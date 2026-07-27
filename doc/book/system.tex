@@ -9,7 +9,8 @@ with the operating system. This chapter shows how to
   \item Launch and interact with other programs
   \item Handle abnormal events that would otherwise terminate your program
   \item Write \index{Internet}Internet \index{client}client and
-    \index{server}server applications, including multicast
+    \index{server}server applications, including multicast and
+    raw IP sockets
 \end{itemize}
 
 \section{The Role of the System Interface}
@@ -899,6 +900,130 @@ when the membership was joined on a specific interface. Memberships
 cannot be queried. Bare names for the other attributes return
 \texttt{yes}/\texttt{no}, an integer, or (for IPv4 \texttt{iface}) a
 dotted address; \texttt{source} cannot be queried either.
+
+\subsection*{Raw Sockets}
+\index{raw socket}\index{SOCK\_RAW}
+Mode \texttt{"nr"} opens an IP-level \index{raw IP}raw socket
+(\texttt{SOCK\_RAW}). Unlike TCP and UDP, the application supplies
+(and receives) upper-layer protocol bytes --- ICMP, IGMP, OSPF, PIM,
+and so on --- while the kernel still builds the IP header unless
+header inclusion is requested. Raw sockets usually require elevated
+privileges (root or administrator).
+
+The \texttt{proto=} attribute is required and selects the IP protocol
+number passed to \texttt{socket()}. Symbolic names include
+\texttt{icmp}, \texttt{igmp}, \texttt{ospf}, \texttt{pim}, and
+\texttt{gre}; any integer from 0 to 255 is also accepted. The first
+argument to \texttt{open()} is a bare host or address (no
+\texttt{:port}): raw destinations are hosts, not transport endpoints.
+IPv6 literals are accepted as hosts and are not misparsed as
+\texttt{host:port}.
+
+\iconcode{
+\>   f := open("8.8.8.8", "nr", "proto=icmp", "ttl=64") {\textbar} \\
+\>\>\>\>stop(\&errortext) \\
+\>   writes(f, icmp\_bytes) \\
+\>   r := receive(f) \\
+\>   write(r.addr, "  ", *r.msg, " bytes")
+}
+
+On many platforms a raw receive buffer includes the IPv4 header in
+front of the protocol message; strip it (or use a library helper)
+before decoding the upper layer. The optional \texttt{hdrincl=yes}
+attribute sets \texttt{IP\_HDRINCL} so writes may supply a complete
+IP header as well --- useful for crafted packets, but not required
+for ordinary ICMP or IGMP.
+
+The runtime does not build protocol payloads. Use
+\texttt{import~net} and the \texttt{PacketSpec} layouts in
+\texttt{uni/lib} (see below), or assemble the bytes yourself.
+
+\subsection*{PacketSpec and package net}
+\index{PacketSpec}\index{package net}\index{ICMP}\index{IGMP}
+The Unicon library module \texttt{packetspec} (package \texttt{net})
+provides a small declarative engine for fixed binary layouts:
+\texttt{field()}, \texttt{ipv4\_field()}, \texttt{checksum\_field()},
+\texttt{set()}/\texttt{build()}/\texttt{decode()}, and
+\texttt{describe()} for REPL discovery. Layer-1 helpers pack and
+unpack network-order integers (\texttt{u8}/\texttt{u16}/\texttt{u32}/
+\texttt{u64}) and IPv4 addresses (\texttt{ipv4}/\texttt{ipv4\_raw}/
+\texttt{to\_ipv4}/\texttt{get\_ipv4}). Internet checksums use
+\texttt{inet\_cksum()}; \texttt{checksum\_field()} may exclude a
+byte range from the sum. Fields marked with \texttt{require()}
+must be supplied before \texttt{build()}, unless
+\texttt{relax()} or \texttt{build(..., lax)} is used (for
+crafting incomplete test packets).
+
+Protocol classes inherit \texttt{PacketSpec} and override
+\texttt{define()} to declare their header. The library currently
+includes ICMP echo (\texttt{icmp.icn}) and IGMPv2/v3
+(\texttt{igmp.icn}):
+
+\begin{description}
+\item[\texttt{IcmpEchoRequest} / \texttt{IcmpEchoReply}]
+\texttt{echo(id, seq, payload)} or chainable
+\texttt{set("id",~…)\allowbreak.set("seq",~…)\allowbreak.build()};
+\texttt{match\_echo(pkt, id, seq)} succeeds on a matching type~0
+reply after stripping the IPv4 header from a raw receive buffer.
+\item[\texttt{Ping}]
+Session wrapper: \texttt{Ping(host)} opens
+\texttt{proto=icmp}, and \texttt{echo()} sends a request and waits
+for a matching reply (returns a table with \texttt{rtt} and
+\texttt{addr}).
+\item[\texttt{Igmpv2Query} / \texttt{Igmpv2Report} / \texttt{Igmpv2Leave}]
+Eight-octet IGMPv2 messages (RFC~2236); report/leave require
+\texttt{group}.
+\item[\texttt{Igmpv3Query} / \texttt{Igmpv3Report}]
+IGMPv3 queries with source lists and membership reports with group
+records (RFC~3376), including convenience methods
+\texttt{join}/\texttt{leave}/\texttt{join\_sources} for ASM and SSM.
+\item[\texttt{Igmp}]
+Session wrapper: \texttt{Igmp()} opens \texttt{proto=igmp};
+\texttt{recv()} returns a classified table (\texttt{kind},
+\texttt{addr}, \ldots); \texttt{report}/\texttt{leave}/\texttt{join}
+send common messages.
+\end{description}
+
+A minimal ICMP echo with the session wrapper:
+
+\iconcode{
+import net \\
+\\
+procedure main() \\
+\>   local p, v \\
+\>   p := Ping("8.8.8.8") {\textbar} stop(\&errortext) \\
+\>   write(p.describe()) \\
+\>   if v := p.echo() then \\
+\>\>\>write("rtt=", v["rtt"], " from ", v["addr"]) \\
+\>   p.close() \\
+end
+}
+
+The same exchange with an explicit raw socket and PacketSpec:
+
+\iconcode{
+import net \\
+\\
+procedure main() \\
+\>   local f, req, reply, id, pkt, r \\
+\>   req := IcmpEchoRequest() \\
+\>   reply := IcmpEchoReply() \\
+\>   id := iand(?100000 {\textbar} 1, 16rFFFF) \\
+\>   f := open("8.8.8.8", "nr", "proto=icmp", "ttl=64") {\textbar} \\
+\>\>\>\>stop(\&errortext) \\
+\>   pkt := req.set("id", id).set("seq", 1).build(, "unicon") \\
+\>   writes(f, pkt) \\
+\>   r := receive(f) \\
+\>   if reply.match\_echo(r.msg, id, 1) then \\
+\>\>\>write("reply from ", r.addr) \\
+\>   close(f) \\
+end
+}
+
+Ready-made programs in \texttt{uni/progs} exercise the same path:
+\texttt{uping} is an ICMP ping client, and \texttt{uigmp} is a raw
+IGMP sniffer. Both need privileges for \texttt{SOCK\_RAW}. See
+Chapter~14 for short usage notes.
 
 \subsection*{Secure Sockets}
 

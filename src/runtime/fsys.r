@@ -332,7 +332,7 @@ Deliberate Syntax Error
 #endif                                  /* MSDOS || ... */
 
 #ifdef PosixFns
-      int is_udp_or_listener = 0;       /* UDP = 1, listener = 2 */
+      int sock_type = SOCK_T_STREAM;    /* TCP / UDP / RAW */
 #endif                                  /* PosixFns */
 #if defined(PosixFns) || defined(Messaging)
       int is_ipv4 = 0;
@@ -409,6 +409,16 @@ Deliberate Syntax Error
                continue;
             case 'r':
             case 'R':
+#ifdef PosixFns
+               /*
+                * After 'n', 'r' means SOCK_RAW (like 'u' for UDP).
+                * Otherwise it remains the ordinary read mode bit.
+                */
+               if (status & Fs_Socket) {
+                  sock_type = SOCK_T_RAW;
+                  continue;
+                  }
+#endif                                  /* PosixFns */
                status |= Fs_Read;
                continue;
             case 'w':
@@ -447,7 +457,7 @@ Deliberate Syntax Error
             case 'u':
             case 'U':
 #ifdef PosixFns
-               is_udp_or_listener = 1;
+               sock_type = SOCK_T_DGRAM;
 #endif                                  /* PosixFns */
                if ((status & Fs_Socket)==0)
                   status |= Fs_Untrans;
@@ -480,7 +490,6 @@ Deliberate Syntax Error
 #ifdef PosixFns
                if (status & Fs_Socket) {
                   status |= Fs_Listen | Fs_Append;
-                  is_udp_or_listener = 2;
                   continue;
                   }
 #endif                                  /* PosixFns */
@@ -954,9 +963,10 @@ Deliberate Syntax Error
                }
 #endif                                  /* HAVE_LIBSSL */
 
-               /* "na" => listen for connections */
+               /* "na"/"nl" => bind (and listen/accept per sock_type) */
                DEC_NARTHREADS;
-               fd = sock_listen(fnamestr, is_udp_or_listener, af_fam, attr, n);
+               fd = sock_listen(fnamestr, sock_type,
+                                (status & Fs_Listen) != 0, af_fam, attr, n);
                INC_NARTHREADS_CONTROLLED;
 
 #if HAVE_LIBSSL
@@ -1011,9 +1021,9 @@ Deliberate Syntax Error
                      timeout = 0;
                }
 #endif                                  /* Graphics || Messaging || ISQL */
-               /* connect to a port */
+               /* connect to a port (or raw destination) */
                DEC_NARTHREADS;
-               fd = sock_connect(fnamestr, is_udp_or_listener == 1, timeout,
+               fd = sock_connect(fnamestr, sock_type, timeout,
                                  af_fam, attr, n);
                INC_NARTHREADS_CONTROLLED;
 #if HAVE_LIBSSL
@@ -1046,9 +1056,9 @@ Deliberate Syntax Error
              * read/reads is not allowed on a listener socket, only select
              * read/reads is not allowed on a UDP socket, only receive
              */
-            if (is_udp_or_listener == 2)
+            if (status & Fs_Listen)
                status |= Fs_Socket | Fs_Listen;
-            else if (is_udp_or_listener == 1)
+            else if (sock_type == SOCK_T_DGRAM)
                status |= Fs_Socket | Fs_Write;
             else
                status |= Fs_Socket | Fs_Read | Fs_Write;

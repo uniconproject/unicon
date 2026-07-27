@@ -95,6 +95,14 @@ extern char *sys_errlist[];
 
 extern stringint signalnames[];
 
+/*
+ * Socket transport type for open()/sock_connect()/sock_listen().
+ * Orthogonal to listener role (Fs_Listen / Fs_Append).
+ */
+#define SOCK_T_STREAM 0                 /* TCP */
+#define SOCK_T_DGRAM  1                 /* UDP */
+#define SOCK_T_RAW    2                 /* SOCK_RAW */
+
 #ifdef IRIS4D
 #include <limits.h>
 #include <sys/param.h>

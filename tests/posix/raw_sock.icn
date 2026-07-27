@@ -1,0 +1,77 @@
+#
+# raw_sock.icn - raw socket open() plumbing ("nr", proto=, hdrincl=)
+#
+# SOCK_RAW usually needs elevated privileges.  This test checks the
+# Unicon-side plumbing that does not: required proto=, name lookup,
+# and that a privilege denial still means socket() was reached.
+# Full ICMP/send coverage belongs with a PacketSpec layer later.
+#
+
+# True when open failed because the OS refused SOCK_RAW (plumbing worked).
+procedure raw_denied()
+   local t
+   t := \(&errortext) | fail
+   if find("not permitted", t) | find("Permission denied", t) |
+      find("forbidden", t) | find("Access is denied", t) then
+      return
+   fail
+end
+
+# Open a raw socket; success or privilege denial both count as plumbing-ok.
+procedure check_raw_open(label, proto)
+   local f
+   f := open("127.0.0.1", "nr", "proto=" || proto)
+   if \f then {
+      write(label, ": plumbing-ok")
+      close(f)
+      return
+      }
+   if raw_denied() then {
+      write(label, ": plumbing-ok")
+      return
+      }
+   write(label, ": ", image(&errortext))
+end
+
+procedure main()
+   local f, tmp
+
+   if open("127.0.0.1", "nr") then
+      write("oops: missing proto accepted")
+   else
+      write("missing-proto: ", &errortext)
+
+   if open("127.0.0.1", "nr", "proto=nope") then
+      write("oops: bad proto accepted")
+   else
+      write("bad-proto: ", &errortext)
+
+   if open("127.0.0.1", "nr", "proto=") then
+      write("oops: empty proto accepted")
+   else
+      write("empty-proto: ", &errortext)
+
+   check_raw_open("raw-icmp", "icmp")
+   check_raw_open("raw-gre", "gre")
+   check_raw_open("raw-ospf", "ospf")
+   check_raw_open("raw-numeric", "89")
+
+   # hdrincl= is a known boolean attr (reject junk without needing SOCK_RAW)
+   if open(":5111", "nua", "hdrincl=maybe") then
+      write("oops: bad hdrincl accepted")
+   else
+      write("bad-hdrincl: ", &errortext)
+
+   # Without a preceding 'n', 'r' remains ordinary read mode.
+   tmp := "raw-mode-r.tmp"
+   f := open(tmp, "w") | stop("temp create failed: ", &errortext)
+   write(f, "ok")
+   close(f)
+   f := open(tmp, "r") | stop("read-mode open failed: ", &errortext)
+   if read(f) == "ok" then
+      write("read-mode-r: ok")
+   else
+      write("read-mode-r: unexpected")
+   close(f)
+   remove(tmp)
+end

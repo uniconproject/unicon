@@ -1,0 +1,249 @@
+#
+# uigmp.icn - IGMP sniffer (raw socket)
+#
+# Build:  unicon uigmp
+# Run:    sudo ./uigmp [seconds]
+#         sudo ./uigmp -v [seconds]   # also show open()/Igmp API demos
+# Needs privileges for SOCK_RAW.
+#
+# Default: listen with Igmp() until interrupted (or for N seconds).
+# -v/-d: run both open()/PacketSpec and Igmp() demos.
+#
+
+import net
+
+global verbose
+
+procedure usage()
+   stop("Usage: ", &progname, " [-v|-d] [seconds]")
+end
+
+procedure vwrite(args[])
+   if \verbose then
+      write ! args
+end
+
+#
+# Human-readable IGMPv3 group-record type name.
+#
+procedure record_type_name(t)
+   case t of {
+      IGMP_MODE_IS_INCLUDE:         return "MODE_IS_INCLUDE"
+      IGMP_MODE_IS_EXCLUDE:         return "MODE_IS_EXCLUDE"
+      IGMP_CHANGE_TO_INCLUDE_MODE:  return "CHANGE_TO_INCLUDE"
+      IGMP_CHANGE_TO_EXCLUDE_MODE:  return "CHANGE_TO_EXCLUDE"
+      IGMP_ALLOW_NEW_SOURCES:       return "ALLOW_NEW_SOURCES"
+      IGMP_BLOCK_OLD_SOURCES:       return "BLOCK_OLD_SOURCES"
+      default:                      return "type=" || t
+      }
+end
+
+procedure list_to_csv(L)
+   local s, a
+   s := ""
+   every a := !L do {
+      if *s > 0 then s ||:= ","
+      s ||:= a
+      }
+   return s
+end
+
+#
+# Strip a trailing :0 port from receive() addresses for display.
+#
+procedure peer_addr(a)
+   a := ::string(a)
+   if *a >= 2 & a[*a - 1+:2] == ":0" then
+      return a[1:*a - 1]
+   return a
+end
+
+#
+# Print a one-line description from PacketSpec matchers (open() path).
+#
+procedure show_igmp_open(msg, addr, q2, q3, r2, leave2, r3)
+   local v, rec, srcs
+
+   addr := peer_addr(addr)
+   if v := r3.match_report(msg) then {
+      writes(*msg, " bytes from ", addr, ": IGMPv3 report")
+      every rec := !v["records"] do {
+         srcs := ""
+         if *rec["sources"] > 0 then
+            srcs := " sources=[" || list_to_csv(rec["sources"]) || "]"
+         writes(" {", rec["group"], " ", record_type_name(rec["type"]),
+                srcs, "}")
+         }
+      write()
+      return
+      }
+   if v := q3.match_query(msg) then {
+      writes(*msg, " bytes from ", addr, ": IGMPv3 query group=",
+             v["group"], " max_resp=", v["max_resp_code"],
+             " qrv=", v["qrv"])
+      if *v["sources"] > 0 then
+         writes(" sources=[", list_to_csv(v["sources"]), "]")
+      write()
+      return
+      }
+   if v := q2.match_query(msg) then {
+      write(*msg, " bytes from ", addr, ": IGMPv2 query group=",
+            v["group"], " max_resp=", v["max_resp_time"])
+      return
+      }
+   if v := r2.match_report(msg) then {
+      write(*msg, " bytes from ", addr, ": IGMPv2 report group=",
+            v["group"])
+      return
+      }
+   if v := leave2.match_leave(msg) then {
+      write(*msg, " bytes from ", addr, ": IGMPv2 leave group=",
+            v["group"])
+      return
+      }
+   write(*msg, " bytes from ", addr, ": IGMP (unrecognized)")
+end
+
+#
+# Print a classified table from Igmp.recv() / classify().
+#
+procedure show_igmp_session(v)
+   local rec, srcs, addr
+
+   addr := peer_addr(v["addr"])
+   case v["kind"] of {
+      "v3_report": {
+         writes(v["len"], " bytes from ", addr, ": IGMPv3 report")
+         every rec := !v["records"] do {
+            srcs := ""
+            if *rec["sources"] > 0 then
+               srcs := " sources=[" || list_to_csv(rec["sources"]) || "]"
+            writes(" {", rec["group"], " ", record_type_name(rec["type"]),
+                   srcs, "}")
+            }
+         write()
+         }
+      "v3_query": {
+         writes(v["len"], " bytes from ", addr, ": IGMPv3 query group=",
+                v["group"], " max_resp=", v["max_resp_code"],
+                " qrv=", v["qrv"])
+         if *v["sources"] > 0 then
+            writes(" sources=[", list_to_csv(v["sources"]), "]")
+         write()
+         }
+      "v2_query":
+         write(v["len"], " bytes from ", addr, ": IGMPv2 query group=",
+               v["group"], " max_resp=", v["max_resp_time"])
+      "v2_report":
+         write(v["len"], " bytes from ", addr, ": IGMPv2 report group=",
+               v["group"])
+      "v2_leave":
+         write(v["len"], " bytes from ", addr, ": IGMPv2 leave group=",
+               v["group"])
+      default:
+         write(v["len"], " bytes from ", addr, ": IGMP (unrecognized)")
+      }
+end
+
+#
+# Low-level: open the raw socket and match with PacketSpec classes.
+#
+procedure igmp_open(secs)
+   local f, r, ticks, q2, q3, r2, leave2, r3
+
+   r3 := Igmpv3Report()
+   q3 := Igmpv3Query()
+   q2 := Igmpv2Query()
+   r2 := Igmpv2Report()
+   leave2 := Igmpv2Leave()
+
+   f := open("0.0.0.0", "nr", "proto=igmp") |
+      stop("open failed: ", &errortext,
+           "\n(raw IGMP usually needs root/admin)")
+
+   vwrite("--- open()/PacketSpec ---")
+   write("listening on IGMP")
+   vwrite("timeout ", secs, "s")
+
+   ticks := secs * 10
+   every !ticks do {
+      if *select(f, 100) = 0 then next
+      r := receive(f) | next
+      show_igmp_open(r.msg, r.addr, q2, q3, r2, leave2, r3)
+      }
+
+   close(f)
+end
+
+#
+# High-level: Igmp() hides "nr" / proto=igmp and classify/recv.
+#
+procedure igmp_session(secs, forever)
+   local g, v, ticks
+
+   g := Igmp() |
+      stop("Igmp() failed: ", &errortext,
+           "\n(raw IGMP usually needs root/admin)")
+
+   vwrite("--- Igmp() session ---")
+   vwrite(g.describe())
+   if \forever then
+      write("listening on IGMP")
+   else
+      write("listening on IGMP (", secs, "s)")
+
+   if \forever then
+      repeat {
+         v := g.recv(1000) | next
+         show_igmp_session(v)
+         }
+   else {
+      ticks := secs * 10
+      every !ticks do {
+         v := g.recv(100) | next
+         show_igmp_session(v)
+         }
+      }
+
+   g.close()
+end
+
+procedure main(argv)
+   local secs, forever, a
+
+   verbose := &null
+   forever := &null
+   secs := &null
+
+   every a := !argv do {
+      if a == "-h" | a == "--help" then
+         usage()
+      else if a == "-v" | a == "-d" |
+              a == "--verbose" | a == "--debug" then
+         verbose := 1
+      else if a == "forever" then
+         forever := 1
+      else if integer(a) then {
+         secs := integer(a)
+         if secs = 0 then
+            forever := 1
+         }
+      else
+         usage()
+      }
+
+   if \forever then
+      secs := \secs | 3
+   else if /secs then
+      forever := 1
+   else if secs < 1 then
+      secs := 1
+
+   if \verbose then {
+      igmp_open(\secs | 3)
+      write()
+      igmp_session(\secs | 3, forever)
+      }
+   else
+      igmp_session(\secs | 3, forever)
+end

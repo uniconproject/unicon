@@ -665,7 +665,7 @@ int urlopen(char *url, int flag, struct netfd *retval)
 
    if ( strcasecmp(scheme, "file") != 0 ) {
       /* Find out the IP address */
-      res0 = uni_getaddrinfo(host, port, SOCK_STREAM, AF_INET);
+      res0 = uni_getaddrinfo(host, port, SOCK_T_STREAM, AF_INET);
       if (!res0)
         return NULL;
 
@@ -785,7 +785,7 @@ FILE *socketopen(char *url, char *type)
       port = "http";
 
    /* Find out the IP address */
-   res0 = uni_getaddrinfo(host, port, SOCK_STREAM, AF_INET);
+   res0 = uni_getaddrinfo(host, port, SOCK_T_STREAM, AF_INET);
    if (!res0)
      return NULL;
 

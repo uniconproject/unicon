@@ -1,0 +1,661 @@
+#<p>
+# Declarative binary packet layouts for raw/IP protocols.
+#</p>
+#<p>
+# Layer 1 provides fixed-width network-byte-order packers
+# (<tt>u8</tt>/<tt>u16</tt>/<tt>u32</tt>/<tt>u64</tt>), IPv4 address
+# helpers (<tt>ipv4</tt>/<tt>get_ipv4</tt>), and matching readers
+# (<tt>get_u8</tt>/…).  <tt>PacketSpec</tt> is the engine: a list of
+# fields that can <tt>build()</tt> and <tt>decode()</tt> byte strings.
+# Protocol classes inherit <tt>PacketSpec</tt> and override
+# <tt>define()</tt> to declare their layout.  Typical use is chainable
+# <tt>set()</tt> then <tt>build()</tt>; <tt>describe()</tt> lists fields
+# for REPL discovery.  Checksums are filled at build time with
+# <tt>inet_cksum()</tt>; <tt>checksum_field()</tt> can exclude a byte
+# range (e.g. OSPF Authentication) from the sum.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+
+package net
+
+link bincvt
+
+#<p>
+# Pack an 8-bit unsigned integer as one network-order byte.
+# <[param n integer value; masked to 8 bits]>
+# <[returns 1-byte string]>
+#</p>
+procedure u8(n  # integer; masked to 8 bits
+             )
+   return rawstring(iand(integer(n), 16rFF), 1)
+end
+
+#<p>
+# Pack a 16-bit unsigned integer in network byte order.
+# <[param n integer value; masked to 16 bits]>
+# <[returns 2-byte string]>
+#</p>
+procedure u16(n  # integer; masked to 16 bits
+              )
+   return rawstring(iand(integer(n), 16rFFFF), 2)
+end
+
+#<p>
+# Pack a 32-bit unsigned integer in network byte order.
+# <[param n integer value; masked to 32 bits]>
+# <[returns 4-byte string]>
+#</p>
+procedure u32(n  # integer; masked to 32 bits
+              )
+   return rawstring(iand(integer(n), 16rFFFFFFFF), 4)
+end
+
+#<p>
+# Pack a 64-bit unsigned integer in network byte order.
+# <[param n integer value; masked to 64 bits]>
+# <[returns 8-byte string]>
+#</p>
+procedure u64(n  # integer; masked to 64 bits
+              )
+   return rawstring(iand(integer(n), 16rFFFFFFFFFFFFFFFF), 8)
+end
+
+#<p>
+# Read an 8-bit unsigned integer from a byte string.
+# <[param s byte string]>
+# <[param i 1-based start index; defaults to 1]>
+# <[returns integer 0..255]>
+# <[fails if s is too short]>
+#</p>
+procedure get_u8(s,  # byte string
+                 i   # 1-based start index; defaults to 1
+                 )
+   i := \i | 1
+   if i > *s then
+      fail
+   return unsigned(s[i+:1])
+end
+
+#<p>
+# Read a 16-bit unsigned integer (network order) from a byte string.
+# <[param s byte string]>
+# <[param i 1-based start index; defaults to 1]>
+# <[returns integer 0..65535]>
+# <[fails if s is too short]>
+#</p>
+procedure get_u16(s,  # byte string
+                  i   # 1-based start index; defaults to 1
+                  )
+   i := \i | 1
+   if i + 1 > *s then
+      fail
+   return unsigned(s[i+:2])
+end
+
+#<p>
+# Read a 32-bit unsigned integer (network order) from a byte string.
+# <[param s byte string]>
+# <[param i 1-based start index; defaults to 1]>
+# <[returns integer]>
+# <[fails if s is too short]>
+#</p>
+procedure get_u32(s,  # byte string
+                  i   # 1-based start index; defaults to 1
+                  )
+   i := \i | 1
+   if i + 3 > *s then
+      fail
+   return unsigned(s[i+:4])
+end
+
+#<p>
+# Read a 64-bit unsigned integer (network order) from a byte string.
+# <[param s byte string]>
+# <[param i 1-based start index; defaults to 1]>
+# <[returns integer]>
+# <[fails if s is too short]>
+#</p>
+procedure get_u64(s,  # byte string
+                  i   # 1-based start index; defaults to 1
+                  )
+   i := \i | 1
+   if i + 7 > *s then
+      fail
+   return unsigned(s[i+:8])
+end
+
+#<p>
+# Pack an unsigned integer of <tt>size</tt> bytes (1, 2, 4, or 8) in
+# network byte order.  Used by <tt>PacketSpec</tt>; prefer
+# <tt>u8</tt>/<tt>u16</tt>/<tt>u32</tt>/<tt>u64</tt> at call sites.
+# <[param n integer value]>
+# <[param size width in bytes]>
+# <[returns size-byte string]>
+#</p>
+procedure uintbe(n,     # integer value
+                 size   # width in bytes (1, 2, 4, or 8)
+                 )
+   case size of {
+      1: return u8(n)
+      2: return u16(n)
+      4: return u32(n)
+      8: return u64(n)
+      default: return rawstring(integer(n), size)
+      }
+end
+
+#<p>
+# Read an unsigned integer of <tt>size</tt> bytes (network order).
+# <[param s byte string]>
+# <[param size width in bytes]>
+# <[param i 1-based start index; defaults to 1]>
+# <[returns integer]>
+# <[fails if s is too short or size is unsupported]>
+#</p>
+procedure get_uintbe(s,     # byte string
+                     size,  # width in bytes (1, 2, 4, or 8)
+                     i      # 1-based start index; defaults to 1
+                     )
+   i := \i | 1
+   case size of {
+      1: return get_u8(s, i)
+      2: return get_u16(s, i)
+      4: return get_u32(s, i)
+      8: return get_u64(s, i)
+      default: {
+         if i + size - 1 > *s then
+            fail
+         return unsigned(s[i+:size])
+         }
+      }
+end
+
+#<p>
+# Pack an IPv4 address as 4 network-order bytes.
+# Accepts an integer or a dotted-quad string.  For an already-packed
+# 4-byte address use <tt>ipv4_raw()</tt> (or <tt>to_ipv4()</tt>, which
+# treats length-4 strings as raw — valid dotted-quads are never length 4).
+# <[param a address as integer or "a.b.c.d"]>
+# <[returns 4-byte string]>
+# <[fails if a is not a valid IPv4 address]>
+#</p>
+procedure ipv4(a  # integer or dotted-quad string
+               )
+   local o1, o2, o3, o4
+   if type(a) == "integer" then
+      return u32(a)
+   a := ::string(a)
+   a ? {
+      o1 := integer(tab(upto('.'))) | fail
+      ="." | fail
+      o2 := integer(tab(upto('.'))) | fail
+      ="." | fail
+      o3 := integer(tab(upto('.'))) | fail
+      ="." | fail
+      o4 := integer(tab(0)) | fail
+      pos(0) | fail
+      }
+   ((0 <= o1 <= 255) & (0 <= o2 <= 255) &
+    (0 <= o3 <= 255) & (0 <= o4 <= 255)) | fail
+   return ::char(o1) || ::char(o2) || ::char(o3) || ::char(o4)
+end
+
+#<p>
+# Pass through an already-packed 4-byte IPv4 address.
+# <[param a exactly 4 bytes]>
+# <[returns a unchanged]>
+# <[fails if *a ~= 4]>
+#</p>
+procedure ipv4_raw(a  # exactly 4 packed address bytes
+                   )
+   a := ::string(a)
+   if *a ~= 4 then
+      fail
+   return a
+end
+
+#<p>
+# Pack an IPv4 address from an integer, dotted-quad, or 4 raw bytes.
+# Length 4 selects the raw form (dotted-quad text is always longer).
+# <[param a integer, "a.b.c.d", or 4 raw bytes]>
+# <[returns 4-byte string]>
+#</p>
+procedure to_ipv4(a  # integer, dotted-quad, or 4 raw bytes
+                  )
+   if type(a) == "integer" then
+      return ipv4(a)
+   a := ::string(a)
+   if *a = 4 then
+      return ipv4_raw(a)
+   return ipv4(a)
+end
+
+#<p>
+# Read an IPv4 address from a byte string as a dotted-quad.
+# <[param s byte string]>
+# <[param i 1-based start index; defaults to 1]>
+# <[returns dotted-quad string]>
+# <[fails if s is too short]>
+#</p>
+procedure get_ipv4(s,  # byte string
+                   i   # 1-based start index; defaults to 1
+                   )
+   i := \i | 1
+   if i + 3 > *s then
+      fail
+   return ::ord(s[i]) || "." || ::ord(s[i + 1]) || "." ||
+          ::ord(s[i + 2]) || "." || ::ord(s[i + 3])
+end
+
+#<p>
+# Strip an IPv4 header from a <tt>SOCK_RAW</tt> receive buffer,
+# returning the upper-layer message (ICMP, IGMP, …).
+# <[param pkt IP+payload byte string from receive()]>
+# <[returns payload bytes after the IPv4 header]>
+# <[fails if the buffer is too short for a minimal IPv4 header]>
+#</p>
+procedure strip_ipv4(pkt  # IP+payload byte string from receive()
+                     )
+   local ihl
+   if *pkt < 20 then
+      fail
+   ihl := iand(::ord(pkt[1]), 16r0F) * 4
+   if ihl < 20 | *pkt < ihl then
+      fail
+   return pkt[ihl + 1:0]
+end
+
+#<p>
+# TTL from an IPv4 header at the front of a <tt>SOCK_RAW</tt> buffer.
+# <[param pkt IP+payload byte string]>
+# <[returns TTL as an integer 0..255]>
+# <[fails if the buffer is shorter than a minimal IPv4 header]>
+#</p>
+procedure ipv4_ttl(pkt  # IP+payload byte string
+                   )
+   if *pkt < 20 then
+      fail
+   return ::ord(pkt[9])
+end
+
+#<p>
+# Source address from an IPv4 header as a dotted-quad.
+# <[param pkt IP+payload byte string]>
+# <[returns dotted-quad string]>
+# <[fails if the buffer is shorter than a minimal IPv4 header]>
+#</p>
+procedure ipv4_src(pkt  # IP+payload byte string
+                   )
+   return get_ipv4(pkt, 13)
+end
+
+#<p>
+# Internet checksum (RFC 1071) over a byte string.
+# <[param s byte string to checksum]>
+# <[returns 16-bit checksum as an integer]>
+#</p>
+procedure inet_cksum(s)
+   local sum, i, n
+   sum := 0
+   i := 1
+   while i <= *s do {
+      if i = *s then
+         n := ishift(::ord(s[i]), 8)
+      else
+         n := ishift(::ord(s[i]), 8) + ::ord(s[i + 1])
+      sum +:= n
+      i +:= 2
+      }
+   while sum >= 16r10000 do
+      sum := iand(sum, 16rFFFF) + ishift(sum, -16)
+   return iand(ixor(sum, 16rFFFF), 16rFFFF)
+end
+
+#<p>
+# One field in a <tt>PacketSpec</tt>.
+# <tt>kind</tt> is <tt>"int"</tt>, <tt>"bytes"</tt>, <tt>"ipv4"</tt>,
+# or <tt>"checksum"</tt>.  For checksum fields, <tt>exoff</tt>/<tt>exlen</tt>
+# are an optional 1-based byte range excluded from <tt>inet_cksum()</tt>
+# (null <tt>exlen</tt> means through the end of the buffer).
+# <tt>required</tt> means <tt>build()</tt> fails unless the field was
+# supplied via <tt>set()</tt> or the <tt>build()</tt> table.
+#</p>
+class PacketField(name, size, defval, kind, exoff, exlen, required)
+end
+
+#<p>
+# Base declarative packet layout.  Subclasses override <tt>define()</tt>
+# to add fields; <tt>initially()</tt> runs <tt>define()</tt> after
+# allocating the field list.
+#</p>
+#<p>
+# Preferred call shape (no string-keyed tables required):
+#</p>
+#<pre>
+#  pkt := IcmpEchoRequest().set("id", 1).set("seq", 2).build(, "hi")
+#  write(IcmpEchoRequest().describe())
+#</pre>
+class PacketSpec(fields, vals, pay, lax)
+
+   #<p>
+   # Override in subclasses to declare fields via
+   # <tt>field()</tt> / <tt>bytes_field()</tt> / <tt>ipv4_field()</tt> /
+   # <tt>checksum_field()</tt> / <tt>require()</tt>.
+   #</p>
+   method define()
+   end
+
+   #<p>
+   # Look up a declared field by name.
+   # <[param name field name]>
+   # <[returns PacketField]>
+   # <[fails if name is not in this layout]>
+   #</p>
+   method find_field(name  # field name
+                     )
+      local f
+      every f := !fields do
+         if f.name == name then
+            return f
+      fail
+   end
+
+   #<p>
+   # Add a fixed-width network-order integer field.
+   # <[param name field name used in build/decode tables]>
+   # <[param size width in bytes (1, 2, 4, or 8)]>
+   # <[param defval default value when build() omits this field]>
+   #</p>
+   method field(name,   # field name used in build/decode tables
+                size,   # width in bytes (1, 2, 4, or 8)
+                defval  # default when build() omits this field
+                )
+      put(fields, PacketField(name, size, defval, "int"))
+   end
+
+   #<p>
+   # Add an opaque byte-string field of fixed size.
+   # <[param name field name]>
+   # <[param size width in bytes]>
+   # <[param defval default bytes; defaults to zero-fill of size]>
+   #</p>
+   method bytes_field(name,   # field name
+                      size,   # width in bytes
+                      defval  # default bytes; defaults to zero-fill
+                      )
+      defval := \defval | repl("\x00", size)
+      put(fields, PacketField(name, size, defval, "bytes"))
+   end
+
+   #<p>
+   # Add a 4-byte IPv4 address field.  <tt>build()</tt> accepts a
+   # dotted-quad, integer, or 4 raw bytes via <tt>to_ipv4()</tt>;
+   # <tt>decode()</tt> returns a dotted-quad string.
+   # <[param name field name]>
+   # <[param defval default address; defaults to 0.0.0.0]>
+   #</p>
+   method ipv4_field(name,    # field name
+                     defval   # default address; defaults to 0.0.0.0
+                     )
+      defval := \defval | "0.0.0.0"
+      put(fields, PacketField(name, 4, defval, "ipv4"))
+   end
+
+   #<p>
+   # Add a 16-bit checksum placeholder.  Filled at <tt>build()</tt>
+   # time with <tt>inet_cksum()</tt>.  By default the sum covers the
+   # full buffer (header||payload), which is correct for ICMP and IGMP.
+   # Pass <tt>exclude_off</tt>/<tt>exclude_len</tt> (1-based) to omit a
+   # range — e.g. OSPF's 8-byte Authentication field — by treating those
+   # bytes as zero during the sum.  A null <tt>exclude_len</tt> means
+   # through the end of the buffer (e.g. PIM Register covering only the
+   # first 8 bytes: <tt>checksum_field("checksum", 9)</tt>).
+   # <[param name field name; defaults to "checksum"]>
+   # <[param exclude_off 1-based start of excluded range; optional]>
+   # <[param exclude_len length to exclude; null means through end]>
+   #</p>
+   method checksum_field(name,         # field name; defaults to "checksum"
+                         exclude_off,  # 1-based start of excluded range
+                         exclude_len   # length; null means through end
+                         )
+      name := \name | "checksum"
+      put(fields, PacketField(name, 2, 0, "checksum",
+                              exclude_off, exclude_len))
+   end
+
+   #<p>
+   # Mark a previously declared field as required.  <tt>build()</tt>
+   # then fails unless the field was supplied via <tt>set()</tt> or
+   # the optional <tt>build()</tt> table.
+   # <[param name field name]>
+   # <[returns self]>
+   # <[fails if name is unknown or is a checksum field]>
+   #</p>
+   method require(name  # field name
+                  )
+      local f
+      f := find_field(name) | fail
+      if f.kind == "checksum" then
+         fail
+      f.required := 1
+      return self
+   end
+
+   #<p>
+   # Set a field value for a later <tt>build()</tt>.  Chainable.
+   # <[param name field name]>
+   # <[param value field value]>
+   # <[returns self]>
+   # <[fails if name is unknown or is a checksum field]>
+   #</p>
+   method set(name,   # field name
+              value   # field value
+              )
+      local f
+      f := find_field(name) | fail
+      if f.kind == "checksum" then
+         fail
+      vals[name] := value
+      return self
+   end
+
+   #<p>
+   # Set the optional payload appended after fixed fields at
+   # <tt>build()</tt> time.  Chainable.
+   # <[param p payload bytes]>
+   # <[returns self]>
+   #</p>
+   method set_payload(p  # payload bytes
+                      )
+      pay := \p | ""
+      return self
+   end
+
+   #<p>
+   # Clear values from <tt>set()</tt> / <tt>set_payload()</tt>
+   # and restore required-field checking.  Chainable.
+   # <[returns self]>
+   #</p>
+   method clear()
+      vals := table()
+      pay := &null
+      lax := &null
+      return self
+   end
+
+   #<p>
+   # Disable required-field checks for subsequent <tt>build()</tt>
+   # calls (for crafting incomplete / malformed test packets).
+   # Chainable.  Re-enable with <tt>strict()</tt> or <tt>clear()</tt>.
+   # <[returns self]>
+   #</p>
+   method relax()
+      lax := 1
+      return self
+   end
+
+   #<p>
+   # Re-enable required-field checks after <tt>relax()</tt>.
+   # Chainable.
+   # <[returns self]>
+   #</p>
+   method strict()
+      lax := &null
+      return self
+   end
+
+   #<p>
+   # Human-readable layout summary for REPL discovery: field names,
+   # kinds, defaults, required markers, and current <tt>set()</tt>
+   # values.
+   # <[returns description string]>
+   #</p>
+   method describe()
+      local f, s, cur
+
+      s := ""
+      every f := !fields do {
+         if *s > 0 then
+            s ||:= "  "
+         s ||:= f.name || ":" || f.kind
+         if f.kind == "checksum" then
+            s ||:= "(auto)"
+         else if cur := \vals[f.name] then
+            s ||:= "=" || cur
+         else if \f.required then
+            s ||:= "(required)"
+         else if f.kind == "bytes" then
+            s ||:= "[" || f.size || " bytes]"
+         else if \f.defval then
+            s ||:= "=" || f.defval
+         else if f.kind == "int" then
+            s ||:= "=0"
+         else if f.kind == "ipv4" then
+            s ||:= "=0.0.0.0"
+         }
+      return s
+   end
+
+   #<p>
+   # Build a packet from this layout.  Values come from prior
+   # <tt>set()</tt> calls, overlaid by the optional <tt>extra</tt>
+   # table.  Payload is <tt>payload</tt> if given, else a prior
+   # <tt>set_payload()</tt>.  Required fields with no value fail
+   # unless <tt>relax()</tt> is in effect or <tt>lax</tt> is passed
+   # (for incomplete / malformed protocol-test packets; omitted
+   # fields still take their defaults, e.g. <tt>0.0.0.0</tt>).
+   # <[param extra optional table of field-name -&gt; value overrides]>
+   # <[param payload optional bytes appended after fixed fields]>
+   # <[param lax if non-null, skip required-field checks this call]>
+   # <[returns complete packet byte string with checksum filled]>
+   # <[fails if a required field is missing (and not lax) or a value
+   # is invalid]>
+   #</p>
+   method build(extra,    # optional table of field-name -> value overrides
+                payload,  # optional bytes appended after fixed fields
+                lax       # if non-null, skip required-field checks
+                )
+      local f, buf, v, ckoff, ck, ckexoff, ckexlen, ckbuf, el, use, skip
+
+      use := copy(vals)
+      if \extra then
+         every k := key(extra) do
+            use[k] := extra[k]
+      payload := \payload | \pay | ""
+      skip := \lax | \self.lax
+      buf := ""
+      ckoff := &null
+      ckexoff := &null
+      ckexlen := &null
+
+      every f := !fields do {
+         if \f.required & /use[f.name] & /skip then
+            fail
+         case f.kind of {
+            "checksum": {
+               ckoff := *buf + 1
+               ckexoff := f.exoff
+               ckexlen := f.exlen
+               buf ||:= uintbe(0, f.size)
+               }
+            "bytes": {
+               v := ::string(\use[f.name] | f.defval)
+               if *v ~== f.size then
+                  v := ::left(v, f.size, "\x00")
+               buf ||:= v
+               }
+            "ipv4": {
+               v := to_ipv4(\use[f.name] | f.defval) | fail
+               buf ||:= v
+               }
+            "int": {
+               v := integer(\use[f.name] | \f.defval | 0)
+               buf ||:= uintbe(v, f.size)
+               }
+            }
+         }
+
+      buf ||:= payload
+      if \ckoff then {
+         ckbuf := buf
+         if \ckexoff then {
+            if ckexoff <= *buf then {
+               el := \ckexlen | (*buf - ckexoff + 1)
+               if ckexoff + el - 1 > *buf then
+                  el := *buf - ckexoff + 1
+               if el > 0 then
+                  ckbuf := buf[1:ckexoff] || repl("\x00", el) ||
+                           buf[ckexoff + el:0]
+               }
+            }
+         ck := inet_cksum(ckbuf)
+         buf := buf[1:ckoff] || u16(ck) || buf[ckoff + 2:0]
+         }
+      return buf
+   end
+
+   #<p>
+   # Decode a byte string into a table of field values.  Any trailing
+   # bytes are stored under <tt>"payload"</tt>.
+   # <[param s packet bytes]>
+   # <[returns table of field name -&gt; value]>
+   # <[fails if s is shorter than the fixed layout]>
+   #</p>
+   method decode(s  # packet bytes
+                 )
+      local f, pos, out
+
+      out := table()
+      pos := 1
+      every f := !fields do {
+         if pos + f.size - 1 > *s then
+            fail
+         case f.kind of {
+            "bytes":
+               out[f.name] := s[pos+:f.size]
+            "ipv4":
+               out[f.name] := get_ipv4(s, pos) | fail
+            default:
+               out[f.name] := get_uintbe(s, f.size, pos) | fail
+            }
+         pos +:= f.size
+         }
+      if pos <= *s then
+         out["payload"] := s[pos:0]
+      else
+         out["payload"] := ""
+      return out
+   end
+
+   #<p>
+   # Construct an empty field list and invoke <tt>define()</tt>.
+   #</p>
+   initially()
+      fields := []
+      vals := table()
+      pay := &null
+      lax := &null
+      define()
+end

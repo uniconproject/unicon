@@ -23,10 +23,14 @@
  * Close a socket without clobbering errno.  On Windows, SOCKET handles
  * must be released with closesocket(); plain close() fails with EBADF
  * and would overwrite a more specific error (e.g. bad socket attribute).
+ * Also drop per-fd metadata (UDP/raw destination addrinfo).
  */
+static void sock_release_fd_meta(int fd);
+
 void sock_close(int fd)
 {
    int hold = errno;
+   sock_release_fd_meta(fd);
 #if NT
    closesocket(fd);
 #else                                   /* NT */
@@ -865,7 +869,7 @@ dptr rec_structor(char *name)
  * For clients, the setup is much simpler; just create the socket and call
  * connect, which returns an fd. We do both in the one procedure "connect".
  *
-852 * UDP is just simpler - no listen or accept, only bind for sock_listen;
+ * UDP is just simpler - no listen or accept, only bind for sock_listen;
  * and for sock_connect it's basically the same except that it must be
  * AF_INET.
  *
@@ -883,13 +887,28 @@ static int sock_track (int);
 
 /*
  * We also stash the sockaddr structs we created with host and port info for
- * any UDP sockets (and let's hope we don't run out of file descriptors)
+ * UDP and raw sockets (and let's hope we don't run out of file descriptors).
  *
  * All because for UDP connect/send doesn't do what sendto does. (At least
- * on Linux 2.0.36)
+ * on Linux 2.0.36).  Raw uses the same sendto path.  sock_close() frees
+ * the retained addrinfo via sock_release_fd_meta().
  */
 
 struct addrinfo **saddrs;
+static int saddrs_n;
+
+#define SOCK_RECV_SMALL 2048
+#define SOCK_RECV_LARGE 65535
+
+static void sock_release_fd_meta(int fd)
+{
+   if (fd < 0)
+      return;
+   if (saddrs != NULL && fd < saddrs_n && saddrs[fd] != NULL) {
+      freeaddrinfo(saddrs[fd]);
+      saddrs[fd] = NULL;
+      }
+}
 
 #if !defined(MAXHOSTNAMELEN)
 #define MAXHOSTNAMELEN 32
@@ -967,15 +986,24 @@ char* print_sockaddrport(struct sockaddr* sa, char* buf, int buflen ) {
   return NULL;
 }
 
-struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
-  int port = atoi(p);
-  int nohost = 0, rc;
+struct addrinfo *uni_getaddrinfo(char* addr, char* p, int sock_type, int family){
+  int nohost = 0, rc, sock, proto;
   struct addrinfo hints, *res0;
+  char *service;
 
-  if (port == 0) {
-    errno = ENXIO;
-    return NULL;
-  }
+  /*
+   * Raw sockets often have no port (ICMP et al.).  TCP/UDP still require
+   * a non-zero numeric port string, matching historical open() behavior.
+   */
+  if (sock_type == SOCK_T_RAW)
+     service = (p && p[0]) ? p : NULL;
+  else {
+     if (p == NULL || p[0] == '\0' || atoi(p) == 0) {
+        errno = ENXIO;
+        return NULL;
+        }
+     service = p;
+     }
 
   if (addr == NULL || addr[0] == '\0')
     nohost = 1;
@@ -983,9 +1011,21 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
   if (!StartupWinSocket()) return 0;
 #endif                                  /*NT*/
 
-  INIT_ADDRINFO_HINTS(hints, family, (is_udp? SOCK_DGRAM : SOCK_STREAM),
-                      (nohost?AI_PASSIVE:0), (is_udp?IPPROTO_UDP:IPPROTO_TCP));
-  if ( (rc = getaddrinfo((nohost?NULL:addr), p, &hints, &res0)) != 0) {
+  if (sock_type == SOCK_T_DGRAM) {
+     sock = SOCK_DGRAM;
+     proto = IPPROTO_UDP;
+     }
+  else if (sock_type == SOCK_T_RAW) {
+     sock = SOCK_RAW;
+     proto = 0;                         /* real protocol chosen at socket() */
+     }
+  else {
+     sock = SOCK_STREAM;
+     proto = IPPROTO_TCP;
+     }
+
+  INIT_ADDRINFO_HINTS(hints, family, sock, (nohost?AI_PASSIVE:0), proto);
+  if ( (rc = getaddrinfo((nohost?NULL:addr), service, &hints, &res0)) != 0) {
     set_gaierrortext(rc);
     return NULL;
   }
@@ -1018,7 +1058,8 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
 
 static char *sock_attr_names[] = {
    "reuseaddr", "reuseport", "broadcast", "rcvbuf", "sndbuf",
-   "join", "leave", "source", "ttl", "mcastloop", "iface", NULL
+   "join", "leave", "source", "ttl", "mcastloop", "iface",
+   "proto", "hdrincl", NULL
    };
 
 static char *ssl_attr_names[] = {
@@ -1055,6 +1096,86 @@ static int sock_attr_bool(char *val)
    if (strcmp(val, "no") == 0)
       return 0;
    return -1;
+}
+
+/*
+ * Map a proto= value (name or number) to an IP protocol number.
+ * Returns 1 on success, 0 if unrecognized or unavailable on this host.
+ */
+static int sock_lookup_proto(char *val, int *proto_out)
+{
+   int i, n, all_digits = 1;
+   static struct { char *name; int proto; } names[] = {
+      { "icmp",   IPPROTO_ICMP },
+      { "icmpv6", IPPROTO_ICMPV6 },
+      { "icmp6",  IPPROTO_ICMPV6 },
+      { "igmp",   IPPROTO_IGMP },
+      { "tcp",    IPPROTO_TCP },
+      { "udp",    IPPROTO_UDP },
+      { "gre",    47 },                 /* GRE (IANA) */
+      { "ospf",   89 },                 /* OSPFIGP (IANA) */
+      { "pim",    IPPROTO_PIM },
+      { "raw",    IPPROTO_RAW },
+      { NULL,     0 }
+      };
+
+   if (val == NULL || val[0] == '\0')
+      return 0;
+   for (i = 0; names[i].name; i++)
+      if (strcasecmp(val, names[i].name) == 0) {
+         if (names[i].proto < 0)
+            return 0;
+         *proto_out = names[i].proto;
+         return 1;
+         }
+   for (i = 0; val[i]; i++)
+      if (val[i] < '0' || val[i] > '9') {
+         all_digits = 0;
+         break;
+         }
+   if (!all_digits)
+      return 0;
+   n = atoi(val);
+   if (n < 0 || n > 255)
+      return 0;
+   *proto_out = n;
+   return 1;
+}
+
+/*
+ * Find proto= among open() attributes.  Returns 1 if found and valid,
+ * 0 if absent, -1 if present but invalid (&errortext set).
+ */
+static int sock_attr_proto(dptr attr, int nattr, int *proto_out)
+{
+   tended char *tmps;
+   char abuf[256], *val;
+   int a;
+   C_integer tmpint;
+
+   for (a = 0; a < nattr; a++) {
+      if (is:null(attr[a]))
+         continue;
+      if (a == 0 && cnv:C_integer(attr[a], tmpint))
+         continue;
+      if (!cnv:C_string(attr[a], tmps))
+         continue;
+      if (strlen(tmps) < 3 || strlen(tmps) >= sizeof(abuf) ||
+          tmps[0] == '=' || strchr(tmps, '=') == NULL)
+         continue;
+      strcpy(abuf, tmps);
+      val = strchr(abuf, '=');
+      *val++ = '\0';
+      if (strcmp(abuf, "proto") != 0)
+         continue;
+      if (!sock_lookup_proto(val, proto_out)) {
+         errno = 0;
+         set_errortext_with_val(1310, tmps);
+         return -1;
+         }
+      return 1;
+      }
+   return 0;
 }
 
 /*
@@ -1127,6 +1248,18 @@ static int sock_split_group_source(char *host, char *srcbuf, size_t srcbuf_sz,
 #passthru #endif
 #passthru #ifndef SO_REUSEPORT
 #passthru #define SO_REUSEPORT -1
+#passthru #endif
+#passthru #ifndef IP_HDRINCL
+#passthru #define IP_HDRINCL -1
+#passthru #endif
+#passthru #ifndef IPPROTO_ICMPV6
+#passthru #define IPPROTO_ICMPV6 -1
+#passthru #endif
+#passthru #ifndef IPPROTO_PIM
+#passthru #define IPPROTO_PIM -1
+#passthru #endif
+#passthru #ifndef IPPROTO_RAW
+#passthru #define IPPROTO_RAW -1
 #passthru #endif
 #passthru #ifndef IP_ADD_SOURCE_MEMBERSHIP
 #passthru #define IP_ADD_SOURCE_MEMBERSHIP -1
@@ -1733,7 +1866,8 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
 
       /* boolean attributes take yes/no, like verifyPeer */
       if (strcmp(abuf, "reuseaddr") == 0 || strcmp(abuf, "reuseport") == 0 ||
-          strcmp(abuf, "broadcast") == 0 || strcmp(abuf, "mcastloop") == 0) {
+          strcmp(abuf, "broadcast") == 0 || strcmp(abuf, "mcastloop") == 0 ||
+          strcmp(abuf, "hdrincl") == 0) {
          if ((on = sock_attr_bool(val)) < 0) {
             errno = 0;
             set_errortext_with_val(1310, tmps);
@@ -1750,6 +1884,10 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
          rc = setsockopt(s, SOL_SOCKET, SO_REUSEPORT, (char *)&on, sizeof(on));
       else if (strcmp(abuf, "broadcast") == 0)
          rc = setsockopt(s, SOL_SOCKET, SO_BROADCAST, (char *)&on, sizeof(on));
+      else if (strcmp(abuf, "hdrincl") == 0)
+         rc = setsockopt(s, IPPROTO_IP, IP_HDRINCL, (char *)&on, sizeof(on));
+      else if (strcmp(abuf, "proto") == 0)
+         rc = 0;                        /* consumed at socket() for SOCK_RAW */
       else if (strcmp(abuf, "rcvbuf") == 0) {
          int sz = ival;
          rc = setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&sz, sizeof(sz));
@@ -1932,8 +2070,8 @@ int sattrib(int s, char *str, long len, dptr answer, char *abuf)
    if (!is_sock_attr(name))
       return RunError;
    if (strcmp(name, "join") == 0 || strcmp(name, "leave") == 0 ||
-       strcmp(name, "source") == 0)
-      return Failed;                    /* memberships are not readable */
+       strcmp(name, "source") == 0 || strcmp(name, "proto") == 0)
+      return Failed;                    /* memberships/create-time only */
 
    af = sock_family(s);
 
@@ -1956,6 +2094,14 @@ int sattrib(int s, char *str, long len, dptr answer, char *abuf)
    if (strcmp(name, "broadcast") == 0) {
       olen = sizeof(on);
       if (getsockopt(s, SOL_SOCKET, SO_BROADCAST, (char *)&on, &olen) < 0)
+         return Failed;
+      strcpy(abuf, on ? "yes" : "no");
+      MakeStr(abuf, strlen(abuf), answer);
+      return Succeeded;
+      }
+   if (strcmp(name, "hdrincl") == 0) {
+      olen = sizeof(on);
+      if (getsockopt(s, IPPROTO_IP, IP_HDRINCL, (char *)&on, &olen) < 0)
          return Failed;
       strcpy(abuf, on ? "yes" : "no");
       MakeStr(abuf, strlen(abuf), answer);
@@ -2042,10 +2188,10 @@ int sattrib(int s, char *str, long len, dptr answer, char *abuf)
 }
 */
 
-int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
+int sock_connect(char *fn, int sock_type, int timeout, int af_fam,
                  dptr attr, int nattr)
 {
-  int saveflags, rc, s, len;
+  int saveflags, rc, s, len, ipproto = 0, stype, sproto;
    struct sockaddr *sa;
    char *p, fname[BUFSIZ];
    struct addrinfo *res, *res0, *saddrinfo;
@@ -2059,31 +2205,64 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
    SAFE_strncpy(fname, fn, sizeof(fname));
 
    /*
-    * find the last colon and get the port.
+    * Raw sockets need the IP protocol number before socket().
     */
-   if (((p = strrchr(fname, ':')) != 0) ) {
-      char *mcsrc, srcbuf[INET6_ADDRSTRLEN];
-
-      *p = 0;
-      /*
-       * source@group:port is an SSM receiver address; for send/connect
-       * the destination is just the group, so keep only the group here.
-       */
-      if (!sock_split_group_source(fname, srcbuf, sizeof(srcbuf), &mcsrc)) {
-         set_syserrortext(errno);
+   if (sock_type == SOCK_T_RAW) {
+      rc = sock_attr_proto(attr, nattr, &ipproto);
+      if (rc < 0)
+         return 0;
+      if (rc == 0) {
+         errno = 0;
+         set_errortext_with_val(1310, "proto");
          return 0;
          }
-      res0 = uni_getaddrinfo(fname, p+1, is_udp, af_fam);
+      }
+
+   /*
+    * host:port for TCP/UDP.  Raw sockets usually have no port; take
+    * host:port only when there is a single colon (IPv4/hostname), so a
+    * bare IPv6 literal is not misparsed as host + port.
+    */
+   p = strrchr(fname, ':');
+   if (sock_type == SOCK_T_RAW && p != NULL &&
+       (strchr(fname, ':') != p || p[1] == '\0'))
+      p = NULL;
+
+   if (p != NULL || sock_type == SOCK_T_RAW) {
+      char *mcsrc, srcbuf[INET6_ADDRSTRLEN];
+      char *portstr = NULL;
+
+      if (p != NULL) {
+         *p = 0;
+         portstr = p + 1;
+         /*
+          * source@group:port is an SSM receiver address; for send/connect
+          * the destination is just the group, so keep only the group here.
+          */
+         if (!sock_split_group_source(fname, srcbuf, sizeof(srcbuf), &mcsrc)) {
+            set_syserrortext(errno);
+            return 0;
+            }
+         }
+      res0 = uni_getaddrinfo(fname, portstr, sock_type, af_fam);
       /* Restore the argument just in case */
-      *p = ':';
+      if (p != NULL)
+         *p = ':';
 
       if (!res0)
         return 0;
 
       s = -1;
       for (res = res0; res; res = res->ai_next) {
-        s = socket(res->ai_family, res->ai_socktype,
-                   res->ai_protocol);
+        if (sock_type == SOCK_T_RAW) {
+           stype = SOCK_RAW;
+           sproto = ipproto;
+           }
+        else {
+           stype = res->ai_socktype;
+           sproto = res->ai_protocol;
+           }
+        s = socket(res->ai_family, stype, sproto);
         if (s < 0) {
           continue;
         }
@@ -2132,7 +2311,7 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
        * default SO_BROADCAST to on so the first write doesn't fail with
        * EACCES.  An explicit broadcast=no attribute overrides it below.
        */
-      if (is_udp && sa->sa_family == AF_INET &&
+      if (sock_type == SOCK_T_DGRAM && sa->sa_family == AF_INET &&
           ((struct sockaddr_in *)sa)->sin_addr.s_addr == htonl(INADDR_BROADCAST)) {
          int on = 1;
          setsockopt(s, SOL_SOCKET, SO_BROADCAST, (char *)&on, sizeof(on));
@@ -2153,7 +2332,7 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
        * Multicast UDP send without iface=: choose a local interface so
        * the first writes() is not ENETUNREACH (no multicast route).
        */
-      if (is_udp && sockaddr_is_multicast(sa))
+      if (sock_type == SOCK_T_DGRAM && sockaddr_is_multicast(sa))
          sock_ensure_mcast_if(s);
    }
    else {
@@ -2162,7 +2341,8 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
       return 0;
 #endif
 #if UNIX
-      if (is_udp || (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
+      if (sock_type != SOCK_T_STREAM ||
+          (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
          return 0;
       saddr_un.sun_family = AF_UNIX;
       strncpy(saddr_un.sun_path, fname, pathbuf_len);
@@ -2177,14 +2357,27 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam,
 #endif                                  /* UNIX */
    }
 
-   /* We don't connect UDP sockets but always use sendto(2). */
-   if (is_udp) {
-      /* save the sockaddr struct */
-      saddrs = realloc(saddrs, (s+1) * (sizeof(struct addrinfo *)));
-      if (saddrs == NULL) {
-         sock_close(s);
-         return 0;
+   /*
+    * UDP and raw: no connect(); always sendto(2) using the saved
+    * destination from open().  Storing saddrinfo also keeps the
+    * getaddrinfo() result owned until sock_close().
+    */
+   if (sock_type == SOCK_T_DGRAM || sock_type == SOCK_T_RAW) {
+      if (s + 1 > saddrs_n) {
+         struct addrinfo **na =
+            realloc(saddrs, (s + 1) * sizeof(struct addrinfo *));
+         if (na == NULL) {
+            sock_close(s);
+            freeaddrinfo(saddrinfo);
+            return 0;
+            }
+         memset(na + saddrs_n, 0,
+                (s + 1 - saddrs_n) * sizeof(struct addrinfo *));
+         saddrs = na;
+         saddrs_n = s + 1;
          }
+      if (saddrs[s] != NULL)
+         freeaddrinfo(saddrs[s]);
       saddrs[s] = saddrinfo;
       return s;
       }
@@ -2347,16 +2540,18 @@ ip_version(const char *src) {
  * including UDP sockets and non-blocking "listener" sockets on which a
  * later select() may turn up an accept.
  */
-int sock_listen(char *addr, int is_udp_or_listener, int af_fam,
+int sock_listen(char *addr, int sock_type, int keep_listener, int af_fam,
                 dptr attr, int nattr)
 {
-  int fd, s, len;
+  int fd, s, len, ipproto = 0, stype, sproto, rc;
    struct addrinfo *res0, *res;
    struct sockaddr *sa;
    unsigned int fromlen;
    struct sockaddr_storage from;
    int created = 0, uncached = 0, parallel = 0, retried = 0;
    int has_attrs = sock_open_has_attrs(attr, nattr);
+   int is_dgram_or_raw = (sock_type == SOCK_T_DGRAM ||
+                          sock_type == SOCK_T_RAW);
 
 again:
    created = 0;
@@ -2398,13 +2593,24 @@ again:
       if (af_fam == AF_UNSPEC)
          af_fam = sock_attrs_af(attr, nattr);
 
+      if (sock_type == SOCK_T_RAW) {
+         rc = sock_attr_proto(attr, nattr, &ipproto);
+         if (rc < 0)
+            return 0;
+         if (rc == 0) {
+            errno = 0;
+            set_errortext_with_val(1310, "proto");
+            return 0;
+            }
+         }
+
       if ((p=strrchr(fname, ':')) != NULL) {
          *p = 0;
          if (!sock_split_group_source(fname, srcbuf, sizeof(srcbuf), &mcsrc)) {
             set_syserrortext(errno);
             return 0;
             }
-         res0 = uni_getaddrinfo(fname, p+1, is_udp_or_listener == 1, af_fam);
+         res0 = uni_getaddrinfo(fname, p+1, sock_type, af_fam);
          *p = ':';
 
          if (!res0)
@@ -2412,8 +2618,15 @@ again:
 
          s = -1;
          for (res = res0; res; res = res->ai_next) {
-           s = socket(res->ai_family, res->ai_socktype,
-                      res->ai_protocol);
+           if (sock_type == SOCK_T_RAW) {
+              stype = SOCK_RAW;
+              sproto = ipproto;
+              }
+           else {
+              stype = res->ai_socktype;
+              sproto = res->ai_protocol;
+              }
+           s = socket(res->ai_family, stype, sproto);
            if (s < 0) {
              continue;
            }
@@ -2440,7 +2653,7 @@ again:
             * parallel/attr open can bind the same port.  Also for
             * multicast binds and any parallel create (TCP or UDP).
             */
-           if (is_mc || parallel || is_udp_or_listener == 1)
+           if (is_mc || parallel || sock_type == SOCK_T_DGRAM)
               setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on));
 #endif                                  /* UNIX */
 
@@ -2551,7 +2764,7 @@ again:
          struct sockaddr_un saddr_un;
          int pathbuf_len;
 
-         if ((is_udp_or_listener==1) ||
+         if (sock_type != SOCK_T_STREAM ||
              (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
             return 0;
 
@@ -2581,7 +2794,7 @@ again:
     * Cached listeners are already pinned by sock_get.  Newly created
     * sockets are not in the map yet, so close cannot race listen.
     */
-   if (is_udp_or_listener != 1) {
+   if (!is_dgram_or_raw) {
      if (listen(s, SOMAXCONN) < 0) {
        /*
         * Not yet in sock_map when created==1, so a failed listen cannot
@@ -2632,7 +2845,7 @@ again:
          uncached = 1;
       }
 
-   if (is_udp_or_listener) {
+   if (is_dgram_or_raw || keep_listener) {
      if (!uncached) {
         /*
          * Convert the sock_get/sock_put pin into File ownership under
@@ -2774,7 +2987,7 @@ int sock_send(char *adr, char *msg, int msglen, int af_fam)
       host = hostname;
    }
 
-   res0 = uni_getaddrinfo(host, p+1, 1, af_fam);
+   res0 = uni_getaddrinfo(host, p+1, SOCK_T_DGRAM, af_fam);
    *p = ':';
 
    if (!res0)
@@ -2803,14 +3016,21 @@ int sock_send(char *adr, char *msg, int msglen, int af_fam)
 }
 
 /*
- * Used by function receive() to receive a UDP datagram into a record.
- * This allocates from the heaps, so rp must point at a tended pointer.
+ * Used by function receive() to receive a UDP or raw datagram into a
+ * record.  This allocates from the heaps, so rp must point at a tended
+ * pointer.  For IPPROTO_ICMP raw sockets the message typically includes
+ * the IP header followed by the ICMP payload.
+ *
+ * MSG_PEEK into a 2K stack buffer (typical MTU-sized datagrams), then
+ * consume with recvfrom.  If the peek fills the buffer, receive into a
+ * 64K heap buffer so the datagram is not truncated or lost.
  */
 int sock_recv(int s, struct b_record **rp)
 {
-   int s_type;
-   char buf[2048];
-   int bufsize = 2048, msglen;
+   int s_type, msglen, bufsize;
+   char small[SOCK_RECV_SMALL];
+   char *buf, *heap = NULL;
+   char addrstr[NI_MAXHOST + NI_MAXSERV + 8];
 
    struct sockaddr_storage conn;
    struct sockaddr* sa = (struct sockaddr*) &conn;
@@ -2825,31 +3045,65 @@ int sock_recv(int s, struct b_record **rp)
 
    if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&s_type, &len) < 0)
       return 0;
-   if (s_type != SOCK_DGRAM)
+   if (s_type != SOCK_DGRAM && s_type != SOCK_RAW)
       return -1;
 
-   if ((msglen = recvfrom(s, buf, bufsize, 0, sa, &addrlen)) < 0)
+   msglen = recvfrom(s, small, SOCK_RECV_SMALL, MSG_PEEK, sa, &addrlen);
+   if (msglen < 0)
       return 0;
+
+   if (msglen >= SOCK_RECV_SMALL) {
+      bufsize = SOCK_RECV_LARGE;
+      heap = malloc(bufsize);
+      if (heap == NULL)
+         return 0;
+      buf = heap;
+      }
+   else {
+      bufsize = SOCK_RECV_SMALL;
+      buf = small;
+      }
+
+   addrlen = sizeof(conn);
+   if ((msglen = recvfrom(s, buf, bufsize, 0, sa, &addrlen)) < 0) {
+      free(heap);
+      return 0;
+      }
+
+   /*
+    * Exact fill of the small buffer is ambiguous (may be truncated).
+    * Exact fill of the large buffer is a valid max-size IPv4 datagram
+    * (65535), so do not reject it as EMSGSIZE.
+    */
+   if (heap == NULL && msglen >= bufsize) {
+#if NT
+      errno = WSAEMSGSIZE;
+#else                                   /* NT */
+      errno = EMSGSIZE;
+#endif                                  /* NT */
+      set_syserrortext(errno);
+      return 0;
+      }
 
    StrLen((*rp)->fields[1]) = msglen;
    StrLoc((*rp)->fields[1]) = alcstr(buf, msglen);
+   free(heap);
 
    s = getnameinfo(sa, addrlen, host,
                                 NI_MAXHOST,
                                serv, NI_MAXSERV, NI_NUMERICSERV);
    if (s == 0) {
-     if ((snprintf(buf, bufsize,"%s:%s", host, serv )) >= bufsize )
-       ;// TODO: handle buffer too small
+      snprintf(addrstr, sizeof(addrstr), "%s:%s", host, serv);
    }
    else {
      if ((print_sockaddr(sa, addrbuf, INET6_ADDRSTRLEN)) == NULL) {
        set_syserrortext(errno);
        return 0;
      }
-     snprintf(buf, bufsize, "%s:%d", addrbuf, get_sa_port(sa));
+     snprintf(addrstr, sizeof(addrstr), "%s:%d", addrbuf, get_sa_port(sa));
    }
 
-   String((*rp)->fields[0], buf);
+   String((*rp)->fields[0], addrstr);
 
    return 1;
 }
@@ -2864,7 +3118,7 @@ int sock_write(int f, char *msg, int n)
    if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (char *)&s_type, &len) < 0)
       return 0;
 
-   if (s_type == SOCK_DGRAM){
+   if (s_type == SOCK_DGRAM || s_type == SOCK_RAW) {
       rv = sendto(fd, msg, n, 0,
                   saddrs[fd]->ai_addr, saddrs[fd]->ai_addrlen);
    }

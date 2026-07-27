@@ -2887,6 +2887,8 @@ connection from a UDP network socket\\
 TCP network socket \\
  \ \ \ \ \texttt{"nu"\ \ \ \ }connect to a
 UDP network socket\\
+ \ \ \ \ \texttt{"nr"\ \ \ \ }open a raw
+IP socket (\texttt{SOCK\_RAW}; requires \texttt{proto=})\\
  \ \ \ \ \texttt{"e"\ \ \ \ } use SSL/TLS protocol to
 encrypt the network socket\\
  \ \ \ \ \texttt{"m"\ \ \ \ }connect to a
@@ -2923,21 +2925,28 @@ Trailing arguments may also be \texttt{"\textit{name}=\textit{value}"}
 socket attributes (\texttt{join}, \texttt{leave}, \texttt{source},
 \texttt{iface}, \texttt{ttl}, \texttt{mcastloop},
 \texttt{reuseaddr}, \texttt{reuseport}, \texttt{broadcast},
-\texttt{rcvbuf}, \texttt{sndbuf}); boolean values are \texttt{yes} or
-\texttt{no}. \texttt{iface} accepts an IPv4 address, a numeric
-interface index, or (on UNIX) an interface name; when omitted, a
-multicast join covers every UP IPv4 interface and a multicast send
-uses the first non-loopback IPv4 address (else loopback).
-\texttt{ttl} sets unicast and multicast hop limits;
-\texttt{mcastloop} controls delivery of the host's own multicasts
-(default on); \texttt{rcvbuf}/\texttt{sndbuf} take a byte size.
-Listeners default to \texttt{reuseaddr=yes}; multicast binds also
-get \texttt{reuseport=yes} where available. Binding a UDP socket to
-a multicast group joins that group; \texttt{source@group:port} or
+\texttt{rcvbuf}, \texttt{sndbuf}, \texttt{proto}, \texttt{hdrincl});
+boolean values are \texttt{yes} or \texttt{no}. \texttt{iface}
+accepts an IPv4 address, a numeric interface index, or (on UNIX) an
+interface name; when omitted, a multicast join covers every UP IPv4
+interface and a multicast send uses the first non-loopback IPv4
+address (else loopback). \texttt{ttl} sets unicast and multicast hop
+limits; \texttt{mcastloop} controls delivery of the host's own
+multicasts (default on); \texttt{rcvbuf}/\texttt{sndbuf} take a byte
+size. Listeners default to \texttt{reuseaddr=yes}; multicast binds
+also get \texttt{reuseport=yes} where available. Binding a UDP socket
+to a multicast group joins that group; \texttt{source@group:port} or
 \texttt{source=} performs a source-specific join instead (IPv4 and
 IPv6; for IPv6 SSM prefer an explicit \texttt{iface=}). Sending to
-\texttt{255.255.255.255} enables broadcast. The same attributes can be
-read or changed after \texttt{open()} with \texttt{Attrib()}. See
+\texttt{255.255.255.255} enables broadcast.
+Mode \texttt{"nr"} opens a raw IP socket and requires
+\texttt{proto=\textit{name{\textbar}n}} (for example \texttt{icmp},
+\texttt{igmp}, or 0--255); the host argument is a bare address with
+no port. Optional \texttt{hdrincl=yes} sets \texttt{IP\_HDRINCL}.
+Packet bytes are built by the application (see package \texttt{net}
+/ \texttt{PacketSpec} in Chapter~5). The same attributes can be read
+or changed after \texttt{open()} with \texttt{Attrib()} (except
+\texttt{proto}, which is fixed at \texttt{socket()} time). See
 Chapter~5 for examples.
 
 For a UDP socket, there is not really a connection, but any writes to

@@ -1,0 +1,206 @@
+#
+# uping.icn - ICMP echo (raw socket)
+#
+# Build:  unicon uping
+# Run:    sudo ./uping host [count]
+#         sudo ./uping -v host [count]   # also show open()/Ping API demos
+# Needs privileges for SOCK_RAW.
+#
+
+import net
+
+global verbose
+
+procedure usage()
+   stop("Usage: ", &progname, " [-v|-d] host [count]")
+end
+
+#
+# First IPv4 address for host (dotted-quad), if resolvable.
+#
+procedure host_ip(h)
+   local he, a
+   he := gethost(h) | fail
+   a := ::string(he.addresses)
+   return a ? tab(upto(',') | 0)
+end
+
+#
+# Strip a trailing :0 port from receive() addresses for display.
+#
+procedure peer_addr(a)
+   a := ::string(a)
+   if *a >= 2 & a[*a - 1+:2] == ":0" then
+      return a[1:*a - 1]
+   return a
+end
+
+#
+# Format microseconds as "W.FFF" milliseconds (ping-style).
+#
+procedure fmt_ms(us)
+   us := integer(us) | 0
+   if us < 0 then
+      us := 0
+   return (us / 1000) || "." || right(us % 1000, 3, "0")
+end
+
+procedure vwrite(args[])
+   if \verbose then
+      write ! args
+end
+
+#
+# Low-level: open the raw socket and build/match PacketSpec layouts.
+#
+procedure ping_open(host, count)
+   local f, id, seq, pkt, r, t0, t1, us, got, req, reply, plen, ip, tx, rx
+   local payload, min_us, max_us, sum_us
+
+   req := IcmpEchoRequest()
+   reply := IcmpEchoReply()
+   id := iand(?100000 | 1, 16rFFFF)
+   payload := repl("\0", 56)
+   plen := *payload
+   ip := host_ip(host) | host
+   tx := 0
+   rx := 0
+   sum_us := 0
+
+   f := open(host, "nr", "proto=icmp", "ttl=64") |
+      stop("open failed: ", &errortext,
+           "\n(raw ICMP usually needs root/admin)")
+
+   vwrite("--- open()/PacketSpec ---")
+   write("PING ", host, " (", ip, "): ", plen, " data bytes")
+   vwrite("id=", id)
+
+   every seq := 0 to count - 1 do {
+      pkt := req.echo(id, seq, payload)
+      t0 := gettimeofday()
+      writes(f, pkt) | {
+         write("send failed: ", &errortext)
+         next
+         }
+      tx +:= 1
+      got := &null
+      every !20 do {
+         if *select(f, 100) = 0 then next
+         r := receive(f) | next
+         if reply.match_echo(r.msg, id, seq) then {
+            t1 := gettimeofday()
+            us := (t1.sec - t0.sec) * 1000000 + (t1.usec - t0.usec)
+            if us < 0 then us := 0
+            write(8 + plen, " bytes from ", peer_addr(r.addr),
+                  ": icmp_seq=", seq,
+                  " ttl=", ipv4_ttl(r.msg) | "?",
+                  " time=", fmt_ms(us), " ms")
+            rx +:= 1
+            sum_us +:= us
+            if /min_us | us < min_us then min_us := us
+            if /max_us | us > max_us then max_us := us
+            got := 1
+            break
+            }
+         }
+      if /got then
+         write("Request timeout for icmp_seq=", seq)
+      delay(200)
+      }
+
+   write("--- ", host, " ping statistics ---")
+   write(tx, " packets transmitted, ", rx, " packets received, ",
+         if tx = 0 then 0 else ((tx - rx) * 1000 / tx) / 10.0,
+         "% packet loss")
+   if rx > 0 then
+      write("round-trip min/avg/max = ",
+            fmt_ms(min_us), "/", fmt_ms(sum_us / rx), "/",
+            fmt_ms(max_us), " ms")
+
+   close(f)
+end
+
+#
+# High-level: Ping() hides "nr" / proto=icmp and reply matching.
+#
+procedure ping_session(host, count)
+   local p, seq, v, plen, ip, tx, rx, us, min_us, max_us, sum_us, payload
+
+   payload := repl("\0", 56)
+   plen := *payload
+   ip := host_ip(host) | host
+   tx := 0
+   rx := 0
+   sum_us := 0
+
+   p := Ping(host) |
+      stop("Ping() failed: ", &errortext,
+           "\n(raw ICMP usually needs root/admin)")
+
+   vwrite("--- Ping() session ---")
+   vwrite(p.describe())
+   write("PING ", host, " (", ip, "): ", plen, " data bytes")
+
+   every seq := 0 to count - 1 do {
+      tx +:= 1
+      if v := p.echo(seq, payload) then {
+         us := \v["rtt_us"] | integer(v["rtt"] * 1000) | 0
+         write(8 + *(\v["payload"] | payload), " bytes from ",
+               peer_addr(v["addr"]), ": icmp_seq=", v["seq"],
+               " ttl=", \v["ttl"] | "?",
+               " time=", fmt_ms(us), " ms")
+         rx +:= 1
+         sum_us +:= us
+         if /min_us | us < min_us then min_us := us
+         if /max_us | us > max_us then max_us := us
+         }
+      else
+         write("Request timeout for icmp_seq=", seq)
+      delay(200)
+      }
+
+   write("--- ", host, " ping statistics ---")
+   write(tx, " packets transmitted, ", rx, " packets received, ",
+         if tx = 0 then 0 else ((tx - rx) * 1000 / tx) / 10.0,
+         "% packet loss")
+   if rx > 0 then
+      write("round-trip min/avg/max = ",
+            fmt_ms(min_us), "/", fmt_ms(sum_us / rx), "/",
+            fmt_ms(max_us), " ms")
+
+   p.close()
+end
+
+procedure main(argv)
+   local host, count, a
+
+   verbose := &null
+   host := &null
+   count := &null
+
+   every a := !argv do {
+      if a == "-h" | a == "--help" then
+         usage()
+      else if a == "-v" | a == "-d" |
+              a == "--verbose" | a == "--debug" then
+         verbose := 1
+      else if /host then
+         host := a
+      else if /count & integer(a) then
+         count := integer(a)
+      else
+         usage()
+      }
+
+   host | usage()
+   count := \count | 4
+   if count < 1 then count := 1
+
+   if \verbose then {
+      ping_open(host, count)
+      write()
+      ping_session(host, count)
+      }
+   else
+      ping_session(host, count)
+end

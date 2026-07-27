@@ -42,7 +42,11 @@
 #define Fs_Pipe         020     /* reading or writing on a pipe */
                                 /* see also: BPipe down below */
 
-/*                      040        this bit is now available */
+#if HAVE_NETNS
+#define Fs_NETNS       040     /* Linux network namespace handle */
+#else                                   /* HAVE_NETNS */
+#define Fs_NETNS         0     /* no network-namespace handles */
+#endif                                  /* HAVE_NETNS */
 
 #define Fs_Reading     0100     /* last file operation was read */
 #define Fs_Writing     0200     /* last file operation was write */
@@ -1315,13 +1319,38 @@
           handle_thread_error(retval, FUNC_THREAD_JOIN, NULL);  \
       } while (0)
 
+#if HAVE_NETNS
+#define CE_RELEASE_PENDING_NS(cp) do {                                  \
+        if ((cp)->pending_ns != NULL) {                                 \
+           netns_release((cp)->pending_ns);                             \
+           (cp)->pending_ns = NULL;                                     \
+           }                                                            \
+      } while (0)
+#else                                  /* HAVE_NETNS */
+#define CE_RELEASE_PENDING_NS(cp) ((void)0)
+#endif                                  /* HAVE_NETNS */
+
 #define CREATE_CE_THREAD(cp, t_stksize, msg) do {                       \
-        THREAD_CREATE(cp, t_stksize, msg);                              \
-        cp->alive = 1;                                                  \
-        cp->have_thread = 1;                                            \
-        SET_FLAG(cp->status, Ts_Attached);                              \
-        SET_FLAG(cp->status, Ts_Posix);                                 \
-        /*if (!(nstat & Ts_Sync ))pthread_detach(&new->thread);*/       \
+        int _ce_th_rv;                                                  \
+        if (t_stksize) {                                                \
+          pthread_attr_t attr;                                          \
+          pthread_attr_init(&attr);                                     \
+          pthread_attr_setstacksize(&attr, t_stksize);                  \
+          _ce_th_rv = pthread_create(&(cp)->thread, &attr, nctramp, (cp)); \
+          pthread_attr_destroy(&attr);                                  \
+        }                                                               \
+        else                                                            \
+          _ce_th_rv = pthread_create(&(cp)->thread, NULL, nctramp, (cp)); \
+        if (_ce_th_rv != 0) {                                           \
+           CE_RELEASE_PENDING_NS(cp);                                   \
+           handle_thread_error(_ce_th_rv, FUNC_THREAD_CREATE, msg);     \
+           }                                                            \
+        else {                                                          \
+           (cp)->alive = 1;                                             \
+           (cp)->have_thread = 1;                                       \
+           SET_FLAG((cp)->status, Ts_Attached);                         \
+           SET_FLAG((cp)->status, Ts_Posix);                            \
+           }                                                            \
       } while (0)
 #else                                  /* PthreadCoswitch */
 #define THREAD_CREATE(cp, t_stksize, msg)

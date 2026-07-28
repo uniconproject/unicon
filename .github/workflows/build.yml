@@ -71,6 +71,7 @@ jobs:
           mingw-w64-ucrt-x86_64-gcc
           mingw-w64-ucrt-x86_64-diffutils
           mingw-w64-ucrt-x86_64-openssl
+          mingw-w64-ucrt-x86_64-libssh
           mingw-w64-ucrt-x86_64-libpng
           mingw-w64-ucrt-x86_64-libjpeg-turbo
           make
@@ -136,6 +137,9 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+
+    - name: Install dependencies
+      run: brew install libssh
 
     - name: Configure
       run: sh configure  ${{ matrix.cfg.opt }}
@@ -234,27 +238,27 @@ jobs:
            ubuntu*|debian*)
               apt-get update -q -y
               DEBIAN_FRONTEND="noninteractive" apt-get install -q -y build-essential make autotools-dev libc6 libgcc1 libgl1-mesa-dev
-              DEBIAN_FRONTEND="noninteractive" apt-get install -q -y libssl-dev libx11-dev libjpeg-dev libpng-dev libglu1-mesa-dev libxft-dev
+              DEBIAN_FRONTEND="noninteractive" apt-get install -q -y libssl-dev libssh-dev libx11-dev libjpeg-dev libpng-dev libglu1-mesa-dev libxft-dev
               DEBIAN_FRONTEND="noninteractive" apt-get install -q -y libopenal-dev libalut-dev libogg-dev libvorbis-dev unixodbc-dev libfreetype6-dev
               ;;
            oracle*)
               dnf -y update
               dnf -y install git gcc make diffutils libjpeg-turbo-devel libpng-devel libX11-devel mesa-libGL-devel mesa-libGLU-devel
-              dnf -y install openssl-devel unixODBC-devel freetype-devel libXft-devel
+              dnf -y install openssl-devel libssh-devel unixODBC-devel freetype-devel libXft-devel
               ;;
            rocky*)
               dnf -y update
               dnf -y install git gcc make diffutils libjpeg-turbo-devel libpng-devel libX11-devel mesa-libGL-devel mesa-libGLU-devel
-              dnf -y install openssl-devel freetype-devel libXft-devel
+              dnf -y install openssl-devel libssh-devel freetype-devel libXft-devel
               ;;
            fedora*)
               dnf -y update
               dnf -y install gcc make diffutils libjpeg-turbo-devel libpng-devel libX11-devel mesa-libGL-devel mesa-libGLU-devel
-              dnf -y install openal-devel freealut-devel libogg-devel libvorbis-devel openssl-devel unixODBC-devel freetype-devel libXft-devel
+              dnf -y install openal-devel freealut-devel libogg-devel libvorbis-devel openssl-devel libssh-devel unixODBC-devel freetype-devel libXft-devel
               ;;
            alpine*)
               apk update
-              apk add build-base diffutils
+              apk add build-base diffutils libssh-dev
               ;;
             esac
 
@@ -417,7 +421,7 @@ jobs:
         sudo apt-get update
         # sudo apt install -q -y i686-pc-linux-gnu-gcc
         sudo apt-get install -q -y gcc-multilib g++-multilib
-        sudo apt install libssl-dev:i386
+        sudo apt install libssl-dev:i386 libssh-dev:i386
         fi
 
         if [[ "${{ matrix.cfg.name }}" = "Ubuntu arm32" ]]
@@ -491,7 +495,7 @@ jobs:
      with:
       usesh: true # default shell is csh, switch to sh
       prepare: |
-        pkg install -y -f autoconf gmake lang/gcc git
+        pkg install -y -f autoconf gmake lang/gcc git libssh
 
    - name: Configure
      shell: freebsd {0}

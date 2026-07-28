@@ -97,7 +97,7 @@ Most of these libraries are listed below for common Linux distributions.
 
 Debian/Ubuntu:
 ```
-apt install libgl1-mesa-dev libssl-dev libx11-dev libjpeg-dev libpng-dev libglu1-mesa-dev
+apt install libgl1-mesa-dev libssl-dev libssh-dev libx11-dev libjpeg-dev libpng-dev libglu1-mesa-dev
             libxft-dev libopenal-dev libalut-dev libogg-dev libvorbis-dev unixodbc-dev
 	    libfreetype6-dev
 ```
@@ -105,7 +105,7 @@ Fedora/Centos (Depending on your Centos version, you may need to replace dnf wit
 ```
 dnf install libjpeg-turbo-devel libpng-devel libX11-devel mesa-libGL-devel mesa-libGLU-devel
             freetype-devel openal-devel freealut-devel libogg-devel libvorbis-devel
-	    openssl-devel unixODBC-devel libXft-devel
+	    openssl-devel libssh-devel unixODBC-devel libXft-devel
 ```
 
 Go into the Unicon directory and run:
@@ -128,11 +128,12 @@ explicitly set the compiler as follows:
 ```
 If you want access to the graphics facilities of Unicon, you also need to download
 and install the XQuartz package from https://www.xquartz.org/.
+For native SSH/SFTP support, install libssh (for example `brew install libssh`).
 
 ### *BSD
 Install build dependencies. Make sure to use GNU `gmake` when building.
 ```
-pkg install -y -f autoconf gmake lang/gcc git
+pkg install -y -f autoconf gmake lang/gcc git libssh
 ```
 
 Configure, make, and optionally install unicon:
@@ -163,7 +164,7 @@ pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86
 - Install the optional libraries for a full build (Unicon will build without them but some features
 will be absent).
 ```
-pacman -S mingw-w64-ucrt-x86_64-openssl  mingw-w64-ucrt-x86_64-libpng mingw-w64-ucrt-x86_64-libjpeg-turbo 
+pacman -S mingw-w64-ucrt-x86_64-openssl mingw-w64-ucrt-x86_64-libssh mingw-w64-ucrt-x86_64-libpng mingw-w64-ucrt-x86_64-libjpeg-turbo 
 ```
 
 - Clone the Unicon repository:

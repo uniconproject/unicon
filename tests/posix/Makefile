@@ -14,6 +14,10 @@ ifeq ($(findstring multiple programs,$(UCFEAT)),)
 SKIP += pty_uni
 endif
 endif
+# ssh needs libssh (the "secure shell" feature); skip when built without it.
+ifeq ($(findstring secure shell,$(UCFEAT)),)
+SKIP += ssh
+endif
 endif
 
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))

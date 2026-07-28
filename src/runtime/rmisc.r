@@ -2603,7 +2603,12 @@ int getimage(dptr dp1, dptr dp2)
             else {
 #endif                                  /* Graphics */
 #ifdef PosixFns
-               if (BlkD(source,File)->status & Fs_Socket) {
+               if ((BlkD(source,File)->status & Fs_Socket)
+#if HAVE_LIBSSH
+                   /* fd.fd is not a socket descriptor for SSH files */
+                   && !(BlkD(source,File)->status & Fs_SSH)
+#endif                                  /* HAVE_LIBSSH */
+                   ) {
                    s = namebuf;
                    len = sock_name(BlkLoc(source)->File.fd.fd,
                                  StrLoc(BlkLoc(source)->File.fname),

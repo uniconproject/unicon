@@ -17,6 +17,11 @@ int sock_getstrg(register char *buf, int maxi, dptr file)
    int r = 0, i=0;
    char *stmp=NULL;
 
+#if HAVE_LIBSSH
+   if (BlkD(*file, File)->status & Fs_SSH)
+      return ssh_getstrg(buf, maxi, BlkD(*file, File)->fd.sshf);
+#endif                                  /* HAVE_LIBSSH */
+
 #if HAVE_LIBSSL
    if (BlkD(*file, File)->status & Fs_Encrypt) {
      r = SSL_peek(BlkD(*file, File)->fd.ssl, buf, maxi);

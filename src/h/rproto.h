@@ -1172,6 +1172,25 @@ int set_ssl_connection_errortext(SSL *ssl, int err);
 void set_ssl_context_errortext(int err, char* errtext);
 #endif                                  /* HAVE_LIBSSL */
 
+#if HAVE_LIBSSH
+void set_ssh_errortext(ssh_session sess, int err);
+struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n, int do_verify);
+struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr spec, dptr attr, int n);
+void ssh_close_file(struct SSHfile *sshf);
+int ssh_file_write(struct SSHfile *sshf, char *s, word n);
+int ssh_getstrg(char *buf, int maxi, struct SSHfile *sshf);
+int ssh_pump(struct SSHfile *sshf, int block, int want_stdout);
+int ssh_chan_read(struct SSHfile *sshf, char *buf, int n, int block);
+void ssh_drain_stderr(struct SSHfile *sshf, dptr d);
+struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
+                                 int status, int *isdir);
+int ssh_sftp_readdir(struct SSHfile *sshf, char *buf, int maxi);
+int ssh_sftp_stat_rec(struct SSHfile *sf, char *path, int use_fstat,
+                      struct descrip *dp, struct b_record **rp);
+int ssh_sftp_unlink(struct SSHfile *sf, char *path);
+int ssh_sftp_rename(struct SSHfile *sf, char *from, char *to);
+#endif                                  /* HAVE_LIBSSH */
+
 #ifdef GenericBSD
 /* in common/save.c */
 int wrtexec(int ef);

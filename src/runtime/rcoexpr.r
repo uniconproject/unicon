@@ -772,6 +772,22 @@ struct threadstate * alloc_tstate()
 void *nctramp(void *arg)
 {
    struct b_coexpr *ce = (struct b_coexpr *) arg;
+#if HAVE_NETNS
+   /*
+    * Join the requested network namespace before any Icon code runs on
+    * this OS thread.  pending_ns is a held NetnsFile* from spawn().
+    */
+   if (ce->pending_ns != NULL) {
+      if (netns_join(ce->pending_ns) != 0) {
+         fprintf(stderr, "spawn: setns() failed: %s\n", strerror(errno));
+         netns_release(ce->pending_ns);
+         ce->pending_ns = NULL;
+         pthread_exit(NULL);
+         }
+      netns_release(ce->pending_ns);
+      ce->pending_ns = NULL;
+      }
+#endif                                  /* HAVE_NETNS */
 #ifdef Concurrent
 /*   sigset_t mask; */
 

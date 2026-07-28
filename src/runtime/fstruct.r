@@ -509,6 +509,50 @@ function{*} key(t)
                      }
                   }
 #endif                                  /* HAVE_LIBSSH */
+#if HAVE_NETNS
+               if (status & Fs_NETNS) {
+                  struct NetnsFile *nsf, *ns_id = NULL;
+#ifdef Concurrent
+                  MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                  peek_i = 0;
+                  for (;;) {
+                     status = BlkD(t,File)->status;
+                     nsf = BlkD(t,File)->fd.netns;
+                     if (nsf == NULL || (status & Fs_NETNS) == 0 ||
+                         (peek_i != 0 && nsf != ns_id)) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        if (peek_i == 0)
+                           runerr(174, t);
+                        fail;
+                        }
+                     ns_id = nsf;
+                     peek_n = netns_peek_key_nth(nsf, peek_i, &result);
+                     if (peek_n < 0) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        runerr(0);
+                        }
+                     if (peek_n == 0) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        fail;
+                        }
+                     peek_i = peek_n;
+#ifdef Concurrent
+                     MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                     suspend result;
+#ifdef Concurrent
+                     MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                     }
+                  }
+#endif                                  /* HAVE_NETNS */
 #if HAVE_LIBSSL
                if ((status & Fs_Encrypt) && (status & Fs_Socket)) {
                   SSL *ssl, *ssl_id = NULL;

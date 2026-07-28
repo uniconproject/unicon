@@ -271,6 +271,9 @@ Deliberate Syntax Error
 #endif                                  /* ICONC_XPM_FLAGS */
 #endif                                  /* Graphics */
 
+   /* Compile flags before the source file; link flags with the -l tail. */
+   buf = growcat(buf, &buflen, 3, ICONC_CPPFLAGS, ICONC_CFLAGS, ICONCCFLAGS);
+
    buf = growcat(buf, &buflen, 6, " ", ExeFlag, " ", exename, " ", srcname);
 
 #if 0
@@ -278,11 +281,11 @@ Deliberate Syntax Error
       buf = growcat(buf, &buflen, 2, " ", dlrgint);
       }
 #endif
+   buf = growcat(buf, &buflen, 1, ICONC_LDFLAGS);
    for (l = liblst; l != NULL; l = l->next) {
       buf = growcat(buf, &buflen, 2, " ", l->libname);
       }
 
-   buf = growcat(buf, &buflen, 4, CPPFLAGS, CFLAGS, ICONCCFLAGS, LDFLAGS);
 #ifdef Messaging
    buf = growcat(buf, &buflen, 1, " -ltp");
 #endif                                  /* Messaging */

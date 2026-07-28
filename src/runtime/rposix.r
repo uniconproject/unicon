@@ -3916,7 +3916,11 @@ int ssh_pump(struct SSHfile *sshf, int block, int want_stdout)
 /*
  * ssh_chan_read() - read up to n stdout bytes out of the queue,
  * pumping the wire as needed.  Returns the byte count, 0 at EOF,
- * -1 on error with &errortext set.
+ * -1 on error (caller sets &errortext after INC_NARTHREADS).
+ *
+ * Under Concurrent, the caller must hold the shared session mutex
+ * (b_file.mutexid) around this call: the same lock used by
+ * receive()/Attrib() and by writers on sibling channels.
  */
 int ssh_chan_read(struct SSHfile *sshf, char *buf, int n, int block)
 {
@@ -3979,6 +3983,9 @@ int ssh_chan_read(struct SSHfile *sshf, char *buf, int n, int block)
  * their concatenation (possibly empty) as an Icon string in *d.
  * This is a live, incremental accessor: each call returns only the
  * bytes accumulated since the previous one.
+ *
+ * Under Concurrent, the caller must hold the shared session mutex
+ * (same rule as ssh_chan_read).
  */
 void ssh_drain_stderr(struct SSHfile *sshf, dptr d)
 {
@@ -5517,8 +5524,19 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
    else {
       /* Read as much as we can without blocking, in chunks of 1536 bytes */
       long bufsize = 1536, total = 0, i = 0;
+#if HAVE_LIBSSH && defined(Concurrent)
+      word ssh_mtx = 0;
+      int ssh_have_mtx = 0;
+#endif                                  /* HAVE_LIBSSH && Concurrent */
       StrLoc(*d) = strfree;
       StrLen(*d) = 0;
+#if HAVE_LIBSSH && defined(Concurrent)
+      if (fstatus & Fs_SSH) {
+         ssh_mtx = BlkD(*f,File)->mutexid;
+         MUTEX_LOCKID_CONTROLLED(ssh_mtx);
+         ssh_have_mtx = 1;
+         }
+#endif                                  /* HAVE_LIBSSH && Concurrent */
       for(;;) {
          int srv, kk=0;
          fd_set readset;
@@ -5529,12 +5547,17 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
              * select() on the session fd cannot see data already
              * decrypted and queued inside libssh; pump the channel.
              * SFTP files have no channel queue -- just try a read.
+             * The shared session mutex (above) covers pump + dequeue.
              */
             struct SSHfile *sshf = BlkD(*f,File)->fd.sshf;
             if (sshf == NULL || sshf->closed ||
                 (sshf->chan == NULL && sshf->sfile == NULL &&
                  sshf->q_stdout == 0)) {
                set_errortext(1324);
+#if defined(Concurrent)
+               if (ssh_have_mtx)
+                  MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
                return 0;
                }
             if (sshf->sfile != NULL) {
@@ -5547,13 +5570,22 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
                INC_NARTHREADS_CONTROLLED;
                if (prc == -1) {
                   set_ssh_errortext(sshf->sess, 1324);
+#if defined(Concurrent)
+                  if (ssh_have_mtx)
+                     MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
                   return 0;
                   }
                if (prc == 2)
                   break;                /* nothing more is available */
                if (prc == 0) {          /* EOF */
-                  if (StrLen(*d) == 0)
+                  if (StrLen(*d) == 0) {
+#if defined(Concurrent)
+                     if (ssh_have_mtx)
+                        MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
                      return 0;
+                     }
                   break;
                   }
                }
@@ -5612,6 +5644,10 @@ tryagain:
                   set_ssh_errortext(sshf->sess, sshf->sfile ? 1325 : 1324);
                   strtotal += bufsize;
                   strfree = StrLoc(*d);
+#if defined(Concurrent)
+                  if (ssh_have_mtx)
+                     MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
                   return 0;
                   }
                }
@@ -5687,6 +5723,10 @@ tryagain:
          }
          i++;
       }
+#if HAVE_LIBSSH && defined(Concurrent)
+      if (ssh_have_mtx)
+         MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* HAVE_LIBSSH && Concurrent */
    }
    return d;
 }

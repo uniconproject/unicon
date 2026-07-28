@@ -1929,7 +1929,7 @@ end
 
 "stat() - get file status."
 
-function{0,1} stat(f)
+function{0,1} stat(f, path)
    type_case f of {
       string: {
          abstract {
@@ -2025,6 +2025,37 @@ function{0,1} stat(f)
             if (BlkD(f,File)->status & Fs_Compress)
                fail;
 #endif                                  /* HAVE_LIBZ */
+
+#if HAVE_LIBSSH
+            if (BlkD(f,File)->status & Fs_SSH) {
+               /*
+                * stat(sshfile): sftp_fstat on an open sftp file.
+                * stat(session, path): a single sftp_stat request on a
+                * remote path, no open()+fstat round trip.
+                */
+               tended char *rpath = NULL;
+               if (BlkD(f,File)->fd.sshf == NULL)
+                  runerr(174, f);
+               if (!constr)
+                  if (!(constr = rec_structor("posix_stat")))
+                     syserr("failed to create posix record constructor");
+               nfields = (int) BlkD(*constr, Proc)->nfields;
+               Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+               if (!is:null(path)) {
+                  if (!cnv:C_string(path, rpath))
+                     runerr(103, path);
+                  if (!ssh_sftp_stat_rec(BlkD(f,File)->fd.sshf, rpath, 0,
+                                         &result, &rp))
+                     fail;
+                  }
+               else {
+                  if (!ssh_sftp_stat_rec(BlkD(f,File)->fd.sshf, NULL, 1,
+                                         &result, &rp))
+                     fail;
+                  }
+               return result;
+               }
+#endif                                  /* HAVE_LIBSSH */
 
             IntVal(amperErrno) = 0;
             if (BlkD(f,File)->status & Fs_Directory) {
@@ -2174,6 +2205,79 @@ function{0,1} receive(f)
 
       nfields = (int) BlkD(*constr,Proc)->nfields;
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+
+#if HAVE_LIBSSH
+      if (status & Fs_SSH) {
+         /*
+          * The next channel event in true arrival order: a
+          * posix_message whose addr is "stdout", "stderr" or "exit"
+          * and whose msg is the data (the exit status as a string).
+          * Fails once the channel is exhausted.  Hold the shared
+          * session mutex around pump/dequeue (Concurrent).
+          */
+         struct SSHfile *sshf = BlkD(f,File)->fd.sshf;
+         struct SSHchunk *ck;
+         char *tag;
+         int prc, len;
+#ifdef Concurrent
+         word ssh_mtx = BlkD(f,File)->mutexid;
+#endif                                  /* Concurrent */
+
+         if (sshf == NULL || sshf->closed)
+            fail;
+
+#ifdef Concurrent
+         MUTEX_LOCKID_CONTROLLED(ssh_mtx);
+#endif                                  /* Concurrent */
+         DEC_NARTHREADS;
+         prc = ssh_pump(sshf, 1, 0);
+         INC_NARTHREADS_CONTROLLED;
+         if (prc < 0) {
+#ifdef Concurrent
+            MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+            set_ssh_errortext(sshf->sess, 1324);
+            fail;
+            }
+         if (prc == 0) {
+#ifdef Concurrent
+            MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+            fail;                       /* exhausted */
+            }
+
+         ck = sshf->qhead;
+         sshf->qhead = ck->next;
+         if (sshf->qhead == NULL)
+            sshf->qtail = NULL;
+         if (ck->tag == SSH_CHUNK_STDOUT)
+            sshf->q_stdout -= (ck->len - ck->off);
+         switch (ck->tag) {
+            case SSH_CHUNK_STDOUT: tag = "stdout"; break;
+            case SSH_CHUNK_STDERR: tag = "stderr"; break;
+            default:               tag = "exit";   break;
+            }
+         StrLoc(rp->fields[0]) = tag;
+         StrLen(rp->fields[0]) = strlen(tag);
+         len = ck->len - ck->off;
+         Protect(StrLoc(rp->fields[1]) = alcstr(ck->data + ck->off, len),
+                 {
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                  free(ck); runerr(0);
+                  });
+         StrLen(rp->fields[1]) = len;
+         free(ck);
+#ifdef Concurrent
+         MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+
+         result.dword = D_Record;
+         result.vword.bptr = (union block *)rp;
+         return result;
+         }
+#endif                                  /* HAVE_LIBSSH */
 
       IntVal(amperErrno) = 0;
       if ((ret = sock_recv(BlkD(f,File)->fd.fd, &rp)) == 0) {

@@ -3081,6 +3081,136 @@ function{*} Attrib(argv[argc])
 
       if (argc == 0) runerr(130, nulldesc);
 
+#if HAVE_LIBSSH
+      /*
+       * SSH channel attributes (query only):
+       *   Attrib(c, "exitstatus")  the remote command's exit status,
+       *                            or fails until it has arrived
+       *   Attrib(c, "stderr")      stderr accumulated since the last
+       *                            such call (a possibly empty string)
+       *   Attrib(c, "eof")         1 once the remote sent EOF, else 0
+       */
+      if (is:file(argv[0]) && (BlkD(argv[0],File)->status & Fs_SSH)) {
+         tended struct descrip ans;
+         struct SSHfile *sshf = BlkD(argv[0],File)->fd.sshf;
+         word i;
+#ifdef Concurrent
+         word ssh_mtx = BlkD(argv[0],File)->mutexid;
+#endif                                  /* Concurrent */
+
+         if (argc < 2)
+            runerr(130, nulldesc);
+         if (sshf == NULL)
+            runerr(174, argv[0]);
+
+         for (i = 1; i < argc; i++) {
+            tended struct descrip sbuf;
+            char *p;
+
+            if (is:null(argv[i]))
+               continue;
+            if (!cnv:tmp_string(argv[i], sbuf))
+               runerr(109, argv[i]);
+            p = StrLoc(sbuf);
+
+            if (StrLen(sbuf) == 10 && strncmp(p, "exitstatus", 10) == 0) {
+               /*
+                * Pump until the exit-status callback has fired (or the
+                * channel is done with no status).  Prefer callback state
+                * over libssh's blocking get_exit_* helpers, which are
+                * version-sensitive and unnecessary once callbacks are
+                * registered.
+                */
+               if (sshf->closed)
+                  fail;
+#ifdef Concurrent
+               MUTEX_LOCKID_CONTROLLED(ssh_mtx);
+#endif                                  /* Concurrent */
+               DEC_NARTHREADS;
+               while (!sshf->exit_seen) {
+                  int prc;
+                  if (sshf->chan == NULL || sshf->eof_seen ||
+                      ssh_channel_is_eof(sshf->chan))
+                     break;
+                  prc = ssh_pump(sshf, 1, 0);
+                  if (prc < 0) {
+                     INC_NARTHREADS_CONTROLLED;
+#ifdef Concurrent
+                     MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                     set_ssh_errortext(sshf->sess, 1324);
+                     fail;
+                     }
+                  if (prc == 0)
+                     break;             /* EOF, still no exit status */
+                  }
+               INC_NARTHREADS_CONTROLLED;
+               if (!sshf->exit_seen) {
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                  fail;
+                  }
+               {
+               int es = sshf->exit_status;
+#ifdef Concurrent
+               MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+               suspend C_integer es;
+               }
+               }
+            else if (StrLen(sbuf) == 6 && strncmp(p, "stderr", 6) == 0) {
+               if (sshf->closed)
+                  fail;
+#ifdef Concurrent
+               MUTEX_LOCKID_CONTROLLED(ssh_mtx);
+#endif                                  /* Concurrent */
+               DEC_NARTHREADS;
+               if (ssh_pump(sshf, 0, 0) < 0) {
+                  INC_NARTHREADS_CONTROLLED;
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                  set_ssh_errortext(sshf->sess, 1324);
+                  fail;
+                  }
+               INC_NARTHREADS_CONTROLLED;
+               ssh_drain_stderr(sshf, &ans);
+#ifdef Concurrent
+               MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+               suspend ans;
+               }
+            else if (StrLen(sbuf) == 3 && strncmp(p, "eof", 3) == 0) {
+               int eofv;
+               if (sshf->closed)
+                  fail;
+#ifdef Concurrent
+               MUTEX_LOCKID_CONTROLLED(ssh_mtx);
+#endif                                  /* Concurrent */
+               DEC_NARTHREADS;
+               if (ssh_pump(sshf, 0, 0) < 0) {
+                  INC_NARTHREADS_CONTROLLED;
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                  set_ssh_errortext(sshf->sess, 1324);
+                  fail;
+                  }
+               INC_NARTHREADS_CONTROLLED;
+               eofv = sshf->eof_seen ? 1 : 0;
+#ifdef Concurrent
+               MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+               suspend C_integer eofv;
+               }
+            else
+               runerr(1321, argv[i]);
+            }
+         fail;
+         }
+#endif                                  /* HAVE_LIBSSH */
+
 #ifdef PosixFns
       /*
        * Socket attributes: Attrib(f, "ttl=4") sets, Attrib(f, "ttl")

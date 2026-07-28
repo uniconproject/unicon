@@ -344,7 +344,8 @@ DISTROOT ?= ..
 
 dist: distclean update_rev
 	echo "Building $(UTAR)"
-	tar -czf $(DISTROOT)/$(UTAR) --exclude-vcs --exclude-backups ../$(unicwd)
+	tar -czf $(DISTROOT)/$(UTAR) --exclude-vcs --exclude-backups \
+	    --transform 's,^,$(PKG_TARNAME)/,' -C $(TOPDIR) .
 
 publishdist: dist
 	scp $(DISTROOT)/$(UTAR) web.sf.net:/home/project-web/unicon/htdocs/download/
@@ -360,7 +361,7 @@ deb: dist
 	cp $(DISTROOT)/$(udist)/$(UTAR) $(DISTROOT)/$(udist)/$(UTARORIG)
 	@echo unpacking $(DISTROOT)/$(udist)/$(UTAR)
 	cd $(DISTROOT)/$(udist) && tar -xf $(UTAR)
-	mv $(DISTROOT)/$(udist)/unicon $(DISTROOT)/$(udist)/$(PKG_STRNAME)
+	mv $(DISTROOT)/$(udist)/$(PKG_TARNAME) $(DISTROOT)/$(udist)/$(PKG_STRNAME)
 	@echo "To finish building the deb package, do"
 	@echo "   cd $(DISTROOT)/$(udist)/$(PKG_STRNAME)"
 	@echo "Then run:"
@@ -387,7 +388,7 @@ rpmdir=rpmbuild
 rpm: dist
 	mkdir -p $(DISTROOT)/$(rpmdir)/SOURCES
 	mkdir -p $(DISTROOT)/$(rpmdir)/SPECS
-	cp rpm/unicon.spec $(DISTROOT)/$(rpmdir)/SPECS
+	cp $(TOPDIR)/rpm/unicon.spec $(DISTROOT)/$(rpmdir)/SPECS
 	mv $(DISTROOT)/$(UTAR) $(DISTROOT)/$(rpmdir)/SOURCES
 	@echo "To finish building the rpm package, do"
 	@echo "   cd $(DISTROOT)/$(rpmdir)/SPECS"

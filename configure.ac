@@ -437,8 +437,11 @@ if test x"$CC" = x"clang" || test x"$unicon_os" = x"macos" || test x"$unicon_os"
    AC_CFLAG([-Werror -Wno-parentheses-equality], [], [CFLAGS="$CFLAGS -Wno-parentheses-equality"])
    AC_CXXFLAG([-Werror -Wno-parentheses-equality], [], [CXXFLAGS="$CXXFLAGS -Wno-parentheses-equality"])
 fi
+
+# Warning suppressions for iconc-generated C only (not Unicon's own CFLAGS).
+# Skip -Wno-parentheses-equality here (already gated above / hardcoded on MacOS).
+ICONCCFLAGS=
 AC_CFLAG([-Werror -Wno-deprecated-non-prototype], [], [ICONCCFLAGS="$ICONCCFLAGS -Wno-deprecated-non-prototype"])
-AC_CFLAG([-Werror -Wno-parentheses-equality], [], [ICONCCFLAGS="$ICONCCFLAGS -Wno-parentheses-equality"])
 AC_CFLAG([-Werror -Wno-unused-value], [], [ICONCCFLAGS="$ICONCCFLAGS -Wno-unused-value"])
 AC_CFLAG([-Werror -Wno-return-type], [], [ICONCCFLAGS="$ICONCCFLAGS -Wno-return-type"])
 
@@ -992,6 +995,20 @@ dnl -shared on Alpine (undefined reference to main from crt1). Expose linker fla
 dnl Strip only a standalone -no-pie token (space-delimited), not substrings like -Wl,-no-pie.
 PLUGIN_LDFLAGS=`echo " $LDFLAGS " | sed 's/ -no-pie / /g' | sed 's/  */ /g' | sed 's/^ //;s/ $//'`
 AC_SUBST([PLUGIN_LDFLAGS])
+
+dnl Escape configure flag values for embedding in C string literals (ccomp_param.h).
+dnl Leading space keeps growcat concatenation spacing simple.
+iconc_c_escape() {
+  printf ' %s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+}
+ICONC_CPPFLAGS_STR=`iconc_c_escape "$CPPFLAGS"`
+ICONC_CFLAGS_STR=`iconc_c_escape "$CFLAGS"`
+ICONCCFLAGS_STR=`iconc_c_escape "$ICONCCFLAGS"`
+ICONC_LDFLAGS_STR=`iconc_c_escape "$LDFLAGS"`
+AC_SUBST([ICONC_CPPFLAGS_STR])
+AC_SUBST([ICONC_CFLAGS_STR])
+AC_SUBST([ICONCCFLAGS_STR])
+AC_SUBST([ICONC_LDFLAGS_STR])
 
 AC_CONFIG_FILES([Makefile:Makefile.in],)
 AC_CONFIG_FILES([Makedefs:Makedefs.in],)

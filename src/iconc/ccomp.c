@@ -279,7 +279,8 @@ Deliberate Syntax Error
       buf = growcat(buf, &buflen, 2, " ", l->libname);
       }
 
-   buf = growcat(buf, &buflen, 4, CPPFLAGS, CFLAGS, ICONCCFLAGS, LDFLAGS);
+   buf = growcat(buf, &buflen, 4, ICONC_CPPFLAGS, ICONC_CFLAGS,
+                 ICONCCFLAGS, ICONC_LDFLAGS);
 #ifdef Messaging
    buf = growcat(buf, &buflen, 1, " -ltp");
 #endif                                  /* Messaging */

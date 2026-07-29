@@ -709,9 +709,13 @@ int checkOpenConsole( FILE *w, char *s );
       void      postcursor              (wbp);
       void      scrubcursor             (wbp);
       void      mkfont                  (char *s, char is_3D);
-#ifdef HAVE_XFT
+#ifdef HAVE_LIBXFT
       void      drawstrng               (wbp w, int x, int y, char *str, int slen);
-#endif                                  /* HAVE_XFT */
+      int       textwidth               (wbp w, char *s, int n);
+      void      ensure_xftdraw          (wbp w);
+      char     *convert_spec            (char *s);
+      void      xft_font_metrics        (wdp wd, wfp rv);
+#endif                                  /* HAVE_LIBXFT */
 
    #endif                               /* XWindows */
 

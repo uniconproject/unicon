@@ -70,7 +70,7 @@ void xdis(register wbp w, char *s, int n)
    pollctr>>=1; pollctr++;
    x = ws->x;
    y = ws->y;
-   delta_x = XTextWidth(wc->font->fsp,s,n);
+   delta_x = TEXTWIDTH(w,s,n);
    RENDER4(XDrawImageString,x,y,s,n);
    ws->x += delta_x;
    }
@@ -534,10 +534,10 @@ int wputc(int ci, wbp w)
          if (wc->drawop != GXcopy) XSetFunction(stddpy, stdgc, GXcopy);
          XSetForeground(stddpy, stdgc, wd->colors[wc->bg].c);
          XClearArea(stddpy, stdwin,
-                    ws->x, ws->y-wc->font->fsp->max_bounds.ascent,
+                    ws->x, ws->y-wc->font->ascent,
                     width-ws->x, lh, False);
          XFillRectangle(stddpy, stdpix, stdgc,
-                        ws->x, ws->y - wc->font->fsp->max_bounds.ascent,
+                        ws->x, ws->y - wc->font->ascent,
                         width - ws->x, lh);
          XSetForeground(stddpy, stdgc,
                         wd->colors[wc->fg].c^(ISXORREVERSE(w)?
@@ -550,7 +550,7 @@ int wputc(int ci, wbp w)
        * Now for the exciting part: do we scroll the window?
        * Copy the pixmap upward, then repaint the window.
        */
-      over = ws->y + wc->font->fsp->max_bounds.descent - height;
+      over = ws->y + wc->font->descent - height;
       if (over > 0) {
          ws->y -= over;
 
@@ -604,7 +604,7 @@ int wputc(int ci, wbp w)
        */
       c = EVQUESUB(w,i);
       pre_x = ws->x;
-      ws->x -= XTextWidth(wc->font->fsp, &c, 1);
+      ws->x -= TEXTWIDTH(w, &c, 1);
       /*
        * Physically erase the character from the queue.  This results in
        * two control-H's present in the queue.
@@ -663,7 +663,11 @@ int handle_misc(wdp wd, wbp w)
                             wd->icongc, 0, 0, ws->iconw, ws->iconh, 3, 3);
                else
                   XDrawString(wd->display, evwin, wd->icongc, 4,
+#ifdef HAVE_LIBXFT
+                              ws->display->xfont->ascent + 2,
+#else                                   /* HAVE_LIBXFT */
                               ws->display->fonts->fsp->max_bounds.ascent + 2,
+#endif                                  /* HAVE_LIBXFT */
                               ws->iconlabel, strlen(ws->iconlabel));
                if (ws->iconic == IconicState)
                   SETEXPOSED(wb);
@@ -1200,8 +1204,8 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
     * some attributes of the context determine window defaults
     */
    ws->height = wc->font->height * 12;
-   ws->width  = wc->font->fsp->max_bounds.width * 80;
-   ws->y = wc->font->fsp->max_bounds.ascent;
+   ws->width  = wc->font->maxwidth * 80;
+   ws->y = wc->font->ascent;
    ws->x = 0;
    ws->y += wc->dy;
    ws->x += wc->dx;
@@ -1285,11 +1289,21 @@ void makeIcon(wbp w,
       ws->iconw += 6;
       }
    else {    /* determine the size of the icon window */
-      ws->iconh = wd->fonts->fsp->max_bounds.ascent +
-                  wd->fonts->fsp->max_bounds.descent + 5;
+#ifdef HAVE_LIBXFT
+      ws->iconh = wd->xfont->ascent +
+                  wd->xfont->descent + 5;
+#else                                   /* HAVE_LIBXFT */
+      ws->iconh = wd->fonts->ascent +
+                  wd->fonts->descent + 5;
+#endif                                  /* HAVE_LIBXFT */
       if (ws->iconlabel == NULL) ws->iconlabel = "";
+#ifdef HAVE_LIBXFT
+      ws->iconw = XTextWidth(wd->xfont, ws->iconlabel,
+                  strlen(ws->iconlabel)) + 6;
+#else                                   /* HAVE_LIBXFT */
       ws->iconw = XTextWidth(wd->fonts->fsp, ws->iconlabel,
                   strlen(ws->iconlabel)) + 6;
+#endif                                  /* HAVE_LIBXFT */
       }
 
    /* if icon position hint exists, get it */
@@ -1456,7 +1470,11 @@ int wmap(wbp w)
     */
    gcv.foreground = wd->colors[wc->fg].c ^ (ISXORREVERSE(w) ? wd->colors[wc->bg].c : 0);
    gcv.background = wd->colors[wc->bg].c;
+#ifdef HAVE_LIBXFT
+   gcv.font       = wd->xfont->fid;
+#else                                   /* HAVE_LIBXFT */
    gcv.font       = wc->font->fsp->fid;
+#endif                                  /* HAVE_LIBXFT */
    if (wc->fillstyle)
       gcv.fill_style = wc->fillstyle;
    else
@@ -1762,7 +1780,11 @@ int seticonlabel(wbp w, char *val)
       if (ws->iconic == IconicState && !ws->iconpix && ws->iconwin) {
          XClearWindow(wd->display, ws->iconwin);
          XDrawString(wd->display, ws->iconwin, wd->icongc, 4,
+#ifdef HAVE_LIBXFT
+                     wd->xfont->ascent + 2,
+#else                                   /* HAVE_LIBXFT */
                      wd->fonts->fsp->max_bounds.ascent + 2,
+#endif                                  /* HAVE_LIBXFT */
                      ws->iconlabel, strlen(ws->iconlabel));
          }
       }
@@ -2587,11 +2609,13 @@ int setfont(wbp w, char **s)
    Protect(tmp = alc_font(w,s), return Failed);
    wc->font = tmp;
 
+#ifndef HAVE_LIBXFT
    if (wc->gc != NULL)
       XSetFont(ws->display->display, wc->gc, wc->font->fsp->fid);
+#endif                                  /* HAVE_LIBXFT */
 
    if (ws->pix == (Pixmap) NULL) {
-      ws->y = wc->font->fsp->max_bounds.ascent;
+      ws->y = wc->font->ascent;
       ws->x = 0;
       }
    return Succeeded;
@@ -2701,6 +2725,12 @@ int resizePixmap(wbp w, int width, int height)
 
       XFreePixmap(stddpy, stdpix);      /* free old pixmap */
       ws->pix = p;
+#ifdef HAVE_LIBXFT
+      if (ws->pixDraw) {
+         XftDrawDestroy(ws->pixDraw);
+         ws->pixDraw = NULL;
+         }
+#endif                                  /* HAVE_LIBXFT */
       }
    return 1;
    }
@@ -4393,7 +4423,11 @@ Pixmap loadimage(wbp w, char *filename,
    if (stdgc == NULL) {
       gcv.foreground = wd->colors[wc->fg].c;
       gcv.background = wd->colors[wc->bg].c;
+#ifdef HAVE_LIBXFT
+      gcv.font       = wd->xfont->fid;
+#else                                   /* HAVE_LIBXFT */
       gcv.font       = wc->font->fsp->fid;
+#endif                                  /* HAVE_LIBXFT */
       wc->gc = XCreateGC(stddpy, p2, gcmask, &gcv);
       stdgc = wc->gc;
       }
@@ -4669,7 +4703,11 @@ char my_wmap(wbp w)
     */
    gcv.foreground = wd->colors[wc->fg].c ^ (ISXORREVERSE(w) ? wd->colors[wc->bg].c : 0);
    gcv.background = wd->colors[wc->bg].c;
+#ifdef HAVE_LIBXFT
+   gcv.font       = wd->xfont->fid;
+#else                                   /* HAVE_LIBXFT */
    gcv.font       = wc->font->fsp->fid;
+#endif                                  /* HAVE_LIBXFT */
    if (wc->fillstyle)
       gcv.fill_style = wc->fillstyle;
    else

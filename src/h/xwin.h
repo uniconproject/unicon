@@ -29,14 +29,21 @@
 #define XLFD_Spacing    11
 #define XLFD_CharSet    13
 
+#ifdef HAVE_LIBXFT
+#define TEXTWIDTH(w,s,n) textwidth(w, s, n)
+#else                                   /* HAVE_LIBXFT */
 #define TEXTWIDTH(w,s,n) XTextWidth((w)->context->font->fsp, s, n)
+#endif                                  /* HAVE_LIBXFT */
 #define SCREENDEPTH(w)\
         DefaultDepth((w)->window->display->display, w->window->display->screen)
-#define ASCENT(w) ((w)->context->font->fsp->ascent)
-#define DESCENT(w) ((w)->context->font->fsp->descent)
+/*
+ * Prefer metrics cached on wfont so both core X and Xft fonts work.
+ */
+#define ASCENT(w) ((w)->context->font->ascent)
+#define DESCENT(w) ((w)->context->font->descent)
 #define LEADING(w) ((w)->context->leading)
 #define FHEIGHT(w) ((w)->context->font->height)
-#define FWIDTH(w) ((w)->context->font->fsp->max_bounds.width)
+#define FWIDTH(w) ((w)->context->font->maxwidth)
 #define LINEWIDTH(w) ((w)->context->linewidth)
 #define DISPLAYHEIGHT(w)\
         DisplayHeight(w->window->display->display, w->window->display->screen)
@@ -113,7 +120,7 @@
    if (stdwin) func(stddpy, stdwin, stdgc, v1, v2, v3, v4, v5, v6, v7); \
    func(stddpy, stdpix, stdgc, v1, v2, v3, v4, v5, v6, v7);}
 
-#define MAXDESCENDER(w) (w->context->font->fsp->max_bounds.descent)
+#define MAXDESCENDER(w) ((w)->context->font->descent)
 
 /*
  * Macros to perform direct window system calls from graphics routines
@@ -150,8 +157,10 @@
 
 #define drawsegments(w, segs, nsegs) \
    { STDLOCALS_RENDER(w); RENDER2(XDrawSegments,segs,nsegs); }
+#ifndef HAVE_LIBXFT
 #define drawstrng(w, x, y, s, slen) \
    { STDLOCALS_RENDER(w); RENDER4(XDrawString, x, y, s, slen); }
+#endif                                  /* HAVE_LIBXFT */
 #define fillarcs(w, arcs, narcs) \
    { STDLOCALS_RENDER(w); RENDER2(XFillArcs, arcs, narcs); }
 #define fillpolygon(w, points, npoints) \

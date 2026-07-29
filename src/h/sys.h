@@ -254,6 +254,10 @@
       #include <X11/Xos.h>
       #include <X11/Xatom.h>
 
+#ifdef HAVE_LIBXFT
+#include <X11/Xft/Xft.h>
+#endif                                  /* HAVE_LIBXFT */
+
       #undef VMS
       #define VMS 0
    #endif                               /* VMS */

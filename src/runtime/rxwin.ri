@@ -856,6 +856,12 @@ int handle_misc(wdp wd, wbp w)
             /*
              * first of all, we are done with this window
              */
+#ifdef HAVE_LIBXFT
+            if (ws->winDraw) {
+               XftDrawDestroy(ws->winDraw);
+               ws->winDraw = NULL;
+               }
+#endif                                  /* HAVE_LIBXFT */
             ws->win = (Window) NULL;
 
             /*
@@ -4050,6 +4056,15 @@ int remap(wbp w, int x, int y)
 
    XGetSizeHints(stddpy, stdwin, &size_hints, XA_WM_NORMAL_HINTS);
    wmhints = XGetWMHints(stddpy, stdwin);
+#ifdef HAVE_LIBXFT
+   /*
+    * winDraw is bound to the old Window; drop it before destroy/recreate.
+    */
+   if (ws->winDraw) {
+      XftDrawDestroy(ws->winDraw);
+      ws->winDraw = NULL;
+      }
+#endif                                  /* HAVE_LIBXFT */
    if (ws->iconwin)
       XDestroyWindow(stddpy, ws->iconwin);
    if (stdwin)

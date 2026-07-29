@@ -134,6 +134,21 @@ void ensure_xftdraw(wbp w)
    wsp ws = w->window;
    wdp wd = ws->display;
 
+   /*
+    * XftDraw objects are bound to a specific Drawable.  If the window
+    * or pixmap was replaced (e.g. remap()), recreate the draw context.
+    */
+   if (ws->pixDraw != NULL &&
+       (ws->pix == (Pixmap)NULL || XftDrawDrawable(ws->pixDraw) != ws->pix)) {
+      XftDrawDestroy(ws->pixDraw);
+      ws->pixDraw = NULL;
+      }
+   if (ws->winDraw != NULL &&
+       (ws->win == (Window)NULL || XftDrawDrawable(ws->winDraw) != ws->win)) {
+      XftDrawDestroy(ws->winDraw);
+      ws->winDraw = NULL;
+      }
+
    if (ws->pix != (Pixmap)NULL && ws->pixDraw == NULL)
       ws->pixDraw = XftDrawCreate(wd->display, ws->pix, ws->vis, wd->cmap);
    if (ws->win != (Window)NULL && ws->winDraw == NULL)

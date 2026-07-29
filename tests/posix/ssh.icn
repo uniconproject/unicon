@@ -65,7 +65,7 @@ end
 #   UNICON_SSH_KNOWNHOSTS known_hosts path (else host-key check is skipped)
 #   UNICON_SSH_SFTPPATH   remote directory for SFTP checks (optional)
 procedure live_test()
-   local host, addr, opts, s, line, got, c, info, remote
+   local host, addr, opts, s, line, got, c, info, remote, L, chunk
 
    host := getenv("UNICON_SSH_TESTHOST") | {
       write("live round-trip: skipped (set UNICON_SSH_TESTHOST)")
@@ -95,6 +95,30 @@ procedure live_test()
       got ||:= m.addr || "=" || trim(m.msg, '\n') || ";"
    write("live receive: ", if find("stdout=", got) & find("exit=", got)
       then "pass" else "fail")
+   close(s)
+
+   #
+   # Partial line via reads(): interactive prompts have no trailing
+   # newline.  reads() on an SSH channel must return those bytes without
+   # blocking for '\\n' (the old sock_getstrg path hung here).
+   #
+   opts := ssh_opts(addr, "cmd=printf 'partial_ssh_line'")
+   s := open ! opts | {
+      write("live partial-reads: open failed: ", &errortext)
+      return
+      }
+   # Drain with a short select bound so a hang fails the suite instead
+   # of wedging CI.  5s is generous for a local/LAN printf.
+   got := ""
+   every 1 to 50 do {
+      L := select(s, 100) | break
+      if *L = 0 then next
+      chunk := reads(s, 64) | break
+      got ||:= chunk
+      if find("partial_ssh_line", got) then break
+      }
+   write("live partial-reads: ",
+      if find("partial_ssh_line", got) then "pass" else "fail")
    close(s)
 
    # Optional SFTP checks when a remote writable directory is provided

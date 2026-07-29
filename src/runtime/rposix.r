@@ -313,6 +313,43 @@ int get_fd(struct descrip file, unsigned int errmask)
    return fileno(BlkD(file,File)->fd.fp);
 }
 
+#if HAVE_LIBSSH
+/*
+ * ssh_file_pending() - 1 if an SSH file already has stdout (or EOF)
+ * waiting.  Used by select() so we do not hang when libssh buffered
+ * the banner/prompt during open().  Only stdout matters here: stream
+ * reads() do not consume stderr/exit queue chunks, so a nonempty
+ * qhead alone must not make select() claim the file is readable.
+ */
+int ssh_file_pending(struct b_file *fp)
+{
+   struct SSHfile *sshf;
+
+   if (fp == NULL || !(fp->status & Fs_SSH))
+      return 0;
+   sshf = fp->fd.sshf;
+   if (sshf == NULL || sshf->closed)
+      return 0;
+#ifdef Concurrent
+   MUTEX_LOCKID_CONTROLLED(fp->mutexid);
+#endif                                  /* Concurrent */
+   if (sshf->nl_pending || sshf->q_stdout > 0) {
+#ifdef Concurrent
+      MUTEX_UNLOCKID(fp->mutexid);
+#endif                                  /* Concurrent */
+      return 1;
+      }
+   if (sshf->chan != NULL || sshf->sfile != NULL)
+      ssh_pump(sshf, 0, 1);             /* want stdout for reads()/select */
+   {
+   int ready = (sshf->nl_pending || sshf->q_stdout > 0 || sshf->eof_seen);
+#ifdef Concurrent
+   MUTEX_UNLOCKID(fp->mutexid);
+#endif                                  /* Concurrent */
+   return ready;
+   }
+}
+#endif                                  /* HAVE_LIBSSH */
 
 int get_uid(char *name)
 {
@@ -3751,6 +3788,10 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 
 #if HAVE_LIBSSH
 
+#if !NT
+#passthru #include <sys/ioctl.h>
+#endif                                  /* !NT */
+
 /*
  * Authentication attributes are tried in the order they appear in the
  * open() call, not in a hardcoded priority order.
@@ -4027,6 +4068,43 @@ void ssh_drain_stderr(struct SSHfile *sshf, dptr d)
 }
 
 /*
+ * ssh_request_interactive_pty() - remote PTY with TERM + window size.
+ * Without a real size, ls(1) and friends fall back to one column.
+ * term NULL => $TERM or "xterm"; cols/rows <= 0 => local TIOCGWINSZ
+ * (or 80x24).
+ */
+static int ssh_request_interactive_pty(ssh_channel chan, const char *term,
+                                       int cols, int rows)
+{
+   const char *t = term;
+#if !NT
+   struct winsize ws;
+#endif                                  /* !NT */
+
+   if (t == NULL || *t == '\0') {
+      t = getenv("TERM");
+      if (t == NULL || *t == '\0')
+         t = "xterm";
+      }
+   if (cols <= 0 || rows <= 0) {
+#if !NT
+      if (ioctl(STDIN_FILENO, TIOCGWINSZ, &ws) == 0 ||
+          ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0) {
+         if (cols <= 0 && ws.ws_col > 0)
+            cols = ws.ws_col;
+         if (rows <= 0 && ws.ws_row > 0)
+            rows = ws.ws_row;
+         }
+#endif                                  /* !NT */
+      if (cols <= 0)
+         cols = 80;
+      if (rows <= 0)
+         rows = 24;
+      }
+   return ssh_channel_request_pty_size(chan, t, cols, rows);
+}
+
+/*
  * create_ssh_session() - establish an authenticated SSH connection,
  * optionally with a channel on it, returning a malloc'd SSHfile.
  * Follows the same attribute-parsing shape as create_ssl_context():
@@ -4050,6 +4128,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n, int do_veri
    tended char *tmps, *val;
    tended char *key=NULL, *password=NULL, *keypass=NULL;
    tended char *hostkeyfile=NULL, *cmd=NULL, *userattr=NULL;
+   tended char *term=NULL;
    char namebuf[512];
    char *user, *host, *at, *colon, *rbrack;
    int auth_order[2];
@@ -4059,6 +4138,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n, int do_veri
    ssh_channel chan = NULL;
    C_integer timeout = 0;
    C_integer port = 0;
+   C_integer pty_cols = 0, pty_rows = 0;
    int a, authed, err;
    int want_channel = 1;                /* channel=yes by default */
 
@@ -4172,6 +4252,12 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n, int do_veri
          hostkeyfile = val;
       else if (strcmp(tmps, "cmd") == 0)
          cmd = val;
+      else if (strcmp(tmps, "term") == 0)
+         term = val;
+      else if (strcmp(tmps, "cols") == 0)
+         pty_cols = atol(val);
+      else if (strcmp(tmps, "rows") == 0)
+         pty_rows = atol(val);
       else if (strcmp(tmps, "channel") == 0) {
          want_channel = sock_attr_bool(val);
          if (want_channel < 0) {
@@ -4292,7 +4378,8 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n, int do_veri
             goto ssh_fail;
          }
       else {
-         if (ssh_channel_request_pty(chan) != SSH_OK)
+         if (ssh_request_interactive_pty(chan, term,
+                                         (int)pty_cols, (int)pty_rows) != SSH_OK)
             goto ssh_fail;
          if (ssh_channel_request_shell(chan) != SSH_OK)
             goto ssh_fail;
@@ -4514,10 +4601,12 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr spec, dptr attr, int
 {
    tended char *tmps, *val;
    tended char *cmd = NULL;
+   tended char *term = NULL;
    struct SSHfile *owner, *sshf;
    ssh_channel chan = NULL;
    dptr dp;
    int a;
+   C_integer pty_cols = 0, pty_rows = 0;
 
    /* resolve to the session owner: opening on a channel opens a sibling */
    owner = (sf->parent != NULL) ? sf->parent : sf;
@@ -4554,6 +4643,12 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr spec, dptr attr, int
          }
       if (strcmp(tmps, "cmd") == 0)
          cmd = val;
+      else if (strcmp(tmps, "term") == 0)
+         term = val;
+      else if (strcmp(tmps, "cols") == 0)
+         pty_cols = atol(val);
+      else if (strcmp(tmps, "rows") == 0)
+         pty_rows = atol(val);
       else {
          set_errortext_with_val(1321, tmps);
          return NULL;
@@ -4580,7 +4675,8 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr spec, dptr attr, int
          goto chan_fail;
       }
    else {
-      if (ssh_channel_request_pty(chan) != SSH_OK)
+      if (ssh_request_interactive_pty(chan, term,
+                                      (int)pty_cols, (int)pty_rows) != SSH_OK)
          goto chan_fail;
       if (ssh_channel_request_shell(chan) != SSH_OK)
          goto chan_fail;

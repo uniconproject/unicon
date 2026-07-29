@@ -2446,6 +2446,21 @@ void post_if_ready(dptr ldp, dptr f, fd_set *fdsp)
    }
 #endif                                  /* LIBSSL */
 
+#if HAVE_LIBSSH
+   /*
+    * SSH: only report ready when stdout (or EOF) is actually available.
+    * A readable TCP fd alone is not enough — it may be protocol noise or
+    * stderr; reads() would then block forever waiting for stdout.
+    * ssh_file_pending() nonblocking-pumps first so we notice data that
+    * select() saw on the wire (or that was left in libssh buffers).
+    */
+   if (status & Fs_SSH) {
+      if (ssh_file_pending(BlkD(*f, File)))
+         c_put(ldp, f);
+      return;
+      }
+#endif                                  /* HAVE_LIBSSH */
+
    fd = get_fd(*f, Fs_Read|Fs_Socket|Fs_Messaging);
    if ((fd != -1) && FD_ISSET(fd, fdsp)) {
       /*
@@ -2618,6 +2633,47 @@ function{0,1} select(files[nargs])
                }
             }
 
+#if HAVE_LIBSSH
+         /*
+          * If any SSH file already has queued/pumpable data, do not block
+          * in select() — the TCP fd may be idle while the prompt sits in
+          * libssh buffers from open().
+          */
+         {
+         int ssh_ready = 0;
+         for (k = 0; k < nargs && !ssh_ready; k++) {
+            if ((k + 1 == nargs) && is:integer(files[k]))
+               continue;
+            if (is:file(files[k]) &&
+                (BlkD(files[k], File)->status & Fs_SSH) &&
+                ssh_file_pending(BlkD(files[k], File)))
+               ssh_ready = 1;
+            else if (is:list(files[k])) {
+               for (ep = BlkD(files[k], List)->listhead;
+                    BlkType(ep) == T_Lelem && !ssh_ready;
+                    ep = Blk(ep, Lelem)->listnext) {
+                  for (i = 0; i < Blk(ep, Lelem)->nused && !ssh_ready; i++) {
+                     j = Blk(ep, Lelem)->first + i;
+                     if (j >= ep->Lelem.nslots)
+                        j -= Blk(ep, Lelem)->nslots;
+                     f = Blk(ep, Lelem)->lslots[j];
+                     if (is:file(f) && (BlkD(f, File)->status & Fs_SSH) &&
+                         ssh_file_pending(BlkD(f, File)))
+                        ssh_ready = 1;
+                     }
+                  }
+               }
+            }
+         if (ssh_ready) {
+            tv.tv_sec = 0;
+            tv.tv_usec = 0;
+            ptv = &tv;
+            /* fall through: still set timeout branch may overwrite ptv */
+            }
+         if (ssh_ready)
+            timeout = 0;
+         }
+#endif                                  /* HAVE_LIBSSH */
 
       /* Set the tv struct */
       if (timeout < 0) {

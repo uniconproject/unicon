@@ -1940,6 +1940,60 @@ function{0,1} reads(f,i)
             }
 #endif                                  /* HAVE_LIBSSH */
          if (status & Fs_Socket) {
+#if HAVE_LIBSSH
+            /*
+             * SSH channel (not SFTP): raw byte stream via u_read.
+             * sock_getstrg() is line-oriented and blocks until '\\n', so
+             * an interactive prompt like "host$ " would hang forever
+             * with the bytes stuck inside ssh_getstrg()'s local buffer.
+             * (SFTP regular files are handled above; read() stays
+             * line-oriented via ssh_getstrg.)
+             */
+            if ((status & Fs_SSH) && BlkD(f,File)->fd.sshf != NULL &&
+                BlkD(f,File)->fd.sshf->sfile == NULL &&
+                BlkD(f,File)->fd.sshf->sdir == NULL) {
+               if (i < 0) {
+                  /* reads(f, -1): concatenate until EOF */
+                  tended struct descrip chunk;
+                  StrLen(s) = 0;
+                  StrLoc(s) = "";
+                  for (;;) {
+                     DEC_NARTHREADS;
+                     if (u_read(&f, MaxReadStr, status, &chunk) == 0) {
+                        INC_NARTHREADS_CONTROLLED;
+                        if (StrLen(s) == 0)
+                           fail;
+                        return s;
+                        }
+                     INC_NARTHREADS_CONTROLLED;
+                     Protect(reserve(Strings, StrLen(s) + StrLen(chunk)),
+                             runerr(0));
+                     if (StrLen(s) > 0 &&
+                         !InRange(strbase, StrLoc(s), strfree)) {
+                        Protect((StrLoc(s) =
+                                 alcstr(StrLoc(s), StrLen(s))), runerr(0));
+                        }
+                     if (StrLen(s) == 0)
+                        s = chunk;
+                     else {
+                        Protect(sptr = alcstr(StrLoc(chunk), StrLen(chunk)),
+                                runerr(0));
+                        StrLen(s) += StrLen(chunk);
+                        }
+                     }
+                  }
+               DEC_NARTHREADS;
+               if (u_read(&f, i, status, &s) == 0) {
+                  INC_NARTHREADS_CONTROLLED;
+                  fail;
+                  }
+               INC_NARTHREADS_CONTROLLED;
+               /* reads(f, 0): nonblocking; fail if nothing available */
+               if (i == 0 && StrLen(s) == 0)
+                  fail;
+               return s;
+               }
+#endif                                  /* HAVE_LIBSSH */
 #if HAVE_LIBSSH && defined(Concurrent)
             if (status & Fs_SSH)
                MUTEX_LOCKID_CONTROLLED(BlkD(f,File)->mutexid);
@@ -2007,7 +2061,8 @@ function{0,1} reads(f,i)
          * implemented after release: all I/O is low-level, no stdio. This
          * makes the Fs_Buff/Fs_Unbuf go away and select will work --
          * correctly. */
-        if (strcmp(StrLoc(BlkD(f,File)->fname), "pipe") != 0) {
+        if (!(status & Fs_Unbuf) &&
+            strcmp(StrLoc(BlkD(f,File)->fname), "pipe") != 0) {
             status |= Fs_Buff;
             BlkLoc(f)->File.status = status;
         }

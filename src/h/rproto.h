@@ -1181,6 +1181,7 @@ int ssh_file_write(struct SSHfile *sshf, char *s, word n);
 int ssh_getstrg(char *buf, int maxi, struct SSHfile *sshf);
 int ssh_pump(struct SSHfile *sshf, int block, int want_stdout);
 int ssh_chan_read(struct SSHfile *sshf, char *buf, int n, int block);
+int ssh_file_pending(struct b_file *fp);
 void ssh_drain_stderr(struct SSHfile *sshf, dptr d);
 struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
                                  int status, int *isdir);

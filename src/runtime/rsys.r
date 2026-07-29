@@ -2168,3 +2168,219 @@ int mswinsystem(char *s)
       return rv;
 }
 #endif                                  /* MSWindows */
+
+#if NT && defined(PosixFns)
+/*
+ * Winsock select() only accepts SOCKETs.  CRT-backed files (&input,
+ * pipes, regular files) are waited on separately via WaitFor /
+ * PeekNamedPipe, matching the Win32 PTY select path.
+ */
+int win_crt_selectable(unsigned int status)
+{
+   if (!(status & Fs_Read))
+      return 0;
+   if (status & (Fs_Socket | Fs_Directory
+#ifdef Messaging
+                 | Fs_Messaging
+#endif                                  /* Messaging */
+#ifdef Graphics
+                 | Fs_Window
+#endif                                  /* Graphics */
+#ifdef PseudoPty
+                 | Fs_Pty
+#endif                                  /* PseudoPty */
+#ifdef Dbm
+                 | Fs_Dbm
+#endif                                  /* Dbm */
+#ifdef ISQL
+                 | Fs_ODBC
+#endif                                  /* ISQL */
+#if HAVE_LIBSSH
+                 | Fs_SSH
+#endif                                  /* HAVE_LIBSSH */
+#if HAVE_LIBZ
+                 | Fs_Compress
+#endif                                  /* HAVE_LIBZ */
+#ifdef HAVE_VOICE
+                 | Fs_Voice
+#endif                                  /* HAVE_VOICE */
+                 ))
+      return 0;
+   return 1;
+}
+
+/*
+ * Non-zero if a CRT-backed file has input ready (or EOF).
+ */
+int win_crt_pending(struct b_file *fp)
+{
+   HANDLE h;
+   DWORD n, ftype;
+   FILE *f;
+
+   if (fp == NULL || !(fp->status & Fs_Read))
+      return 0;
+   f = fp->fd.fp;
+   if (f == NULL)
+      return 0;
+   if (feof(f))
+      return 1;
+   h = (HANDLE)_get_osfhandle(_fileno(f));
+   if (h == INVALID_HANDLE_VALUE || h == (HANDLE)-1)
+      return 0;
+   ftype = GetFileType(h);
+   if (ftype == FILE_TYPE_DISK)
+      return 1;                         /* regular file: always readable */
+   if (ftype == FILE_TYPE_PIPE) {
+      if (PeekNamedPipe(h, NULL, 0, NULL, &n, NULL))
+         return n > 0;
+      return 1;                         /* broken/closed pipe => EOF ready */
+      }
+   /* console or other character device */
+   return WaitForSingleObject(h, 0) == WAIT_OBJECT_0;
+}
+
+/*
+ * Return a list of CRT files from lcs that are ready, or NULL.
+ */
+struct b_list *findactivecrt(struct b_list *lcs)
+{
+   word i, j;
+   tended union block *ep;
+   tended struct descrip d;
+
+   if (lcs == NULL || lcs->size == 0)
+      return NULL;
+   d = nulldesc;
+   ep = (union block *)(lcs->listhead);
+   for ( ; BlkType(ep) == T_Lelem; ep = ep->Lelem.listnext) {
+      for (i = 0; i < ep->Lelem.nused; i++) {
+         struct b_file *fp;
+         int status;
+         j = ep->Lelem.first + i;
+         if (j >= ep->Lelem.nslots)
+            j -= ep->Lelem.nslots;
+         if (!is:file(ep->Lelem.lslots[j]))
+            continue;
+         status = BlkD(ep->Lelem.lslots[j], File)->status;
+         if (!win_crt_selectable(status))
+            continue;
+         fp = BlkD(ep->Lelem.lslots[j], File);
+         if (win_crt_pending(fp)) {
+            if (is:null(d)) {
+               BlkLoc(d) = (union block *)alclist(0, MinListSlots);
+               d.dword = D_List;
+               }
+            c_put(&d, &(ep->Lelem.lslots[j]));
+            }
+         }
+      }
+   if (is:null(d))
+      return NULL;
+   return (struct b_list *)BlkLoc(d);
+}
+
+/*
+ * Put console fd into raw (or restored sane) input mode for Attrib(f,"tty=").
+ * Returns 0 on success, -1 if fd is not a console or the call fails.
+ */
+int win_console_set_raw(int fd, int raw)
+{
+   static DWORD saved_in = 0, saved_out = 0;
+   static int have_saved = 0;
+   static int saved_fd = -1;
+   HANDLE hin, hout;
+   DWORD mode;
+
+   if (fd < 0)
+      return -1;
+   hin = (HANDLE)_get_osfhandle(fd);
+   if (hin == NULL || hin == INVALID_HANDLE_VALUE || hin == (HANDLE)-1)
+      return -1;
+   hout = GetStdHandle(STD_OUTPUT_HANDLE);
+   if (raw) {
+      if (!GetConsoleMode(hin, &mode))
+         return -1;
+      if (!have_saved || saved_fd != fd) {
+         saved_in = mode;
+         saved_out = 0;
+         if (hout != NULL && hout != INVALID_HANDLE_VALUE &&
+             GetConsoleMode(hout, &mode))
+            saved_out = mode;
+         have_saved = 1;
+         saved_fd = fd;
+         }
+      mode = saved_in;
+      mode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT);
+      if (!SetConsoleMode(hin, mode))
+         return -1;
+      if (hout != NULL && hout != INVALID_HANDLE_VALUE &&
+          GetConsoleMode(hout, &mode)) {
+         mode |= ENABLE_PROCESSED_OUTPUT;
+#ifdef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+         mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+#endif
+         SetConsoleMode(hout, mode);
+         }
+      return 0;
+      }
+   if (!have_saved || saved_fd != fd)
+      return 0;
+   if (!SetConsoleMode(hin, saved_in))
+      return -1;
+   if (hout != NULL && hout != INVALID_HANDLE_VALUE && saved_out != 0)
+      SetConsoleMode(hout, saved_out);
+   have_saved = 0;
+   saved_fd = -1;
+   return 0;
+}
+#endif                                  /* NT && PosixFns */
+
+#if UNIX && defined(PosixFns)
+/*
+ * Save/restore termios on fd for Attrib(f, "tty=raw"|"tty=sane").
+ * "sane" restores the mode saved at the last "raw" on that fd, or
+ * applies cooked defaults if nothing was saved.
+ */
+int unix_tty_set_raw(int fd, int raw)
+{
+   static struct termios saved;
+   static int have_saved = 0;
+   static int saved_fd = -1;
+   struct termios tty;
+
+   if (fd < 0 || !isatty(fd))
+      return -1;
+   if (raw) {
+      if (tcgetattr(fd, &tty) < 0)
+         return -1;
+      if (!have_saved || saved_fd != fd) {
+         saved = tty;
+         have_saved = 1;
+         saved_fd = fd;
+         }
+      tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ECHOK | ECHONL | ISIG | IEXTEN);
+      tty.c_iflag &= ~(IXON | IXOFF | ICRNL | INLCR | IGNCR);
+      tty.c_oflag &= ~(OPOST);
+      tty.c_cc[VMIN] = 1;
+      tty.c_cc[VTIME] = 0;
+      return tcsetattr(fd, TCSANOW, &tty) < 0 ? -1 : 0;
+      }
+   if (have_saved && saved_fd == fd) {
+      if (tcsetattr(fd, TCSANOW, &saved) < 0)
+         return -1;
+      have_saved = 0;
+      saved_fd = -1;
+      return 0;
+      }
+   if (tcgetattr(fd, &tty) < 0)
+      return -1;
+   tty.c_lflag |= (ICANON | ECHO | ISIG);
+   tty.c_iflag |= ICRNL;
+   tty.c_oflag |= OPOST;
+#ifdef ONLCR
+   tty.c_oflag |= ONLCR;
+#endif                                  /* ONLCR */
+   return tcsetattr(fd, TCSANOW, &tty) < 0 ? -1 : 0;
+}
+#endif                                  /* UNIX && PosixFns */

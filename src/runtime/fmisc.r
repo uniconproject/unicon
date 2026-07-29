@@ -3059,7 +3059,7 @@ MissingFuncV(signal)
  */
 #if defined(Concurrent) || defined(PosixFns)
 
-"Attrib(argv[]) - read/write attributes (threads, sockets, ...)"
+"Attrib(argv[]) - read/write attributes (threads, sockets, ttys, ...)"
 
 function{*} Attrib(argv[argc])
    abstract {
@@ -3069,6 +3069,7 @@ function{*} Attrib(argv[argc])
 
       /*
        * Attrib() dispatches on the type of its first argument:
+       *   - file + "tty=…": local tty/console raw/sane mode
        *   - socket file: WAttrib-style "name" / "name=value" strings
        *   - co-expression / list / integer codes: thread/channel attrs
        */
@@ -3212,6 +3213,100 @@ function{*} Attrib(argv[argc])
 #endif                                  /* HAVE_LIBSSH */
 
 #ifdef PosixFns
+      /*
+       * TTY mode on a file (&input, etc.): Attrib(f, "tty=raw") /
+       * Attrib(f, "tty=sane").  Entered only when the first attribute
+       * is a tty name so other non-socket Attrib forms are untouched.
+       */
+      if (is:file(argv[0]) &&
+          !(BlkD(argv[0], File)->status & (Fs_Socket
+#if HAVE_LIBSSH
+                                          | Fs_SSH
+#endif                                  /* HAVE_LIBSSH */
+                                          ))) {
+         tended struct descrip sbuf, ans;
+         word i;
+         int fd, status, raw, rv;
+         char *p, *end, *eq;
+         long nlen;
+
+         if (argc >= 2 && !is:null(argv[1]) &&
+             cnv:tmp_string(argv[1], sbuf)) {
+            p = StrLoc(sbuf);
+            end = p + StrLen(sbuf);
+            for (eq = p; eq < end; eq++)
+               if (*eq == '=') break;
+            nlen = (eq < end) ? (eq - p) : StrLen(sbuf);
+            if (nlen == 3 && strncmp(p, "tty", 3) == 0) {
+               status = BlkD(argv[0], File)->status;
+               if (!(status & Fs_Read) && !(status & Fs_Write))
+                  runerr(174, argv[0]);
+               /*
+                * Console &input may be tagged Fs_Window while fd.fp is
+                * still stdin; get_fd() then returns -1 on MS Windows.
+                */
+#ifdef Graphics
+               if ((status & Fs_Window) &&
+                   (BlkD(argv[0], File)->fd.fp == stdin ||
+                    BlkD(argv[0], File)->fd.fp == stdout ||
+                    BlkD(argv[0], File)->fd.fp == stderr))
+#if NT
+                  fd = _fileno(BlkD(argv[0], File)->fd.fp);
+#else                                   /* NT */
+                  fd = fileno(BlkD(argv[0], File)->fd.fp);
+#endif                                  /* NT */
+               else
+#endif                                  /* Graphics */
+                  fd = get_fd(argv[0], 0);
+               if (fd < 0)
+                  runerr(174, argv[0]);
+
+               for (i = 1; i < argc; i++) {
+                  if (is:null(argv[i]))
+                     continue;
+                  if (!cnv:tmp_string(argv[i], sbuf))
+                     runerr(109, argv[i]);
+                  p = StrLoc(sbuf);
+                  end = p + StrLen(sbuf);
+                  for (eq = p; eq < end; eq++)
+                     if (*eq == '=') break;
+                  nlen = (eq < end) ? (eq - p) : StrLen(sbuf);
+                  if (nlen != 3 || strncmp(p, "tty", 3) != 0)
+                     runerr(1310, argv[i]);
+                  if (eq >= end)
+                     runerr(1310, argv[i]); /* query not supported */
+
+                  {
+                  long vlen = end - (eq + 1);
+                  if (vlen == 3 && strncmp(eq + 1, "raw", 3) == 0)
+                     raw = 1;
+                  else if ((vlen == 4 && strncmp(eq + 1, "sane", 4) == 0) ||
+                           (vlen == 6 && strncmp(eq + 1, "cooked", 6) == 0))
+                     raw = 0;
+                  else
+                     runerr(205, argv[i]);
+                  }
+
+#if NT
+                  rv = win_console_set_raw(fd, raw);
+#elif UNIX
+                  rv = unix_tty_set_raw(fd, raw);
+#else                                   /* NT / UNIX */
+                  runerr(121, argv[0]);
+                  rv = -1;
+#endif                                  /* NT / UNIX */
+                  if (rv != 0)
+                     fail;
+                  MakeStr(eq + 1, end - (eq + 1), &ans);
+                  Protect(StrLoc(ans) = alcstr(StrLoc(ans), StrLen(ans)),
+                          runerr(0));
+                  suspend ans;
+                  }
+               fail;
+               }
+            }
+         }
+
       /*
        * Socket attributes: Attrib(f, "ttl=4") sets, Attrib(f, "ttl")
        * gets.  Same names as open() trailing attributes; join/leave add or

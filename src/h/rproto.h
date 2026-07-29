@@ -1031,6 +1031,15 @@ dptr u_read                     (dptr f, int n, int fstatus, dptr d);
 void dup_fds                    (dptr d_stdin, dptr d_stdout, dptr d_stderr);
 int set_if_selectable           (struct descrip *f, fd_set *fdsp, int *n);
 void post_if_ready              (dptr ldp, dptr f, fd_set *fdsp);
+#if NT
+int win_crt_selectable          (unsigned int status);
+int win_crt_pending             (struct b_file *fp);
+struct b_list *findactivecrt    (struct b_list *lcs);
+int win_console_set_raw         (int fd, int raw);
+#endif                                  /* NT */
+#if UNIX
+int unix_tty_set_raw            (int fd, int raw);
+#endif                                  /* UNIX */
 #endif                                  /* PosixFns */
 
 #if COMPILER

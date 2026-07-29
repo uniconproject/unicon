@@ -2410,6 +2410,18 @@ int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n)
          }
       else
 #endif                                  /* PseudoPty && MSWindows */
+#if NT
+      /*
+       * CRT-backed files (&input, pipes, regular files) cannot go through
+       * Winsock select(); they are polled via findactivecrt().
+       */
+      if (win_crt_selectable(status)) {
+         if (status & Fs_Buff) return 1048;
+         BlkLoc(*f)->File.status |= Fs_Unbuf;
+         return 0;
+         }
+      else
+#endif                                  /* NT */
       if ((fd = get_fd(*f, Fs_Read|Fs_Socket|Fs_Messaging)) < 0) {
          if (fd == -2)
             return 212;
@@ -2438,6 +2450,16 @@ void post_if_ready(dptr ldp, dptr f, fd_set *fdsp)
 #endif                                  /* UNIX && PseudoPty */
                                         )) == 0)
       return;
+
+#if NT
+   /*
+    * CRT files are reported by findactivecrt(), not FD_ISSET.  Skipping
+    * here also avoids a false ready if a CRT fd number collides with a
+    * SOCKET that is set in fdsp.
+    */
+   if (win_crt_selectable(status))
+      return;
+#endif                                  /* NT */
 
 #if FIXME_HAVE_LIBSSL
    if ((status & Fs_Socket) && (status & Fs_Encrypt)) {
@@ -2532,9 +2554,15 @@ function{0,1} select(files[nargs])
       tended struct descrip d = nulldesc;
       tended struct descrip d2 = nulldesc;
       tended struct descrip d3 = nulldesc;
+#if NT
+      tended struct descrip d4 = nulldesc;
+#endif                                  /* NT */
       tended struct descrip f;
       tended struct b_list *lws = NULL;
       tended struct b_list *lps = NULL;
+#if NT
+      tended struct b_list *lcs = NULL;
+#endif                                  /* NT */
       struct hgstate state;
 
 #ifdef Graphics
@@ -2587,6 +2615,43 @@ function{0,1} select(files[nargs])
            }
          }
 #endif                                  /* Graphics */
+
+#if NT
+      /*
+       * prepass: CRT-backed files for Win32 readiness polling
+       */
+      if ((lcs = alclist(0, MinListSlots)) == NULL) runerr(307);
+      d4.dword = D_List;
+      BlkLoc(d4) = (union block *)lcs;
+      for (k = 0; k < nargs; k++) {
+         if ((k + 1 == nargs) && is:integer(files[k]))
+            continue;
+         if (is:file(files[k]) &&
+             win_crt_selectable(BlkD(files[k], File)->status))
+            c_put(&d4, files+k);
+         else if (is:list(files[k])) {
+            for (ep = BlkD(files[k], List)->listhead;
+                 BlkType(ep) == T_Lelem; ep = Blk(ep, Lelem)->listnext) {
+               for (i = 0; i < Blk(ep, Lelem)->nused; i++) {
+                  j = Blk(ep, Lelem)->first + i;
+                  if (j >= ep->Lelem.nslots)
+                     j -= ep->Lelem.nslots;
+                  f = ep->Lelem.lslots[j];
+                  if (is:file(f) && win_crt_selectable(BlkD(f, File)->status))
+                     c_put(&d4, &f);
+                  }
+               }
+            }
+         else if (is:set(files[k])) {
+            for (ep = hgfirst(BlkLoc(files[k]), &state); ep != 0;
+                 ep = hgnext(BlkLoc(files[k]), &state, ep)) {
+               f = ep->Selem.setmem;
+               if (is:file(f) && win_crt_selectable(BlkD(f, File)->status))
+                  c_put(&d4, &f);
+               }
+            }
+         }
+#endif                                  /* NT */
 
       /*
        * Unicon select() repeats until a timeout or real result.
@@ -2691,7 +2756,7 @@ function{0,1} select(files[nargs])
 #if defined(PseudoPty) && defined(MSWindows)
          /*
           * if there are any ptys, then even if we said to go forever
-          * timeout periodically to check for window events.
+          * timeout periodically to check for pty readiness.
           */
          if (lps->size > 0) {
             tv.tv_sec = 0;
@@ -2699,6 +2764,17 @@ function{0,1} select(files[nargs])
             }
          else
 #endif                                  /* PseudoPty && MSWindows */
+#if NT
+         /*
+          * CRT files (&input, etc.): poll periodically; Winsock cannot
+          * wait on them.
+          */
+         if (lcs->size > 0) {
+            tv.tv_sec = 0;
+            tv.tv_usec = 50000;
+            }
+         else
+#endif                                  /* NT */
             ptv = 0;
          }
       else {
@@ -2723,6 +2799,14 @@ function{0,1} select(files[nargs])
          }
 #endif                                  /* PseudoPty && MSWindows */
 #endif                                  /* Graphics */
+#if NT
+      if ((lp == NULL) && (lcs->size > 0) &&
+          ((lp = findactivecrt(lcs)) != NULL)) {
+         d.dword = D_List;
+         BlkLoc(d) = (union block *) lp;
+         tv.tv_sec = tv.tv_usec = 0;
+         }
+#endif                                  /* NT */
 
       if (n) {
         DEC_NARTHREADS;
@@ -2759,9 +2843,23 @@ function{0,1} select(files[nargs])
             }
 #endif                                  /* PseudoPty */
 #endif                                  /* Graphics */
+#if NT
+         if ((lp == NULL) && (lcs->size > 0) &&
+             ((lp = findactivecrt(lcs)) != NULL)) {
+            d.dword = D_List;
+            BlkLoc(d) = (union block *) lp;
+            }
+#endif                                  /* NT */
          }
       else if (ptv && (ptv->tv_sec || ptv->tv_usec)) {
          idelay(ptv->tv_sec * 1000 + ptv->tv_usec / 1000);
+#if NT
+         if ((lp == NULL) && (lcs->size > 0) &&
+             ((lp = findactivecrt(lcs)) != NULL)) {
+            d.dword = D_List;
+            BlkLoc(d) = (union block *) lp;
+            }
+#endif                                  /* NT */
          }
 
       if (lp == NULL) {

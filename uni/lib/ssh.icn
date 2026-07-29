@@ -1,0 +1,98 @@
+#<p>
+# Interactive SSH console helper for a channel opened with
+# <tt>open(host, "h", ...)</tt> (no <tt>cmd=</tt>).
+#</p>
+#<p>
+# Puts the local tty in raw mode, muxes <tt>&amp;input</tt> with the
+# remote channel via <tt>select()</tt>, and maps lone LF to CRLF when
+# copying remote output to the local terminal (needed because
+# raw mode disables ONLCR / local newline mapping).  Restores the tty
+# before returning.  Does not close <tt>s</tt> — the caller owns the file.
+#</p>
+#<p>
+# Example:
+#</p>
+#<pre>
+#  s := open("user@host", "h", "key=...") | stop(&errortext)
+#  ssh_interactive(s)
+#  close(s)
+#</pre>
+#<p>
+# For a custom loop (logging, key remapping, …), open the session
+# yourself and drive <tt>select</tt>/<tt>reads</tt>/<tt>writes</tt>;
+# keep channel I/O byte-faithful and only apply display CRLF when
+# writing to a raw local tty.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+
+package net
+
+#<p>
+# Save/restore helpers via <tt>Attrib(&amp;input, "tty=…")</tt>
+# (termios on Unix, console modes on Windows).  Failures are ignored
+# when stdin is not a tty (e.g. automated runs).
+#</p>
+procedure ssh_tty_raw()
+   Attrib(&input, "tty=sane") | &null   # undo a prior crashed client
+   Attrib(&input, "tty=raw") | &null
+end
+
+procedure ssh_tty_sane()
+   Attrib(&input, "tty=sane") | &null
+end
+
+#<p>
+# Write <tt>s</tt> to <tt>&amp;output</tt>, inserting CR before each lone LF.
+#</p>
+procedure ssh_raw_writes(s)
+   local out, i, c, prev
+   out := ""
+   prev := ""
+   every i := 1 to *s do {
+      c := s[i]
+      if c == "\n" & prev ~== "\r" then
+         out ||:= "\r\n"
+      else
+         out ||:= c
+      prev := c
+      }
+   writes(&output, out)
+end
+
+#<p>
+# Run an interactive SSH shell session on channel file <tt>s</tt>.
+# Returns after remote EOF or local stdin EOF.  Fails if a write to
+# the channel fails (tty is still restored).
+# <[param s SSH channel file from open(..., "h")]>
+#</p>
+procedure ssh_interactive(s)
+   local L, f, data
+
+   ssh_tty_raw()
+   while L := select(s, &input) do {
+      every f := !L do {
+         if f === &input then {
+            data := reads(&input, 1) | {
+               ssh_tty_sane()
+               return
+               }
+            writes(s, data) | {
+               ssh_tty_sane()
+               fail
+               }
+            }
+         else {
+            data := reads(s, 4096) | {
+               ssh_tty_sane()
+               writes(&errout, "\r\n[remote closed]\r\n")
+               return
+               }
+            ssh_raw_writes(data)
+            }
+         }
+      }
+   ssh_tty_sane()
+   return
+end

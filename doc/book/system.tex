@@ -1080,11 +1080,16 @@ Attributes include \texttt{user=},
 \texttt{key=} (private key path), \texttt{keypass=} (passphrase for an
 encrypted key), \texttt{password=} (login password),
 \texttt{hostkeyfile=} (known\_hosts path), \texttt{cmd=} (remote
-command), and \texttt{channel=} (\texttt{yes}/\texttt{no}). With neither
+command), and \texttt{channel=} (\texttt{yes}/\texttt{no}). Interactive
+shells also accept \texttt{term=} (terminal type; default \$TERM or
+\texttt{xterm}), \texttt{cols=}, and \texttt{rows=} (PTY size; default
+from the local tty, else 80$\times$24). With neither
 \texttt{key=} nor \texttt{password=}, the default identities and a
 running agent are tried. Mode \texttt{"h-"} skips host-key verification.
 Without \texttt{cmd=}, an interactive shell on a PTY is opened.
-\texttt{channel=no} opens an authenticated session with no channel
+Use \texttt{net::ssh\_interactive(s)} (Unicon class library) to attach
+the local tty: raw mode, \texttt{select} mux with \texttt{\&input}, and
+display CRLF mapping. \texttt{channel=no} opens an authenticated session with no channel
 (useful for SFTP or later \texttt{open(s, ...)} channels);
 \texttt{channel=yes} is the default. Combining \texttt{channel=no} with
 \texttt{cmd=} fails. The default port is 22 when \texttt{:port} is

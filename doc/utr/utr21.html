@@ -366,7 +366,20 @@ as:
   --with-ssl[=DIR]        Use ssl package (DIR: custom library path)
 </pre>
 
-
+<p>
+Font-related libraries serve different Unicon graphics paths.
+<strong>Xft</strong> (with <strong>fontconfig</strong>, which
+<code>configure</code> searches for when Xft is enabled) provides
+antialiased text for the classic 2D X11 backend
+(<code>open(...,&nbsp;"g")</code>); successful builds report
+<code>+XFT</code> in <code>unicon&nbsp;-features</code>.
+<strong>FreeType</strong> rasterizes TrueType/OpenType font files for
+the OpenGL 2D/3D path and is also the usual rasterizer underneath Xft.
+TrueType/OpenType are font <em>file formats</em>, not Unicon APIs.
+Without Xft, 2D X11 falls back to core X fonts.  See the Fonts
+discussion in the Unicon book (Chapter&nbsp;7) and UTR&nbsp;22 for the
+OpenGL font file syntax.
+</p>
 
 <H4>5.2 Example: Enabling Graphics Facilities</H4>
 
@@ -1207,10 +1220,10 @@ while on Fedora and other Redhat-based Linux distributions you might say
 <tr><td>graphics <td> libx11-dev         <td> libX11-devel
 <tr><td>         <td> libjpeg-dev        <td> libjpeg-devel
 <tr><td>         <td> libpng-dev         <td> libpng12-devel
-<tr><td>3d       <td> libglu1-mesa-dev   <td> mesa-libGL-devel, mesa-libGLU-devel
 <tr><td>         <td> libxft-dev         <td> libXft-devel
-<tr><td>         <td> libfreetype6-dev   <td>
-<tr><td>         <td> libftgl-dev        <td>
+<tr><td>3d       <td> libglu1-mesa-dev   <td> mesa-libGL-devel, mesa-libGLU-devel
+<tr><td>         <td> libfreetype6-dev   <td> freetype-devel
+<tr><td>         <td> libftgl-dev        <td> ftgl-devel
 <tr><td>audio    <td> libopenal-dev      <td> openal-devel
 <tr><td>         <td> libalut-dev        <td> freealut-devel
 <tr><td>         <td> libogg-dev         <td> libogg-devel
@@ -1218,6 +1231,13 @@ while on Fedora and other Redhat-based Linux distributions you might say
 <tr><td>database <td> unixodbc-dev       <td> unixODBC-devel
 <tr><td>web      <td> libssl-dev         <td> openssl-devel
 </table>
+<p>
+<code>libxft</code> enables antialiased 2D X11 text (<code>+XFT</code>;
+fontconfig is pulled in as an Xft dependency).
+<code>libfreetype</code> (and optionally <code>libftgl</code>) support
+OpenGL font rasterization (<code>+Freetype</code>); FreeType is also
+used under Xft on most systems.
+</p>
 
 <h4>Windows</h4>
 

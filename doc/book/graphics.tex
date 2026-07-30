@@ -557,6 +557,49 @@ from system to system. Four font family names available on all Unicon
 systems include serif, sans, typewriter, and mono. These families map
 onto the system's closest approximation of Times, Helvetica, Courier,
 and a monospaced console font. Font sizes are given in pixel height.
+Platform-specific family names (for example \texttt{Arial} or
+\texttt{helvetica}) may also be requested; \texttt{Font()} fails if
+no suitable face is found.
+
+\paragraph{TrueType, FreeType, and Xft}
+
+Unicon does not implement a font format of its own. On typical systems
+the pieces fit together as follows:
+
+\begin{itemize}\itemsep0pt
+\item \textbf{TrueType} and \textbf{OpenType} are font \emph{file}
+  formats (commonly \texttt{.ttf} / \texttt{.otf}): outlines and
+  metrics stored on disk.
+\item \textbf{FreeType} is a library that \emph{rasterizes} those
+  files (and others) into bitmaps Unicon can draw.
+\item \textbf{fontconfig} (on Unix) finds and matches installed fonts
+  by family, size, weight, and slant.
+\item \textbf{Xft} is the X11 client API for antialiased text. It uses
+  fontconfig to choose a face and FreeType to render glyphs onto an
+  X drawable.
+\end{itemize}
+
+Which of these Unicon uses depends on the graphics backend and how
+the binary was configured (\texttt{unicon -features} reports
+\texttt{+XFT} and \texttt{+Freetype} when present):
+
+\begin{itemize}\itemsep0pt
+\item \textbf{2D X11} (\texttt{open(..., "g")}): when built with
+  Xft (\texttt{HAVE\_LIBXFT} / \texttt{+XFT}), text is drawn with
+  Xft and fontconfig. Portable names such as \texttt{sans,12} become
+  Xft patterns; antialiased scalable faces are preferred when the
+  system provides them. Without Xft, Unicon falls back to classic
+  core X / XLFD fonts.
+\item \textbf{2D/3D OpenGL} (\texttt{"gl"} / OpenGL 2D): FreeType
+  rasterizes fonts for the GL path. The font string may name a
+  TrueType or OpenType \emph{file}, for example
+  \texttt{font=mymono.ttf,18}. See Unicon Technical Report~22.
+\item \textbf{Windows}: the GDI font API is used; Xft does not apply.
+\end{itemize}
+
+Build-time packages for these layers are summarized in Unicon
+Technical Report~21 (\texttt{--with-Xft}, \texttt{--with-freetype},
+and the corresponding development libraries).
 
 \section{Images, Palettes, and Patterns}
 

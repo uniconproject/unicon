@@ -1615,7 +1615,7 @@ Deliberate Syntax Error
 #ifdef PosixFns
       {
 #if HAVE_LIBSSL
-        SSL *ssl;
+        SSL *ssl = NULL;
 #endif                                  /* HAVE_LIBSSL */
 #if HAVE_LIBSSH
          if (status & Fs_SSH) {
@@ -1704,7 +1704,7 @@ Deliberate Syntax Error
                runerr(209, spec);
             if (status & Fs_Append) {
 #if HAVE_LIBSSL
-               SSL_CTX *ctx;
+               SSL_CTX *ctx = NULL;
                if(status & Fs_Encrypt) {
                   int ssl_type = (sock_type == SOCK_T_DGRAM)
                      ? DTLS_SERVER : TLS_SERVER;
@@ -1725,6 +1725,11 @@ Deliberate Syntax Error
 #if HAVE_LIBSSL
                if(fd > 0 && status & Fs_Encrypt) {
                  int err;
+                 if (ctx == NULL) {
+                    if (sock_purge(fd))
+                       sock_close(fd);
+                    fail;
+                    }
                  ssl = SSL_new(ctx);
                   if (ssl == NULL) {
                     set_ssl_context_errortext(0, NULL);
@@ -1766,7 +1771,7 @@ Deliberate Syntax Error
             else {
                C_integer timeout = 0;
 #if HAVE_LIBSSL
-               SSL_CTX *ctx;
+               SSL_CTX *ctx = NULL;
                if(status & Fs_Encrypt) {
                   int ssl_type = (sock_type == SOCK_T_DGRAM)
                      ? DTLS_CLIENT : TLS_CLIENT;
@@ -1796,6 +1801,10 @@ Deliberate Syntax Error
 #if HAVE_LIBSSL
                if(fd > 0 && status & Fs_Encrypt){
                   int err;
+                  if (ctx == NULL) {
+                    sock_close(fd);
+                    fail;
+                    }
                   ssl = SSL_new(ctx);
                   if (ssl == NULL) {
                     set_ssl_context_errortext(0, NULL);

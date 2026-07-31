@@ -3377,9 +3377,13 @@ again:
      }
 
    fromlen = sizeof(from);
-   DEC_NARTHREADS;
+   /*
+    * Callers (open()) already DEC_NARTHREADS around sock_listen().
+    * A second decrement here made NARthreads negative when another
+    * thread was also unregistered (e.g. delay() in the TLS harness),
+    * so GC ran during accept() and collected live open() strings.
+    */
    if ((fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0) fd = 0;
-   INC_NARTHREADS_CONTROLLED;
 #if NT
    if (fd == 0 && errno == 0) {
       int wsa = WSAGetLastError();

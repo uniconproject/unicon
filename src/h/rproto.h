@@ -1201,6 +1201,14 @@ int ssh_sftp_unlink(struct SSHfile *sf, char *path);
 int ssh_sftp_rename(struct SSHfile *sf, char *from, char *to);
 #endif                                  /* HAVE_LIBSSH */
 
+#if HAVE_NETNS
+struct NetnsFile *netns_create(char *name, int persist, int bridge, int userns);
+int netns_join(struct NetnsFile *ns);
+void netns_hold(struct NetnsFile *ns);
+void netns_release(struct NetnsFile *ns);
+int netns_userns_active(void);
+#endif                                  /* HAVE_NETNS */
+
 #ifdef GenericBSD
 /* in common/save.c */
 int wrtexec(int ef);

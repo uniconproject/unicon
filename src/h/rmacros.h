@@ -42,7 +42,11 @@
 #define Fs_Pipe         020     /* reading or writing on a pipe */
                                 /* see also: BPipe down below */
 
-/*                      040        this bit is now available */
+#if HAVE_NETNS
+#define Fs_NETNS       040     /* Linux network namespace handle */
+#else                                   /* HAVE_NETNS */
+#define Fs_NETNS         0     /* no network-namespace handles */
+#endif                                  /* HAVE_NETNS */
 
 #define Fs_Reading     0100     /* last file operation was read */
 #define Fs_Writing     0200     /* last file operation was write */

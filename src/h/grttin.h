@@ -576,6 +576,21 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
 
 #endif                                  /* Graphics */
 
+   /*
+    * OptNetns: optional leading network-namespace File argument.
+    * Mirrors OptWindow's warg pattern for spawn()/system().  Kept
+    * outside Graphics so fmisc.r/fsys.r always see it.  When HAVE_NETNS
+    * is off, Fs_NETNS is 0 and the check never matches.
+    */
+   #begdef OptNetns(n)
+      if (argc>warg && is:file(argv[warg]) &&
+          (BlkD(argv[warg],File)->status & Fs_NETNS)) {
+         (n) = BlkD(argv[warg],File);
+         warg++;
+         }
+      else { (n) = NULL; }
+   #enddef                              /* OptNetns */
+
 /*
  * GRFX_ALLOC* family of macros used for static allocations.
  * Not really specific to Graphics any more, also used by databases.

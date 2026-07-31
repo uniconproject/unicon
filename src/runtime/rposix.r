@@ -5916,4 +5916,7 @@ struct b_list *findactivewindow(struct b_list *lws)
    return BlkD(d, List);
 }
 #endif                                  /* Graphics */
+
+/* Network-namespace helpers live in ../common/rnetns.c (see HAVE_NETNS). */
+
 #endif                                  /* PosixFns */

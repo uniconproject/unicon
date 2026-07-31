@@ -10,11 +10,23 @@ CON=$(shell $(UC) -features 2>/dev/null | grep -o "concurrent threads")
 MANUAL_ONLY := ovld FxPtTest_OVLD
 TARGETS=$(filter-out $(MANUAL_ONLY),$(patsubst %.icn,%,$(wildcard *.icn)))
 
+SKIP=
 UCFEAT := $(shell $(UC) -features 2>/dev/null)
 
 ifneq ($(CON),concurrent threads)
 SKIP += FxPtTest list_test
 endif
+
+# nettopo: package net topology; needs Network namespaces + privileges/userns.
+ifneq ($(UCFEAT),)
+ifeq ($(findstring Network namespaces,$(UCFEAT)),)
+SKIP += nettopo
+endif
+endif
+
+WINSKIP=nettopo
+BSDSKIP=nettopo
+MACOSSKIP=nettopo
 
 Test: DoTest
 

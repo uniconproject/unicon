@@ -1,0 +1,57 @@
+#
+# unettopo.icn - two-node network-namespace demo (veth + ping)
+#
+# Build:  unicon unettopo
+# Run:    ./unettopo
+#
+# Needs Network namespaces (Linux) plus CAP_NET_ADMIN or a working
+# unprivileged userns bootstrap.
+#
+
+import net
+
+procedure cleanup()
+   system("ip link del ut-v1 2>/dev/null")
+   system("ip link del ut-v2 2>/dev/null")
+   system("ip netns del ut-r1 2>/dev/null")
+   system("ip netns del ut-r2 2>/dev/null")
+end
+
+procedure main()
+   local a, b, v, peer
+
+   if not (&features == "Network namespaces") then
+      stop("This Program Requires Network namespaces")
+
+   # Best-effort cleanup from a previous interrupted run.
+   cleanup()
+
+   # Two isolated network stacks (native open(...,"j","persist=yes")).
+   a := Netns("ut-r1") |
+      stop("Netns(ut-r1) failed: ", &errortext | "?",
+           " (need CAP_NET_ADMIN or unprivileged userns)")
+   b := Netns("ut-r2") | stop("Netns(ut-r2) failed: ", &errortext)
+
+   # Create the veth pair inside a (needed under userns, where host
+   # RTNETLINK create is often denied), then move one end into b.
+   v := Veth("ut-v1", "ut-v2", a) | stop("Veth failed: ", &errortext)
+   peer := v.peer()
+   peer.move(b) | stop("move failed: ", &errortext)
+
+   # Address and bring up each end in its own namespace.
+   v.addr("10.0.0.1/24") | stop("addr a failed")
+   peer.addr("10.0.0.2/24") | stop("addr b failed")
+   v.up() | stop("up a failed")
+   peer.up() | stop("up b failed")
+
+   # Ping from a to b via the native netns File (system(ns, ...)).
+   write("ping 10.0.0.1 -> 10.0.0.2")
+   system(a.nsfile, ["ping", "-c", "1", "-W", "2", "10.0.0.2"]) |
+      stop("ping failed: ", &errortext)
+
+   # Tear down links, then namespaces (unbind persist mounts).
+   v.delete()
+   a.delete()
+   b.delete()
+   write("done")
+end

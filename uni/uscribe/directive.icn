@@ -1,45 +1,66 @@
+#<p>
+# <tt>DirectiveRegistry</tt> maps a directive name (the word after
+# <tt>".. "</tt> in <tt>".. note::"</tt>, <tt>".. code-block:: icon"</tt>,
+# <tt>".. api:: net.icn"</tt>, etc.) to a handler procedure. The core
+# <tt>Parser</tt> (<tt>parser.icn</tt>) does not know the names of any
+# directives -- it just recognizes the <tt>".. name:: arg"</tt> syntax,
+# builds a <tt>RawDirective</tt> node (<tt>node.icn</tt>), and asks the
+# registry to expand it. This is the concrete mechanism for a future
+# <tt>".. api::"</tt> bridge into classic UniDoc: register a handler
+# here that shells out to (or in-process calls) UniAll/UniHTML and
+# splices the result in, and neither the parser nor the doctree needs
+# to know UniDoc exists.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
 package uscribe
 
 import lang
 
-#
-# directive.icn
-#
-# DirectiveRegistry maps a directive name (the word after ".. " in
-# ".. note::", ".. code-block:: icon", ".. api:: net.icn", etc.) to a
-# handler procedure. The core Parser (parser.icn) does not know the
-# names of any directives -- it just recognizes the ".. name:: arg"
-# syntax, builds a RawDirective node (node.icn), and asks the registry
-# to expand it. This is the concrete mechanism for the ".. api::"
-# bridge into classic UniDoc mentioned earlier: register a handler
-# here that shells out to (or in-process calls) UniAll/UniHTML and
-# splices the result in, and neither the parser nor the doctree needs
-# to know UniDoc exists.
-#
-# This file is in the public domain.
-#
-
-# <p>
-# handler procedures have the signature:
-#   handler(rawDirective, parserContext) -> a Node (or a list of
-#   Nodes) to substitute in the doctree at that point, or fails to
-#   leave the RawDirective node as-is (which HtmlOutputter renders as
-#   an HTML comment marker -- see visitRawDirective() in
-#   outputter.icn).
-# </p>
+#<p>
+# Registry of directive-name to handler procedures. Handlers have the
+# signature: <tt>handler(rawDirective, parserContext)</tt> returns a
+# <tt>Node</tt> (or a list of Nodes) to substitute in the doctree at
+# that point, or fails to leave the <tt>RawDirective</tt> node as-is
+# (which <tt>HtmlOutputter</tt> renders as an HTML comment marker --
+# see <tt>visitRawDirective()</tt> in <tt>outputter.icn</tt>).
+#</p>
 class DirectiveRegistry : Object (handlers)
 
+    #<p>
+    # Register a handler for a directive name.
+    # <[param name directive name string]>
+    # <[param handlerProc procedure to expand matching directives]>
+    #</p>
     method register(name, handlerProc)
         handlers[name] := handlerProc
         return
     end
 
+    #<p>
+    # Look up and invoke the handler for <tt>rawDirective</tt>.
+    # <[param rawDirective a <tt>RawDirective</tt> node]>
+    # <[param ctx parser context passed through to the handler]>
+    # <[returns the <tt>Node</tt> (or list of Nodes) produced by the handler]>
+    # <[fails if no handler is registered for the directive name]>
+    #</p>
     method expand(rawDirective, ctx)
         local h
         h := \handlers[rawDirective.getName()] | fail
         return h(rawDirective, ctx)
     end
 
+    #<p>
+    # Test whether a directive name has a registered handler.
+    # <[param name directive name string]>
+    # <[returns non-null if known]>
+    # <[fails if the name is not registered]>
+    #</p>
     method isKnown(name)
         return member(handlers, name)
     end
@@ -49,13 +70,17 @@ class DirectiveRegistry : Object (handlers)
         registerBuiltins(self)
 end
 
-# <p>
+#<p>
 # The handful of directives the book format needs out of the box:
-# code-block, note/warning/tip (thin wrappers producing Admonition),
-# and image. "toctree" is deliberately *not* here -- chapter order is
-# Manifest's job (manifest.icn), read once up front, not a per-file
-# directive, to keep the two-pass build simple.
-# </p>
+# <tt>code-block</tt>, <tt>note</tt>/<tt>warning</tt>/<tt>tip</tt>
+# (thin wrappers producing <tt>Admonition</tt>), and <tt>image</tt>.
+# <tt>toctree</tt> is deliberately <i>not</i> here -- chapter order is
+# <tt>Manifest</tt>'s job (<tt>manifest.icn</tt>), read once up front,
+# not a per-file directive, to keep the two-pass build simple.
+# The name <tt>api</tt> is reserved for a future UniDoc bridge and is
+# not registered yet.
+# <[param reg a <tt>DirectiveRegistry</tt> to populate]>
+#</p>
 procedure registerBuiltins(reg)
     reg.register("code-block", handleCodeBlock)
     reg.register("note", handleNote)
@@ -64,6 +89,12 @@ procedure registerBuiltins(reg)
     reg.register("image", handleImage)
 end
 
+#<p>
+# Expand <tt>.. code-block::</tt> into a <tt>CodeBlock</tt> node.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param ctx unused parser context]>
+# <[returns a <tt>CodeBlock</tt> instance]>
+#</p>
 procedure handleCodeBlock(raw, ctx)
     local cb, ln
     cb := CodeBlock()
@@ -73,18 +104,46 @@ procedure handleCodeBlock(raw, ctx)
     return cb
 end
 
+#<p>
+# Expand <tt>.. note::</tt> into an <tt>Admonition</tt> of kind
+# <tt>"note"</tt>.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param ctx unused parser context]>
+# <[returns an <tt>Admonition</tt> instance]>
+#</p>
 procedure handleNote(raw, ctx)
     return mkAdmonitionFromBody("note", raw)
 end
 
+#<p>
+# Expand <tt>.. warning::</tt> into an <tt>Admonition</tt> of kind
+# <tt>"warning"</tt>.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param ctx unused parser context]>
+# <[returns an <tt>Admonition</tt> instance]>
+#</p>
 procedure handleWarning(raw, ctx)
     return mkAdmonitionFromBody("warning", raw)
 end
 
+#<p>
+# Expand <tt>.. tip::</tt> into an <tt>Admonition</tt> of kind
+# <tt>"tip"</tt>.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param ctx unused parser context]>
+# <[returns an <tt>Admonition</tt> instance]>
+#</p>
 procedure handleTip(raw, ctx)
     return mkAdmonitionFromBody("tip", raw)
 end
 
+#<p>
+# Shared helper: build an <tt>Admonition</tt> whose body is one
+# <tt>Paragraph</tt> of inline-parsed body lines.
+# <[param kind admonition kind string]>
+# <[param raw a <tt>RawDirective</tt> supplying the body lines]>
+# <[returns an <tt>Admonition</tt> instance]>
+#</p>
 procedure mkAdmonitionFromBody(kind, raw)
     local adm, para, ln
     adm := Admonition()
@@ -96,10 +155,25 @@ procedure mkAdmonitionFromBody(kind, raw)
     return adm
 end
 
+#<p>
+# Expand <tt>.. image::</tt> into an <tt>ImageNode</tt>. The optional
+# first non-blank body line is used as alt text until field-list
+# options (<tt>:alt:</tt>) are parsed.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param ctx unused parser context]>
+# <[returns an <tt>ImageNode</tt> instance]>
+#</p>
 procedure handleImage(raw, ctx)
-    local img
+    local img, alt
     img := ImageNode()
     img.setURI(raw.getArg())
+    every alt := !raw.getBodyLines() do {
+        alt := trim(alt, ' ', 0)
+        if *alt > 0 then {
+            img.setAlt(alt)
+            break
+            }
+        }
     return img
 end
 
@@ -121,3 +195,4 @@ end
 # end
 #
 # reg.register("api", handleApiBridge)
+

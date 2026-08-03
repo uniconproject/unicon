@@ -1,32 +1,44 @@
+#<p>
+# Line-oriented parser: raw chapter text to a <tt>Document</tt> doctree
+# (<tt>node.icn</tt>). Deliberately a restricted subset of RST-like syntax
+# -- underline-style headings, blank-line-separated paragraphs,
+# <tt>"- "</tt>/<tt>"* "</tt> bullet lists, and <tt>".. name:: arg"</tt>
+# directives with an indented body -- rather than a full docutils
+# reimplementation. Covers what Brian's book and the FRR docs actually
+# use.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
 package uscribe
 
 import lang
 
-#
-# parser.icn
-#
-# Line-oriented parser: raw chapter text -> Document doctree
-# (node.icn). Deliberately a restricted subset of RST-like syntax --
-# underline-style headings, blank-line-separated paragraphs, "- "/"*"
-# bullet lists, and ".. name:: arg" directives with an indented body
-# -- rather than a full docutils reimplementation. Covers what Brian's
-# book and the FRR docs actually use; see the scope note in the
-# original design discussion.
-#
-# This file is in the public domain.
-#
-
+# <p>
+# Parse one chapter of RST-like source into a <tt>Document</tt> tree.
+# Holds a <tt>DirectiveRegistry</tt> used when expanding
+# <tt>".. name::"</tt> directives during <tt>parseBlocks()</tt>.
+# </p>
 class Parser : Object (registry)
 
+    # <p>
+    # Install the directive registry used by <tt>parseDirective()</tt>.
+    # <[param r a <tt>DirectiveRegistry</tt> instance]>
+    # </p>
     method setRegistry(r)
         registry := r
         return
     end
 
     # <p>
-    # Parse one chapter file into a Document.
+    # Parse one chapter file into a <tt>Document</tt>.
     # <[param path filesystem path to the chapter source]>
-    # <[returns a Document instance]>
+    # <[returns a <tt>Document</tt> instance]>
+    # <[fails if <tt>path</tt> cannot be opened for reading]>
     # </p>
     method parseFile(path)
         local f, lines, ln, doc
@@ -46,14 +58,21 @@ class Parser : Object (registry)
 end
 
 # <p>
-# Core recursive-descent block parser. Consumes lines[i..limit] at
-# nesting depth 'level' (0 = document top level, matches Section level
-# numbering in node.icn), attaching parsed Block nodes as children of
-# 'container'. Returns the index just past the last line consumed.
+# Core recursive-descent block parser. Consumes
+# <tt>lines[i..limit]</tt> at nesting depth <tt>level</tt>
+# (0 = document top level, matching <tt>Section</tt> level numbering
+# in <tt>node.icn</tt>), attaching parsed <tt>Block</tt> nodes as
+# children of <tt>container</tt>.
+# <[param parser the owning <tt>Parser</tt> (for directive expansion)]>
+# <[param lines list of source lines]>
+# <[param i 1-based start index into <tt>lines</tt>]>
+# <[param limit last index (inclusive) to consider]>
+# <[param container parent <tt>Block</tt> to attach children to]>
 # <[param level current section-nesting depth, used for heading level
 #         bookkeeping and to decide when an underlined heading closes
 #         the current section rather than opening a nested one -- see
-#         headingLevelFor()]>
+#         <tt>headingLevelFor()</tt>]>
+# <[returns the index just past the last line consumed]>
 # </p>
 procedure parseBlocks(parser, lines, i, limit, container, level)
     local blankRun, para, curSection, hLevel
@@ -68,10 +87,10 @@ procedure parseBlocks(parser, lines, i, limit, container, level)
 
         # Underline-style heading: a non-blank line followed by a line
         # of repeated punctuation at least as long as the title.
-        if i < limit & isUnderline(lines[i+1]) & *lines[i+1] >= *trimRight(lines[i]) then {
+        if isHeadingAt(lines, i, limit) then {
             hLevel := headingLevelFor(lines[i+1][1])
             curSection := Section()
-            curSection.setTitle(trimRight(lines[i]))
+            curSection.setTitle(trim(lines[i], ' ', 0))
             curSection.setLevel(hLevel)
             container.addChild(curSection)
             i +:= 2
@@ -91,6 +110,13 @@ procedure parseBlocks(parser, lines, i, limit, container, level)
             next
             }
 
+        # RST literal block: a line ending in "::" followed by an
+        # indented block (optionally after a blank line).
+        if isLiteralIntro(lines[i]) then {
+            i := parseLiteralBlock(lines, i, limit, curSection)
+            next
+            }
+
         # Otherwise: an ordinary paragraph -- consume until the next
         # blank line, heading, directive, or bullet line.
         i := parseParagraph(lines, i, limit, curSection)
@@ -99,13 +125,32 @@ procedure parseBlocks(parser, lines, i, limit, container, level)
     return i
 end
 
+# <p>
+# Consume consecutive non-blank lines as one paragraph, stopping at a
+# blank line, heading, directive, bullet, or literal introducer.
+# Always advances at least one line so a too-short underline cannot
+# leave <tt>i</tt> unchanged (that used to infinite-loop in
+# <tt>parseBlocks</tt>).
+# <[param lines list of source lines]>
+# <[param i 1-based start index]>
+# <[param limit last index (inclusive)]>
+# <[param container parent to receive the new <tt>Paragraph</tt>]>
+# <[returns the index just past the last line consumed]>
+# </p>
 procedure parseParagraph(lines, i, limit, container)
     local buf, para
     buf := []
     while i <= limit & not isBlank(lines[i]) &
           not isDirectiveLine(lines[i]) & not isBulletLine(lines[i]) &
-          not (i < limit & isUnderline(lines[i+1])) do {
-        put(buf, trimRight(lines[i]))
+          not isLiteralIntro(lines[i]) &
+          not isHeadingAt(lines, i, limit) do {
+        put(buf, trim(lines[i]))
+        i +:= 1
+        }
+    # Always make progress: a too-short underline must not leave i
+    # unchanged (that used to infinite-loop in parseBlocks).
+    if *buf = 0 & i <= limit then {
+        put(buf, trim(lines[i]))
         i +:= 1
         }
     para := Paragraph()
@@ -114,7 +159,158 @@ procedure parseParagraph(lines, i, limit, container)
     return i
 end
 
-procedure parseBulletList(lines, i, limit, container) 
+# <p>
+# RST <tt>"::"</tt> literal block. The introducer line may be just
+# <tt>"::"</tt> or end with <tt>"::"</tt> (e.g. <tt>"Unicon::"</tt>).
+# Following indented lines become a <tt>CodeBlock</tt> with common
+# leading indent stripped; relative indent inside the block is
+# preserved.
+# <[param lines list of source lines]>
+# <[param i index of the introducer line]>
+# <[param limit last index (inclusive)]>
+# <[param container parent to receive optional leading
+#         <tt>Paragraph</tt> and/or <tt>CodeBlock</tt>]>
+# <[returns the index just past the last line consumed]>
+# </p>
+procedure parseLiteralBlock(lines, i, limit, container)
+    local text, body, cb, para, minInd, ln, stripped, j, n
+
+    text := literalIntroText(trim(lines[i]))
+    i +:= 1
+    while i <= limit & isBlank(lines[i]) do
+        i +:= 1
+
+    body := []
+    while i <= limit do {
+        if isBlank(lines[i]) then {
+            # Blank line inside the block only if more indented content follows.
+            j := i + 1
+            while j <= limit & isBlank(lines[j]) do
+                j +:= 1
+            if j <= limit & isIndented(lines[j]) then {
+                put(body, "")
+                i +:= 1
+                next
+                }
+            break
+            }
+        if not isIndented(lines[i]) then
+            break
+        put(body, rtrimLiteralLine(lines[i]))
+        i +:= 1
+        }
+
+    if *text > 0 then {
+        para := Paragraph()
+        every put(para.getChildren(), !parseInline(text))
+        container.addChild(para)
+        }
+
+    if *body > 0 then {
+        minInd := literalMinIndent(body)
+        cb := CodeBlock()
+        every ln := !body do {
+            if *ln = 0 then
+                cb.addLine("")
+            else {
+                stripped := ln
+                n := minInd
+                stripped ? {
+                    every 1 to n do {
+                        if any(' ') then move(1)
+                        else break
+                        }
+                    stripped := "" || tab(0)
+                    }
+                cb.addLine(stripped)
+                }
+            }
+        container.addChild(cb)
+        }
+
+    return i
+end
+
+# <p>
+# True when <tt>s</tt> is an RST literal-block introducer: a non-empty
+# line ending in <tt>"::"</tt> that is not a <tt>".. name::"</tt>
+# directive.
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not a literal introducer]>
+# </p>
+procedure isLiteralIntro(s)
+    local t
+    t := trim(\s | "")
+    if *t < 2 then fail
+    # Do not treat ".. name::" directives as literal introducers.
+    if isDirectiveLine(t) then fail
+    return t[*t-1:0] == "::"
+end
+
+# <p>
+# Text shown before the literal block. RST keeps one colon when
+# <tt>"::"</tt> is glued to a word (<tt>"Unicon::"</tt> ->
+# <tt>"Unicon:"</tt>); both colons are dropped when preceded by
+# whitespace (<tt>"Unicon ::"</tt> -> <tt>"Unicon"</tt>). A lone
+# <tt>"::"</tt> yields empty text.
+# <[param s the introducer line (already right-trimmed)]>
+# <[returns the paragraph text before the code block, or <tt>""</tt>]>
+# </p>
+procedure literalIntroText(s)
+    local t
+    t := trim(s)
+    if t == "::" then
+        return ""
+    if *t >= 3 & t[*t-2] == " " & t[*t-1:0] == "::" then
+        return trim(t[1:*t-1])   # drop " ::"
+    # glued "::" -> keep one colon ("Unicon::" -> "Unicon:")
+    return t[1:*t]
+end
+
+# <p>
+# Right-trim a line inside a literal block (trailing spaces only).
+# <[param s a literal-block body line]>
+# <[returns <tt>s</tt> with trailing spaces removed]>
+# </p>
+procedure rtrimLiteralLine(s)
+    return trim(s)
+end
+
+# <p>
+# Smallest leading-space indent among non-empty lines in a literal
+# body; used to strip the common indent from a <tt>CodeBlock</tt>.
+# <[param body list of literal-block body lines]>
+# <[returns the minimum indent count, or 0 if all lines are empty]>
+# </p>
+procedure literalMinIndent(body)
+    local ln, n, minInd
+    minInd := &null
+    every ln := !body do {
+        if *ln = 0 then next
+        n := 0
+        ln ? {
+            while any(' ') do {
+                move(1)
+                n +:= 1
+                }
+            }
+        if /minInd | n < minInd then
+            minInd := n
+        }
+    return \minInd | 0
+end
+
+# <p>
+# Parse a run of consecutive bullet lines (<tt>"- "</tt> /
+# <tt>"* "</tt>), including indented continuation lines, into a
+# <tt>BulletList</tt> of <tt>ListItem</tt>s.
+# <[param lines list of source lines]>
+# <[param i index of the first bullet line]>
+# <[param limit last index (inclusive)]>
+# <[param container parent to receive the new <tt>BulletList</tt>]>
+# <[returns the index just past the last line consumed]>
+# </p>
+procedure parseBulletList(lines, i, limit, container)
     local blist, item, buf
     blist := BulletList()
     container.addChild(blist)
@@ -124,7 +320,7 @@ procedure parseBulletList(lines, i, limit, container)
         # Continuation lines: indented, non-blank, not a new bullet.
         while i <= limit & not isBlank(lines[i]) & not isBulletLine(lines[i]) &
               isIndented(lines[i]) do {
-            put(buf, trimLeft(lines[i]))
+            put(buf, trim(lines[i], ' ', 1))
             i +:= 1
             }
         item := ListItem()
@@ -134,6 +330,18 @@ procedure parseBulletList(lines, i, limit, container)
     return i
 end
 
+# <p>
+# Parse a <tt>".. name:: arg"</tt> directive and its indented body,
+# expand it via <tt>parser.registry</tt>, and attach the result to
+# <tt>container</tt>. If expansion fails, the raw
+# <tt>RawDirective</tt> is attached instead.
+# <[param parser the owning <tt>Parser</tt>]>
+# <[param lines list of source lines]>
+# <[param i index of the directive header line]>
+# <[param limit last index (inclusive)]>
+# <[param container parent for the expanded node(s)]>
+# <[returns the index just past the last body line consumed]>
+# </p>
 procedure parseDirective(parser, lines, i, limit, container)
     local head, dname, arg, body, raw, expanded, indentCol
 
@@ -143,7 +351,7 @@ procedure parseDirective(parser, lines, i, limit, container)
         dname := tab(find("::"))
         move(2)
         tab(many(' '))
-        arg := trim(tab(0))
+        arg := trim(tab(0), ' ', 0)
         }
     i +:= 1
     body := []
@@ -173,36 +381,85 @@ procedure parseDirective(parser, lines, i, limit, container)
     return i
 end
 
-# ---------------------------------------------------------------------
-# Line-classification helpers
-# ---------------------------------------------------------------------
+# <p>
+# Line-classification and small string helpers used by the block
+# parsers above.
+# </p>
 
+# <p>
+# True when <tt>s</tt> is empty or contains only whitespace.
+# <[param s a source line]>
+# </p>
 procedure isBlank(s)
-    return trim(s) == ""
+    return trim(s, ' ', 0) == ""
 end
 
+# <p>
+# True when <tt>lines[i]</tt> is a title and <tt>lines[i+1]</tt> is a
+# long-enough underline.
+# <[param lines list of source lines]>
+# <[param i candidate title-line index]>
+# <[param limit last index (inclusive)]>
+# <[fails if there is no heading at <tt>i</tt>]>
+# </p>
+procedure isHeadingAt(lines, i, limit)
+    return i < limit & isUnderline(lines[i+1]) &
+           *lines[i+1] >= *trim(lines[i])
+end
+
+# <p>
+# True when <tt>s</tt> is a non-empty line of repeated heading
+# underline characters (<tt>=</tt>, <tt>-</tt>, <tt>~</tt>,
+# <tt>^</tt>, or <tt>"</tt>).
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not an underline]>
+# </p>
 procedure isUnderline(s)
     local t
     /s := ""
-    t := trim(s)
+    t := trim(s, ' ', 0)
     if *t = 0 then fail
     return t ? (tab(many('=-~^"')), pos(0))
 end
 
+# <p>
+# Map an underline character to a 1-based section level
+# (<tt>=</tt>=1, <tt>-</tt>=2, <tt>~</tt>=3, <tt>^</tt>=4; anything
+# else defaults to 4).
+# <[param ch the first character of an underline line]>
+# <[returns an integer section level]>
+# </p>
 procedure headingLevelFor(ch)
     static order
     initial order := "=-~^"
     return (find(ch, order) | 4)
 end
 
+# <p>
+# True when <tt>s</tt> looks like <tt>".. name:: ..."</tt>.
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not a directive header]>
+# </p>
 procedure isDirectiveLine(s)
     return s ? (=".. ", find("::"))
 end
 
+# <p>
+# True when <tt>s</tt> is a bullet list item
+# (<tt>"- "</tt> or <tt>"* "</tt>, optionally indented).
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not a bullet line]>
+# </p>
 procedure isBulletLine(s)
     return s ? ((tab(many(' ')) | &pos), tab(any('-*')), =" ")
 end
 
+# <p>
+# Strip the leading bullet marker and surrounding spaces from a
+# bullet line, returning the item text.
+# <[param s a bullet line]>
+# <[returns the item text after the marker]>
+# </p>
 procedure stripBulletMarker(s)
     s ? {
         tab(many(' ')) | &pos
@@ -212,6 +469,13 @@ procedure stripBulletMarker(s)
         }
 end
 
+# <p>
+# True when <tt>s</tt> starts with one or more spaces and has
+# non-space content afterward (used for directive bodies, list
+# continuations, and literal blocks).
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not indented content]>
+# </p>
 procedure isIndented(s)
     s ? {
         tab(many(' ')) | fail
@@ -220,6 +484,12 @@ procedure isIndented(s)
         }
 end
 
+# <p>
+# Remove up to <tt>n</tt> leading spaces from <tt>s</tt>.
+# <[param s a source line]>
+# <[param n maximum number of spaces to strip]>
+# <[returns the remainder of the line]>
+# </p>
 procedure stripIndent(s, n)
     local i
     s ? {
@@ -231,25 +501,13 @@ procedure stripIndent(s, n)
         }
 end
 
-procedure trimRight(s)
-    s ? {
-        tab(0)
-        while ord(&subject[&pos-1]) = ord(" ") do move(-1)
-        return "" || &subject[1:&pos]
-        }
-end
-
-procedure trimLeft(s)
-    s ? {
-        tab(many(' ')) | &pos
-        return "" || tab(0)
-        }
-end
-
-procedure trim(s)
-    return trimLeft(trimRight(s))
-end
-
+# <p>
+# Join a list of lines into one string with single spaces between
+# non-empty contributions (used when collapsing paragraph and list
+# item wraps).
+# <[param buf list of line strings]>
+# <[returns a single space-joined string]>
+# </p>
 procedure joinLines(buf)
     local out, ln
     out := ""

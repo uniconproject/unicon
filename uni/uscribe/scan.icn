@@ -1,35 +1,41 @@
+#<p>
+# Reusable balanced-delimiter scanning, generalized from the pattern in
+# classic UniDoc's <tt>UniHTML.icn</tt>: <tt>checkSpecial()</tt> +
+# <tt>parseClause()</tt> used Icon's <tt>sbal()</tt> to find
+# <tt>"&lt;[ ... ]&gt;"</tt> clauses embedded in running text while
+# correctly skipping past <tt>&lt;pre&gt;</tt>/<tt>&lt;code&gt;</tt>
+# blocks. That logic was hard-wired to HTML output and to UniDoc's own
+# field names (<tt>throws</tt>, <tt>param</tt>, <tt>returns</tt>...).
+# Here it is factored into a generic utility that both unidoc and
+# uscribe can call.
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
 package uscribe
 
-#
-# scan.icn
-#
-# Reusable balanced-delimiter scanning, generalized from the pattern in
-# classic UniDoc's UniHTML.icn: checkSpecial() + parseClause() used
-# Icon's sbal() to find "<[ ... ]>" clauses embedded in running text
-# while correctly skipping past <pre>/<code> blocks. That logic was
-# hard-wired to HTML output and to UniDoc's own field names (throws,
-# param, returns...). Here it is factored into a generic utility that
-# both unidoc and uscribe can call.
-#
-# This file is in the public domain.
-#
-
 # <p>
-# Scan string s left to right. Whenever the literal openTok is found
-# (outside of any span already excluded via skipMap), extract the
-# balanced substring up to the matching closeTok using sbal(), and
-# call handler(matchedText) -- handler's return value is spliced into
-# the output in place of the whole "openTok ... closeTok" run. If
-# handler fails, the original text (openTok included) is passed
-# through unchanged.
+# Scan string <tt>s</tt> left to right. Whenever the literal
+# <tt>openTok</tt> is found (outside of any span already excluded via
+# <tt>skipSpans</tt>), extract the balanced substring up to the
+# matching <tt>closeTok</tt> using <tt>sbal()</tt>, and call
+# <tt>handler(matchedText)</tt> -- handler's return value is spliced
+# into the output in place of the whole
+# <tt>"openTok ... closeTok"</tt> run. If handler fails, the original
+# text (<tt>openTok</tt> included) is passed through unchanged.
 # <[param s the text to scan]>
-# <[param openTok opening delimiter, e.g. "<[" or "{{"]>
-# <[param closeTok closing delimiter, e.g. "]>" or "}}"]>
-# <[param handler procedure(matchedInnerText) -> replacement string]>
-# <[param skipSpans a table mapping "startTok" -> "endTok" for regions
-#         to pass through verbatim without scanning inside them, e.g.
-#         table("<pre>","</pre>","<code>","</code>") -- pass &null or
-#         an empty table to scan everything]>
+# <[param openTok opening delimiter, e.g. <tt>"&lt;["</tt> or
+#         <tt>"{{"</tt>]>
+# <[param closeTok closing delimiter, e.g. <tt>"]&gt;"</tt> or
+#         <tt>"}}"</tt>]>
+# <[param handler procedure(<tt>matchedInnerText</tt>) -> replacement
+#         string]>
+# <[param skipSpans a table mapping <tt>"startTok"</tt> ->
+#         <tt>"endTok"</tt> for regions to pass through verbatim
+#         without scanning inside them, e.g.
+#         <tt>table("&lt;pre&gt;","&lt;/pre&gt;","&lt;code&gt;","&lt;/code&gt;")</tt>
+#         -- pass <tt>&null</tt> or an empty table to scan everything]>
 # <[returns the fully scanned/replaced string]>
 # </p>
 procedure scanBalancedDirectives(s, openTok, closeTok, handler, skipSpans)
@@ -81,14 +87,16 @@ end
 
 # <p>
 # Version of the balanced-clause extraction that matches exactly how
-# classic UniDoc used sbal() in UniHTML.icn's checkSpecial(): the
-# subject is already positioned just after openTok, and sbal() with a
-# one-entry map keyed on openTok is used to consume up through the
-# matching closeTok, respecting nested opens.
-# <[param cMap a table with a single key: cMap[openTok] = closeTok]>
-# <[returns the inner text (delimiters stripped), or fails if the
-#          input at the current position is not a valid balanced
-#          clause]>
+# classic UniDoc used <tt>sbal()</tt> in <tt>UniHTML.icn</tt>'s
+# <tt>checkSpecial()</tt>: the subject is already positioned just
+# after <tt>openTok</tt>, and <tt>sbal()</tt> with a one-entry map
+# keyed on <tt>openTok</tt> is used to consume up through the matching
+# <tt>closeTok</tt>, respecting nested opens.
+# <[param cMap a table with a single key:
+#         <tt>cMap[openTok] = closeTok</tt>]>
+# <[returns the inner text (delimiters stripped)]>
+# <[fails if the input at the current position is not a valid
+#         balanced clause]>
 # </p>
 procedure sbalClause(cMap)
     local inner
@@ -100,6 +108,10 @@ end
 # <p>
 # Internal: does any string in the skip-span table (as open or close
 # token) appear at the very start of the remaining subject?
+# <[param rest the unscanned remainder of the subject]>
+# <[param skipSpans table of open-token -> close-token pairs]>
+# <[returns the matched open or close token string]>
+# <[fails if no skip token is at the start of <tt>rest</tt>]>
 # </p>
 procedure findAnySkipToken(rest, skipSpans)
     local k
@@ -111,7 +123,10 @@ procedure findAnySkipToken(rest, skipSpans)
 end
 
 # <p>
-# Internal: true if we are currently inside any registered skip span.
+# Internal: succeed if we are currently inside any registered skip
+# span (any entry in <tt>skipDepth</tt> is positive).
+# <[param skipDepth table of open-token -> nesting depth]>
+# <[fails if no skip span is active]>
 # </p>
 procedure anySkipActive(skipDepth)
     local k
@@ -120,6 +135,11 @@ procedure anySkipActive(skipDepth)
     fail
 end
 
+# <p>
+# Decrement <tt>n</tt> by one, flooring at zero.
+# <[param n a non-negative integer depth]>
+# <[returns <tt>n - 1</tt>, or 0 if <tt>n</tt> was already 0]>
+# </p>
 procedure decrFloor(n)
     return (n > 0, n - 1) | 0
 end

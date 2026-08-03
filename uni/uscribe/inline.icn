@@ -1,38 +1,47 @@
-package uscribe
-
-#
-# inline.icn
-#
+#<p>
 # Inline markup parsing: turn one line (or run of text within a
-# paragraph/list-item/heading) into a list of Inline nodes.
-#
-# This replaces what classic UniDoc's cmts2html() did inline with HTML
-# string concatenation. The difference: this produces Node objects
-# (node.icn), so any Outputter can render *emphasis*, `literal`, and
+# paragraph/list-item/heading) into a list of <tt>Inline</tt> nodes.
+#</p>
+#<p>
+# This replaces what classic UniDoc's <tt>cmts2html()</tt> did inline
+# with HTML string concatenation. The difference: this produces
+# <tt>Node</tt> objects (<tt>node.icn</tt>), so any <tt>Outputter</tt>
+# can render <tt>*emphasis*</tt>, <tt>`literal`</tt>, and
 # cross-references its own way -- HTML, groff, plain text -- without
 # touching this parser.
-#
-# Node construction goes through node.icn's mkText()/mkEmphasis()/
-# mkStrong()/mkLiteral()/mkPendingXref() factories rather than raw
-# ClassName(...) calls, so this file never has to count each class's
-# inherited (parent/srcFile/srcLine) field slots by hand.
-#
-# This file is in the public domain.
-#
+#</p>
+#<p>
+# Node construction goes through <tt>node.icn</tt>'s
+# <tt>mkText()</tt>/<tt>mkEmphasis()</tt>/<tt>mkStrong()</tt>/
+# <tt>mkLiteral()</tt>/<tt>mkPendingXref()</tt> factories rather than
+# raw <tt>ClassName(...)</tt> calls, so this file never has to count
+# each class's inherited (<tt>parent</tt>/<tt>srcFile</tt>/<tt>srcLine</tt>)
+# field slots by hand.
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
 
-# <p>
+package uscribe
+
+#<p>
 # Parse plain text with lightweight inline markup:
-#   *emphasis*    -> Emphasis
-#   **strong**    -> Strong
-#   `literal`     -> Literal
-#   :ref:`label`  -> PendingXref(kind: "ref")
-#   :doc:`file`   -> PendingXref(kind: "doc")
-# Anything else is plain Text. Longer/more specific tokens (":ref:`",
-# ":doc:`", "**") are tried before shorter ones ("*", "`") so e.g.
-# "**bold**" is not misread as two adjacent "*emph*" runs.
+#   <tt>*emphasis*</tt>    -> <tt>Emphasis</tt>
+#   <tt>**strong**</tt>    -> <tt>Strong</tt>
+#   <tt>``literal``</tt>   -> <tt>Literal</tt> (RST-style; preferred)
+#   <tt>`literal`</tt>     -> <tt>Literal</tt> (single-backtick convenience)
+#   <tt>:ref:`label`</tt>  -> <tt>PendingXref</tt>(kind: <tt>"ref"</tt>)
+#   <tt>:doc:`file`</tt>   -> <tt>PendingXref</tt>(kind: <tt>"doc"</tt>)
+# Anything else is plain <tt>Text</tt>. Longer/more specific tokens
+# (<tt>":ref:`"</tt>, <tt>":doc:`"</tt>, <tt>"**"</tt>, <tt>"``"</tt>)
+# are tried before shorter ones (<tt>"*"</tt>, <tt>"`"</tt>) so e.g.
+# <tt>"**bold**"</tt> is not misread as two adjacent <tt>"*emph*"</tt>
+# runs, and <tt>``code``</tt> is not misread as two empty
+# single-backtick spans. Unclosed delimiters are left as plain text
+# (the opener is not eaten).
 # <[param s one line/run of source text]>
-# <[returns a list of Inline node instances]>
-# </p>
+# <[returns a list of <tt>Inline</tt> node instances]>
+#</p>
 procedure parseInline(s)
     local out, buf, tok
 
@@ -41,34 +50,58 @@ procedure parseInline(s)
     s ? {
         while not pos(0) do {
             if =":ref:`" then {
-                tok := tab(find("`"))
-                move(1)
-                flushText(out, buf); buf := ""
-                put(out, mkPendingXref(tok, "ref"))
+                if tok := tab(find("`")) then {
+                    move(1)
+                    flushText(out, buf); buf := ""
+                    put(out, mkPendingXref(tok, "ref"))
+                    }
+                else
+                    buf ||:= ":ref:`"
                 }
             else if =":doc:`" then {
-                tok := tab(find("`"))
-                move(1)
-                flushText(out, buf); buf := ""
-                put(out, mkPendingXref(tok, "doc"))
+                if tok := tab(find("`")) then {
+                    move(1)
+                    flushText(out, buf); buf := ""
+                    put(out, mkPendingXref(tok, "doc"))
+                    }
+                else
+                    buf ||:= ":doc:`"
                 }
             else if ="**" then {
-                tok := tab(find("**"))
-                move(2)
-                flushText(out, buf); buf := ""
-                put(out, mkStrong([mkText(tok)]))
+                if tok := tab(find("**")) then {
+                    move(2)
+                    flushText(out, buf); buf := ""
+                    put(out, mkStrong([mkText(tok)]))
+                    }
+                else
+                    buf ||:= "**"
+                }
+            else if ="``" then {
+                if tok := tab(find("``")) then {
+                    move(2)
+                    flushText(out, buf); buf := ""
+                    put(out, mkLiteral(tok))
+                    }
+                else
+                    buf ||:= "``"
                 }
             else if ="*" then {
-                tok := tab(find("*"))
-                move(1)
-                flushText(out, buf); buf := ""
-                put(out, mkEmphasis([mkText(tok)]))
+                if tok := tab(find("*")) then {
+                    move(1)
+                    flushText(out, buf); buf := ""
+                    put(out, mkEmphasis([mkText(tok)]))
+                    }
+                else
+                    buf ||:= "*"
                 }
             else if ="`" then {
-                tok := tab(find("`"))
-                move(1)
-                flushText(out, buf); buf := ""
-                put(out, mkLiteral(tok))
+                if tok := tab(find("`")) then {
+                    move(1)
+                    flushText(out, buf); buf := ""
+                    put(out, mkLiteral(tok))
+                    }
+                else
+                    buf ||:= "`"
                 }
             else {
                 buf ||:= move(1)
@@ -79,10 +112,12 @@ procedure parseInline(s)
     return out
 end
 
-# <p>
-# Internal: append a Text node for any plain-text run accumulated so
-# far, unless it is empty.
-# </p>
+#<p>
+# Internal: append a <tt>Text</tt> node for any plain-text run
+# accumulated so far, unless it is empty.
+# <[param out output list of inline nodes]>
+# <[param buf accumulated plain-text buffer]>
+#</p>
 procedure flushText(out, buf)
     if *buf > 0 then put(out, mkText(buf))
 end

@@ -1,0 +1,98 @@
+import util
+import uscribe
+
+#
+# main.icn
+#
+# uscribe driver. Usage:
+#   uscribe --manifest=book.idx --title="Programming with Unicon" \
+#           --targetDir=./htmlBook
+#
+# Two-pass build, matching the design discussion:
+#   pass 1: parse every chapter file into a Document (parser.icn),
+#           then walk each Document with LabelTable.collect()
+#           (labeltable.icn) to build the global label table.
+#   pass 2: walk each Document again with LabelTable.resolve() to
+#           swap every PendingXref for a real Reference, then hand
+#           each resolved Document to an Outputter (outputter.icn).
+#
+# This file is in the public domain.
+#
+
+global targetDir, bookTitle
+
+procedure main(args)
+    local manifestPath, mf, parser, registry, labels, chapterPath, doc
+    local outp, outPath, f
+
+    if *args = 0 then helpMesg()
+    Args(args, set("manifest","title","targetDir"), helpMesg)
+
+    manifestPath := Args().getOpt("manifest") | helpMesg()
+    bookTitle    := Args().getOptDef("title", "Untitled Book")
+    targetDir    := Args().getOptDef("targetDir", "./htmlBook")
+
+    registry := DirectiveRegistry()
+    parser   := Parser()
+    parser.setRegistry(registry)
+
+    mf := Manifest()
+    mf.setTitle(bookTitle)
+    mf.loadFromFile(manifestPath) |
+        stop("uscribe: could not read manifest '", manifestPath, "'")
+
+    # --- Pass 1: parse every chapter, then collect labels ---
+    labels := LabelTable()
+    every chapterPath := !mf.getChapterPaths() do {
+        doc := parser.parseFile(chapterPath) |
+            stop("uscribe: could not read chapter '", chapterPath, "'")
+        mf.setDocument(chapterPath, doc)
+        labels.collect(doc)
+        }
+
+    ensureDir(targetDir)
+
+    # --- Pass 2: resolve cross-refs, then render each chapter ---
+    every doc := !mf.getOrderedDocuments() do {
+        labels.resolve(doc)
+        outPath := targetDir || "/" || chapterOutputName(doc.getSrcName())
+        f := open(outPath, "w") | stop("uscribe: could not write '", outPath, "'")
+        outp := HtmlOutputter()
+        outp.setOutFile(f)
+        outp.setLabelTable(labels)
+        doc.accept(outp)
+        close(f)
+        write("wrote ", outPath)
+        }
+end
+
+procedure chapterOutputName(srcPath)
+    local base
+    srcPath ? {
+        tab(find(".") | 0)
+        base := "" || &subject[1:&pos]
+        }
+    base ? {
+        every tab(upto('/')) do move(1)
+        base := "" || tab(0)
+        }
+    return base || ".html"
+end
+
+procedure ensureDir(d)
+    # Unicon's mkdir()/system() usage mirrors makeDirPath() in
+    # uni/unidoc/UniHTML.icn -- that procedure is a good candidate to
+    # extract into the shared chrome module (refactor #3) rather than
+    # reimplementing directory creation here.
+    system("mkdir -p " || d)
+end
+
+procedure helpMesg()
+    write("Usage: uscribe --manifest=FILE [--title=TITLE] [--targetDir=DIR]")
+    write()
+    write("  --manifest=FILE   Plain-text chapter list, one source path per")
+    write("                    line (# comments and blank lines allowed).")
+    write("  --title=TITLE     Book title (default: \"Untitled Book\")")
+    write("  --targetDir=DIR   Where to write generated HTML (default: ./htmlBook)")
+    stop()
+end

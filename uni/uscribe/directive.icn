@@ -1,0 +1,123 @@
+package uscribe
+
+import lang
+
+#
+# directive.icn
+#
+# DirectiveRegistry maps a directive name (the word after ".. " in
+# ".. note::", ".. code-block:: icon", ".. api:: net.icn", etc.) to a
+# handler procedure. The core Parser (parser.icn) does not know the
+# names of any directives -- it just recognizes the ".. name:: arg"
+# syntax, builds a RawDirective node (node.icn), and asks the registry
+# to expand it. This is the concrete mechanism for the ".. api::"
+# bridge into classic UniDoc mentioned earlier: register a handler
+# here that shells out to (or in-process calls) UniAll/UniHTML and
+# splices the result in, and neither the parser nor the doctree needs
+# to know UniDoc exists.
+#
+# This file is in the public domain.
+#
+
+# <p>
+# handler procedures have the signature:
+#   handler(rawDirective, parserContext) -> a Node (or a list of
+#   Nodes) to substitute in the doctree at that point, or fails to
+#   leave the RawDirective node as-is (which HtmlOutputter renders as
+#   an HTML comment marker -- see visitRawDirective() in
+#   outputter.icn).
+# </p>
+class DirectiveRegistry : Object (handlers)
+
+    method register(name, handlerProc)
+        handlers[name] := handlerProc
+        return
+    end
+
+    method expand(rawDirective, ctx)
+        local h
+        h := \handlers[rawDirective.getName()] | fail
+        return h(rawDirective, ctx)
+    end
+
+    method isKnown(name)
+        return member(handlers, name)
+    end
+
+    initially
+        handlers := table()
+        registerBuiltins(self)
+end
+
+# <p>
+# The handful of directives the book format needs out of the box:
+# code-block, note/warning/tip (thin wrappers producing Admonition),
+# and image. "toctree" is deliberately *not* here -- chapter order is
+# Manifest's job (manifest.icn), read once up front, not a per-file
+# directive, to keep the two-pass build simple.
+# </p>
+procedure registerBuiltins(reg)
+    reg.register("code-block", handleCodeBlock)
+    reg.register("note", handleNote)
+    reg.register("warning", handleWarning)
+    reg.register("tip", handleTip)
+    reg.register("image", handleImage)
+end
+
+procedure handleCodeBlock(raw, ctx)
+    local cb, ln
+    cb := CodeBlock()
+    cb.setLanguage(\raw.getArg())
+    every ln := !raw.getBodyLines() do
+        cb.addLine(ln)
+    return cb
+end
+
+procedure handleNote(raw, ctx)
+    return mkAdmonitionFromBody("note", raw)
+end
+
+procedure handleWarning(raw, ctx)
+    return mkAdmonitionFromBody("warning", raw)
+end
+
+procedure handleTip(raw, ctx)
+    return mkAdmonitionFromBody("tip", raw)
+end
+
+procedure mkAdmonitionFromBody(kind, raw)
+    local adm, para, ln
+    adm := Admonition()
+    adm.setKind(kind)
+    para := Paragraph()
+    every ln := !raw.getBodyLines() do
+        every put(para.getChildren(), !parseInline(ln))
+    adm.addChild(para)
+    return adm
+end
+
+procedure handleImage(raw, ctx)
+    local img
+    img := ImageNode()
+    img.setURI(raw.getArg())
+    return img
+end
+
+# ---------------------------------------------------------------------
+# Sketch of the UniDoc bridge. Left unregistered by default (real
+# wiring needs a decision on in-process vs. subprocess invocation --
+# see the "Refactor #4" discussion: UniAll.processFile()+
+# UniHTML.buildPages() should be exposed as a callable library
+# procedure so this can link directly to generated pages instead of
+# shelling out to the unidoc binary and re-parsing its HTML output).
+# ---------------------------------------------------------------------
+
+# procedure handleApiBridge(raw, ctx)
+#     local manifestEntry
+#     # raw.getArg() is the source file/package to document, e.g. "net.icn"
+#     # manifestEntry := UniDoc_generatePages(raw.getArg())  # see refactor #4
+#     # return a Reference-bearing node pointing at manifestEntry's index page
+#     fail
+# end
+#
+# reg.register("api", handleApiBridge)

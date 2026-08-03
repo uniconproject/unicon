@@ -1,0 +1,88 @@
+package uscribe
+
+#
+# inline.icn
+#
+# Inline markup parsing: turn one line (or run of text within a
+# paragraph/list-item/heading) into a list of Inline nodes.
+#
+# This replaces what classic UniDoc's cmts2html() did inline with HTML
+# string concatenation. The difference: this produces Node objects
+# (node.icn), so any Outputter can render *emphasis*, `literal`, and
+# cross-references its own way -- HTML, groff, plain text -- without
+# touching this parser.
+#
+# Node construction goes through node.icn's mkText()/mkEmphasis()/
+# mkStrong()/mkLiteral()/mkPendingXref() factories rather than raw
+# ClassName(...) calls, so this file never has to count each class's
+# inherited (parent/srcFile/srcLine) field slots by hand.
+#
+# This file is in the public domain.
+#
+
+# <p>
+# Parse plain text with lightweight inline markup:
+#   *emphasis*    -> Emphasis
+#   **strong**    -> Strong
+#   `literal`     -> Literal
+#   :ref:`label`  -> PendingXref(kind: "ref")
+#   :doc:`file`   -> PendingXref(kind: "doc")
+# Anything else is plain Text. Longer/more specific tokens (":ref:`",
+# ":doc:`", "**") are tried before shorter ones ("*", "`") so e.g.
+# "**bold**" is not misread as two adjacent "*emph*" runs.
+# <[param s one line/run of source text]>
+# <[returns a list of Inline node instances]>
+# </p>
+procedure parseInline(s)
+    local out, buf, tok
+
+    out := []
+    buf := ""
+    s ? {
+        while not pos(0) do {
+            if =":ref:`" then {
+                tok := tab(find("`"))
+                move(1)
+                flushText(out, buf); buf := ""
+                put(out, mkPendingXref(tok, "ref"))
+                }
+            else if =":doc:`" then {
+                tok := tab(find("`"))
+                move(1)
+                flushText(out, buf); buf := ""
+                put(out, mkPendingXref(tok, "doc"))
+                }
+            else if ="**" then {
+                tok := tab(find("**"))
+                move(2)
+                flushText(out, buf); buf := ""
+                put(out, mkStrong([mkText(tok)]))
+                }
+            else if ="*" then {
+                tok := tab(find("*"))
+                move(1)
+                flushText(out, buf); buf := ""
+                put(out, mkEmphasis([mkText(tok)]))
+                }
+            else if ="`" then {
+                tok := tab(find("`"))
+                move(1)
+                flushText(out, buf); buf := ""
+                put(out, mkLiteral(tok))
+                }
+            else {
+                buf ||:= move(1)
+                }
+            }
+        }
+    flushText(out, buf)
+    return out
+end
+
+# <p>
+# Internal: append a Text node for any plain-text run accumulated so
+# far, unless it is empty.
+# </p>
+procedure flushText(out, buf)
+    if *buf > 0 then put(out, mkText(buf))
+end

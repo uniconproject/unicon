@@ -1,0 +1,259 @@
+package uscribe
+
+import lang
+
+#
+# parser.icn
+#
+# Line-oriented parser: raw chapter text -> Document doctree
+# (node.icn). Deliberately a restricted subset of RST-like syntax --
+# underline-style headings, blank-line-separated paragraphs, "- "/"*"
+# bullet lists, and ".. name:: arg" directives with an indented body
+# -- rather than a full docutils reimplementation. Covers what Brian's
+# book and the FRR docs actually use; see the scope note in the
+# original design discussion.
+#
+# This file is in the public domain.
+#
+
+class Parser : Object (registry)
+
+    method setRegistry(r)
+        registry := r
+        return
+    end
+
+    # <p>
+    # Parse one chapter file into a Document.
+    # <[param path filesystem path to the chapter source]>
+    # <[returns a Document instance]>
+    # </p>
+    method parseFile(path)
+        local f, lines, ln, doc
+        f := open(path, "r") | fail
+        lines := []
+        while ln := read(f) do put(lines, ln)
+        close(f)
+
+        doc := Document()
+        doc.setSrcName(path)
+        parseBlocks(self, lines, 1, *lines, doc, 0)
+        return doc
+    end
+
+    initially
+        /registry := DirectiveRegistry()
+end
+
+# <p>
+# Core recursive-descent block parser. Consumes lines[i..limit] at
+# nesting depth 'level' (0 = document top level, matches Section level
+# numbering in node.icn), attaching parsed Block nodes as children of
+# 'container'. Returns the index just past the last line consumed.
+# <[param level current section-nesting depth, used for heading level
+#         bookkeeping and to decide when an underlined heading closes
+#         the current section rather than opening a nested one -- see
+#         headingLevelFor()]>
+# </p>
+procedure parseBlocks(parser, lines, i, limit, container, level)
+    local blankRun, para, curSection, hLevel
+
+    curSection := container
+    while i <= limit do {
+        # Skip blank lines between blocks.
+        if isBlank(lines[i]) then {
+            i +:= 1
+            next
+            }
+
+        # Underline-style heading: a non-blank line followed by a line
+        # of repeated punctuation at least as long as the title.
+        if i < limit & isUnderline(lines[i+1]) & *lines[i+1] >= *trimRight(lines[i]) then {
+            hLevel := headingLevelFor(lines[i+1][1])
+            curSection := Section()
+            curSection.setTitle(trimRight(lines[i]))
+            curSection.setLevel(hLevel)
+            container.addChild(curSection)
+            i +:= 2
+            next
+            }
+
+        # Directive: ".. name:: arg", body is every following line
+        # indented at least 3 spaces relative to the directive line.
+        if isDirectiveLine(lines[i]) then {
+            i := parseDirective(parser, lines, i, limit, curSection)
+            next
+            }
+
+        # Bullet list: a run of consecutive "- "/"* " lines.
+        if isBulletLine(lines[i]) then {
+            i := parseBulletList(lines, i, limit, curSection)
+            next
+            }
+
+        # Otherwise: an ordinary paragraph -- consume until the next
+        # blank line, heading, directive, or bullet line.
+        i := parseParagraph(lines, i, limit, curSection)
+        }
+
+    return i
+end
+
+procedure parseParagraph(lines, i, limit, container)
+    local buf, para
+    buf := []
+    while i <= limit & not isBlank(lines[i]) &
+          not isDirectiveLine(lines[i]) & not isBulletLine(lines[i]) &
+          not (i < limit & isUnderline(lines[i+1])) do {
+        put(buf, trimRight(lines[i]))
+        i +:= 1
+        }
+    para := Paragraph()
+    every put(para.getChildren(), !parseInline(joinLines(buf)))
+    container.addChild(para)
+    return i
+end
+
+procedure parseBulletList(lines, i, limit, container) 
+    local blist, item, buf
+    blist := BulletList()
+    container.addChild(blist)
+    while i <= limit & isBulletLine(lines[i]) do {
+        buf := [stripBulletMarker(lines[i])]
+        i +:= 1
+        # Continuation lines: indented, non-blank, not a new bullet.
+        while i <= limit & not isBlank(lines[i]) & not isBulletLine(lines[i]) &
+              isIndented(lines[i]) do {
+            put(buf, trimLeft(lines[i]))
+            i +:= 1
+            }
+        item := ListItem()
+        every put(item.getChildren(), !parseInline(joinLines(buf)))
+        blist.addChild(item)
+        }
+    return i
+end
+
+procedure parseDirective(parser, lines, i, limit, container)
+    local head, dname, arg, body, raw, expanded, indentCol
+
+    head := lines[i]
+    head ? {
+        tab(match(".. "))
+        dname := tab(find("::"))
+        move(2)
+        tab(many(' '))
+        arg := trim(tab(0))
+        }
+    i +:= 1
+    body := []
+    indentCol := 4  # minimum body indent; a stricter parser would
+                     # measure the first body line's actual indent
+    while i <= limit & (isBlank(lines[i]) | isIndented(lines[i])) do {
+        if not isBlank(lines[i]) then put(body, stripIndent(lines[i], indentCol))
+        else put(body, "")
+        i +:= 1
+        }
+    # Trim trailing blank lines collected as part of the body. pull()
+    # removes from the back of the list; pop() (front-removal) would
+    # silently trim the wrong end.
+    while *body > 0 & body[-1] == "" do pull(body) | break
+
+    raw := RawDirective()
+    raw.setName(dname)
+    raw.setArg(arg)
+    raw.setBodyLines(body)
+
+    expanded := parser.registry.expand(raw, container) | raw
+    if type(expanded) == "list" then
+        every container.addChild(!expanded)
+    else
+        container.addChild(expanded)
+
+    return i
+end
+
+# ---------------------------------------------------------------------
+# Line-classification helpers
+# ---------------------------------------------------------------------
+
+procedure isBlank(s)
+    return trim(s) == ""
+end
+
+procedure isUnderline(s)
+    local t
+    /s := ""
+    t := trim(s)
+    if *t = 0 then fail
+    return t ? (tab(many('=-~^"')), pos(0))
+end
+
+procedure headingLevelFor(ch)
+    static order
+    initial order := "=-~^"
+    return (find(ch, order) | 4)
+end
+
+procedure isDirectiveLine(s)
+    return s ? (=".. ", find("::"))
+end
+
+procedure isBulletLine(s)
+    return s ? ((tab(many(' ')) | &pos), tab(any('-*')), =" ")
+end
+
+procedure stripBulletMarker(s)
+    s ? {
+        tab(many(' ')) | &pos
+        move(1)
+        tab(many(' ')) | &pos
+        return "" || tab(0)
+        }
+end
+
+procedure isIndented(s)
+    s ? {
+        tab(many(' ')) | fail
+        if pos(0) then fail
+        return
+        }
+end
+
+procedure stripIndent(s, n)
+    local i
+    s ? {
+        every i := 1 to n do {
+            if any(' ') then move(1)
+            else break
+            }
+        return "" || tab(0)
+        }
+end
+
+procedure trimRight(s)
+    s ? {
+        tab(0)
+        while ord(&subject[&pos-1]) = ord(" ") do move(-1)
+        return "" || &subject[1:&pos]
+        }
+end
+
+procedure trimLeft(s)
+    s ? {
+        tab(many(' ')) | &pos
+        return "" || tab(0)
+        }
+end
+
+procedure trim(s)
+    return trimLeft(trimRight(s))
+end
+
+procedure joinLines(buf)
+    local out, ln
+    out := ""
+    every ln := !buf do
+        out ||:= (if *out > 0 then " " else "") || ln
+    return out
+end

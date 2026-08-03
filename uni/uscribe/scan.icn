@@ -1,0 +1,125 @@
+package uscribe
+
+#
+# scan.icn
+#
+# Reusable balanced-delimiter scanning, generalized from the pattern in
+# classic UniDoc's UniHTML.icn: checkSpecial() + parseClause() used
+# Icon's sbal() to find "<[ ... ]>" clauses embedded in running text
+# while correctly skipping past <pre>/<code> blocks. That logic was
+# hard-wired to HTML output and to UniDoc's own field names (throws,
+# param, returns...). Here it is factored into a generic utility that
+# both unidoc and uscribe can call.
+#
+# This file is in the public domain.
+#
+
+# <p>
+# Scan string s left to right. Whenever the literal openTok is found
+# (outside of any span already excluded via skipMap), extract the
+# balanced substring up to the matching closeTok using sbal(), and
+# call handler(matchedText) -- handler's return value is spliced into
+# the output in place of the whole "openTok ... closeTok" run. If
+# handler fails, the original text (openTok included) is passed
+# through unchanged.
+# <[param s the text to scan]>
+# <[param openTok opening delimiter, e.g. "<[" or "{{"]>
+# <[param closeTok closing delimiter, e.g. "]>" or "}}"]>
+# <[param handler procedure(matchedInnerText) -> replacement string]>
+# <[param skipSpans a table mapping "startTok" -> "endTok" for regions
+#         to pass through verbatim without scanning inside them, e.g.
+#         table("<pre>","</pre>","<code>","</code>") -- pass &null or
+#         an empty table to scan everything]>
+# <[returns the fully scanned/replaced string]>
+# </p>
+procedure scanBalancedDirectives(s, openTok, closeTok, handler, skipSpans)
+    local out, cMap, skipDepth, tok, matched, replacement
+
+    cMap := table()
+    cMap[openTok] := closeTok
+    /skipSpans := table()
+    skipDepth := table()
+    every skipDepth[key(skipSpans)] := 0
+
+    out := ""
+    s ? {
+        while out ||:= tab(find(openTok) | 0) do {
+            if pos(0) then break
+
+            # Check for any registered skip-span open/close tokens
+            # right here before considering openTok itself.
+            tok := findAnySkipToken("" || &subject[&pos:0], skipSpans)
+            if \tok then {
+                out ||:= move(*tok)
+                if member(skipSpans, tok) then
+                    skipDepth[tok] +:= 1
+                else
+                    every (k := key(skipSpans)) do
+                        if skipSpans[k] == tok then skipDepth[k] := decrFloor(skipDepth[k])
+                next
+                }
+
+            if anySkipActive(skipDepth) then {
+                out ||:= move(*openTok)
+                next
+                }
+
+            if matched := sbal(cMap, openTok, closeTok, 'openTok') then {
+                # sbal() semantics vary by Icon/Unicon version; the
+                # wrapper sbalClause() below pins down the exact call
+                # uscribe relies on. See sbalClause().
+                }
+            if replacement := handler(matched) then
+                out ||:= replacement
+            else
+                out ||:= openTok || matched || closeTok
+            }
+        out ||:= tab(0)
+        }
+    return out
+end
+
+# <p>
+# Version of the balanced-clause extraction that matches exactly how
+# classic UniDoc used sbal() in UniHTML.icn's checkSpecial(): the
+# subject is already positioned just after openTok, and sbal() with a
+# one-entry map keyed on openTok is used to consume up through the
+# matching closeTok, respecting nested opens.
+# <[param cMap a table with a single key: cMap[openTok] = closeTok]>
+# <[returns the inner text (delimiters stripped), or fails if the
+#          input at the current position is not a valid balanced
+#          clause]>
+# </p>
+procedure sbalClause(cMap)
+    local inner
+    if inner := sbal(cMap) then
+        return inner
+    fail
+end
+
+# <p>
+# Internal: does any string in the skip-span table (as open or close
+# token) appear at the very start of the remaining subject?
+# </p>
+procedure findAnySkipToken(rest, skipSpans)
+    local k
+    every k := key(skipSpans) do {
+        if rest[1:1+*k] == k then return k
+        if rest[1:1+*skipSpans[k]] == skipSpans[k] then return skipSpans[k]
+        }
+    fail
+end
+
+# <p>
+# Internal: true if we are currently inside any registered skip span.
+# </p>
+procedure anySkipActive(skipDepth)
+    local k
+    every k := key(skipDepth) do
+        if skipDepth[k] > 0 then return
+    fail
+end
+
+procedure decrFloor(n)
+    return (n > 0, n - 1) | 0
+end

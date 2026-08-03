@@ -1,0 +1,131 @@
+package uscribe
+
+import lang
+
+#
+# labeltable.icn
+#
+# Two-pass cross-reference resolution. Pass 1 (collect) walks every
+# parsed Document and records every Section's label/title -> (file,
+# anchor). Pass 2 (resolve) walks every Document again and swaps each
+# PendingXref inline node (see node.icn) for a resolved Reference,
+# using this table. This is the piece that makes ":ref:`some-label`"
+# work across chapter-file boundaries -- something neither classic
+# UniDoc nor its parlett/ predecessor needed, since they only ever
+# cross-referenced source entities within a single resolved parse,
+# not author-written prose labels spanning a whole book.
+#
+# This file is in the public domain.
+#
+
+class LabelTable : Object (byLabel, bySlug)
+
+    # <p>
+    # Pass 1: register every Section in doc under both its explicit
+    # label (if any) and a slugified-title fallback, so ":doc:`file`"
+    # links can also target a chapter's top section by title.
+    # <[param doc a parsed Document]>
+    # </p>
+    method collect(doc)
+        walkCollect(doc.getChildren(), doc.getSrcName())
+        return
+    end
+
+    method walkCollect(nodeList, srcFile)
+        local n, kids
+        every n := !nodeList do {
+            if isSectionNode(n) then {
+                registerSection(n, srcFile)
+                walkCollect(n.getChildren(), srcFile)
+                }
+            else if kids := tryGetChildren(n) then
+                walkCollect(kids, srcFile)
+            }
+        return
+    end
+
+    method registerSection(sectionNode, srcFile)
+        local anchor, key
+        anchor := \sectionNode.getLabel() | slugify(sectionNode.getTitle())
+        if \sectionNode.getLabel() then
+            byLabel[sectionNode.getLabel()] := [srcFile, anchor]
+        bySlug[slugify(sectionNode.getTitle())] := [srcFile, anchor]
+        return
+    end
+
+    # <p>
+    # Pass 2: walk doc, replacing every PendingXref inline node with a
+    # resolved Reference. Call this only after collect() has run over
+    # *every* chapter, so forward references (chapter 3 linking back
+    # to a label defined in chapter 1) resolve correctly regardless of
+    # reading order.
+    # <[param doc a parsed Document, mutated in place]>
+    # </p>
+    method resolve(doc)
+        walkResolve(doc.getChildren())
+        return
+    end
+
+    method walkResolve(nodeList)
+        local i, n, kids, resolved
+        every i := 1 to *nodeList do {
+            n := nodeList[i]
+            if isPendingXref(n) then {
+                resolved := lookup(n)
+                if \resolved then nodeList[i] := resolved
+                # else: leave the PendingXref in place; the Outputter's
+                # visitBrokenXref() will surface it as a warning.
+                }
+            else if kids := tryGetChildren(n) then
+                walkResolve(kids)
+            }
+        return
+    end
+
+    method lookup(xref)
+        local hit, ref
+        hit := \byLabel[xref.getLabel()] | \bySlug[slugify(xref.getLabel())] | fail
+        ref := Reference()
+        ref.setTarget(hit[1], hit[2])
+        ref.setText(\xref.getDisplayText() | xref.getLabel())
+        return ref
+    end
+
+    initially
+        byLabel := table()
+        bySlug := table()
+end
+
+# ---------------------------------------------------------------------
+# Type-dispatch helpers built on Node.nodeType() (node.icn) rather than
+# on duck-typed method-presence checks -- referencing a method an
+# object doesn't have (e.g. calling n.getLevel() on a Paragraph) is a
+# hard runtime error in Unicon, not a graceful failure, so nodeType()
+# is the only safe way to branch across a mixed list of Node types.
+# ---------------------------------------------------------------------
+
+procedure isSectionNode(n)
+    return n.nodeType() == "Section"
+end
+
+procedure isPendingXref(n)
+    return n.nodeType() == "PendingXref"
+end
+
+# <p>
+# Node types that carry a "children" list (see node.icn's Block
+# subclasses, plus the two composite inline types Emphasis/Strong).
+# Leaf types -- Text, Literal, Reference, PendingXref, CodeBlock,
+# ImageNode, RawDirective -- have no getChildren() and must not be
+# called into.
+# </p>
+procedure tryGetChildren(n)
+    static withChildren
+    initial withChildren := set(["Document","Section","Paragraph",
+        "BulletList","EnumList","ListItem","Admonition","TableNode",
+        "Emphasis","Strong"])
+    if member(withChildren, n.nodeType()) then
+        return n.getChildren()
+    fail
+end
+

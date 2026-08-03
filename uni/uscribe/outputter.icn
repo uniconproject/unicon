@@ -1,0 +1,236 @@
+package uscribe
+
+import lang
+
+#
+# outputter.icn
+#
+# Outputter is the piece modeled directly on the legacy parlett/
+# unidoc design (HtmlOutputter / GroffOutputter in
+# uni/unidoc/parlett/htmloutputter.icn and groffoutputter.icn) rather
+# than on the current UniHTML.icn, which hard-wires HTML string
+# concatenation directly into the entity-walking code. Here, walking
+# the doctree (node.icn) and rendering it are cleanly separated: add
+# a new Outputter subclass and every existing Document renders in a
+# new format with zero changes to the parser or the doctree.
+#
+# This file is in the public domain.
+#
+
+# <p>
+# Abstract base. One visitXxx method per concrete Node type in
+# node.icn. A driver (main.icn) calls outp.visitDocument(doc) once per
+# parsed chapter; each visit method is responsible for walking its own
+# children and calling child.accept(self) recursively.
+# </p>
+class Outputter : Object ()
+    abstract method visitDocument(n)
+    abstract method visitSection(n)
+    abstract method visitParagraph(n)
+    abstract method visitBulletList(n)
+    abstract method visitEnumList(n)
+    abstract method visitListItem(n)
+    abstract method visitCodeBlock(n)
+    abstract method visitAdmonition(n)
+    abstract method visitTable(n)
+    abstract method visitImage(n)
+    abstract method visitRawDirective(n)
+
+    abstract method visitText(n)
+    abstract method visitEmphasis(n)
+    abstract method visitStrong(n)
+    abstract method visitLiteral(n)
+    abstract method visitReference(n)
+    abstract method visitBrokenXref(n)
+end
+
+# <p>
+# First concrete Outputter: single logical page per Document, written
+# as one HTML file. Multi-file frame/nav chrome (the part worth
+# lifting wholesale out of uni/unidoc/UniHTML.icn's pageTop()/
+# pageBottom()/navFrameRef()/openStdHtmlFile()) is intentionally kept
+# out of this class -- it belongs in a separate reusable "HtmlChrome"
+# module so both unidoc and uscribe call the *same* frame-building
+# code instead of each maintaining their own copy. See the TODO below.
+# </p>
+class HtmlOutputter : Outputter (outFile, labelTable)
+
+    method setOutFile(f)
+        outFile := f
+        return
+    end
+
+    method setLabelTable(lt)
+        labelTable := lt
+        return
+    end
+
+    method visitDocument(n)
+        write(outFile, "<html><head><title>", escapeHtml(\n.getTitle()) | "",
+              "</title></head><body>")
+        every (!n.getChildren()).accept(self)
+        write(outFile, "</body></html>")
+        return
+    end
+
+    method visitSection(n)
+        local h
+        h := "h" || (n.getLevel() + 1)  # h2 for level 1, h3 for level 2, ...
+        write(outFile, "<", h, " id=\"", anchorFor(n), "\">")
+        writeInlineTitle(n.getTitle())
+        write(outFile, "</", h, ">")
+        every (!n.getChildren()).accept(self)
+        return
+    end
+
+    method visitParagraph(n)
+        write(outFile, "<p>")
+        every (!n.getChildren()).accept(self)
+        write(outFile, "</p>")
+        return
+    end
+
+    method visitBulletList(n)
+        write(outFile, "<ul>")
+        every (!n.getChildren()).accept(self)
+        write(outFile, "</ul>")
+        return
+    end
+
+    method visitEnumList(n)
+        write(outFile, "<ol start=\"", n.getStartAt(), "\">")
+        every (!n.getChildren()).accept(self)
+        write(outFile, "</ol>")
+        return
+    end
+
+    method visitListItem(n)
+        write(outFile, "<li>")
+        every (!n.getChildren()).accept(self)
+        write(outFile, "</li>")
+        return
+    end
+
+    method visitCodeBlock(n)
+        local ln
+        write(outFile, "<pre><code>")
+        every ln := !n.getLines() do
+            write(outFile, escapeHtml(ln))
+        write(outFile, "</code></pre>")
+        return
+    end
+
+    method visitAdmonition(n)
+        write(outFile, "<div class=\"admonition ", n.getKind(), "\">")
+        write(outFile, "<p class=\"admonition-title\">", capitalize(n.getKind()), "</p>")
+        every (!n.getChildren()).accept(self)
+        write(outFile, "</div>")
+        return
+    end
+
+    method visitTable(n)
+        write(outFile, "<table>")
+        every (!n.getChildren()).accept(self)
+        write(outFile, "</table>")
+        return
+    end
+
+    method visitImage(n)
+        write(outFile, "<img src=\"", n.getURI(), "\" alt=\"",
+              escapeHtml(\n.getAlt()) | "", "\">")
+        return
+    end
+
+    method visitRawDirective(n)
+        # Unknown directive that reached the Outputter unhandled --
+        # DirectiveRegistry (directive.icn) should normally have
+        # converted these to real nodes during parsing. Render a
+        # visible marker rather than silently dropping content.
+        write(outFile, "<!-- unhandled directive: ", n.getName(), " -->")
+        return
+    end
+
+    method visitText(n)
+        write(outFile, escapeHtml(n.getText()))
+        return
+    end
+
+    method visitEmphasis(n)
+        write(outFile, "<em>")
+        every (!n.getChildren()).accept(self)
+        write(outFile, "</em>")
+        return
+    end
+
+    method visitStrong(n)
+        write(outFile, "<strong>")
+        every (!n.getChildren()).accept(self)
+        write(outFile, "</strong>")
+        return
+    end
+
+    method visitLiteral(n)
+        write(outFile, "<code>", escapeHtml(n.getText()), "</code>")
+        return
+    end
+
+    method visitReference(n)
+        write(outFile, "<a href=\"", n.getTargetFile(), "#",
+              n.getTargetAnchor(), "\">", escapeHtml(n.getText()), "</a>")
+        return
+    end
+
+    method visitBrokenXref(n)
+        write(outFile, "<span class=\"broken-xref\">", escapeHtml(n.getLabel()),
+              "</span>")
+        write(&errout, "warning: unresolved xref '", n.getLabel(), "'")
+        return
+    end
+
+    # <p>
+    # Helper: write a Section's title, which may itself contain inline
+    # markup (e.g. a `code` span in a heading), by running it through
+    # parseInline() and dispatching each piece.
+    # </p>
+    method writeInlineTitle(titleText)
+        local piece
+        every piece := !parseInline(titleText) do
+            piece.accept(self)
+        return
+    end
+
+    method anchorFor(sectionNode)
+        return \sectionNode.getLabel() | slugify(sectionNode.getTitle())
+    end
+end
+
+# <p>
+# Minimal HTML-escaping helper -- deliberately small and dependency
+# free; both unidoc and uscribe can share this instead of each having
+# their own ad hoc escaper (compare to protectLine() in UniHTML.icn).
+# </p>
+procedure escapeHtml(s)
+    local out
+    /s := ""
+    out := ""
+    s ? {
+        while out ||:= tab(upto('&<>"')) do
+            out ||:= case move(1) of {
+                "&": "&amp;"
+                "<": "&lt;"
+                ">": "&gt;"
+                "\"": "&quot;"
+            }
+        out ||:= tab(0)
+        }
+    return out
+end
+
+# <p>
+# Turn a section title into a filesystem/anchor-safe slug, used as a
+# fallback anchor when no explicit label was set.
+# </p>
+
+procedure capitalize(s)
+    return map(s[1], &lcase, &ucase) || s[2:0]
+end

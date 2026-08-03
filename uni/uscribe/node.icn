@@ -1,0 +1,600 @@
+package uscribe
+
+import lang
+
+#
+# node.icn
+#
+# Doctree node hierarchy for uscribe. Parsing and rendering are
+# separate steps connected by this Node hierarchy, so a new Outputter
+# (HTML, groff, man, plain text, ...) never has to touch the parser.
+#
+# This file is in the public domain.
+#
+
+# <p>
+# Abstract base for every doctree node. Every node knows how to accept
+# an Outputter (visitor pattern) -- see outputter.icn.
+# </p>
+class Node : Object (parent, srcFile, srcLine)
+
+    # <p>
+    # Attach this node under a parent block. Most Block subclasses
+    # keep a "children" field; this just records back-pointers so
+    # error messages and cross-ref resolution can report a location.
+    # </p>
+    method setParent(p)
+        parent := p
+        return
+    end
+    method getParent()
+        return \parent
+    end
+
+    method setPos(fName, lineNo)
+        srcFile := fName
+        srcLine := lineNo
+        return
+    end
+    method getPos()
+        return [srcFile, srcLine]
+    end
+
+    # <p>
+    # Concrete-class discriminator, e.g. "Section", "Paragraph". Every
+    # concrete subclass overrides this with a literal string matching
+    # its own name. Exists so code walking a mixed list of Node types
+    # (LabelTable, mainly) can branch on type without referencing a
+    # method the object might not have -- doing that directly (e.g.
+    # calling n.getLevel() on a Paragraph) is a hard runtime error in
+    # Unicon, not a graceful failure.
+    # </p>
+    abstract method nodeType()
+
+    # <p>
+    # Double-dispatch entry point. Every concrete node overrides this
+    # to call the matching visitXxx() method on the Outputter.
+    # <[param outp an Outputter instance]>
+    # </p>
+    abstract method accept(outp)
+end
+
+# ---------------------------------------------------------------------
+# Block-level nodes
+# ---------------------------------------------------------------------
+
+# <p>
+# Base class for anything that stacks vertically on the page and can
+# contain other block or inline children.
+# </p>
+class Block : Node (children)
+
+    method getChildren()
+        return children
+    end
+
+    method addChild(n)
+        n.setParent(self)
+        put(children, n)
+        return n
+    end
+
+    initially
+        children := []
+end
+
+# <p>
+# The root of one parsed source file. A Document does not itself know
+# about other Documents -- chapter ordering and merging is Manifest's
+# job (manifest.icn), not the doctree's.
+# </p>
+class Document : Block (children, title, srcName)
+
+    method setSrcName(s)
+        srcName := s
+        return
+    end
+    method getSrcName()
+        return \srcName
+    end
+
+    method setTitle(t)
+        title := t
+        return
+    end
+    method getTitle()
+        return \title
+    end
+
+    method accept(outp)
+        outp.visitDocument(self)
+        return
+    end
+    method nodeType()
+        return "Document"
+    end
+
+    initially
+        children := []
+end
+
+# <p>
+# A heading plus everything nested under it until the next heading of
+# equal or lesser level. Level is 1-based (1 == top-level chapter title).
+# </p>
+class Section : Block (children, title, level, label)
+
+    method setTitle(t)
+        title := t
+        return
+    end
+    method getTitle()
+        return title
+    end
+
+    method setLevel(n)
+        level := n
+        return
+    end
+    method getLevel()
+        return level
+    end
+
+    # <p>
+    # Optional explicit cross-reference label (from a ".. _label:"
+    # style marker). If none was given, LabelTable can synthesize one
+    # from the title -- see labeltable.icn.
+    # </p>
+    method setLabel(l)
+        label := l
+        return
+    end
+    method getLabel()
+        return \label
+    end
+
+    method accept(outp)
+        outp.visitSection(self)
+        return
+    end
+    method nodeType()
+        return "Section"
+    end
+
+    initially
+        children := []
+end
+
+class Paragraph : Block (children)
+    method accept(outp)
+        outp.visitParagraph(self)
+        return
+    end
+    method nodeType()
+        return "Paragraph"
+    end
+
+    initially
+        children := []
+end
+
+# <p>
+# BulletList and EnumList share ListItem children; "ordered" on the
+# Outputter side is just which one it is, so we keep them as distinct
+# node types rather than one class with a flag -- cleaner dispatch.
+# </p>
+class BulletList : Block (children)
+    method accept(outp)
+        outp.visitBulletList(self)
+        return
+    end
+    method nodeType()
+        return "BulletList"
+    end
+
+    initially
+        children := []
+end
+
+class EnumList : Block (children, startAt)
+    method setStartAt(n)
+        startAt := n
+        return
+    end
+    method getStartAt()
+        return \startAt | 1
+    end
+    method accept(outp)
+        outp.visitEnumList(self)
+        return
+    end
+    method nodeType()
+        return "EnumList"
+    end
+
+    initially
+        children := []
+end
+
+class ListItem : Block (children)
+    method accept(outp)
+        outp.visitListItem(self)
+        return
+    end
+    method nodeType()
+        return "ListItem"
+    end
+
+    initially
+        children := []
+end
+
+# <p>
+# A literal block of source/code text. Kept as raw lines, not parsed
+# as prose -- deliberately opaque to the inline-markup parser so code
+# samples are never accidentally reinterpreted as *emphasis* etc.
+# </p>
+class CodeBlock : Node (lines, language)
+
+    method setLanguage(l)
+        language := l
+        return
+    end
+    method getLanguage()
+        return \language
+    end
+
+    method addLine(l)
+        put(lines, l)
+        return
+    end
+    method getLines()
+        return lines
+    end
+
+    method accept(outp)
+        outp.visitCodeBlock(self)
+        return
+    end
+    method nodeType()
+        return "CodeBlock"
+    end
+
+    initially
+        lines := []
+end
+
+# <p>
+# note / warning / tip -- one node type, "kind" distinguishes them so
+# Outputters can style each differently without a class per kind.
+# </p>
+class Admonition : Block (children, kind)
+
+    method setKind(k)
+        kind := k
+        return
+    end
+    method getKind()
+        return kind
+    end
+
+    method accept(outp)
+        outp.visitAdmonition(self)
+        return
+    end
+    method nodeType()
+        return "Admonition"
+    end
+
+    initially
+        children := []
+end
+
+class TableNode : Block (children, headerRow)
+    method setHeaderRow(row)
+        headerRow := row
+        return
+    end
+    method getHeaderRow()
+        return \headerRow
+    end
+    method accept(outp)
+        outp.visitTable(self)
+        return
+    end
+    method nodeType()
+        return "Table"
+    end
+
+    initially
+        children := []
+end
+
+class ImageNode : Node (uri, altText)
+    method setURI(u)
+        uri := u
+        return
+    end
+    method getURI()
+        return uri
+    end
+    method setAlt(a)
+        altText := a
+        return
+    end
+    method getAlt()
+        return \altText
+    end
+    method accept(outp)
+        outp.visitImage(self)
+        return
+    end
+    method nodeType()
+        return "Image"
+    end
+end
+
+# <p>
+# Generic escape hatch: any directive the core parser doesn't know
+# about is captured here (name + raw argument + raw body lines) and
+# handed to whatever the DirectiveRegistry has registered for that
+# name (see directive.icn).
+# </p>
+class RawDirective : Node (dname, arg, bodyLines)
+
+    method setName(n)
+        dname := n
+        return
+    end
+    method getName()
+        return dname
+    end
+    method setArg(a)
+        arg := a
+        return
+    end
+    method getArg()
+        return \arg
+    end
+    method setBodyLines(b)
+        bodyLines := b
+        return
+    end
+    method getBodyLines()
+        return bodyLines
+    end
+
+    method accept(outp)
+        outp.visitRawDirective(self)
+        return
+    end
+    method nodeType()
+        return "RawDirective"
+    end
+
+    initially
+        bodyLines := []
+end
+
+# ---------------------------------------------------------------------
+# Inline-level nodes (live inside Paragraph/ListItem/Section title text)
+# ---------------------------------------------------------------------
+
+class Inline : Node ()
+    abstract method accept(outp)
+end
+
+class Text : Inline (str)
+    method setText(s)
+        str := s
+        return
+    end
+    method getText()
+        return str
+    end
+    method accept(outp)
+        outp.visitText(self)
+        return
+    end
+    method nodeType()
+        return "Text"
+    end
+end
+
+class Emphasis : Inline (children)
+    method setChildren(c)
+        children := c
+        return
+    end
+    method getChildren()
+        return children
+    end
+    method accept(outp)
+        outp.visitEmphasis(self)
+        return
+    end
+    method nodeType()
+        return "Emphasis"
+    end
+    initially
+        children := []
+end
+
+class Strong : Inline (children)
+    method setChildren(c)
+        children := c
+        return
+    end
+    method getChildren()
+        return children
+    end
+    method accept(outp)
+        outp.visitStrong(self)
+        return
+    end
+    method nodeType()
+        return "Strong"
+    end
+    initially
+        children := []
+end
+
+class Literal : Inline (str)
+    method setText(s)
+        str := s
+        return
+    end
+    method getText()
+        return str
+    end
+    method accept(outp)
+        outp.visitLiteral(self)
+        return
+    end
+    method nodeType()
+        return "Literal"
+    end
+end
+
+# <p>
+# A resolved cross-reference (we know the target). Produced from a
+# PendingXref by LabelTable during pass 2 -- see labeltable.icn.
+# </p>
+class Reference : Inline (text, targetFile, targetAnchor)
+
+    method setText(t)
+        text := t
+        return
+    end
+    method getText()
+        return text
+    end
+    method setTarget(fName, anchor)
+        targetFile := fName
+        targetAnchor := anchor
+        return
+    end
+    method getTargetFile()
+        return \targetFile
+    end
+    method getTargetAnchor()
+        return \targetAnchor
+    end
+
+    method accept(outp)
+        outp.visitReference(self)
+        return
+    end
+    method nodeType()
+        return "Reference"
+    end
+end
+
+# <p>
+# An unresolved ":ref:`label`" or ":doc:`file`" found during pass 1
+# parsing. The parser emits these optimistically; LabelTable's
+# resolve() pass walks every Document afterward, swapping each
+# PendingXref for a Reference (or flagging it as broken).
+# See LabelTable.resolve() in labeltable.icn.
+# </p>
+class PendingXref : Inline (label, displayText, kind)
+
+    method setLabel(l)
+        label := l
+        return
+    end
+    method getLabel()
+        return label
+    end
+    method setDisplayText(d)
+        displayText := d
+        return
+    end
+    method getDisplayText()
+        return \displayText
+    end
+    method setKind(k)
+        kind := k
+        return
+    end
+    method getKind()  # "ref" or "doc"
+        return kind
+    end
+
+    method accept(outp)
+        # Should never survive to rendering -- LabelTable.resolve()
+        # replaces every PendingXref before the Outputter walk begins.
+        # If we get here, treat it as a broken reference.
+        outp.visitBrokenXref(self)
+        return
+    end
+
+    method nodeType()
+        return "PendingXref"
+    end
+end
+
+# ---------------------------------------------------------------------
+# Factory procedures. Prefer these over direct ClassName(...) calls for
+# node types with several inherited (parent/srcFile/srcLine) fields --
+# they read/setName-and-return, so callers never have to count
+# positional inherited-field slots by hand.
+# ---------------------------------------------------------------------
+
+procedure mkText(s)
+    local n
+    n := Text()
+    n.setText(s)
+    return n
+end
+
+procedure mkLiteral(s)
+    local n
+    n := Literal()
+    n.setText(s)
+    return n
+end
+
+procedure mkEmphasis(kids)
+    local n
+    n := Emphasis()
+    n.setChildren(kids)
+    return n
+end
+
+procedure mkStrong(kids)
+    local n
+    n := Strong()
+    n.setChildren(kids)
+    return n
+end
+
+procedure mkPendingXref(label, kind)
+    local n
+    n := PendingXref()
+    n.setLabel(label)
+    n.setKind(kind)
+    return n
+end
+
+# <p>
+# Turn a title/label into a filesystem/anchor-safe slug. Shared by
+# outputter.icn (fallback anchors) and labeltable.icn (title-based
+# lookup key) -- kept here as the single definition since Unicon
+# procedure names are global across a linked program, not scoped per
+# file, and both callers need the exact same slugging rule anyway.
+# </p>
+procedure slugify(s)
+    local out, piece, needSep
+    out := ""
+    needSep := &null
+    s ? {
+        while tab(upto(&letters ++ &digits)) do {
+            piece := tab(many(&letters ++ &digits)) | break
+            if \needSep then out ||:= "-"
+            out ||:= piece
+            needSep := 1
+            }
+        }
+    return map(out, &ucase, &lcase)
+end

@@ -376,8 +376,10 @@ procedure _utoj(u,jerror, raw)
 end
 
 #
-# Procedure for converting Unicon escapes and escape sequences to valid
-# JSON escape sequences.
+# Procedure for converting a Unicon string value to a JSON string
+# literal (including surrounding quotes). Control characters and
+# Unicon-style backslash escapes in the value are mapped to JSON
+# escapes; a literal double-quote becomes \".
 #
 procedure jsonify_string(s,jerror)
    static hex, oct, T_Esc
@@ -400,8 +402,11 @@ procedure jsonify_string(s,jerror)
 
    s ? {
       while c := move(1) do {
-         if c == '\"' then return jerror.set_err("Unicon string \""||s||
-            "\" contains an illegal double quote for JSON strings")
+         # Literal double quote in the Unicon string value → JSON \"
+         if c == "\"" then {
+            ns ||:= "\\\""
+            next
+            }
          # Handle escape sequences
          if c == "\\" then {
             case (c := move(1)) |

@@ -1,88 +1,370 @@
+#<p>
+# HTML doctree outputter: abstract <tt>Outputter</tt> visitor base and
+# concrete <tt>HtmlOutputter</tt> that emits one HTML file per chapter,
+# plus shared helpers <tt>escapeHtml</tt>, <tt>safeCssIdent</tt>,
+# <tt>safeThemeName</tt>, and <tt>capitalize</tt>.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
+link basename
+
 package uscribe
 
 import lang
 
-#
-# outputter.icn
-#
-# Outputter is the piece modeled directly on the legacy parlett/
-# unidoc design (HtmlOutputter / GroffOutputter in
-# uni/unidoc/parlett/htmloutputter.icn and groffoutputter.icn) rather
-# than on the current UniHTML.icn, which hard-wires HTML string
-# concatenation directly into the entity-walking code. Here, walking
-# the doctree (node.icn) and rendering it are cleanly separated: add
-# a new Outputter subclass and every existing Document renders in a
-# new format with zero changes to the parser or the doctree.
-#
-# This file is in the public domain.
-#
-
-# <p>
-# Abstract base. One visitXxx method per concrete Node type in
-# node.icn. A driver (main.icn) calls outp.visitDocument(doc) once per
-# parsed chapter; each visit method is responsible for walking its own
-# children and calling child.accept(self) recursively.
-# </p>
+#<p>
+# Abstract visitor base. One <tt>visitXxx</tt> method per concrete
+# <tt>Node</tt> type in <tt>node.icn</tt>. A driver calls
+# <tt>outp.visitDocument(doc)</tt> once per parsed chapter; each visit
+# method walks its own children via <tt>child.accept(self)</tt>.
+#</p>
 class Outputter : Object ()
+
+    #<p>
+    # Render a top-level <tt>Document</tt> (full page / chapter).
+    # <[param n a Document node]>
+    #</p>
     abstract method visitDocument(n)
+
+    #<p>
+    # Render a <tt>Section</tt> heading and its body children.
+    # <[param n a Section node]>
+    #</p>
     abstract method visitSection(n)
+
+    #<p>
+    # Render a <tt>Paragraph</tt>.
+    # <[param n a Paragraph node]>
+    #</p>
     abstract method visitParagraph(n)
+
+    #<p>
+    # Render a bullet list.
+    # <[param n a BulletList node]>
+    #</p>
     abstract method visitBulletList(n)
+
+    #<p>
+    # Render a numbered list.
+    # <[param n an EnumList node]>
+    #</p>
     abstract method visitEnumList(n)
+
+    #<p>
+    # Render one list item.
+    # <[param n a ListItem node]>
+    #</p>
     abstract method visitListItem(n)
+
+    #<p>
+    # Render a fenced / indented code block.
+    # <[param n a CodeBlock node]>
+    #</p>
     abstract method visitCodeBlock(n)
+
+    #<p>
+    # Render a note/warning/tip admonition.
+    # <[param n an Admonition node]>
+    #</p>
     abstract method visitAdmonition(n)
+
+    #<p>
+    # Render a table (subclass-dependent support).
+    # <[param n a Table node]>
+    #</p>
     abstract method visitTable(n)
+
+    #<p>
+    # Render an image / figure.
+    # <[param n an Image node]>
+    #</p>
     abstract method visitImage(n)
+
+    #<p>
+    # Render a directive that was not expanded by the registry.
+    # <[param n a RawDirective node]>
+    #</p>
     abstract method visitRawDirective(n)
 
+    #<p>
+    # Render a plain text inline leaf.
+    # <[param n a Text node]>
+    #</p>
     abstract method visitText(n)
+
+    #<p>
+    # Render emphasized inline markup.
+    # <[param n an Emphasis node]>
+    #</p>
     abstract method visitEmphasis(n)
+
+    #<p>
+    # Render strong inline markup.
+    # <[param n a Strong node]>
+    #</p>
     abstract method visitStrong(n)
+
+    #<p>
+    # Render a literal / code inline span.
+    # <[param n a Literal node]>
+    #</p>
     abstract method visitLiteral(n)
+
+    #<p>
+    # Render a resolved cross-reference link.
+    # <[param n a Reference node]>
+    #</p>
     abstract method visitReference(n)
+
+    #<p>
+    # Render an unresolved xref (and typically warn on <tt>&errout</tt>).
+    # <[param n a BrokenXref / PendingXref left unresolved]>
+    #</p>
     abstract method visitBrokenXref(n)
 end
 
-# <p>
-# First concrete Outputter: single logical page per Document, written
-# as one HTML file. Multi-file frame/nav chrome (the part worth
-# lifting wholesale out of uni/unidoc/UniHTML.icn's pageTop()/
-# pageBottom()/navFrameRef()/openStdHtmlFile()) is intentionally kept
-# out of this class -- it belongs in a separate reusable "HtmlChrome"
-# module so both unidoc and uscribe call the *same* frame-building
-# code instead of each maintaining their own copy. See the TODO below.
-# </p>
-class HtmlOutputter : Outputter (outFile, labelTable)
+#<p>
+# Concrete <tt>Outputter</tt>: one HTML file per <tt>Document</tt>.
+# Layout is a left sidebar TOC (with filter/search) plus main content
+# and prev/next, with a footer (copyright, powered-by, page source).
+# Shared CSS/JS come from <tt>--theme</tt>
+# (see <tt>uni/uscribe/themes/</tt>).
+#</p>
+class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref)
 
+    #<p>
+    # Set the open file to which HTML is written.
+    # <[param f an open file]>
+    #</p>
     method setOutFile(f)
         outFile := f
         return
     end
 
+    #<p>
+    # Attach the shared label table (for callers that need it later).
+    # <[param lt a LabelTable]>
+    #</p>
     method setLabelTable(lt)
         labelTable := lt
         return
     end
 
+    #<p>
+    # Install book-level navigation. <tt>navEntries</tt> is a list of
+    # <tt>[htmlFile, chapterTitle]</tt> pairs; <tt>navIndex</tt> is the
+    # 1-based index of the chapter being rendered. <tt>theme</tt> is the
+    # build-time <tt>--theme</tt> value (overridden in the browser by
+    # <tt>localStorage</tt>).
+    # <[param title book title string]>
+    # <[param entries list of [htmlFile, chapterTitle] pairs]>
+    # <[param index 1-based chapter index]>
+    # <[param theme default theme name, or null for "basic"]>
+    #</p>
+    method setNav(title, entries, index, theme)
+        bookTitle := title
+        navEntries := entries
+        navIndex := index
+        defaultTheme := \theme | "basic"
+        return
+    end
+
+    #<p>
+    # Optional copyright line (text after the ©), e.g.
+    # <tt>"2026, Jafar Al-Gharaibeh"</tt>. Empty/null omits that segment.
+    # <[param s copyright text, or null]>
+    #</p>
+    method setCopyright(s)
+        copyrightNotice := s
+        return
+    end
+
+    #<p>
+    # Optional sidebar logo URL (relative to the HTML page), e.g.
+    # <tt>"_static/uscribe-logo.png"</tt>. Empty/null omits the image.
+    # <[param href logo <tt>src</tt>, or null]>
+    #</p>
+    method setLogo(href)
+        logoHref := href
+        return
+    end
+
+    #<p>
+    # Emit a complete HTML document: head (theme boot, CSS/JS), sidebar,
+    # prev/next, body children, footer, and closing tags.
+    # <[param n a Document node]>
+    #</p>
     method visitDocument(n)
-        write(outFile, "<html><head><title>", escapeHtml(\n.getTitle()) | "",
-              "</title></head><body>")
+        write(outFile, "<!DOCTYPE html>")
+        write(outFile, "<html lang=\"en\" data-theme=\"",
+              escapeHtml(safeThemeName(\defaultTheme | "basic")), "\"><head>")
+        write(outFile, "<meta charset=\"utf-8\">")
+        write(outFile, "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
+        write(outFile, "<title>", escapeHtml(\n.getTitle()) | "", "</title>")
+        writeThemeBoot(\defaultTheme | "basic")
+        write(outFile, "<link rel=\"stylesheet\" href=\"_static/highlight.css\">")
+        write(outFile, "<script defer src=\"_static/search.js\"></script>")
+        write(outFile, "<script defer src=\"_static/highlight-unicon.js\"></script>")
+        write(outFile, "<script defer src=\"_static/theme-switcher.js\"></script>")
+        write(outFile, "</head><body>")
+        write(outFile, "<div class=\"layout\">")
+        writeSidebar()
+        write(outFile, "<div class=\"main\">")
+        writePrevNext()
         every (!n.getChildren()).accept(self)
+        writePrevNext()
+        writeFooter(\n.getSrcName())
+        write(outFile, "</div></div>")
         write(outFile, "</body></html>")
         return
     end
 
+    #<p>
+    # Emit the active theme stylesheet link and a tiny blocking script
+    # that swaps in a saved <tt>localStorage</tt> theme before first paint.
+    # <[param fallback theme name used when nothing is stored]>
+    #</p>
+    method writeThemeBoot(fallback)
+        fallback := safeThemeName(fallback)
+        write(outFile, "<script>")
+        write(outFile, "(function(){try{var t=localStorage.getItem('uscribe-theme');")
+        write(outFile, "if(t==='basic'||t==='classic'||t==='dark')")
+        write(outFile, "document.documentElement.setAttribute('data-theme',t);")
+        write(outFile, "else t='", fallback, "';")
+        write(outFile, "document.write('<link id=\"theme-css\" rel=\"stylesheet\" href=\"_static/theme-'+t+'.css\">');")
+        write(outFile, "}catch(e){document.write('<link id=\"theme-css\" rel=\"stylesheet\" href=\"_static/theme-",
+              fallback, ".css\">');}})();")
+        write(outFile, "</script>")
+        write(outFile, "<noscript><link id=\"theme-css\" rel=\"stylesheet\" href=\"_static/theme-",
+              escapeHtml(fallback), ".css\"></noscript>")
+        return
+    end
+
+    #<p>
+    # Emit the left sidebar: optional logo, book title, theme picker,
+    # chapter filter box, TOC list, and link to the full search page.
+    #</p>
+    method writeSidebar()
+        local i, e
+        /navEntries := []
+        /navIndex := 0
+        write(outFile, "<nav class=\"sidebar\" aria-label=\"Book contents\">")
+        if \logoHref & *logoHref > 0 then
+            write(outFile, "<a class=\"sidebar-logo\" href=\"index.html\">",
+                  "<img src=\"", escapeHtml(logoHref),
+                  "\" alt=\"", escapeHtml(\bookTitle) | "Book", "\"></a>")
+        write(outFile, "<div class=\"book-title\"><a href=\"index.html\">",
+              escapeHtml(\bookTitle) | "Book", "</a></div>")
+        writeThemePicker(\defaultTheme | "basic")
+        write(outFile, "<p class=\"search-hint\">Filter chapters; Enter for full search</p>")
+        write(outFile, "<input class=\"search-box\" id=\"nav-search\" type=\"search\" ")
+        write(outFile, "placeholder=\"Search…\" aria-label=\"Filter chapter list\">")
+        write(outFile, "<ol id=\"nav-toc\">")
+        every i := 1 to *navEntries do {
+            e := navEntries[i]
+            if i = navIndex then
+                write(outFile, "<li class=\"current\">", escapeHtml(e[2]), "</li>")
+            else
+                write(outFile, "<li><a href=\"", escapeHtml(e[1]), "\">",
+                      escapeHtml(e[2]), "</a></li>")
+            }
+        write(outFile, "</ol>")
+        write(outFile, "<p class=\"search-hint\"><a href=\"search.html\">Search page</a></p>")
+        write(outFile, "</nav>")
+        return
+    end
+
+    #<p>
+    # Emit the theme <tt>&lt;select&gt;</tt> used by
+    # <tt>theme-switcher.js</tt>.
+    # <[param fallback unused; options are always basic/classic/dark]>
+    #</p>
+    method writeThemePicker(fallback)
+        write(outFile, "<label class=\"search-hint\" for=\"theme-select\">Theme</label>")
+        write(outFile, "<select class=\"search-box\" id=\"theme-select\" aria-label=\"Color theme\">")
+        write(outFile, "<option value=\"basic\">basic</option>")
+        write(outFile, "<option value=\"classic\">classic</option>")
+        write(outFile, "<option value=\"dark\">dark</option>")
+        write(outFile, "</select>")
+        return
+    end
+
+    #<p>
+    # Emit previous/next chapter links for the current <tt>navIndex</tt>.
+    #</p>
+    method writePrevNext()
+        local prev, nxt
+        /navEntries := []
+        /navIndex := 0
+        write(outFile, "<div class=\"prevnext\">")
+        if navIndex > 1 then {
+            prev := navEntries[navIndex - 1]
+            write(outFile, "<a href=\"", escapeHtml(prev[1]), "\">&larr; ",
+                  escapeHtml(prev[2]), "</a>")
+            }
+        else
+            write(outFile, "<span></span>")
+        if navIndex > 0 & navIndex < *navEntries then {
+            nxt := navEntries[navIndex + 1]
+            write(outFile, "<a href=\"", escapeHtml(nxt[1]), "\">",
+                  escapeHtml(nxt[2]), " &rarr;</a>")
+            }
+        else
+            write(outFile, "<span></span>")
+        write(outFile, "</div>")
+        return
+    end
+
+    #<p>
+    # Page footer: optional copyright, always
+    # <tt>Powered by uscribe</tt>, and a Page source link when a
+    # chapter source path is known (file under <tt>_sources/</tt>).
+    # <[param srcPath chapter source path, or null]>
+    #</p>
+    method writeFooter(srcPath)
+        local base, needSep
+        needSep := &null
+        write(outFile, "<footer class=\"footer\" role=\"contentinfo\">")
+        if \copyrightNotice & *copyrightNotice > 0 then {
+            writes(outFile, "&copy; ", escapeHtml(copyrightNotice), ".")
+            needSep := 1
+            }
+        if \needSep then writes(outFile, " | ")
+        writes(outFile, "Powered by uscribe")
+        if \srcPath then {
+            base := basename(srcPath)
+            writes(outFile, " | <a href=\"_sources/", escapeHtml(base),
+                   "\" rel=\"nofollow\">Page source</a>")
+            }
+        write(outFile)
+        write(outFile, "</footer>")
+        return
+    end
+
+    #<p>
+    # Emit an <tt>hN</tt> heading (<tt>h2</tt> for level 1, etc.) with
+    # an <tt>id</tt> from <tt>anchorFor</tt>, then visit children.
+    # <[param n a Section node]>
+    #</p>
     method visitSection(n)
         local h
         h := "h" || (n.getLevel() + 1)  # h2 for level 1, h3 for level 2, ...
-        write(outFile, "<", h, " id=\"", anchorFor(n), "\">")
+        write(outFile, "<", h, " id=\"", escapeHtml(anchorFor(n)), "\">")
         writeInlineTitle(n.getTitle())
         write(outFile, "</", h, ">")
         every (!n.getChildren()).accept(self)
         return
     end
 
+    #<p>
+    # Emit a <tt>&lt;p&gt;</tt> wrapping inline children.
+    # <[param n a Paragraph node]>
+    #</p>
     method visitParagraph(n)
         write(outFile, "<p>")
         every (!n.getChildren()).accept(self)
@@ -90,6 +372,10 @@ class HtmlOutputter : Outputter (outFile, labelTable)
         return
     end
 
+    #<p>
+    # Emit a <tt>&lt;ul&gt;</tt> list.
+    # <[param n a BulletList node]>
+    #</p>
     method visitBulletList(n)
         write(outFile, "<ul>")
         every (!n.getChildren()).accept(self)
@@ -97,6 +383,10 @@ class HtmlOutputter : Outputter (outFile, labelTable)
         return
     end
 
+    #<p>
+    # Emit a <tt>&lt;ol&gt;</tt> starting at <tt>n.getStartAt()</tt>.
+    # <[param n an EnumList node]>
+    #</p>
     method visitEnumList(n)
         write(outFile, "<ol start=\"", n.getStartAt(), "\">")
         every (!n.getChildren()).accept(self)
@@ -104,6 +394,10 @@ class HtmlOutputter : Outputter (outFile, labelTable)
         return
     end
 
+    #<p>
+    # Emit a <tt>&lt;li&gt;</tt>.
+    # <[param n a ListItem node]>
+    #</p>
     method visitListItem(n)
         write(outFile, "<li>")
         every (!n.getChildren()).accept(self)
@@ -111,23 +405,42 @@ class HtmlOutputter : Outputter (outFile, labelTable)
         return
     end
 
+    #<p>
+    # Emit a <tt>&lt;pre&gt;&lt;code class="language-…"&gt;</tt> block.
+    # Languages <tt>icon</tt> / <tt>icn</tt> are normalized to
+    # <tt>unicon</tt> for highlighting.
+    # <[param n a CodeBlock node]>
+    #</p>
     method visitCodeBlock(n)
-        local ln
-        write(outFile, "<pre><code>")
+        local ln, lang, cls
+        lang := safeCssIdent(\n.getLanguage() | "text")
+        if lang == "icon" | lang == "icn" then
+            lang := "unicon"
+        cls := "language-" || lang
+        write(outFile, "<pre><code class=\"", escapeHtml(cls), "\">")
         every ln := !n.getLines() do
             write(outFile, escapeHtml(ln))
         write(outFile, "</code></pre>")
         return
     end
 
+    #<p>
+    # Emit an admonition <tt>div</tt> with a capitalized kind title.
+    # <[param n an Admonition node]>
+    #</p>
     method visitAdmonition(n)
-        write(outFile, "<div class=\"admonition ", n.getKind(), "\">")
-        write(outFile, "<p class=\"admonition-title\">", capitalize(n.getKind()), "</p>")
+        write(outFile, "<div class=\"admonition ", escapeHtml(n.getKind()), "\">")
+        write(outFile, "<p class=\"admonition-title\">",
+              escapeHtml(capitalize(n.getKind())), "</p>")
         every (!n.getChildren()).accept(self)
         write(outFile, "</div>")
         return
     end
 
+    #<p>
+    # Emit a bare <tt>&lt;table&gt;</tt> and visit row children.
+    # <[param n a Table node]>
+    #</p>
     method visitTable(n)
         write(outFile, "<table>")
         every (!n.getChildren()).accept(self)
@@ -135,26 +448,46 @@ class HtmlOutputter : Outputter (outFile, labelTable)
         return
     end
 
+    #<p>
+    # Emit an <tt>&lt;img&gt;</tt> with escaped <tt>src</tt> and <tt>alt</tt>.
+    # <[param n an Image node]>
+    #</p>
     method visitImage(n)
-        write(outFile, "<img src=\"", n.getURI(), "\" alt=\"",
-              escapeHtml(\n.getAlt()) | "", "\">")
+        local uri, cls
+        uri := n.getURI()
+        cls := "figure"
+        if find("logo", map(uri, &ucase, &lcase)) then
+            cls := "figure logo"
+        write(outFile, "<img class=\"", cls, "\" src=\"", escapeHtml(uri),
+              "\" alt=\"", escapeHtml(\n.getAlt()) | "", "\">")
         return
     end
 
+    #<p>
+    # Emit an HTML comment marker for an unhandled directive rather
+    # than silently dropping it. Normally
+    # <tt>DirectiveRegistry</tt> converts these during parsing.
+    # <[param n a RawDirective node]>
+    #</p>
     method visitRawDirective(n)
-        # Unknown directive that reached the Outputter unhandled --
-        # DirectiveRegistry (directive.icn) should normally have
-        # converted these to real nodes during parsing. Render a
-        # visible marker rather than silently dropping content.
-        write(outFile, "<!-- unhandled directive: ", n.getName(), " -->")
+        write(outFile, "<!-- unhandled directive: ", escapeHtml(n.getName()),
+              " -->")
         return
     end
 
+    #<p>
+    # Write escaped plain text.
+    # <[param n a Text node]>
+    #</p>
     method visitText(n)
         write(outFile, escapeHtml(n.getText()))
         return
     end
 
+    #<p>
+    # Emit <tt>&lt;em&gt;</tt> around inline children.
+    # <[param n an Emphasis node]>
+    #</p>
     method visitEmphasis(n)
         write(outFile, "<em>")
         every (!n.getChildren()).accept(self)
@@ -162,6 +495,10 @@ class HtmlOutputter : Outputter (outFile, labelTable)
         return
     end
 
+    #<p>
+    # Emit <tt>&lt;strong&gt;</tt> around inline children.
+    # <[param n a Strong node]>
+    #</p>
     method visitStrong(n)
         write(outFile, "<strong>")
         every (!n.getChildren()).accept(self)
@@ -169,17 +506,30 @@ class HtmlOutputter : Outputter (outFile, labelTable)
         return
     end
 
+    #<p>
+    # Emit <tt>&lt;code&gt;</tt> with escaped literal text.
+    # <[param n a Literal node]>
+    #</p>
     method visitLiteral(n)
         write(outFile, "<code>", escapeHtml(n.getText()), "</code>")
         return
     end
 
+    #<p>
+    # Emit an <tt>&lt;a href="file#anchor"&gt;</tt> for a resolved xref.
+    # <[param n a Reference node]>
+    #</p>
     method visitReference(n)
-        write(outFile, "<a href=\"", n.getTargetFile(), "#",
-              n.getTargetAnchor(), "\">", escapeHtml(n.getText()), "</a>")
+        write(outFile, "<a href=\"", escapeHtml(n.getTargetFile()), "#",
+              escapeHtml(n.getTargetAnchor()), "\">",
+              escapeHtml(n.getText()), "</a>")
         return
     end
 
+    #<p>
+    # Emit a <tt>broken-xref</tt> span and warn on <tt>&errout</tt>.
+    # <[param n an unresolved xref node]>
+    #</p>
     method visitBrokenXref(n)
         write(outFile, "<span class=\"broken-xref\">", escapeHtml(n.getLabel()),
               "</span>")
@@ -187,11 +537,11 @@ class HtmlOutputter : Outputter (outFile, labelTable)
         return
     end
 
-    # <p>
-    # Helper: write a Section's title, which may itself contain inline
-    # markup (e.g. a `code` span in a heading), by running it through
-    # parseInline() and dispatching each piece.
-    # </p>
+    #<p>
+    # Write a section title that may contain inline markup by running
+    # it through <tt>parseInline()</tt> and dispatching each piece.
+    # <[param titleText raw title string]>
+    #</p>
     method writeInlineTitle(titleText)
         local piece
         every piece := !parseInline(titleText) do
@@ -199,16 +549,22 @@ class HtmlOutputter : Outputter (outFile, labelTable)
         return
     end
 
+    #<p>
+    # Anchor id for a section: explicit label if set, else
+    # <tt>slugify</tt> of the title.
+    # <[param sectionNode a Section node]>
+    # <[returns anchor string]>
+    #</p>
     method anchorFor(sectionNode)
         return \sectionNode.getLabel() | slugify(sectionNode.getTitle())
     end
 end
 
-# <p>
-# Minimal HTML-escaping helper -- deliberately small and dependency
-# free; both unidoc and uscribe can share this instead of each having
-# their own ad hoc escaper (compare to protectLine() in UniHTML.icn).
-# </p>
+#<p>
+# Escape <tt>&amp; &lt; &gt; "</tt> for HTML text and attributes.
+# <[param s input string, or null treated as empty]>
+# <[returns escaped string]>
+#</p>
 procedure escapeHtml(s)
     local out
     /s := ""
@@ -226,11 +582,48 @@ procedure escapeHtml(s)
     return out
 end
 
-# <p>
-# Turn a section title into a filesystem/anchor-safe slug, used as a
-# fallback anchor when no explicit label was set.
-# </p>
+#<p>
+# Keep only letters, digits, <tt>_</tt>, and <tt>-</tt> so document
+# strings are safe in CSS class / HTML id tokens. Empty result becomes
+# <tt>"text"</tt>.
+# <[param s input string, or null]>
+# <[returns sanitized token]>
+#</p>
+procedure safeCssIdent(s)
+    local out, c, ok
+    /s := ""
+    ok := &letters ++ &digits ++ '_-'
+    out := ""
+    every c := !s do
+        if any(ok, c) then
+            out ||:= c
+    if *out = 0 then
+        return "text"
+    return out
+end
 
+#<p>
+# Theme directory / CSS stem names used in HTML attributes and inline
+# JavaScript. Same character set as <tt>safeCssIdent</tt>; empty or
+# fully stripped input becomes <tt>"basic"</tt>.
+# <[param s theme name, or null]>
+# <[returns sanitized theme name]>
+#</p>
+procedure safeThemeName(s)
+    local t
+    t := safeCssIdent(\s | "basic")
+    if t == "text" & (\s | "basic") ~== "text" then
+        return "basic"
+    if *(\s | "") = 0 then
+        return "basic"
+    return t
+end
+
+#<p>
+# Uppercase the first character of <tt>s</tt> (for admonition titles).
+# <[param s non-empty string]>
+# <[returns capitalized string]>
+#</p>
 procedure capitalize(s)
     return map(s[1], &lcase, &ucase) || s[2:0]
 end

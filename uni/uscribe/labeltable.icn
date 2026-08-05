@@ -175,7 +175,30 @@ end
 # <[returns the HTML basename, including <tt>".html"</tt>]>
 # </p>
 procedure chapterOutputName(srcPath)
-    return suffix(basename(srcPath))[1] || ".html"
+    return safeHtmlFileStem(suffix(basename(srcPath))[1]) || ".html"
+end
+
+# <p>
+# Keep a chapter basename usable as an HTML file stem and in
+# <tt>href</tt> values: letters, digits, <tt>_ . -</tt> only; other
+# characters become <tt>-</tt>. Empty input becomes <tt>"chapter"</tt>.
+# <[param s basename without extension, or null]>
+# <[returns sanitized stem]>
+# </p>
+procedure safeHtmlFileStem(s)
+    local out, c, ok
+    /s := ""
+    ok := &letters ++ &digits ++ '_.-'
+    out := ""
+    every c := !s do {
+        if any(ok, c) then
+            out ||:= c
+        else
+            out ||:= "-"
+        }
+    if *out = 0 then
+        return "chapter"
+    return out
 end
 
 # <p>

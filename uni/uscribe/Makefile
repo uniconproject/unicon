@@ -30,7 +30,8 @@ clean:
 directive.u : directive.icn inline.u node.u
 inline.u : inline.icn node.u
 labeltable.u : labeltable.icn node.u
-main.u : main.icn directive.u labeltable.u manifest.u outputter.u parser.u
+latexout.u : latexout.icn inline.u labeltable.u node.u outputter.u
+main.u : main.icn directive.u labeltable.u latexout.u manifest.u outputter.u parser.u
 manifest.u : manifest.icn
 node.u : node.icn
 outputter.u : outputter.icn inline.u node.u

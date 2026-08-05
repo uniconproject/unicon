@@ -1,36 +1,59 @@
+#<p>
+# <tt>uscribe</tt> CLI driver: two-pass book build from a manifest.
+# Pass 1 parses every chapter and collects labels; pass 2 resolves
+# xrefs and renders via <tt>HtmlOutputter</tt> or <tt>LatexOutputter</tt>.
+# Usage: <tt>uscribe --manifest=book.idx --title=… --targetDir=…</tt>
+# and optionally <tt>--format=html|latex|pdf</tt>.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
+link io
+link basename
+
 import util
+import json
 import uscribe
 
-#
-# main.icn
-#
-# uscribe driver. Usage:
-#   uscribe --manifest=book.idx --title="Programming with Unicon" \
-#           --targetDir=./htmlBook
-#
-# Two-pass build, matching the design discussion:
-#   pass 1: parse every chapter file into a Document (parser.icn),
-#           then walk each Document with LabelTable.collect()
-#           (labeltable.icn) to build the global label table.
-#   pass 2: walk each Document again with LabelTable.resolve() to
-#           swap every PendingXref for a real Reference, then hand
-#           each resolved Document to an Outputter (outputter.icn).
-#
-# This file is in the public domain.
-#
+global targetDir, bookTitle, themeName, copyrightNotice, logoHref
 
-global targetDir, bookTitle
-
+#<p>
+# Parse CLI options, load the manifest, run the two-pass build, and
+# dispatch to <tt>renderHtml</tt> or <tt>renderLatex</tt>.
+# <[param args command-line argument list]>
+#</p>
 procedure main(args)
     local manifestPath, mf, parser, registry, labels, chapterPath, doc
-    local outp, outPath, f
+    local docs, format
 
     if *args = 0 then helpMesg()
-    Args(args, set("manifest","title","targetDir"), helpMesg)
+    Args(args, set("manifest","title","targetDir","theme","themePath","format",
+                   "copyright","logo"),
+         helpMesg)
 
     manifestPath := Args().getOpt("manifest") | helpMesg()
     bookTitle    := Args().getOptDef("title", "Untitled Book")
-    targetDir    := Args().getOptDef("targetDir", "./htmlBook")
+    copyrightNotice := Args().getOpt("copyright")
+    logoHref := &null
+    format       := map(Args().getOptDef("format", "html"), &ucase, &lcase)
+    if not member(set(["html","latex","pdf"]), format) then
+        stop("uscribe: --format must be html, latex, or pdf (got '",
+             format, "')")
+
+    if format == "html" then
+        targetDir := Args().getOptDef("targetDir", "./htmlBook")
+    else
+        targetDir := Args().getOptDef("targetDir", "./latexBook")
+
+    themeName := Args().getOptDef("theme", "basic")
+    if themeName ~== safeThemeName(themeName) then
+        stop("uscribe: invalid --theme '", themeName,
+             "'; use only letters, digits, '_' or '-'")
+    themeName := safeThemeName(themeName)
 
     registry := DirectiveRegistry()
     parser   := Parser()
@@ -46,53 +69,624 @@ procedure main(args)
     every chapterPath := !mf.getChapterPaths() do {
         doc := parser.parseFile(chapterPath) |
             stop("uscribe: could not read chapter '", chapterPath, "'")
+        doc.setTitle(bookTitle)
         mf.setDocument(chapterPath, doc)
         labels.collect(doc)
         }
 
+    docs := mf.getOrderedDocuments()
     ensureDir(targetDir)
 
-    # --- Pass 2: resolve cross-refs, then render each chapter ---
-    every doc := !mf.getOrderedDocuments() do {
+    if format == "html" then
+        renderHtml(docs, labels)
+    else if format == "pdf" then
+        renderLatex(docs, labels, 1)
+    else
+        renderLatex(docs, labels)
+end
+
+#<p>
+# HTML builder: install themes, write search/index pages, then one
+# <tt>.html</tt> per chapter with resolved xrefs.
+# <[param docs ordered list of Document nodes]>
+# <[param labels LabelTable after collect()]>
+#</p>
+procedure renderHtml(docs, labels)
+    local themePath, themeDir, nav, indexDocs, doc, outp, outPath, f, i
+    local logoSrc, logoBase
+
+    themePath := Args().getOpt("themePath")
+    themeDir := resolveThemeDir(themeName, themePath) |
+        stop("uscribe: theme '", themeName, "' not found",
+             " (tried --themePath, ./themes/, and built-in themes/)")
+
+    ensureDir(targetDir || "/_static")
+    installThemeAssets(dirname(themeDir), themeName, targetDir || "/_static")
+    write("theme: ", themeName, " (default; all themes available in UI)")
+
+    logoSrc := Args().getOpt("logo")
+    if \logoSrc then {
+        logoBase := basename(logoSrc)
+        copyFile(logoSrc, targetDir || "/_static/" || logoBase) |
+            stop("uscribe: could not copy logo '", logoSrc, "'")
+        logoHref := "_static/" || logoBase
+        write("logo: ", logoHref)
+        }
+
+    nav := buildNavEntries(docs)
+    indexDocs := []
+    every doc := !docs do
+        put(indexDocs, [
+            chapterOutputName(doc.getSrcName()),
+            chapterDisplayTitle(doc),
+            collectSearchText(doc)
+            ])
+    writeSearchIndex(targetDir, indexDocs)
+    writeSearchPage(targetDir, bookTitle, nav)
+    writeIndexPage(targetDir, bookTitle, nav)
+    ensureDir(targetDir || "/_sources")
+
+    every i := 1 to *docs do {
+        doc := docs[i]
         labels.resolve(doc)
         outPath := targetDir || "/" || chapterOutputName(doc.getSrcName())
         f := open(outPath, "w") | stop("uscribe: could not write '", outPath, "'")
         outp := HtmlOutputter()
         outp.setOutFile(f)
         outp.setLabelTable(labels)
+        outp.setNav(bookTitle, nav, i, themeName)
+        outp.setCopyright(copyrightNotice)
+        outp.setLogo(logoHref)
         doc.accept(outp)
         close(f)
         write("wrote ", outPath)
+        copyFile(doc.getSrcName(),
+                 targetDir || "/_sources/" || basename(doc.getSrcName())) |
+            write(&errout, "warning: could not copy page source '",
+                  doc.getSrcName(), "'")
         }
+    return
 end
 
-procedure chapterOutputName(srcPath)
-    local base
-    srcPath ? {
-        tab(find(".") | 0)
-        base := "" || &subject[1:&pos]
+#<p>
+# LaTeX / PDF builder: one <tt>book.tex</tt> for the whole manifest.
+# If <tt>wantPdf</tt> is non-null, run a TeX engine twice afterward to
+# produce <tt>book.pdf</tt> (TOC / xrefs).
+# <[param docs ordered list of Document nodes]>
+# <[param labels LabelTable after collect()]>
+# <[param wantPdf non-null to run pdflatex/xelatex/lualatex]>
+#</p>
+procedure renderLatex(docs, labels, wantPdf)
+    local outPath, f, outp, doc, engine, rc
+
+    outPath := targetDir || "/book.tex"
+    f := open(outPath, "w") | stop("uscribe: could not write '", outPath, "'")
+    outp := LatexOutputter()
+    outp.setOutFile(f)
+    outp.setLabelTable(labels)
+    outp.setBookTitle(bookTitle)
+    outp.writePreamble()
+    every doc := !docs do {
+        labels.resolve(doc)
+        doc.accept(outp)
         }
-    base ? {
-        every tab(upto('/')) do move(1)
-        base := "" || tab(0)
-        }
-    return base || ".html"
+    outp.writeEpilogue()
+    close(f)
+    write("wrote ", outPath)
+
+    if /wantPdf then
+        return
+
+    engine := findPdfEngine() |
+        stop("uscribe: --format=pdf needs pdflatex, xelatex, or lualatex",
+             " in PATH (wrote ", outPath, " only)")
+    write("running ", engine, " (pass 1)…")
+    rc := runLatex(engine, targetDir, "book")
+    write("running ", engine, " (pass 2, for TOC/xrefs)…")
+    rc := runLatex(engine, targetDir, "book")
+    if rc ~= 0 then
+        stop("uscribe: ", engine, " failed (exit ", rc,
+             "); see ", targetDir, "/book.log")
+    write("wrote ", targetDir, "/book.pdf")
+    return
 end
 
+#<p>
+# Find the first available TeX engine on <tt>PATH</tt> via IPL
+# <tt>pathfind()</tt>.
+# <[returns "pdflatex", "xelatex", or "lualatex"]>
+# <[fails if none are found]>
+#</p>
+procedure findPdfEngine()
+    local cmd
+    every cmd := !["pdflatex", "xelatex", "lualatex"] do
+        if pathfind(cmd) then
+            return cmd
+    fail
+end
+
+#<p>
+# Run <tt>engine</tt> on <tt>basename.tex</tt> inside <tt>dir</tt>
+# with nonstopmode / halt-on-error. Uses <tt>chdir()</tt> and the
+# argv form of <tt>system()</tt> (no shell).
+# <[param engine TeX binary name]>
+# <[param dir working directory]>
+# <[param basename tex file basename without .tex]>
+# <[returns system() exit status]>
+#</p>
+procedure runLatex(engine, dir, basename)
+    local cwd, rc, nullf
+    cwd := chdir()
+    chdir(dir) | stop("uscribe: chdir(", dir, ") failed")
+    nullf := open("/dev/null", "w") | open("NUL", "w")
+    rc := system([engine, "-interaction=nonstopmode", "-halt-on-error",
+                  basename || ".tex"], , nullf, nullf)
+    close(\nullf)
+    chdir(cwd) | stop("uscribe: chdir back to ", cwd, " failed")
+    return rc
+end
+
+#<p>
+# Locate <tt>themes/NAME</tt>. Order: explicit <tt>--themePath</tt>,
+# <tt>./themes/NAME</tt>, then <tt>themes/</tt> next to this source
+# tree (<tt>../themes</tt> or <tt>./themes</tt>).
+# <[param name theme subdirectory name]>
+# <[param themePath optional root from --themePath]>
+# <[returns path to a valid theme directory]>
+# <[fails if no candidate looks valid]>
+#</p>
+procedure resolveThemeDir(name, themePath)
+    local cand, root
+    if \themePath then {
+        cand := themePath || "/" || name
+        if themeLooksValid(cand) then return cand
+        }
+    every root := !["./themes", "../themes", "themes"] do {
+        cand := root || "/" || name
+        if themeLooksValid(cand) then return cand
+        }
+    fail
+end
+
+#<p>
+# Succeed if <tt>dir/static/book.css</tt> is readable.
+# <[param dir candidate theme directory]>
+# <[fails if book.css cannot be opened]>
+#</p>
+procedure themeLooksValid(dir)
+    local f
+    f := open(dir || "/static/book.css", "r") | fail
+    close(f)
+    return
+end
+
+#<p>
+# Install shared JS/CSS plus every built-in theme as
+# <tt>theme-NAME.css</tt> so the browser switcher can change skins live.
+# <tt>defaultTheme</tt> is still used as the initial/fallback choice
+# (also copied to <tt>book.css</tt>).
+# <[param themesRoot parent of _shared and theme dirs]>
+# <[param defaultTheme name used for book.css alias]>
+# <[param destStatic destination _static directory]>
+#</p>
+procedure installThemeAssets(themesRoot, defaultTheme, destStatic)
+    local shared, name, src, f
+    ensureDir(destStatic)
+    shared := themesRoot || "/_shared"
+    f := open(shared || "/search.js", "r")
+    if \f then {
+        close(f)
+        copyDirFiles(shared, destStatic)
+        }
+    every name := !["basic", "classic", "dark"] do {
+        src := themesRoot || "/" || name || "/static/book.css"
+        f := open(src, "r")
+        if \f then {
+            close(f)
+            copyFile(src, destStatic || "/theme-" || name || ".css") |
+                write(&errout, "uscribe: could not copy theme ", name)
+            }
+        }
+    # Convenience alias for tools that still look for book.css
+    copyFile(destStatic || "/theme-" || defaultTheme || ".css",
+             destStatic || "/book.css") |
+        write(&errout, "uscribe: could not install book.css alias")
+    return
+end
+
+#<p>
+# Copy one file with <tt>reads</tt>/<tt>writes</tt> (no shell).
+# <[param src source path]>
+# <[param dst destination path]>
+# <[fails if open/read/write fails]>
+#</p>
+procedure copyFile(src, dst)
+    local fin, fout, chunk
+    fin := open(src) | fail
+    fout := open(dst, "w") | {
+        close(fin)
+        fail
+        }
+    while chunk := reads(fin, 8192) do
+        writes(fout, chunk)
+    close(fin)
+    close(fout)
+    return
+end
+
+#<p>
+# Copy every non-<tt>.</tt>/<tt>..</tt> entry from <tt>srcDir</tt> into
+# <tt>destDir</tt> (flat; subdirectories are skipped on copy failure).
+# <[param srcDir source directory]>
+# <[param destDir destination directory]>
+#</p>
+procedure copyDirFiles(srcDir, destDir)
+    local d, name
+    d := open(srcDir) | fail
+    while name := read(d) do {
+        if name == "." | name == ".." then next
+        copyFile(srcDir || "/" || name, destDir || "/" || name) | &null
+        }
+    close(d)
+    return
+end
+
+#<p>
+# Parent directory of a path (POSIX <tt>/</tt> separators), via IPL
+# <tt>tail()</tt>. Bare names yield <tt>"."</tt>.
+# <[param path file or directory path]>
+# <[returns parent path, or "." if none]>
+#</p>
+procedure dirname(path)
+    local parts
+    parts := tail(path)
+    if /parts[1] | (*parts[1] = 0) then
+        return "."
+    return parts[1]
+end
+
+#<p>
+# Build sidebar/nav entries from ordered documents.
+# <[param docs list of Document nodes]>
+# <[returns list of [htmlFile, displayTitle] pairs]>
+#</p>
+procedure buildNavEntries(docs)
+    local nav, doc
+    nav := []
+    every doc := !docs do
+        put(nav, [chapterOutputName(doc.getSrcName()), chapterDisplayTitle(doc)])
+    return nav
+end
+
+#<p>
+# Display title for a chapter: first <tt>Section</tt> title, else the
+# HTML basename.
+# <[param doc a Document node]>
+# <[returns title string]>
+#</p>
+procedure chapterDisplayTitle(doc)
+    local n
+    every n := !doc.getChildren() do
+        if n.nodeType() == "Section" then
+            return n.getTitle()
+    return chapterOutputName(doc.getSrcName())
+end
+
+#<p>
+# Flatten visible text from a <tt>Document</tt> for the client-side
+# search index.
+# <[param doc a Document node]>
+# <[returns space-joined searchable text]>
+#</p>
+procedure collectSearchText(doc)
+    local buf
+    buf := []
+    collectSearchWalk(doc.getChildren(), buf)
+    return joinSearch(buf)
+end
+
+#<p>
+# Recursively append searchable strings from a node list into
+# <tt>buf</tt>.
+# <[param nodeList list of Node]>
+# <[param buf accumulator list mutated in place]>
+#</p>
+procedure collectSearchWalk(nodeList, buf)
+    local n, kids
+    every n := !nodeList do {
+        case n.nodeType() of {
+            "Section": {
+                put(buf, n.getTitle())
+                collectSearchWalk(n.getChildren(), buf)
+                }
+            "Paragraph" | "ListItem" | "Admonition" | "Emphasis" | "Strong": {
+                collectSearchWalk(n.getChildren(), buf)
+                }
+            "BulletList" | "EnumList" | "Document": {
+                collectSearchWalk(n.getChildren(), buf)
+                }
+            "Text" | "Literal": {
+                put(buf, n.getText())
+                }
+            "CodeBlock": {
+                every put(buf, !n.getLines())
+                }
+            default: {
+                }
+            }
+        }
+    return
+end
+
+#<p>
+# Join non-empty pieces with spaces.
+# <[param buf list of strings]>
+# <[returns joined string]>
+#</p>
+procedure joinSearch(buf)
+    local s, piece
+    s := ""
+    every piece := !buf do
+        if *piece > 0 then
+            s ||:= piece || " "
+    return s
+end
+
+#<p>
+# Emit <tt>searchindex.js</tt>:
+# <tt>window.USCRIBE_SEARCH = [{title,file,body}, ...]</tt>
+# via <tt>json.tojson()</tt>.
+# <[param dir output directory]>
+# <[param indexDocs list of [file, title, body] triples]>
+#</p>
+procedure writeSearchIndex(dir, indexDocs)
+    local f, e, rows, row
+    rows := []
+    every e := !indexDocs do {
+        row := table()
+        row["title"] := \e[2] | ""
+        row["file"]  := \e[1] | ""
+        row["body"]  := \e[3] | ""
+        put(rows, row)
+        }
+    f := open(dir || "/searchindex.js", "w") |
+        stop("uscribe: could not write searchindex.js")
+    write(f, "window.USCRIBE_SEARCH = ",
+          tojson(rows) | stop("uscribe: tojson failed for search index"),
+          ";")
+    close(f)
+    write("wrote ", dir, "/searchindex.js")
+    return
+end
+
+#<p>
+# Write the shared HTML head and opening <tt>layout</tt> div for
+# index/search shell pages.
+# <[param f open output file]>
+# <[param title page &lt;title&gt; text]>
+#</p>
+procedure writeShellHead(f, title)
+    write(f, "<!DOCTYPE html>")
+    write(f, "<html lang=\"en\" data-theme=\"",
+          escapeHtml(safeThemeName(\themeName | "basic")),
+          "\"><head>")
+    write(f, "<meta charset=\"utf-8\">")
+    write(f, "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
+    write(f, "<title>", escapeHtml(title), "</title>")
+    writeThemeBootStatic(f, \themeName | "basic")
+    write(f, "<link rel=\"stylesheet\" href=\"_static/highlight.css\">")
+    write(f, "<script defer src=\"_static/search.js\"></script>")
+    write(f, "<script defer src=\"_static/highlight-unicon.js\"></script>")
+    write(f, "<script defer src=\"_static/theme-switcher.js\"></script>")
+    write(f, "</head><body><div class=\"layout\">")
+    return
+end
+
+#<p>
+# Emit theme-boot script/noscript links into an open file (same logic
+# as <tt>HtmlOutputter.writeThemeBoot</tt>).
+# <[param f open output file]>
+# <[param fallback theme name]>
+#</p>
+procedure writeThemeBootStatic(f, fallback)
+    fallback := safeThemeName(fallback)
+    write(f, "<script>")
+    write(f, "(function(){try{var t=localStorage.getItem('uscribe-theme');")
+    write(f, "if(t==='basic'||t==='classic'||t==='dark')")
+    write(f, "document.documentElement.setAttribute('data-theme',t);")
+    write(f, "else t='", fallback, "';")
+    write(f, "document.write('<link id=\"theme-css\" rel=\"stylesheet\" href=\"_static/theme-'+t+'.css\">');")
+    write(f, "}catch(e){document.write('<link id=\"theme-css\" rel=\"stylesheet\" href=\"_static/theme-",
+          fallback, ".css\">');}})();")
+    write(f, "</script>")
+    write(f, "<noscript><link id=\"theme-css\" rel=\"stylesheet\" href=\"_static/theme-",
+          escapeHtml(fallback), ".css\"></noscript>")
+    return
+end
+
+#<p>
+# Emit a sidebar TOC for shell pages, marking <tt>currentFile</tt> as
+# the current entry when it matches.
+# <[param f open output file]>
+# <[param title book title]>
+# <[param nav list of [htmlFile, chapterTitle] pairs]>
+# <[param currentFile basename of the current page, or null]>
+#</p>
+procedure writeSidebarStatic(f, title, nav, currentFile)
+    local e
+    write(f, "<nav class=\"sidebar\" aria-label=\"Book contents\">")
+    if \logoHref & *logoHref > 0 then
+        write(f, "<a class=\"sidebar-logo\" href=\"index.html\">",
+              "<img src=\"", escapeHtml(logoHref),
+              "\" alt=\"", escapeHtml(title), "\"></a>")
+    write(f, "<div class=\"book-title\"><a href=\"index.html\">",
+          escapeHtml(title), "</a></div>")
+    write(f, "<label class=\"search-hint\" for=\"theme-select\">Theme</label>")
+    write(f, "<select class=\"search-box\" id=\"theme-select\" aria-label=\"Color theme\">")
+    write(f, "<option value=\"basic\">basic</option>")
+    write(f, "<option value=\"classic\">classic</option>")
+    write(f, "<option value=\"dark\">dark</option>")
+    write(f, "</select>")
+    write(f, "<p class=\"search-hint\">Filter chapters; Enter for full search</p>")
+    write(f, "<input class=\"search-box\" id=\"nav-search\" type=\"search\" ")
+    write(f, "placeholder=\"Search…\" aria-label=\"Filter chapter list\">")
+    write(f, "<ol id=\"nav-toc\">")
+    every e := !nav do {
+        if \currentFile == e[1] then
+            write(f, "<li class=\"current\">", escapeHtml(e[2]), "</li>")
+        else
+            write(f, "<li><a href=\"", escapeHtml(e[1]), "\">",
+                  escapeHtml(e[2]), "</a></li>")
+        }
+    write(f, "</ol>")
+    write(f, "<p class=\"search-hint\"><a href=\"search.html\">Search page</a></p>")
+    write(f, "</nav>")
+    return
+end
+
+#<p>
+# Write <tt>index.html</tt>: book title and ordered chapter links.
+# <[param dir output directory]>
+# <[param title book title]>
+# <[param nav list of [htmlFile, chapterTitle] pairs]>
+#</p>
+procedure writeIndexPage(dir, title, nav)
+    local f, e
+    f := open(dir || "/index.html", "w") |
+        stop("uscribe: could not write '", dir, "/index.html'")
+    writeShellHead(f, title)
+    writeSidebarStatic(f, title, nav, "index.html")
+    write(f, "<div class=\"main\">")
+    write(f, "<h1>", escapeHtml(title), "</h1>")
+    write(f, "<p>Contents</p>")
+    write(f, "<ol>")
+    every e := !nav do
+        write(f, "<li><a href=\"", escapeHtml(e[1]), "\">",
+              escapeHtml(e[2]), "</a></li>")
+    write(f, "</ol>")
+    writeFooterStatic(f)
+    write(f, "</div></div></body></html>")
+    close(f)
+    write("wrote ", dir, "/index.html")
+    return
+end
+
+#<p>
+# Write <tt>search.html</tt> with client-side search UI over
+# <tt>searchindex.js</tt>.
+# <[param dir output directory]>
+# <[param title book title]>
+# <[param nav list of [htmlFile, chapterTitle] pairs]>
+#</p>
+procedure writeSearchPage(dir, title, nav)
+    local f
+    f := open(dir || "/search.html", "w") |
+        stop("uscribe: could not write search.html")
+    writeShellHead(f, title || " — Search")
+    write(f, "<script src=\"searchindex.js\"></script>")
+    writeSidebarStatic(f, title, nav, "search.html")
+    write(f, "<div class=\"main\">")
+    write(f, "<h1>Search</h1>")
+    write(f, "<input class=\"search-box\" id=\"full-search\" type=\"search\" ")
+    write(f, "placeholder=\"Search the book…\" style=\"max-width:28rem\">")
+    write(f, "<div id=\"search-results\"></div>")
+    write(f, "<script>")
+    write(f, "(function(){")
+    write(f, "function qparam(){var m=location.search.match(/[?&]q=([^&]*)/);")
+    write(f, "return m?decodeURIComponent(m[1].replace(/\\+/g,' ')):''}")
+    write(f, "function run(q){q=(q||'').toLowerCase().trim();")
+    write(f, "var box=document.getElementById('search-results');")
+    write(f, "var data=window.USCRIBE_SEARCH||[];")
+    write(f, "if(!q){box.innerHTML='<p>Type a query.</p>';return}")
+    write(f, "var hits=[];")
+    write(f, "for(var i=0;i<data.length;i++){var e=data[i];")
+    write(f, "var hay=((e.title||'')+' '+(e.body||'')).toLowerCase();")
+    write(f, "if(hay.indexOf(q)!==-1)hits.push(e)}")
+    write(f, "if(!hits.length){box.innerHTML='<p>No matches.</p>';return}")
+    write(f, "var ol=document.createElement('ol');")
+    write(f, "for(var j=0;j<hits.length;j++){")
+    write(f, "var li=document.createElement('li');")
+    write(f, "var a=document.createElement('a');")
+    write(f, "a.href=hits[j].file;a.textContent=hits[j].title;")
+    write(f, "li.appendChild(a);ol.appendChild(li)}")
+    write(f, "box.textContent='';box.appendChild(ol)}")
+    write(f, "var input=document.getElementById('full-search');")
+    write(f, "var initial=qparam();input.value=initial;run(initial);")
+    write(f, "input.addEventListener('input',function(){run(input.value)});")
+    write(f, "})();")
+    write(f, "</script>")
+    writeFooterStatic(f)
+    write(f, "</div></div></body></html>")
+    close(f)
+    write("wrote ", dir, "/search.html")
+    return
+end
+
+#<p>
+# Page footer for shell pages (index/search): optional copyright
+# and always <tt>Powered by uscribe</tt> (no page source).
+# <[param f open output file]>
+#</p>
+procedure writeFooterStatic(f)
+    local needSep
+    needSep := &null
+    write(f, "<footer class=\"footer\" role=\"contentinfo\">")
+    if \copyrightNotice & *copyrightNotice > 0 then {
+        writes(f, "&copy; ", escapeHtml(copyrightNotice), ".")
+        needSep := 1
+        }
+    if \needSep then writes(f, " | ")
+    writes(f, "Powered by uscribe")
+    write(f)
+    write(f, "</footer>")
+    return
+end
+
+#<p>
+# Create directory <tt>d</tt> and any missing parents using the
+# built-in <tt>mkdir()</tt> (portable <tt>mkdir -p</tt>).
+# <[param d directory path]>
+#</p>
 procedure ensureDir(d)
-    # Unicon's mkdir()/system() usage mirrors makeDirPath() in
-    # uni/unidoc/UniHTML.icn -- that procedure is a good candidate to
-    # extract into the shared chrome module (refactor #3) rather than
-    # reimplementing directory creation here.
-    system("mkdir -p " || d)
+    local f, parent
+    if d == "" | d == "." | d == "/" then return
+    if mkdir(d) then return          # created
+    if f := open(d) then {           # already exists
+        close(f)
+        return
+        }
+    parent := dirname(d)
+    if parent == d then
+        stop("uscribe: cannot create directory '", d, "'")
+    ensureDir(parent)
+    mkdir(d) | {
+        if f := open(d) then {
+            close(f)
+            return
+            }
+        stop("uscribe: cannot create directory '", d, "'")
+        }
+    return
 end
 
+#<p>
+# Print usage and exit via <tt>stop()</tt>.
+#</p>
 procedure helpMesg()
-    write("Usage: uscribe --manifest=FILE [--title=TITLE] [--targetDir=DIR]")
+    write("Usage: uscribe --manifest=FILE [options]")
     write()
-    write("  --manifest=FILE   Plain-text chapter list, one source path per")
-    write("                    line (# comments and blank lines allowed).")
-    write("  --title=TITLE     Book title (default: \"Untitled Book\")")
-    write("  --targetDir=DIR   Where to write generated HTML (default: ./htmlBook)")
+    write("  --manifest=FILE     Plain-text chapter list, one source path per")
+    write("                      line (# comments and blank lines allowed).")
+    write("  --title=TITLE       Book title (default: \"Untitled Book\")")
+    write("  --copyright=TEXT    Footer © line (e.g. \"2026, Jafar Al-Gharaibeh\")")
+    write("  --logo=FILE         Sidebar logo image (copied to _static/; HTML only)")
+    write("  --format=FMT        html (default), latex, or pdf")
+    write("  --targetDir=DIR     Output directory (default: ./htmlBook or")
+    write("                      ./latexBook for latex/pdf)")
+    write("  --theme=NAME        HTML theme: basic, classic, dark (default: basic)")
+    write("  --themePath=DIR     Directory containing theme subdirs (optional)")
+    write()
+    write("  HTML footers always include \"Powered by uscribe\".")
+    write("  latex writes book.tex; pdf also runs pdflatex/xelatex/lualatex.")
     stop()
 end

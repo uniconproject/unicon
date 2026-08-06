@@ -68,7 +68,7 @@ class List : DropDown(
    end
 
    method resize()
-      local bw
+      local bw, border
 
       if /self.selection_list then
          fatal("no selection list specified")
@@ -84,12 +84,13 @@ class List : DropDown(
       /self.h_spec := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
       self.Component.compute_absolutes()
 
-      bw := self.h - 2 * BORDER_WIDTH
+      border := if GuiThemeIsFlat() then 1 else BORDER_WIDTH
+      bw := self.h - 2 * border
 
       #
       # Set button position and size
       #
-      b.set_pos(self.w - BORDER_WIDTH - bw, BORDER_WIDTH)
+      b.set_pos(self.w - border - bw, border)
       b.set_size(bw, bw)
       b.resize()
 
@@ -97,9 +98,9 @@ class List : DropDown(
       # Set label position and size - reflect the way the textlist works.
       #
       l.set_pos(DEFAULT_TEXT_X_SURROUND - HIGHLIGHT_TEXT_SPACING,
-                BORDER_WIDTH)
+                border)
       l.set_size(self.w - bw - 2 * (DEFAULT_TEXT_X_SURROUND - HIGHLIGHT_TEXT_SPACING),
-                 self.h - 2 * BORDER_WIDTH)
+                 self.h - 2 * border)
 
       l.resize()
 
@@ -111,7 +112,7 @@ class List : DropDown(
       # Draw text element 
       #
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      ThemeSunkenPanel(self.cbwin, self.x, self.y, self.w, self.h)
       #
       # Draw button and list
       #

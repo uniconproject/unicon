@@ -35,7 +35,7 @@ class TextButton : Button(
    end
 
    method display(buffer_flag)
-      local cw, yoff, dwin
+      local cw, yoff, dwin, state
       yoff := self.y + self.h / 2
 
       if /self.transparent then{
@@ -45,28 +45,63 @@ class TextButton : Button(
       else
          dwin := self.cwin
 
-      case self.internal_alignment of {
-         "c" : center_string(dwin, self.tx + self.tw / 2, yoff, self.label, self.accel)
-         "l" : left_string(dwin, self.tx, yoff, self.label, self.accel)
-         "r" : right_string(dwin, self.tx + self.tw, yoff, self.label, self.accel)
-         default : fatal("incorrect internal_alignment specifier: " || image(self.internal_alignment))
-      }
-
-      if /self.no_keyboard_flag & \self.has_focus then {
-         DashedRectangle(dwin, self.x + BORDER_WIDTH + 1, self.y + BORDER_WIDTH + 1, self.w - 2 * BORDER_WIDTH - 2, self.h - 2 * BORDER_WIDTH - 2)
-      }
-
-      if \self.is_down then {
-         cw := Clone(dwin, "drawop=reverse")
-         FillRectangle(cw, self.x, self.y, self.w, self.h)
-         Uncouple(cw)
-         DrawSunkenRectangle(dwin, self.x, self.y, self.w, self.h)
-      } else {
-         DrawRaisedRectangle(dwin, self.x, self.y, self.w, self.h)
-         if /self.is_checked_flag then
-            DrawRaisedRectangle(dwin, self.x, self.y, self.w, self.h)
+      if GuiThemeIsFlat() then {
+         #
+         # Flat: fill face first (up / pressed / checked), then label
+         # in the normal fg.  Press/check tints stay light enough that
+         # dark text remains readable (menus use accent fill separately).
+         #
+         if \self.is_down then
+            state := "down"
+         else if \self.is_checked_flag then
+            state := "checked"
          else
+            state := "up"
+         ThemeFillFace(dwin, self.x, self.y, self.w, self.h, state,
+            ThemeComponentBg(self.attribs) | &null)
+
+         case self.internal_alignment of {
+            "c" : center_string(dwin, self.tx + self.tw / 2, yoff, self.label, self.accel)
+            "l" : left_string(dwin, self.tx, yoff, self.label, self.accel)
+            "r" : right_string(dwin, self.tx + self.tw, yoff, self.label, self.accel)
+            default : fatal("incorrect internal_alignment specifier: " || image(self.internal_alignment))
+         }
+
+         if \self.is_down | \self.is_checked_flag then
             DrawSunkenRectangle(dwin, self.x, self.y, self.w, self.h)
+         else
+            DrawRaisedRectangle(dwin, self.x, self.y, self.w, self.h)
+
+         #
+         # Focus ring is accent blue; omit it while pressed so the
+         # darkened face is the click cue (not the blue border).
+         #
+         if /self.no_keyboard_flag & \self.has_focus & /self.is_down then
+            DashedRectangle(dwin, self.x + 2, self.y + 2, self.w - 4, self.h - 4)
+      } else {
+         case self.internal_alignment of {
+            "c" : center_string(dwin, self.tx + self.tw / 2, yoff, self.label, self.accel)
+            "l" : left_string(dwin, self.tx, yoff, self.label, self.accel)
+            "r" : right_string(dwin, self.tx + self.tw, yoff, self.label, self.accel)
+            default : fatal("incorrect internal_alignment specifier: " || image(self.internal_alignment))
+         }
+
+         if /self.no_keyboard_flag & \self.has_focus then {
+            DashedRectangle(dwin, self.x + BORDER_WIDTH + 1, self.y + BORDER_WIDTH + 1, self.w - 2 * BORDER_WIDTH - 2, self.h - 2 * BORDER_WIDTH - 2)
+         }
+
+         if \self.is_down then {
+            cw := Clone(dwin, "drawop=reverse")
+            FillRectangle(cw, self.x, self.y, self.w, self.h)
+            Uncouple(cw)
+            DrawSunkenRectangle(dwin, self.x, self.y, self.w, self.h)
+         } else {
+            DrawRaisedRectangle(dwin, self.x, self.y, self.w, self.h)
+            if /self.is_checked_flag then
+               DrawRaisedRectangle(dwin, self.x, self.y, self.w, self.h)
+            else
+               DrawSunkenRectangle(dwin, self.x, self.y, self.w, self.h)
+         }
       }
 
       self.do_shading(dwin)

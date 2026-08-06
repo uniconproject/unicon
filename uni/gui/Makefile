@@ -4,11 +4,12 @@ include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
 .PHONY: all clean deps
 
-UFILES=border.u button.u buttongroup.u checkbox.u checkboxgroup.u \
+UFILES=theme.u guiprocs.u \
+	border.u button.u buttongroup.u checkbox.u checkboxgroup.u \
 	checkboxmenuitem.u circulate.u clipboard.u component.u componentscrollarea.u \
 	dialog.u dispatcher.u drawscrollarea.u displayscrollarea.u \
 	drag.u dropdown.u editabletextlist.u editlist.u editspin.u \
-	filedialog.u font_dlg.u printdlg.u stddlg.u guiprocs.u \
+	filedialog.u font_dlg.u printdlg.u stddlg.u \
 	icon.u iconbutton.u image.u label.u line.u \
 	linebasedscrollarea.u list.u listspin.u menu.u menubar.u \
 	menubutton.u menucomponent.u menuseparator.u node.u \
@@ -25,11 +26,6 @@ all: $(UFILES)
 
 clean:
 	$(RM) *.u uniclass.dir uniclass.pag uniclass.db
-
-# additional manual dependencies since unidep is broken at the moment
-printdlg.u : printdlg.icn dialog.u tabset.u tabitem.u table.u tablecolumn.u textbutton.u textfield.u label.u guih.icn
-editabletextlist.u: stddlg.u
-stddlg.u: textfield.u textbutton.u
 
 deps:
 	$(UNIDEP) *.icn -f deps.out -nb

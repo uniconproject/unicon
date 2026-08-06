@@ -36,11 +36,19 @@ class CheckBox : Button(tx, tw)
       # Set the icons if necessary
       #
       if /self.img_up then {
-         if /self.parent_check_box_group then
-            self.set_imgs(img_style("box_up"), img_style("box_down"))
-         else
-            self.set_imgs(img_style("diamond_up"), img_style("diamond_down"))
-      }
+         if /self.parent_check_box_group then {
+            if GuiThemeIsFlat() then
+               self.set_imgs(img_style("box_up_flat"), img_style("box_down_flat"))
+            else
+               self.set_imgs(img_style("box_up"), img_style("box_down"))
+            }
+         else {
+            if GuiThemeIsFlat() then
+               self.set_imgs(img_style("diamond_up_flat"), img_style("diamond_down_flat"))
+            else
+               self.set_imgs(img_style("diamond_up"), img_style("diamond_down"))
+            }
+         }
 
       if /self.h_spec := WAttrib(self.cwin, "fheight") then
          self.h_spec <:= img_h

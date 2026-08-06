@@ -28,7 +28,11 @@ class MenuSeparator : MenuComponent()
    method display_label(lw, mw, rw)
       local cw
       cw := self.parent_component.cbwin
-      DrawRaisedRectangle(cw, self.label_x, self.label_y + (self.label_h - SEPARATOR_HEIGHT) / 2, lw + mw + rw, SEPARATOR_HEIGHT)
+      if GuiThemeIsFlat() then
+         ThemeHairline(cw, self.label_x,
+            self.label_y + self.label_h / 2, lw + mw + rw)
+      else
+         DrawRaisedRectangle(cw, self.label_x, self.label_y + (self.label_h - SEPARATOR_HEIGHT) / 2, lw + mw + rw, SEPARATOR_HEIGHT)
    end
 
    initially(a[])

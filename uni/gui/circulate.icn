@@ -64,19 +64,22 @@ class Circulate : Component(selection, selection_list, b, l)
    #
    # @p
    method resize()
+      local border
       /self.h_spec := WAttrib(self.cwin, "fheight") + 16
       compute_absolutes()
+
+      border := if GuiThemeIsFlat() then 1 else BORDER_WIDTH
 
       #
       # Set button position and size
       #
-      b.set_pos(BORDER_WIDTH, BORDER_WIDTH)
-      b.set_size(self.h - 2 * BORDER_WIDTH, self.h - 2 * BORDER_WIDTH)
+      b.set_pos(border, border)
+      b.set_size(self.h - 2 * border, self.h - 2 * border)
       b.resize()
 
-      l.set_pos(self.h - BORDER_WIDTH + DEFAULT_TEXT_X_SURROUND, self.h / 2)
+      l.set_pos(self.h - border + DEFAULT_TEXT_X_SURROUND, self.h / 2)
       l.set_align("l", "c")
-      l.set_size(self.w - self.h - 2 * DEFAULT_TEXT_X_SURROUND, self.h - 2 * BORDER_WIDTH)
+      l.set_size(self.w - self.h - 2 * DEFAULT_TEXT_X_SURROUND, self.h - 2 * border)
       l.resize()
 
       return
@@ -89,7 +92,7 @@ class Circulate : Component(selection, selection_list, b, l)
    # @p
    method display(buffer_flag)
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      ThemeSunkenPanel(self.cbwin, self.x, self.y, self.w, self.h)
       l.display(1)
       b.display(1)
       self.do_shading(self.cbwin)

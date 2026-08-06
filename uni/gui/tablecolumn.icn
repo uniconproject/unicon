@@ -115,10 +115,14 @@ class TableColumn : TextButton(
       }         
 
       if \self.is_down then {
-         cw := Clone(self.cbwin, "drawop=reverse")
-         FillRectangle(cw, self.x, self.y, self.w - CHANGE_SIZE_BORDER, self.h)
-         Uncouple(cw)
-      } 
+         if GuiThemeIsFlat() then
+            ThemeFillFace(self.cbwin, self.x, self.y, self.w - CHANGE_SIZE_BORDER, self.h, "down")
+         else {
+            cw := Clone(self.cbwin, "drawop=reverse")
+            FillRectangle(cw, self.x, self.y, self.w - CHANGE_SIZE_BORDER, self.h)
+            Uncouple(cw)
+            }
+         } 
       DrawRaisedRectangle(self.cbwin, self.x + self.w - CHANGE_SIZE_BORDER, self.y + BORDER_WIDTH, CHANGE_SIZE_BORDER, self.h - 2 * BORDER_WIDTH)
 
       Clip(self.cbwin)

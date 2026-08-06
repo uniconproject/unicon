@@ -24,8 +24,13 @@ $define TICK_H 10
 class SliderArea : Component(inner_x, inner_y, inner_w, inner_h, slider_x, slider_y, slider_w, slider_h) 
    method display(buffer_flag)
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      if GuiThemeIsFlat() then
+         ThemeFillInput(self.cbwin, self.inner_x, self.inner_y, self.inner_w, self.inner_h)
       DrawSunkenRectangle(self.cbwin, self.inner_x, self.inner_y, self.inner_w, self.inner_h)
-      EraseRectangle(self.cbwin, self.slider_x, self.slider_y, self.slider_w, self.slider_h)
+      if GuiThemeIsFlat() then
+         ThemeFillFace(self.cbwin, self.slider_x, self.slider_y, self.slider_w, self.slider_h, "up")
+      else
+         EraseRectangle(self.cbwin, self.slider_x, self.slider_y, self.slider_w, self.slider_h)
       DrawRaisedRectangle(self.cbwin, self.slider_x, self.slider_y, self.slider_w, self.slider_h)
       self.do_shading(self.cbwin)
       if /buffer_flag then
@@ -411,7 +416,7 @@ class Slider : Component(
       EraseRectangle(W, self.x, self.y, self.w, self.h)
 
       if \self.draw_border_flag then
-         DrawSunkenRectangle(W, self.x, self.y, self.w, self.h)
+         ThemeSunkenPanel(W, self.x, self.y, self.w, self.h)
 
       if \self.labels then
          draw_labels(W)

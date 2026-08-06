@@ -669,6 +669,58 @@ extern struct b_proc *opblks[];
          nargs = xnargs;
          if (xargp[0].dword == D_Proc) {
             bp = BlkD(*xargp, Proc);
+            /*
+             * Preprocessor assert / assert_not use runerr(219, payload).
+             * The payload starts with char(28) for assert or char(29) for
+             * assert_not, and an optional label follows char(30) (see
+             * preproce.icn).  Show source-like assert(...) syntax.  A plain
+             * runerr(219, x) has no marker and is shown as written.
+             */
+            if (bp && StrLen(bp->pname) == 6 &&
+                !strncmp(StrLoc(bp->pname), "runerr", 6) &&
+                nargs >= 2 && k_errornumber == 219) {
+               dptr a2 = xargp + 2;
+               if (is:string(*a2) && StrLen(*a2) > 0 &&
+                   ((unsigned char)StrLoc(*a2)[0] == 28 ||
+                    (unsigned char)StrLoc(*a2)[0] == 29)) {
+                  word slen = StrLen(*a2);
+                  char *spexpr = StrLoc(*a2);
+                  word i, start = 1;
+                  int is_assert_not = ((unsigned char)spexpr[0] == 29);
+                  if (is_assert_not)
+                     fprintf(f, "assert_not(");
+                  else
+                     fprintf(f, "assert(");
+                  {
+                     for (i = start; i < slen; i++)
+                        if ((unsigned char)spexpr[i] == 30)
+                           break;
+                     if (i < slen) {
+                        if (i > start)
+                           fwrite(spexpr + start, sizeof(char),
+                                  (size_t)(i - start), f);
+                        fprintf(f, ", \"");
+                        {
+                           word j;
+                           for (j = i + 1; j < slen; j++) {
+                              char c = spexpr[j];
+                              if (c == '"' || c == '\\')
+                                 putc('\\', f);
+                              putc(c, f);
+                              }
+                        }
+                        fprintf(f, "\"");
+                        }
+                     else {
+                        if (slen > start)
+                           fwrite(spexpr + start, sizeof(char),
+                                  (size_t)(slen - start), f);
+                        }
+                  }
+                  fprintf(f, ")");
+                  break;
+               }
+               }
             if (bp)
             putstr(f, &(bp->pname));
             else fprintf(f,"???");

@@ -935,7 +935,7 @@ end
 # the check passes, so the call means the same thing in every mode and can
 # stand wherever a statement can, including a then or else branch:
 #   __test__   failure writes a diagnostic and fails out of the procedure
-#   __debug__  failure writes a diagnostic to &errout, then runtime error 100
+#   __debug__  failure is runtime error 219 (see errmsg.r and rdebug.r)
 #   otherwise  the call is just (&null), with no run-time cost
 # The condition is evaluated once and never resumed.  The label is only
 # evaluated on failure; a label that fails or is &null is left out.
@@ -951,16 +951,25 @@ procedure preproc_expand_builtin_assert(name, args, done_set)
    else
       test := "(" || args[1] || ")"
    cond := preproc_quote_string(args[1])
-   lbl := (", ((\" \" || (\"\" ~== \\(" || \args[2] || "))) | \"\")") | ""
 
-   if preproc_sym_enabled("__test__") then
+   if preproc_sym_enabled("__test__") then {
+      lbl := (", ((\" \" || (\"\" ~== \\(" || \args[2] || "))) | \"\")") | ""
       expanded := "(if " || test || " then { write(\"[\", &file, \":\", " ||
          "&line, \"] assertion failed (\", " || cond || ", \")\"" || lbl ||
          "); fail } else &null)"
-   else if preproc_sym_enabled("__debug__") then
-      expanded := "(if " || test || " then { write(&errout, \"[\", &file, " ||
-         "\":\", &line, \"] assertion failed (\", " || cond || ", \")\"" || lbl ||
-         "); runerr(100, " || cond || ") } else &null)"
+      }
+   else if preproc_sym_enabled("__debug__") then {
+      lbl := (" || ((char(30) || (\"\" ~== \\(" || \args[2] || "))) | \"\")") | ""
+      # The payload starts with char(28) for assert or char(29) for
+      # assert_not, so the runtime can tell these from a plain runerr(219)
+      # and the traceback can tell the two apart (errmsg.r, rdebug.r).
+      cond := (if name == "assert" then "char(28) || " else "char(29) || ") ||
+         cond
+      # Limit the payload to one value: when &error converts the error to
+      # failure, runerr must not be resumed into the label's alternative.
+      expanded := "(if " || test || " then runerr(219, (" || cond || lbl ||
+         ") \\ 1) else &null)"
+      }
    else
       return "(&null)"
 

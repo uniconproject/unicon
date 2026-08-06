@@ -29,3 +29,4 @@ list_test FxPtTest: | tester.u
 
 # Built-in assert modes set on the command line.
 assert_cmdline_test: UFLAGS += -D__test__
+assert_cmdline_errconv: UFLAGS += -D__debug__

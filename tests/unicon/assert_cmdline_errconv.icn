@@ -1,0 +1,35 @@
+# Compiled with -D__debug__ (see Makefile).  Under &error an assert failure
+# is converted like any other run-time error; a plain runerr(219) keeps
+# the standard message.
+
+procedure report()
+   write(&errornumber, " [", &errortext, "] [", image(&errorvalue), "]")
+end
+
+procedure report_len()
+   write(&errornumber, " text=", *&errortext, " value=", *&errorvalue)
+end
+
+procedure f(x)
+   assert(x = 2, "lbl")
+end
+
+procedure g(x)
+   assert_not(x = 1)
+end
+
+procedure h(x)
+   assert(x = 2, &null)
+end
+
+procedure main()
+   local x
+   x := 1
+   &error := 1; f(x) | report()
+   &error := 1; g(x) | report()
+   &error := 1; h(x) | report()
+   &error := 1; runerr(219, "plain text") | report()
+   # The label is longer than the old 16 KB keyword buffer.
+   &error := 1; assert(1 = 2, repl("x", 20000)) | report_len()
+   write("done")
+end

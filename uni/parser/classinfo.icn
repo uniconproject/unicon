@@ -164,14 +164,16 @@ procedure get_symbol_name(sym)
 end
 
 #
-# Generate all the dirs in the IPATH as file names normalized with a "/" at the end
+# Generate all the dirs in the IPATH as file names normalized with a "/" at the end.
+# Uses IPL {ipaths_get} so Unicon's default library dirs are included even when
+# the IPATH environment variable is unset.
 #
 procedure get_all_dirs(home)
-   local s, x
+   local x
 
    /home := "."
-   s := ::getenv("IPATH") | fail
-   every x := home | split_path_string(s) do {
+   every x := home | !ipaths_get() do {
+      if *x = 0 then next
       if x[-1] ~== "/" then
          x ||:= "/"
       #::write("get_all_dirs(", home, ") x:", x)

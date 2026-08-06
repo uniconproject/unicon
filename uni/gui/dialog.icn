@@ -223,8 +223,13 @@ class Dialog : Component(
    end
 
    method open_win()
-      self.win := (WOpen ! (["inputmask=mc"] ||| self.attribs)) | fail
-      self.buffer_win := (WOpen ! (["canvas=hidden"] ||| self.attribs)) | fail
+      local attrs
+      #
+      # Theme defaults come first; explicit dialog attribs override them.
+      #
+      attrs := (GuiThemeDialogAttribs() | []) ||| (self.attribs | [])
+      self.win := (WOpen ! (["inputmask=mc"] ||| attrs)) | fail
+      self.buffer_win := (WOpen ! (["canvas=hidden"] ||| attrs)) | fail
       Raise(self.win)
       return
    end

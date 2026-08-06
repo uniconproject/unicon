@@ -554,8 +554,12 @@ class TextField : Component(
       #
       cp := self.cursor - self.leftmost + 1
 
-      if \self.draw_border_flag then
+      if \self.draw_border_flag then {
+         if GuiThemeIsFlat() then
+            ThemeFillInput(dwin, self.x, self.y, self.w, self.h,
+               ThemeComponentBg(self.attribs) | &null)
          DrawSunkenRectangle(dwin, self.x, self.y, self.w, self.h)
+         }
 
       if has_region() then {
          mp := self.mark - self.leftmost + 1

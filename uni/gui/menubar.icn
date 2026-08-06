@@ -50,9 +50,12 @@ class MenuBar : Component(
    end
 
    method display(buffer_flag)
-      local m
+      local m, cw
       EraseRectangle(cbwin, x, y, w, h)
-      DrawRaisedRectangle(cbwin, x, y, w, h)
+      if GuiThemeIsFlat() then
+         FlatBorder(cbwin, x, y + h - 1, w, 1, GuiThemePalette().border)
+      else
+         DrawRaisedRectangle(cbwin, x, y, w, h)
 
       #
       # Draw the menu options with a raised rectangle around the open menu.
@@ -62,11 +65,31 @@ class MenuBar : Component(
       # string in the centre of its area.
       #
       every m := !menus do {
-         if m === \which_highlight then
-            DrawRaisedRectangle(cbwin, m.label_x, y + BORDER_WIDTH,
-                                m.label_mid_w, h - 2 * BORDER_WIDTH)
-         left_string(cbwin, m.label_x + DEFAULT_TEXT_X_SURROUND, y + h / 2,
-                     m.get_label(), m.get_accel())
+         if m === \which_highlight then {
+            if GuiThemeIsFlat() then {
+               #
+               # Solid accent selection (menus only; buttons use tint fills).
+               #
+               ThemeFillAccent(cbwin, m.label_x, y + 1, m.label_mid_w, h - 2)
+               FlatBorder(cbwin, m.label_x, y + 1, m.label_mid_w, h - 2,
+                  GuiThemePalette().border)
+               }
+            else
+               DrawRaisedRectangle(cbwin, m.label_x, y + BORDER_WIDTH,
+                                   m.label_mid_w, h - 2 * BORDER_WIDTH)
+            }
+         #
+         # Label after fill so text stays visible; use light fg on accent.
+         #
+         if m === \which_highlight & GuiThemeIsFlat() then {
+            cw := Clone(cbwin, "fg=" || GuiThemePalette().surface)
+            left_string(cw, m.label_x + DEFAULT_TEXT_X_SURROUND, y + h / 2,
+                        m.get_label(), m.get_accel())
+            Uncouple(cw)
+            }
+         else
+            left_string(cbwin, m.label_x + DEFAULT_TEXT_X_SURROUND, y + h / 2,
+                        m.get_label(), m.get_accel())
          if \m.is_shaded_flag then
             FilterRectangle(cbwin, m.label_x, y + BORDER_WIDTH,
                             m.label_mid_w, h - 2 * BORDER_WIDTH)

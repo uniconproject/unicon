@@ -51,15 +51,19 @@ class Spin : Component(up, down)
       self.up := IconButton()
       self.up.connect(self, "on_up", BUTTON_PRESS_EVENT)
       self.up.connect(self, "on_up", BUTTON_HELD_EVENT)
-      self.up.toggle_draw_border()
-      self.up.set_img(img_style("tiny_arrow_up"))
+      if not GuiThemeIsFlat() then
+         self.up.toggle_draw_border()
+      self.up.set_img(img_style(if GuiThemeIsFlat() then "tiny_arrow_up_flat"
+         else "tiny_arrow_up"))
       self.up.clear_accepts_focus()
       self.add(up)
       self.down := IconButton()
       self.down.connect(self, "on_down", BUTTON_PRESS_EVENT)
       self.down.connect(self, "on_down", BUTTON_HELD_EVENT)
-      self.down.toggle_draw_border()
-      self.down.set_img(img_style("tiny_arrow_down"))
+      if not GuiThemeIsFlat() then
+         self.down.toggle_draw_border()
+      self.down.set_img(img_style(if GuiThemeIsFlat() then "tiny_arrow_down_flat"
+         else "tiny_arrow_down"))
       self.down.clear_accepts_focus()
       self.add(down)
 end

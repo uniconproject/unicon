@@ -147,27 +147,50 @@ end
 
 #
 # Draw a raised rectangle.
+# Under the flat theme this is a 1px border; under classic it is a bevel.
+# @param W       Window
+# @param x,y,w,h Rectangle
+# @param i       Bevel width when classic (default {BORDER_WIDTH})
+# @return        W
 #
 procedure DrawRaisedRectangle(W, x, y, w, h, i)
    /i := BORDER_WIDTH
-   BevelRectangle(W, x, y, w, h, i)
+   if GuiThemeIsFlat() then
+      return FlatBorder(W, x, y, w, h, GuiThemePalette().border)
+   else
+      return BevelRectangle(W, x, y, w, h, i)
 end
 
 #
 # Draw a sunken rectangle.
+# Under the flat theme this is a darker input border (no fill; callers
+# may use {ThemeFillInput}).  Under classic it is a bevel.
+# @param W       Window
+# @param x,y,w,h Rectangle
+# @param i       Bevel depth when classic (default -{BORDER_WIDTH})
+# @return        W
 #
 procedure DrawSunkenRectangle(W, x, y, w, h, i)
    /i := -BORDER_WIDTH
-   BevelRectangle(W, x, y, w, h, i)
+   if GuiThemeIsFlat() then
+      return FlatBorder(W, x, y, w, h, GuiThemePalette().border_input)
+   else
+      return BevelRectangle(W, x, y, w, h, i)
 end
 
 #
-# Draw a dashed rectangle using the shadow color.
+# Draw a focus rectangle.
+# Under the flat theme this is an accent ring; under classic it is a
+# dashed shadow outline.
+# @param W       Window
+# @param x,y,w,h Rectangle
+# @return        W when flat; otherwise draws and returns
 #
 procedure DashedRectangle(W, x, y, w, h)
    local cw
+   if GuiThemeIsFlat() then
+      return FlatFocusRing(W, x, y, w, h)
    cw := Clone(get_shadow_win(W), "pattern=gray", "fillstyle=masked")
-   #cw := Clone(W, "fg=black", "pattern=gray", "fillstyle=masked")
    Rectangle(cw, x, y, w, h)
    Uncouple(cw)
 end
@@ -279,6 +302,38 @@ procedure img_style(s)
 ~11111111111~_
 ~~~~~~~~~~~~~_
 "
+      "box_up_flat" :
+"(b=black;~=trans)13,c6,_
+~~~~~~~~~~~~~_
+~bbbbbbbbbbb~_
+~b~~~~~~~~~b~_
+~b~~~~~~~~~b~_
+~b~~~~~~~~~b~_
+~b~~~~~~~~~b~_
+~b~~~~~~~~~b~_
+~b~~~~~~~~~b~_
+~b~~~~~~~~~b~_
+~b~~~~~~~~~b~_
+~b~~~~~~~~~b~_
+~bbbbbbbbbbb~_
+~~~~~~~~~~~~~_
+"
+         "box_down_flat" :
+"(b=black;~=trans)13,c6,_
+~~~~~~~~~~~~~_
+~bbbbbbbbbbb~_
+~b~~~~~~~~~b~_
+~b~~~~~~~b~b~_
+~b~~~~~~b~~b~_
+~b~b~~~b~~~b~_
+~b~~b~b~~~~b~_
+~b~~~b~~~~~b~_
+~b~~~~~~~~~b~_
+~b~~~~~~~~~b~_
+~b~~~~~~~~~b~_
+~bbbbbbbbbbb~_
+~~~~~~~~~~~~~_
+"
       "diamond_up2":
 "(0=shadow;1=hilite;~=trans)11,c6,_
 ~~~~~1~~~~~_
@@ -340,6 +395,38 @@ procedure img_style(s)
 ~~~~~111~~~~~_
 ~~~~~~1~~~~~~_
 "
+      "diamond_up_flat" :
+"(b=black;~=trans)13,c6,_
+~~~~~~b~~~~~~_
+~~~~~b~b~~~~~_
+~~~~b~~~b~~~~_
+~~~b~~~~~b~~~_
+~~b~~~~~~~b~~_
+~b~~~~~~~~~b~_
+b~~~~~~~~~~~b_
+~b~~~~~~~~~b~_
+~~b~~~~~~~b~~_
+~~~b~~~~~b~~~_
+~~~~b~~~b~~~~_
+~~~~~b~b~~~~~_
+~~~~~~b~~~~~~_
+"
+         "diamond_down_flat" :
+"(b=black;~=trans)13,c6,_
+~~~~~~b~~~~~~_
+~~~~~b~b~~~~~_
+~~~~b~~~b~~~~_
+~~~b~~~~~b~~~_
+~~b~~bbb~~b~~_
+~b~~~bbb~~~b~_
+b~~~~bbb~~~~b_
+~b~~~bbb~~~b~_
+~~b~~bbb~~b~~_
+~~~b~~~~~b~~~_
+~~~~b~~~b~~~~_
+~~~~~b~b~~~~~_
+~~~~~~b~~~~~~_
+"
 
       "arrow_up" :
 "11,c1,_
@@ -358,6 +445,26 @@ procedure img_style(s)
 ~~~00000~~~_
 ~~~~000~~~~_
 ~~~~~0~~~~~_
+"
+      "arrow_up_flat" :
+"(b=black;~=trans)11,c6,_
+~~~~~~~~~~~_
+~~~~~b~~~~~_
+~~~~bbb~~~~_
+~~~bbbbb~~~_
+~~bbbbbbb~~_
+~bbbbbbbbb~_
+~~~~~~~~~~~_
+"
+      "arrow_down_flat" :
+"(b=black;~=trans)11,c6,_
+~~~~~~~~~~~_
+~bbbbbbbbb~_
+~~bbbbbbb~~_
+~~~bbbbb~~~_
+~~~~bbb~~~~_
+~~~~~b~~~~~_
+~~~~~~~~~~~_
 "
       "arrow_left" :
 "9,c1,_
@@ -381,6 +488,30 @@ procedure img_style(s)
 00000~~~~_
 000~~~~~~_
 0~~~~~~~~_
+"
+      "arrow_left_flat" :
+"(b=black;~=trans)9,c6,_
+~~~~~~~~~_
+~~~~~~b~~_
+~~~~bbb~~_
+~~bbbbb~~_
+bbbbbbbbb_
+~~bbbbb~~_
+~~~~bbb~~_
+~~~~~~b~~_
+~~~~~~~~~_
+"
+      "arrow_right_flat" :
+"(b=black;~=trans)9,c6,_
+~~~~~~~~~_
+~~b~~~~~~_
+~~bbb~~~~_
+~~bbbbb~~_
+bbbbbbbbb_
+~~bbbbb~~_
+~~bbb~~~~_
+~~b~~~~~~_
+~~~~~~~~~_
 "
       "closed_folder" : "16,c1,_
 ~~~~~~~~~~~~~~~~_
@@ -469,6 +600,22 @@ procedure img_style(s)
 ~00000~_
 ~~000~~_
 ~~~0~~~_
+"
+      "tiny_arrow_up_flat" :
+"(b=black;~=trans)7,c6,_
+~~~~~~~_
+~~~b~~~_
+~~bbb~~_
+~bbbbb~_
+~~~~~~~_
+"
+      "tiny_arrow_down_flat" :
+"(b=black;~=trans)7,c6,_
+~~~~~~~_
+~bbbbb~_
+~~bbb~~_
+~~~b~~~_
+~~~~~~~_
 "
       default : stop("unknown image style")
    }

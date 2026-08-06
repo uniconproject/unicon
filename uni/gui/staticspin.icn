@@ -28,28 +28,29 @@ end
 #
 class StaticSpin : Spin(lab)
    method resize()
-      local bh, bw
+      local bh, bw, border
 
       /self.h_spec := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
       self.Component.compute_absolutes()
 
-      bw := self.h - 2 * BORDER_WIDTH
+      border := if GuiThemeIsFlat() then 1 else BORDER_WIDTH
+      bw := self.h - 2 * border
       bh := bw / 2
       #
       # Set buttons position and size
       #
-      up.set_pos(self.w - BORDER_WIDTH - bw, BORDER_WIDTH)
+      up.set_pos(self.w - border - bw, border)
       up.set_size(bw, bh)
       up.resize()
-      down.set_pos(self.w - BORDER_WIDTH - bw, BORDER_WIDTH + bh)
+      down.set_pos(self.w - border - bw, border + bh)
       down.set_size(bw, bh)
       down.resize()
 
       #
       # Set Label position and size
       #
-      lab.set_pos(BORDER_WIDTH + DEFAULT_TEXT_X_SURROUND, BORDER_WIDTH)
-      lab.set_size(self.w - bw - 2 * BORDER_WIDTH - 2 * DEFAULT_TEXT_X_SURROUND,  self.h - 2 * BORDER_WIDTH)
+      lab.set_pos(border + DEFAULT_TEXT_X_SURROUND, border)
+      lab.set_size(self.w - bw - 2 * border - 2 * DEFAULT_TEXT_X_SURROUND,  self.h - 2 * border)
       lab.resize()
    end
 
@@ -58,7 +59,7 @@ class StaticSpin : Spin(lab)
       # Draw text element 
       #
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      ThemeSunkenPanel(self.cbwin, self.x, self.y, self.w, self.h)
       #
       # Draw button and list
       #

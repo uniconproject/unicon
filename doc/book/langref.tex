@@ -1918,6 +1918,11 @@ memberships); bare names query the current value except for
 Boolean values are \texttt{yes}/\texttt{no}; numeric values are
 integers. Socket attributes do not require the Concurrent build
 feature.
+For an SSH channel file, \texttt{Attrib(c, "exitstatus")} produces the
+remote command's exit status (and fails until it has arrived),
+\texttt{Attrib(c, "stderr")} returns stderr bytes accumulated since the
+previous such call, and \texttt{Attrib(c, "eof")} produces 1 once remote
+EOF has been seen.
 For a co-expression or list, integer attribute codes from
 \texttt{threadh.icn} query or set thread inbox/outbox and channel limits
 (see Chapter~8; requires Concurrent).
@@ -2891,6 +2896,8 @@ UDP network socket\\
 IP socket (\texttt{SOCK\_RAW}; requires \texttt{proto=})\\
  \ \ \ \ \texttt{"e"\ \ \ \ } use SSL/TLS protocol to
 encrypt the network socket\\
+ \ \ \ \ \texttt{"h"\ \ \ \ } open an SSH client
+session (requires \texttt{libssh}; see Chapter~6)\\
  \ \ \ \ \texttt{"m"\ \ \ \ }connect to a
 messaging server (HTTP, HTTPS, SMTP, POP, ...)\\
  \ \ \ \ \texttt{"o"\ \ \ \ }open an
@@ -2977,6 +2984,18 @@ For 2D and 3D windows, attribute values may be specified in the
 following arguments to \texttt{open()}. \texttt{open()} fails if a
 window cannot be opened or an attribute cannot be set to a requested
 value.
+
+When opening an SSH session (mode \texttt{"h"}), the first argument is a
+host or \texttt{user@host}, optionally with \texttt{:port} (same form as
+socket addresses; IPv6 uses \texttt{[addr]:port}). Trailing attributes
+include \texttt{user=}, \texttt{key=}, \texttt{keypass=},
+\texttt{password=}, \texttt{hostkeyfile=}, \texttt{cmd=},
+\texttt{term=}/\texttt{cols=}/\texttt{rows=} (interactive PTY), and
+\texttt{channel=} (\texttt{yes}/\texttt{no}; \texttt{channel=no} is a
+transport-only session). Mode \texttt{"h-"} skips host-key verification.
+\texttt{open(s, ...)} on an existing SSH file opens another channel on
+the same session; \texttt{open(s, "sftp", "path=\textit{path}", ...)}
+opens a remote file or directory over SFTP. See Chapter~6.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{opmask}
@@ -3165,7 +3184,11 @@ or fails if the conversion cannot be performed.
 to the port associated with \texttt{f}, waiting if necessary. The
 returned value is a record of type \texttt{posix\_message(addr, msg)},
 containing the address of the sender and the contents of the message
-respectively. 
+respectively. For an SSH channel file, \texttt{receive(c)} instead
+yields the next channel event in arrival order: \texttt{addr} is
+\texttt{"stdout"}, \texttt{"stderr"}, or \texttt{"exit"}, and
+\texttt{msg} holds the data (the exit status as a string for
+\texttt{"exit"}).
 
 \bigskip\hrule\vspace{0.1cm}
 \index{remove}
@@ -3174,7 +3197,8 @@ respectively.
 
 \noindent
 \index{remove file}\index{file!remove}\texttt{remove(s)} removes the
-file named \texttt{s}.
+file named \texttt{s}. \texttt{remove(s, path)} removes a remote path
+over SFTP when \texttt{s} is an SSH session file.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{rename}
@@ -3183,7 +3207,8 @@ file named \texttt{s}.
 
 \noindent
 \index{file!rename}\texttt{rename(s1,s2)} renames the file named
-\texttt{s1} to have the name \texttt{s2}.
+\texttt{s1} to have the name \texttt{s2}. \texttt{rename(s, from, to)}
+renames a remote path over SFTP when \texttt{s} is an SSH session file.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{repl}
@@ -3435,7 +3460,10 @@ integers that may be formatted with the \texttt{ctime()} and
 listing option of the UNIX \texttt{ls(1)} command. For example,
 \texttt{"-rwxrwsr-x"} represents a plain
 file with a mode of 2775 (octal). \texttt{stat(f)} fails if filename or
-path \texttt{f} does not exist.
+path \texttt{f} does not exist. \texttt{stat(c)} on an open SFTP file
+uses the remote file handle; \texttt{stat(s, path)} stats a remote path
+on SSH session \texttt{s} without opening it. Fields the SFTP server
+did not send are null rather than zero.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{staticnames}
@@ -5047,6 +5075,12 @@ length\\
 1307 \ \ \ \ \ \ \ private key and certificate mismatch\\
 1308 \ \ \ \ \ \ \ unknown protocol\\
 1310 \ \ \ \ \ \ \ bad socket attribute\\
+1320 \ \ \ \ \ \ \ SSH error\\
+1321 \ \ \ \ \ \ \ bad ssh attribute\\
+1322 \ \ \ \ \ \ \ SSH authentication error\\
+1323 \ \ \ \ \ \ \ SSH host key verification error\\
+1324 \ \ \ \ \ \ \ SSH channel error\\
+1325 \ \ \ \ \ \ \ SFTP error\\
 
 \subsection*{System errors}
 

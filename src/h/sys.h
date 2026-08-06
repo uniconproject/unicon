@@ -454,6 +454,12 @@
 
 #endif                                  /* HAVE_LIBSSL */
 
+#ifdef HAVE_LIBSSH
+#include <libssh/libssh.h>
+#include <libssh/callbacks.h>
+#include <libssh/sftp.h>
+#endif                                  /* HAVE_LIBSSH */
+
 /* On some systems we get a definition of offsetof() and on some we don't.
  * Include stddef.h just in case: guards within stddef.h should prevent double inclusion.
  */

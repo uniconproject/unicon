@@ -1,0 +1,92 @@
+#
+# ussh.icn - native SSH client demo (libssh / open() mode "h")
+#
+# Build:  unicon ussh
+# Run:    ./ussh user@host                 # interactive shell
+#         ./ussh user@host uname -a        # run a remote command
+#         ./ussh -n user@host uptime       # skip known_hosts check
+#         ./ussh -i ~/.ssh/id_ed25519 user@host
+#
+# Needs a Unicon build with the "secure shell" feature (&features).
+# Interactive mode uses net::ssh_interactive() (works on Unix and
+# Windows console iconx: select(&input) + Attrib(&input, "tty=…")).
+#
+
+import net
+link options
+
+procedure usage()
+   stop("Usage: ", &progname, " [-n] [-i key] [-p password] user@host [command...]\n",
+        "  -n            skip host-key verification (open mode \"h-\")\n",
+        "  -i key        private key path (default: agent / ~/.ssh identities)\n",
+        "  -p password   login password (prefer keys; visible in process list)\n",
+        "  -h            show this help\n",
+        "  user@host     optional :port, or [ipv6]:port\n",
+        "  command...    if present, run remotely and print output; else shell")
+end
+
+#
+# Expand a leading ~/ using HOME (libssh does not do this for key=).
+#
+procedure expand_path(p)
+   local home
+   p := ::string(p)
+   if p[1] == "~" & (*p = 1 | p[2] == "/") then {
+      home := getenv("HOME") | fail
+      if *p = 1 then
+         return home
+      return home || p[2:0]
+      }
+   return p
+end
+
+procedure main(argv)
+   local opts, host, cmd, mode, key, attrs, s, m, i
+
+   opts := options(argv, "ni:p:h")
+   if \opts["h"] then
+      usage()
+
+   host := argv[1] | usage()
+   cmd := &null
+   if *argv >= 2 then {
+      cmd := argv[2]
+      every i := 3 to *argv do
+         cmd ||:= " " || argv[i]
+      }
+
+   (&features == "secure shell") |
+      stop("this Unicon build has no SSH support (need libssh at configure time)")
+
+   mode := if /opts["n"] then "h" else "h-"
+   attrs := [host, mode]
+   if key := \opts["i"] then
+      put(attrs, "key=" || (expand_path(key) | stop("bad -i path")))
+   if \opts["p"] then
+      put(attrs, "password=" || opts["p"])
+   if \cmd then
+      put(attrs, "cmd=" || cmd)
+
+   write(&errout, "Connecting to ", host, " ...")
+   s := open ! attrs | stop("open failed: ", &errortext)
+   write(&errout, "connected.")
+
+   if \cmd then {
+      #
+      # One-shot remote command: preserve stdout/stderr order via receive().
+      #
+      while m := receive(s) do {
+         if m.addr == "stdout" then
+            writes(&output, m.msg)
+         else if m.addr == "stderr" then
+            writes(&errout, m.msg)
+         else if m.addr == "exit" then
+            write(&errout, "[exit ", trim(m.msg), "]")
+         }
+      close(s)
+      return
+      }
+
+   ssh_interactive(s) | stop("session write failed: ", &errortext)
+   close(s)
+end

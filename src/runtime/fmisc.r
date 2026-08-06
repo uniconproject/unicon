@@ -3059,7 +3059,7 @@ MissingFuncV(signal)
  */
 #if defined(Concurrent) || defined(PosixFns)
 
-"Attrib(argv[]) - read/write attributes (threads, sockets, ...)"
+"Attrib(argv[]) - read/write attributes (threads, sockets, ttys, ...)"
 
 function{*} Attrib(argv[argc])
    abstract {
@@ -3069,6 +3069,7 @@ function{*} Attrib(argv[argc])
 
       /*
        * Attrib() dispatches on the type of its first argument:
+       *   - file + "tty=…": local tty/console raw/sane mode
        *   - socket file: WAttrib-style "name" / "name=value" strings
        *   - co-expression / list / integer codes: thread/channel attrs
        */
@@ -3081,7 +3082,231 @@ function{*} Attrib(argv[argc])
 
       if (argc == 0) runerr(130, nulldesc);
 
+#if HAVE_LIBSSH
+      /*
+       * SSH channel attributes (query only):
+       *   Attrib(c, "exitstatus")  the remote command's exit status,
+       *                            or fails until it has arrived
+       *   Attrib(c, "stderr")      stderr accumulated since the last
+       *                            such call (a possibly empty string)
+       *   Attrib(c, "eof")         1 once the remote sent EOF, else 0
+       */
+      if (is:file(argv[0]) && (BlkD(argv[0],File)->status & Fs_SSH)) {
+         tended struct descrip ans;
+         struct SSHfile *sshf = BlkD(argv[0],File)->fd.sshf;
+         word i;
+#ifdef Concurrent
+         word ssh_mtx = BlkD(argv[0],File)->mutexid;
+#endif                                  /* Concurrent */
+
+         if (argc < 2)
+            runerr(130, nulldesc);
+         if (sshf == NULL)
+            runerr(174, argv[0]);
+
+         for (i = 1; i < argc; i++) {
+            tended struct descrip sbuf;
+            char *p;
+
+            if (is:null(argv[i]))
+               continue;
+            if (!cnv:tmp_string(argv[i], sbuf))
+               runerr(109, argv[i]);
+            p = StrLoc(sbuf);
+
+            if (StrLen(sbuf) == 10 && strncmp(p, "exitstatus", 10) == 0) {
+               /*
+                * Pump until the exit-status callback has fired (or the
+                * channel is done with no status).  Prefer callback state
+                * over libssh's blocking get_exit_* helpers, which are
+                * version-sensitive and unnecessary once callbacks are
+                * registered.
+                */
+               if (sshf->closed)
+                  fail;
+#ifdef Concurrent
+               MUTEX_LOCKID_CONTROLLED(ssh_mtx);
+#endif                                  /* Concurrent */
+               DEC_NARTHREADS;
+               while (!sshf->exit_seen) {
+                  int prc;
+                  if (sshf->chan == NULL || sshf->eof_seen ||
+                      ssh_channel_is_eof(sshf->chan))
+                     break;
+                  prc = ssh_pump(sshf, 1, 0);
+                  if (prc < 0) {
+                     INC_NARTHREADS_CONTROLLED;
+#ifdef Concurrent
+                     MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                     set_ssh_errortext(sshf->sess, 1324);
+                     fail;
+                     }
+                  if (prc == 0)
+                     break;             /* EOF, still no exit status */
+                  }
+               INC_NARTHREADS_CONTROLLED;
+               if (!sshf->exit_seen) {
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                  fail;
+                  }
+               {
+               int es = sshf->exit_status;
+#ifdef Concurrent
+               MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+               suspend C_integer es;
+               }
+               }
+            else if (StrLen(sbuf) == 6 && strncmp(p, "stderr", 6) == 0) {
+               if (sshf->closed)
+                  fail;
+#ifdef Concurrent
+               MUTEX_LOCKID_CONTROLLED(ssh_mtx);
+#endif                                  /* Concurrent */
+               DEC_NARTHREADS;
+               if (ssh_pump(sshf, 0, 0) < 0) {
+                  INC_NARTHREADS_CONTROLLED;
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                  set_ssh_errortext(sshf->sess, 1324);
+                  fail;
+                  }
+               INC_NARTHREADS_CONTROLLED;
+               ssh_drain_stderr(sshf, &ans);
+#ifdef Concurrent
+               MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+               suspend ans;
+               }
+            else if (StrLen(sbuf) == 3 && strncmp(p, "eof", 3) == 0) {
+               int eofv;
+               if (sshf->closed)
+                  fail;
+#ifdef Concurrent
+               MUTEX_LOCKID_CONTROLLED(ssh_mtx);
+#endif                                  /* Concurrent */
+               DEC_NARTHREADS;
+               if (ssh_pump(sshf, 0, 0) < 0) {
+                  INC_NARTHREADS_CONTROLLED;
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                  set_ssh_errortext(sshf->sess, 1324);
+                  fail;
+                  }
+               INC_NARTHREADS_CONTROLLED;
+               eofv = sshf->eof_seen ? 1 : 0;
+#ifdef Concurrent
+               MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+               suspend C_integer eofv;
+               }
+            else
+               runerr(1321, argv[i]);
+            }
+         fail;
+         }
+#endif                                  /* HAVE_LIBSSH */
+
 #ifdef PosixFns
+      /*
+       * TTY mode on a file (&input, etc.): Attrib(f, "tty=raw") /
+       * Attrib(f, "tty=sane").  Entered only when the first attribute
+       * is a tty name so other non-socket Attrib forms are untouched.
+       */
+      if (is:file(argv[0]) &&
+          !(BlkD(argv[0], File)->status & (Fs_Socket
+#if HAVE_LIBSSH
+                                          | Fs_SSH
+#endif                                  /* HAVE_LIBSSH */
+                                          ))) {
+         tended struct descrip sbuf, ans;
+         word i;
+         int fd, status, raw, rv;
+         char *p, *end, *eq;
+         long nlen;
+
+         if (argc >= 2 && !is:null(argv[1]) &&
+             cnv:tmp_string(argv[1], sbuf)) {
+            p = StrLoc(sbuf);
+            end = p + StrLen(sbuf);
+            for (eq = p; eq < end; eq++)
+               if (*eq == '=') break;
+            nlen = (eq < end) ? (eq - p) : StrLen(sbuf);
+            if (nlen == 3 && strncmp(p, "tty", 3) == 0) {
+               status = BlkD(argv[0], File)->status;
+               if (!(status & Fs_Read) && !(status & Fs_Write))
+                  runerr(174, argv[0]);
+               /*
+                * Console &input may be tagged Fs_Window while fd.fp is
+                * still stdin; get_fd() then returns -1 on MS Windows.
+                */
+#ifdef Graphics
+               if ((status & Fs_Window) &&
+                   (BlkD(argv[0], File)->fd.fp == stdin ||
+                    BlkD(argv[0], File)->fd.fp == stdout ||
+                    BlkD(argv[0], File)->fd.fp == stderr))
+#if NT
+                  fd = _fileno(BlkD(argv[0], File)->fd.fp);
+#else                                   /* NT */
+                  fd = fileno(BlkD(argv[0], File)->fd.fp);
+#endif                                  /* NT */
+               else
+#endif                                  /* Graphics */
+                  fd = get_fd(argv[0], 0);
+               if (fd < 0)
+                  runerr(174, argv[0]);
+
+               for (i = 1; i < argc; i++) {
+                  if (is:null(argv[i]))
+                     continue;
+                  if (!cnv:tmp_string(argv[i], sbuf))
+                     runerr(109, argv[i]);
+                  p = StrLoc(sbuf);
+                  end = p + StrLen(sbuf);
+                  for (eq = p; eq < end; eq++)
+                     if (*eq == '=') break;
+                  nlen = (eq < end) ? (eq - p) : StrLen(sbuf);
+                  if (nlen != 3 || strncmp(p, "tty", 3) != 0)
+                     runerr(1310, argv[i]);
+                  if (eq >= end)
+                     runerr(1310, argv[i]); /* query not supported */
+
+                  {
+                  long vlen = end - (eq + 1);
+                  if (vlen == 3 && strncmp(eq + 1, "raw", 3) == 0)
+                     raw = 1;
+                  else if ((vlen == 4 && strncmp(eq + 1, "sane", 4) == 0) ||
+                           (vlen == 6 && strncmp(eq + 1, "cooked", 6) == 0))
+                     raw = 0;
+                  else
+                     runerr(205, argv[i]);
+                  }
+
+#if NT
+                  rv = win_console_set_raw(fd, raw);
+#elif UNIX
+                  rv = unix_tty_set_raw(fd, raw);
+#else                                   /* NT / UNIX */
+                  runerr(121, argv[0]);
+                  rv = -1;
+#endif                                  /* NT / UNIX */
+                  if (rv != 0)
+                     fail;
+                  MakeStr(eq + 1, end - (eq + 1), &ans);
+                  Protect(StrLoc(ans) = alcstr(StrLoc(ans), StrLen(ans)),
+                          runerr(0));
+                  suspend ans;
+                  }
+               fail;
+               }
+            }
+         }
+
       /*
        * Socket attributes: Attrib(f, "ttl=4") sets, Attrib(f, "ttl")
        * gets.  Same names as open() trailing attributes; join/leave add or

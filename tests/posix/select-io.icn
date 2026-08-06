@@ -1,0 +1,50 @@
+#
+# select-io.icn - select() / reads() mixing for interactive-style I/O
+#
+# Covers the primitives ussh relies on:
+#   1. Timed select(&input) must not raise 1048 (even with nothing ready).
+#   2. select → reads → select on a regular file must keep working: after
+#      select() marks a file Fs_Unbuf, reads() must not stick Fs_Buff on it
+#      (that used to make the next select() raise 1048).
+#   3. Byte-sized reads() across that loop (not only whole-line read()).
+#
+# No stty here: automated runs are not on a controlling tty, and leaving
+# the terminal raw on failure is worse than skipping that check.
+#
+
+procedure main()
+   local f, L, path, data, i
+
+   #
+   # Timed select on &input: must succeed without 1048.  Do not
+   # reads(&input) — that would consume the test harness's stdin.
+   # List size is not checked: a closed/redirected stdin is often
+   # reported ready (EOF), so *L may be 0 or 1 depending on the runner.
+   #
+   L := select(&input, 50) |
+      stop("select(&input) failed: ", image(&errornumber), " ", &errortext)
+   write("input-select: ok")
+
+   #
+   # Regular file: always readable to select(2).  Three select/reads
+   # rounds must all succeed without 1048.
+   #
+   path := "local/select-io.dat"
+   f := open(path, "w") | stop("cannot create ", path)
+   writes(f, "abcdef")
+   close(f)
+
+   f := open(path) | stop("cannot open ", path)
+   every i := 1 to 3 do {
+      L := select(f, 1000) |
+         stop("select(file) #", i, " failed: ", image(&errornumber),
+              " ", &errortext)
+      (*L > 0) | stop("select(file) #", i, " returned empty")
+      data := reads(f, 2) | stop("reads(file) #", i, " failed")
+      write("file-chunk-", i, ": ", image(data))
+      }
+   close(f)
+   remove(path)
+
+   write("select-io done")
+end

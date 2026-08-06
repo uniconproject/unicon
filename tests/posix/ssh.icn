@@ -1,0 +1,151 @@
+# Native SSH client support (open() mode "h", libssh-backed).
+#
+# This test is deterministic and needs no SSH server for its default run:
+# it checks the _SSH feature is present and that the error paths fail
+# cleanly with &errortext set.  A full round-trip against a real server
+# is exercised only when UNICON_SSH_TESTHOST is set (host or user@host);
+# see the header of live_test() for the other UNICON_SSH_* variables.
+
+procedure main()
+   write("feature _SSH: ", if &features == "secure shell" then "yes" else "no")
+
+   # A bad attribute must fail (not abort) with &errortext set.
+   f := open("nobody@127.0.0.1", "h", "bogus=1")
+   write("bad-attribute open fails: ", failed_with_text(f))
+
+   # channel= must be yes/no; other values are bad attributes.
+   f := open("nobody@127.0.0.1", "h", "channel=maybe")
+   write("bad-channel open fails: ", failed_with_text(f))
+
+   # channel=no with cmd= is contradictory.
+   f := open("nobody@127.0.0.1", "h", "channel=no", "cmd=true")
+   write("channel=no+cmd open fails: ", failed_with_text(f))
+
+   # Connecting to a closed local port must fail with &errortext set.
+   f := open("nobody@127.0.0.1:1", "h", "cmd=true")
+   write("connect-refused open fails: ", failed_with_text(f))
+
+   live_test()
+   write("ssh test done")
+end
+
+# Report "yes" when open() failed (produced &null) and left a &errortext.
+procedure failed_with_text(f)
+   if /f & (*&errortext > 0) then return "yes"
+   if \f then close(f)
+   return "no"
+end
+
+# Build open() argv for addr (host or user@host[:port]).
+# Mode is "h-" when no known_hosts file is provided.
+procedure ssh_opts(addr, attrs[])
+   local opts, key, kh, a
+   opts := [addr, "h"]
+   every a := !attrs do put(opts, a)
+   if key := getenv("UNICON_SSH_TESTKEY") then put(opts, "key=" || key)
+   if kh := getenv("UNICON_SSH_KNOWNHOSTS") then put(opts, "hostkeyfile=" || kh)
+   else opts[2] := "h-"
+   return opts
+end
+
+# Append :port from UNICON_SSH_TESTPORT when set (host should not already
+# include a port in that case).
+procedure ssh_addr(host)
+   local p
+   p := getenv("UNICON_SSH_TESTPORT") | {
+      return host
+      }
+   return host || ":" || p
+end
+
+# Live round-trip, only when UNICON_SSH_TESTHOST is set:
+#   UNICON_SSH_TESTHOST   host or user@host (optionally with :port)
+#   UNICON_SSH_TESTPORT   appended as :port when set (libssh default 22)
+#   UNICON_SSH_TESTKEY    private key path (else default identities/agent)
+#   UNICON_SSH_KNOWNHOSTS known_hosts path (else host-key check is skipped)
+#   UNICON_SSH_SFTPPATH   remote directory for SFTP checks (optional)
+procedure live_test()
+   local host, addr, opts, s, line, got, c, info, remote, L, chunk
+
+   host := getenv("UNICON_SSH_TESTHOST") | {
+      write("live round-trip: skipped (set UNICON_SSH_TESTHOST)")
+      return
+      }
+   addr := ssh_addr(host)
+
+   opts := ssh_opts(addr, "cmd=echo unicon_ssh_ok")
+   s := open ! opts | {
+      write("live round-trip: open failed: ", &errortext)
+      return
+      }
+   got := ""
+   while line := read(s) do got ||:= line
+   write("live round-trip: ", if find("unicon_ssh_ok", got) then "pass" else "fail")
+   write("live exit status: ", Attrib(s, "exitstatus"))
+   close(s)
+
+   # Second connection: receive() ordering + stderr/exit events
+   opts := ssh_opts(addr, "cmd=echo out1; echo err1 1>&2; echo out2; exit 3")
+   s := open ! opts | {
+      write("live receive: open failed: ", &errortext)
+      return
+      }
+   got := ""
+   while m := receive(s) do
+      got ||:= m.addr || "=" || trim(m.msg, '\n') || ";"
+   write("live receive: ", if find("stdout=", got) & find("exit=", got)
+      then "pass" else "fail")
+   close(s)
+
+   #
+   # Partial line via reads(): interactive prompts have no trailing
+   # newline.  reads() on an SSH channel must return those bytes without
+   # blocking for '\\n' (the old sock_getstrg path hung here).
+   #
+   opts := ssh_opts(addr, "cmd=printf 'partial_ssh_line'")
+   s := open ! opts | {
+      write("live partial-reads: open failed: ", &errortext)
+      return
+      }
+   # Drain with a short select bound so a hang fails the suite instead
+   # of wedging CI.  5s is generous for a local/LAN printf.
+   got := ""
+   every 1 to 50 do {
+      L := select(s, 100) | break
+      if *L = 0 then next
+      chunk := reads(s, 64) | break
+      got ||:= chunk
+      if find("partial_ssh_line", got) then break
+      }
+   write("live partial-reads: ",
+      if find("partial_ssh_line", got) then "pass" else "fail")
+   close(s)
+
+   # Optional SFTP checks when a remote writable directory is provided
+   remote := getenv("UNICON_SSH_SFTPPATH") | {
+      write("live sftp: skipped (set UNICON_SSH_SFTPPATH)")
+      return
+      }
+   opts := ssh_opts(addr, "channel=no")
+   s := open ! opts | {
+      write("live sftp: open failed: ", &errortext)
+      return
+      }
+   c := open(s, "sftp", "path=" || remote || "/unicon_ssh_bin.bin", "w") |
+        stop("live sftp write-open failed: ", &errortext)
+   writes(c, "\x00\x01\x02\n\xff") | stop("live sftp writes failed: ", &errortext)
+   close(c)
+   c := open(s, "sftp", "path=" || remote || "/unicon_ssh_bin.bin") |
+        stop("live sftp read-open failed: ", &errortext)
+   got := reads(c, 5) | stop("live sftp reads failed: ", &errortext)
+   close(c)
+   write("live sftp binary: ",
+      if got == "\x00\x01\x02\n\xff" then "pass" else "fail")
+   info := stat(s, remote || "/unicon_ssh_bin.bin") |
+           stop("live sftp stat failed: ", &errortext)
+   write("live sftp stat size: ", if info.size = 5 then "pass" else "fail")
+   remove(s, remote || "/unicon_ssh_bin.bin") |
+      stop("live sftp remove failed: ", &errortext)
+   write("live sftp remove: pass")
+   close(s)
+end

@@ -14,6 +14,10 @@ ifeq ($(findstring multiple programs,$(UCFEAT)),)
 SKIP += pty_uni
 endif
 endif
+# ssh needs libssh (the "secure shell" feature); skip when built without it.
+ifeq ($(findstring secure shell,$(UCFEAT)),)
+SKIP += ssh
+endif
 endif
 
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
@@ -30,6 +34,7 @@ IGNORE=
 #               All use fork(); same blocker unless rewritten without fork.
 #   uxsocket    Unix-domain sockets + fork; AF_UNIX differs on Windows (and fork).
 #   rusage      getrusage() stubbed on NT (fail); needs a Windows implementation or skip.
+#   select-io is enabled on Windows: CRT &input / files use findactivecrt().
 #
 WINSKIP=pty_uni tcp wait fork fdup filepair kill pipe-select select udp uxsocket rusage
 

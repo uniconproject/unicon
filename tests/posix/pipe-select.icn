@@ -1,4 +1,5 @@
-# select() + reads() on a pipe only (not &input — would raise error 1048).
+# select() + reads() on a pipe (writer in a child).
+# For select(&input) / Buff-Unbuf mixing, see select-io.icn.
 $include "posix.icn"
 
 procedure main()
@@ -14,8 +15,6 @@ procedure main()
       # parent: reader
       close(L[2])
       while 1 do {
-         # Only select on the pipe: select(&input,...) triggers run-time error 1048
-         # (buffered console read cannot mix with select on &input).
          while *(L := select(L[1], 1000)) = 0 do
             delay(10)
          (&errno = 0) | stop("Select failed: ", sys_errstr(&errno))

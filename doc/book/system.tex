@@ -1055,6 +1055,82 @@ procedure main() \\
 end
 }
 
+\subsection*{Secure Shell (SSH)}
+
+When Unicon is built with \texttt{libssh}, mode \texttt{"h"} opens an
+\index{SSH}SSH client session. The first argument is a host name or
+\texttt{user@host}, optionally with \texttt{:port} (the same
+\texttt{host:port} form as socket \texttt{open()}; IPv6 uses
+\texttt{[addr]:port}). Trailing
+\texttt{"\textit{name}=\textit{value}"} attributes select authentication
+and channel behavior. Connection failures fail with \texttt{\&errortext}
+set (they do not abort), matching the SSL connect path.
+
+\iconcode{
+procedure main() \\
+\>   s := open("user@router.example", "h", "key=~/.ssh/id\_rsa", \\
+\>\>\>\>"cmd=show version") {\textbar} stop(\&errortext) \\
+\>   while write(read(s)) \\
+\>   write("exit status: ", Attrib(s, "exitstatus")) \\
+\>   close(s) \\
+end
+}
+
+Attributes include \texttt{user=},
+\texttt{key=} (private key path), \texttt{keypass=} (passphrase for an
+encrypted key), \texttt{password=} (login password),
+\texttt{hostkeyfile=} (known\_hosts path), \texttt{cmd=} (remote
+command), and \texttt{channel=} (\texttt{yes}/\texttt{no}). Interactive
+shells also accept \texttt{term=} (terminal type; default \$TERM or
+\texttt{xterm}), \texttt{cols=}, and \texttt{rows=} (PTY size; default
+from the local tty, else 80$\times$24). With neither
+\texttt{key=} nor \texttt{password=}, the default identities and a
+running agent are tried. Mode \texttt{"h-"} skips host-key verification.
+Without \texttt{cmd=}, an interactive shell on a PTY is opened.
+Use \texttt{net::ssh\_interactive(s)} (Unicon class library) to attach
+the local tty: raw mode, \texttt{select} mux with \texttt{\&input}, and
+display CRLF mapping. \texttt{channel=no} opens an authenticated session with no channel
+(useful for SFTP or later \texttt{open(s, ...)} channels);
+\texttt{channel=yes} is the default. Combining \texttt{channel=no} with
+\texttt{cmd=} fails. The default port is 22 when \texttt{:port} is
+omitted.
+
+A second \texttt{open(s, ...)} on an existing SSH file opens another
+channel on the same session (no new handshake). Closing the session
+invalidates every channel derived from it.
+
+\iconcode{
+\>   s := open("user@host", "h", "key=id\_rsa") {\textbar} stop(\&errortext) \\
+\>   c1 := open(s, "cmd=uname -a") \\
+\>   c2 := open(s, "cmd=uptime")
+}
+
+Ordinary \texttt{read}/\texttt{writes} use the remote standard streams.
+\texttt{Attrib(c, "exitstatus")}, \texttt{Attrib(c, "stderr")}, and
+\texttt{Attrib(c, "eof")} report the command's exit status, stderr
+accumulated since the previous call, and whether remote EOF has arrived.
+\texttt{receive(c)} yields ordered events as
+\texttt{posix\_message} records whose \texttt{addr} is
+\texttt{"stdout"}, \texttt{"stderr"}, or \texttt{"exit"}.
+
+SFTP uses the same session. Opening with \texttt{"sftp"} and
+\texttt{path=} transfers a remote file (or lists a remote directory,
+with the same auto-detect behavior as a local directory open).
+\texttt{reads}/\texttt{writes} transfer raw bytes.
+\texttt{stat(s, path)}, \texttt{remove(s, path)}, and
+\texttt{rename(s, from, to)} extend the usual builtins with a leading
+SSH session argument.
+
+\iconcode{
+\>   s := open("user@host", "h", "key=id\_rsa", "channel=no") {\textbar} stop(\&errortext) \\
+\>   c := open(s, "sftp", "path=/tmp/out.bin", "w") {\textbar} stop(\&errortext) \\
+\>   writes(c, ReadBytes("local.bin")) \\
+\>   close(c) \\
+\>   info := stat(s, "/tmp/out.bin") \\
+\>   write("remote size: ", info.size) \\
+\>   close(s)
+}
+
 \section{Messaging Facilities}
 
 Unicon's \index{messaging}messaging facilities provide

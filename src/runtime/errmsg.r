@@ -163,6 +163,32 @@ int set_ssl_connection_errortext(SSL *ssl, int err)
 }
 #endif                          /* HAVE_LIBSSL */
 
+#if HAVE_LIBSSH
+/*
+ * set &errornumber and &errortext from a libssh session error.
+ * err is one of the 132x SSH error codes from the errtab above,
+ * used as &errornumber and as the fallback message when the
+ * session has no error string of its own.
+ */
+void set_ssh_errortext(ssh_session sess, int err)
+{
+   int buflen;
+   char *buf = NULL;
+   CURTSTATE();
+
+   k_errornumber = err;
+   if (sess != NULL)
+      buf = (char *) ssh_get_error(sess);
+   if (buf == NULL || *buf == '\0') {
+      set_errortext(err);
+      return;
+   }
+   buflen = strlen(buf);
+   if ((StrLoc(k_errortext) = alcstr(buf, buflen)) != NULL)
+      StrLen(k_errortext) = buflen;
+}
+#endif                          /* HAVE_LIBSSH */
+
 /*
  * set &errno and &errortext based on a system call failure that set errno.
  * TODO: avoid allocations in most cases.

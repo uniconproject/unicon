@@ -1929,7 +1929,7 @@ end
 
 "stat() - get file status."
 
-function{0,1} stat(f)
+function{0,1} stat(f, path)
    type_case f of {
       string: {
          abstract {
@@ -2025,6 +2025,37 @@ function{0,1} stat(f)
             if (BlkD(f,File)->status & Fs_Compress)
                fail;
 #endif                                  /* HAVE_LIBZ */
+
+#if HAVE_LIBSSH
+            if (BlkD(f,File)->status & Fs_SSH) {
+               /*
+                * stat(sshfile): sftp_fstat on an open sftp file.
+                * stat(session, path): a single sftp_stat request on a
+                * remote path, no open()+fstat round trip.
+                */
+               tended char *rpath = NULL;
+               if (BlkD(f,File)->fd.sshf == NULL)
+                  runerr(174, f);
+               if (!constr)
+                  if (!(constr = rec_structor("posix_stat")))
+                     syserr("failed to create posix record constructor");
+               nfields = (int) BlkD(*constr, Proc)->nfields;
+               Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+               if (!is:null(path)) {
+                  if (!cnv:C_string(path, rpath))
+                     runerr(103, path);
+                  if (!ssh_sftp_stat_rec(BlkD(f,File)->fd.sshf, rpath, 0,
+                                         &result, &rp))
+                     fail;
+                  }
+               else {
+                  if (!ssh_sftp_stat_rec(BlkD(f,File)->fd.sshf, NULL, 1,
+                                         &result, &rp))
+                     fail;
+                  }
+               return result;
+               }
+#endif                                  /* HAVE_LIBSSH */
 
             IntVal(amperErrno) = 0;
             if (BlkD(f,File)->status & Fs_Directory) {
@@ -2175,6 +2206,79 @@ function{0,1} receive(f)
       nfields = (int) BlkD(*constr,Proc)->nfields;
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
 
+#if HAVE_LIBSSH
+      if (status & Fs_SSH) {
+         /*
+          * The next channel event in true arrival order: a
+          * posix_message whose addr is "stdout", "stderr" or "exit"
+          * and whose msg is the data (the exit status as a string).
+          * Fails once the channel is exhausted.  Hold the shared
+          * session mutex around pump/dequeue (Concurrent).
+          */
+         struct SSHfile *sshf = BlkD(f,File)->fd.sshf;
+         struct SSHchunk *ck;
+         char *tag;
+         int prc, len;
+#ifdef Concurrent
+         word ssh_mtx = BlkD(f,File)->mutexid;
+#endif                                  /* Concurrent */
+
+         if (sshf == NULL || sshf->closed)
+            fail;
+
+#ifdef Concurrent
+         MUTEX_LOCKID_CONTROLLED(ssh_mtx);
+#endif                                  /* Concurrent */
+         DEC_NARTHREADS;
+         prc = ssh_pump(sshf, 1, 0);
+         INC_NARTHREADS_CONTROLLED;
+         if (prc < 0) {
+#ifdef Concurrent
+            MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+            set_ssh_errortext(sshf->sess, 1324);
+            fail;
+            }
+         if (prc == 0) {
+#ifdef Concurrent
+            MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+            fail;                       /* exhausted */
+            }
+
+         ck = sshf->qhead;
+         sshf->qhead = ck->next;
+         if (sshf->qhead == NULL)
+            sshf->qtail = NULL;
+         if (ck->tag == SSH_CHUNK_STDOUT)
+            sshf->q_stdout -= (ck->len - ck->off);
+         switch (ck->tag) {
+            case SSH_CHUNK_STDOUT: tag = "stdout"; break;
+            case SSH_CHUNK_STDERR: tag = "stderr"; break;
+            default:               tag = "exit";   break;
+            }
+         StrLoc(rp->fields[0]) = tag;
+         StrLen(rp->fields[0]) = strlen(tag);
+         len = ck->len - ck->off;
+         Protect(StrLoc(rp->fields[1]) = alcstr(ck->data + ck->off, len),
+                 {
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                  free(ck); runerr(0);
+                  });
+         StrLen(rp->fields[1]) = len;
+         free(ck);
+#ifdef Concurrent
+         MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+
+         result.dword = D_Record;
+         result.vword.bptr = (union block *)rp;
+         return result;
+         }
+#endif                                  /* HAVE_LIBSSH */
+
       IntVal(amperErrno) = 0;
       if ((ret = sock_recv(BlkD(f,File)->fd.fd, &rp)) == 0) {
          IntVal(amperErrno) = errno;
@@ -2306,6 +2410,18 @@ int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n)
          }
       else
 #endif                                  /* PseudoPty && MSWindows */
+#if NT
+      /*
+       * CRT-backed files (&input, pipes, regular files) cannot go through
+       * Winsock select(); they are polled via findactivecrt().
+       */
+      if (win_crt_selectable(status)) {
+         if (status & Fs_Buff) return 1048;
+         BlkLoc(*f)->File.status |= Fs_Unbuf;
+         return 0;
+         }
+      else
+#endif                                  /* NT */
       if ((fd = get_fd(*f, Fs_Read|Fs_Socket|Fs_Messaging)) < 0) {
          if (fd == -2)
             return 212;
@@ -2335,12 +2451,37 @@ void post_if_ready(dptr ldp, dptr f, fd_set *fdsp)
                                         )) == 0)
       return;
 
+#if NT
+   /*
+    * CRT files are reported by findactivecrt(), not FD_ISSET.  Skipping
+    * here also avoids a false ready if a CRT fd number collides with a
+    * SOCKET that is set in fdsp.
+    */
+   if (win_crt_selectable(status))
+      return;
+#endif                                  /* NT */
+
 #if FIXME_HAVE_LIBSSL
    if ((status & Fs_Socket) && (status & Fs_Encrypt)) {
      if (SSL_has_pending(BlkD(*f, File)->fd.ssl) == 0 )
        return;
    }
 #endif                                  /* LIBSSL */
+
+#if HAVE_LIBSSH
+   /*
+    * SSH: only report ready when stdout (or EOF) is actually available.
+    * A readable TCP fd alone is not enough — it may be protocol noise or
+    * stderr; reads() would then block forever waiting for stdout.
+    * ssh_file_pending() nonblocking-pumps first so we notice data that
+    * select() saw on the wire (or that was left in libssh buffers).
+    */
+   if (status & Fs_SSH) {
+      if (ssh_file_pending(BlkD(*f, File)))
+         c_put(ldp, f);
+      return;
+      }
+#endif                                  /* HAVE_LIBSSH */
 
    fd = get_fd(*f, Fs_Read|Fs_Socket|Fs_Messaging);
    if ((fd != -1) && FD_ISSET(fd, fdsp)) {
@@ -2413,9 +2554,15 @@ function{0,1} select(files[nargs])
       tended struct descrip d = nulldesc;
       tended struct descrip d2 = nulldesc;
       tended struct descrip d3 = nulldesc;
+#if NT
+      tended struct descrip d4 = nulldesc;
+#endif                                  /* NT */
       tended struct descrip f;
       tended struct b_list *lws = NULL;
       tended struct b_list *lps = NULL;
+#if NT
+      tended struct b_list *lcs = NULL;
+#endif                                  /* NT */
       struct hgstate state;
 
 #ifdef Graphics
@@ -2469,6 +2616,43 @@ function{0,1} select(files[nargs])
          }
 #endif                                  /* Graphics */
 
+#if NT
+      /*
+       * prepass: CRT-backed files for Win32 readiness polling
+       */
+      if ((lcs = alclist(0, MinListSlots)) == NULL) runerr(307);
+      d4.dword = D_List;
+      BlkLoc(d4) = (union block *)lcs;
+      for (k = 0; k < nargs; k++) {
+         if ((k + 1 == nargs) && is:integer(files[k]))
+            continue;
+         if (is:file(files[k]) &&
+             win_crt_selectable(BlkD(files[k], File)->status))
+            c_put(&d4, files+k);
+         else if (is:list(files[k])) {
+            for (ep = BlkD(files[k], List)->listhead;
+                 BlkType(ep) == T_Lelem; ep = Blk(ep, Lelem)->listnext) {
+               for (i = 0; i < Blk(ep, Lelem)->nused; i++) {
+                  j = Blk(ep, Lelem)->first + i;
+                  if (j >= ep->Lelem.nslots)
+                     j -= ep->Lelem.nslots;
+                  f = ep->Lelem.lslots[j];
+                  if (is:file(f) && win_crt_selectable(BlkD(f, File)->status))
+                     c_put(&d4, &f);
+                  }
+               }
+            }
+         else if (is:set(files[k])) {
+            for (ep = hgfirst(BlkLoc(files[k]), &state); ep != 0;
+                 ep = hgnext(BlkLoc(files[k]), &state, ep)) {
+               f = ep->Selem.setmem;
+               if (is:file(f) && win_crt_selectable(BlkD(f, File)->status))
+                  c_put(&d4, &f);
+               }
+            }
+         }
+#endif                                  /* NT */
+
       /*
        * Unicon select() repeats until a timeout or real result.
        * GUI activity requires periodic service while select() waits.
@@ -2514,6 +2698,47 @@ function{0,1} select(files[nargs])
                }
             }
 
+#if HAVE_LIBSSH
+         /*
+          * If any SSH file already has queued/pumpable data, do not block
+          * in select() — the TCP fd may be idle while the prompt sits in
+          * libssh buffers from open().
+          */
+         {
+         int ssh_ready = 0;
+         for (k = 0; k < nargs && !ssh_ready; k++) {
+            if ((k + 1 == nargs) && is:integer(files[k]))
+               continue;
+            if (is:file(files[k]) &&
+                (BlkD(files[k], File)->status & Fs_SSH) &&
+                ssh_file_pending(BlkD(files[k], File)))
+               ssh_ready = 1;
+            else if (is:list(files[k])) {
+               for (ep = BlkD(files[k], List)->listhead;
+                    BlkType(ep) == T_Lelem && !ssh_ready;
+                    ep = Blk(ep, Lelem)->listnext) {
+                  for (i = 0; i < Blk(ep, Lelem)->nused && !ssh_ready; i++) {
+                     j = Blk(ep, Lelem)->first + i;
+                     if (j >= ep->Lelem.nslots)
+                        j -= Blk(ep, Lelem)->nslots;
+                     f = Blk(ep, Lelem)->lslots[j];
+                     if (is:file(f) && (BlkD(f, File)->status & Fs_SSH) &&
+                         ssh_file_pending(BlkD(f, File)))
+                        ssh_ready = 1;
+                     }
+                  }
+               }
+            }
+         if (ssh_ready) {
+            tv.tv_sec = 0;
+            tv.tv_usec = 0;
+            ptv = &tv;
+            /* fall through: still set timeout branch may overwrite ptv */
+            }
+         if (ssh_ready)
+            timeout = 0;
+         }
+#endif                                  /* HAVE_LIBSSH */
 
       /* Set the tv struct */
       if (timeout < 0) {
@@ -2531,7 +2756,7 @@ function{0,1} select(files[nargs])
 #if defined(PseudoPty) && defined(MSWindows)
          /*
           * if there are any ptys, then even if we said to go forever
-          * timeout periodically to check for window events.
+          * timeout periodically to check for pty readiness.
           */
          if (lps->size > 0) {
             tv.tv_sec = 0;
@@ -2539,6 +2764,17 @@ function{0,1} select(files[nargs])
             }
          else
 #endif                                  /* PseudoPty && MSWindows */
+#if NT
+         /*
+          * CRT files (&input, etc.): poll periodically; Winsock cannot
+          * wait on them.
+          */
+         if (lcs->size > 0) {
+            tv.tv_sec = 0;
+            tv.tv_usec = 50000;
+            }
+         else
+#endif                                  /* NT */
             ptv = 0;
          }
       else {
@@ -2563,6 +2799,14 @@ function{0,1} select(files[nargs])
          }
 #endif                                  /* PseudoPty && MSWindows */
 #endif                                  /* Graphics */
+#if NT
+      if ((lp == NULL) && (lcs->size > 0) &&
+          ((lp = findactivecrt(lcs)) != NULL)) {
+         d.dword = D_List;
+         BlkLoc(d) = (union block *) lp;
+         tv.tv_sec = tv.tv_usec = 0;
+         }
+#endif                                  /* NT */
 
       if (n) {
         DEC_NARTHREADS;
@@ -2599,9 +2843,23 @@ function{0,1} select(files[nargs])
             }
 #endif                                  /* PseudoPty */
 #endif                                  /* Graphics */
+#if NT
+         if ((lp == NULL) && (lcs->size > 0) &&
+             ((lp = findactivecrt(lcs)) != NULL)) {
+            d.dword = D_List;
+            BlkLoc(d) = (union block *) lp;
+            }
+#endif                                  /* NT */
          }
       else if (ptv && (ptv->tv_sec || ptv->tv_usec)) {
          idelay(ptv->tv_sec * 1000 + ptv->tv_usec / 1000);
+#if NT
+         if ((lp == NULL) && (lcs->size > 0) &&
+             ((lp = findactivecrt(lcs)) != NULL)) {
+            d.dword = D_List;
+            BlkLoc(d) = (union block *) lp;
+            }
+#endif                                  /* NT */
          }
 
       if (lp == NULL) {

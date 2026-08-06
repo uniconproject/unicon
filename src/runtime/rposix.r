@@ -289,6 +289,15 @@ int get_fd(struct descrip file, unsigned int errmask)
 #define fileno _fileno
 #endif                                  /* NT */
 
+#if HAVE_LIBSSH
+   if (status & Fs_SSH) {
+      struct SSHfile *sshf = BlkD(file,File)->fd.sshf;
+      if (sshf == NULL || sshf->closed || sshf->sess == NULL)
+         return -1;
+      return ssh_get_fd(sshf->sess);
+      }
+#endif                                  /* HAVE_LIBSSH */
+
    if (status & Fs_Socket) {
 #if HAVE_LIBSSL
       if(status & Fs_Encrypt)
@@ -304,6 +313,43 @@ int get_fd(struct descrip file, unsigned int errmask)
    return fileno(BlkD(file,File)->fd.fp);
 }
 
+#if HAVE_LIBSSH
+/*
+ * ssh_file_pending() - 1 if an SSH file already has stdout (or EOF)
+ * waiting.  Used by select() so we do not hang when libssh buffered
+ * the banner/prompt during open().  Only stdout matters here: stream
+ * reads() do not consume stderr/exit queue chunks, so a nonempty
+ * qhead alone must not make select() claim the file is readable.
+ */
+int ssh_file_pending(struct b_file *fp)
+{
+   struct SSHfile *sshf;
+
+   if (fp == NULL || !(fp->status & Fs_SSH))
+      return 0;
+   sshf = fp->fd.sshf;
+   if (sshf == NULL || sshf->closed)
+      return 0;
+#ifdef Concurrent
+   MUTEX_LOCKID_CONTROLLED(fp->mutexid);
+#endif                                  /* Concurrent */
+   if (sshf->nl_pending || sshf->q_stdout > 0) {
+#ifdef Concurrent
+      MUTEX_UNLOCKID(fp->mutexid);
+#endif                                  /* Concurrent */
+      return 1;
+      }
+   if (sshf->chan != NULL || sshf->sfile != NULL)
+      ssh_pump(sshf, 0, 1);             /* want stdout for reads()/select */
+   {
+   int ready = (sshf->nl_pending || sshf->q_stdout > 0 || sshf->eof_seen);
+#ifdef Concurrent
+   MUTEX_UNLOCKID(fp->mutexid);
+#endif                                  /* Concurrent */
+   return ready;
+   }
+}
+#endif                                  /* HAVE_LIBSSH */
 
 int get_uid(char *name)
 {
@@ -1474,19 +1520,6 @@ static int sock_join_group(int s, char *grp, char *src,
       }
    errno = EINVAL;
    return -1;
-}
-
-/* True if host is a dotted/numeric multicast address (not a name). */
-static int host_is_multicast(char *host)
-{
-   struct in_addr a4;
-   struct in6_addr a6;
-
-   if (inet_pton(AF_INET, host, &a4) == 1)
-      return IN_MULTICAST(ntohl(a4.s_addr));
-   if (inet_pton(AF_INET6, host, &a6) == 1)
-      return IN6_IS_ADDR_MULTICAST(&a6);
-   return 0;
 }
 
 /*
@@ -3753,6 +3786,1251 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
 }
 #endif                                  /* LIBSSL */
 
+#if HAVE_LIBSSH
+
+#if !NT
+#passthru #include <sys/ioctl.h>
+#endif                                  /* !NT */
+
+/*
+ * Authentication attributes are tried in the order they appear in the
+ * open() call, not in a hardcoded priority order.
+ */
+#define SSH_AUTH_ATTR_KEY      1
+#define SSH_AUTH_ATTR_PASSWORD 2
+
+/*
+ * Channel event queue.  Data and exit-status callbacks append tagged
+ * chunks as messages are parsed off the wire, preserving the exact
+ * stdout/stderr arrival order (ssh_channel_read()'s own buffers keep
+ * the two streams apart and lose it).  Everything here is malloc'd:
+ * callbacks can fire inside blocking libssh calls made while the
+ * thread is unregistered (DEC_NARTHREADS), where Icon allocation is
+ * not allowed.
+ */
+static void ssh_enqueue(struct SSHfile *sshf, int tag, char *data, int len)
+{
+   struct SSHchunk *ck;
+
+   ck = malloc(sizeof(struct SSHchunk) + len);
+   if (ck == NULL)
+      syserr("out of memory for ssh channel data");
+   ck->next = NULL;
+   ck->tag = tag;
+   ck->off = 0;
+   ck->len = len;
+   if (len > 0)
+      memcpy(ck->data, data, len);
+   if (sshf->qtail != NULL)
+      sshf->qtail->next = ck;
+   else
+      sshf->qhead = ck;
+   sshf->qtail = ck;
+   if (tag == SSH_CHUNK_STDOUT)
+      sshf->q_stdout += len;
+}
+
+static int ssh_chan_data_cb(ssh_session session, ssh_channel channel,
+                            void *data, uint32_t len, int is_stderr,
+                            void *userdata)
+{
+   struct SSHfile *sshf = (struct SSHfile *)userdata;
+
+   if (len == 0)
+      return 0;
+   ssh_enqueue(sshf, is_stderr ? SSH_CHUNK_STDERR : SSH_CHUNK_STDOUT,
+               (char *)data, (int)len);
+   return (int)len;             /* consumed: keep it out of libssh's buffer */
+}
+
+static void ssh_chan_eof_cb(ssh_session session, ssh_channel channel,
+                            void *userdata)
+{
+   ((struct SSHfile *)userdata)->eof_seen = 1;
+}
+
+static void ssh_chan_exit_cb(ssh_session session, ssh_channel channel,
+                             int exit_status, void *userdata)
+{
+   struct SSHfile *sshf = (struct SSHfile *)userdata;
+   char buf[32];
+
+   sshf->exit_status = exit_status;
+   sshf->exit_seen = 1;
+   snprintf(buf, sizeof(buf), "%d", exit_status);
+   ssh_enqueue(sshf, SSH_CHUNK_EXIT, buf, (int)strlen(buf));
+}
+
+/*
+ * ssh_clear_file_state() - free queued chunks and the callbacks
+ * struct, leaving the SSHfile itself allocated (still owned by a
+ * b_file until that file is closed).
+ */
+static void ssh_clear_file_state(struct SSHfile *sshf)
+{
+   struct SSHchunk *ck, *nextck;
+
+   for (ck = sshf->qhead; ck != NULL; ck = nextck) {
+      nextck = ck->next;
+      free(ck);
+      }
+   sshf->qhead = sshf->qtail = NULL;
+   sshf->q_stdout = 0;
+   if (sshf->cbs != NULL) {
+      free(sshf->cbs);
+      sshf->cbs = NULL;
+      }
+}
+
+/*
+ * ssh_free_file_state() - clear a file's queued state and free the
+ * SSHfile struct itself.
+ */
+static void ssh_free_file_state(struct SSHfile *sshf)
+{
+   ssh_clear_file_state(sshf);
+   free(sshf);
+}
+
+/*
+ * ssh_chan_register_callbacks() - route a channel's traffic through
+ * the arrival-order queue.  Must happen before the channel is opened
+ * so no early data can land in libssh's own buffers instead.
+ */
+static int ssh_chan_register_callbacks(struct SSHfile *sshf, ssh_channel chan)
+{
+   ssh_channel_callbacks cb;
+
+   cb = malloc(sizeof(struct ssh_channel_callbacks_struct));
+   if (cb == NULL)
+      return -1;
+   memset(cb, 0, sizeof(struct ssh_channel_callbacks_struct));
+   ssh_callbacks_init(cb);
+   cb->userdata = sshf;
+   cb->channel_data_function = ssh_chan_data_cb;
+   cb->channel_eof_function = ssh_chan_eof_cb;
+   cb->channel_exit_status_function = ssh_chan_exit_cb;
+   if (ssh_set_channel_callbacks(chan, cb) != SSH_OK) {
+      free(cb);
+      return -1;
+      }
+   sshf->cbs = cb;
+   return 0;
+}
+
+/*
+ * ssh_pump() - let libssh process incoming packets so the channel
+ * callbacks can run.  Returns 1 once the queue has what the caller
+ * wants (a stdout chunk when want_stdout, else any chunk), 0 at EOF
+ * with nothing wanted queued, 2 when nonblocking and nothing has
+ * arrived yet, -1 on error (does NOT set &errortext -- callers that
+ * run under DEC_NARTHREADS must call set_ssh_errortext only after
+ * re-registering the thread).
+ */
+int ssh_pump(struct SSHfile *sshf, int block, int want_stdout)
+{
+   int rc;
+
+   if (sshf == NULL || sshf->closed)
+      return -1;
+
+   for (;;) {
+      if (want_stdout ? (sshf->q_stdout > 0) : (sshf->qhead != NULL))
+         return 1;
+      if (sshf->chan == NULL || sshf->eof_seen ||
+          ssh_channel_is_eof(sshf->chan))
+         return 0;
+      rc = ssh_channel_poll_timeout(sshf->chan, block ? 100 : 0, 0);
+      if (rc == SSH_ERROR)
+         return -1;
+      if (!block) {
+         if (want_stdout ? (sshf->q_stdout > 0) : (sshf->qhead != NULL))
+            return 1;
+         if (sshf->eof_seen || rc == SSH_EOF ||
+             ssh_channel_is_eof(sshf->chan))
+            return 0;
+         return 2;
+         }
+      }
+}
+
+/*
+ * ssh_chan_read() - read up to n stdout bytes out of the queue,
+ * pumping the wire as needed.  Returns the byte count, 0 at EOF,
+ * -1 on error (caller sets &errortext after INC_NARTHREADS).
+ *
+ * Under Concurrent, the caller must hold the shared session mutex
+ * (b_file.mutexid) around this call: the same lock used by
+ * receive()/Attrib() and by writers on sibling channels.
+ */
+int ssh_chan_read(struct SSHfile *sshf, char *buf, int n, int block)
+{
+   struct SSHchunk *ck, *prev, *nextck;
+   int copied = 0, take, rc;
+
+   if (sshf == NULL || sshf->closed)
+      return -1;
+
+   if (sshf->sfile != NULL) {
+      /*
+       * SFTP regular file: raw sftp_read.  Caller is responsible for
+       * DEC_NARTHREADS around this (same as other blocking SSH I/O).
+       */
+      rc = sftp_read(sshf->sfile, buf, n);
+      if (rc < 0)
+         return -1;                     /* caller sets &errortext after INC */
+      return rc;                        /* 0 == EOF */
+      }
+
+   if (sshf->q_stdout == 0) {
+      rc = ssh_pump(sshf, block, 1);
+      if (rc == -1)
+         return -1;
+      if (rc != 1)
+         return 0;                      /* EOF (or nothing yet, nonblocking) */
+      }
+   prev = NULL;
+   ck = sshf->qhead;
+   while (ck != NULL && copied < n) {
+      nextck = ck->next;
+      if (ck->tag != SSH_CHUNK_STDOUT) {
+         prev = ck;
+         ck = nextck;
+         continue;
+         }
+      take = ck->len - ck->off;
+      if (take > n - copied)
+         take = n - copied;
+      memcpy(buf + copied, ck->data + ck->off, take);
+      ck->off += take;
+      copied += take;
+      sshf->q_stdout -= take;
+      if (ck->off == ck->len) {
+         if (prev != NULL)
+            prev->next = nextck;
+         else
+            sshf->qhead = nextck;
+         if (sshf->qtail == ck)
+            sshf->qtail = prev;
+         free(ck);
+         }
+      ck = nextck;
+      }
+   return copied;
+}
+
+/*
+ * ssh_drain_stderr() - remove every queued stderr chunk, producing
+ * their concatenation (possibly empty) as an Icon string in *d.
+ * This is a live, incremental accessor: each call returns only the
+ * bytes accumulated since the previous one.
+ *
+ * Under Concurrent, the caller must hold the shared session mutex
+ * (same rule as ssh_chan_read).
+ */
+void ssh_drain_stderr(struct SSHfile *sshf, dptr d)
+{
+   struct SSHchunk *ck, *prev, *nextck;
+   word total = 0;
+   char *p;
+
+   for (ck = sshf->qhead; ck != NULL; ck = ck->next)
+      if (ck->tag == SSH_CHUNK_STDERR)
+         total += ck->len;
+
+   StrLen(*d) = total;
+   if (total == 0) {
+      StrLoc(*d) = "";
+      return;
+      }
+   Protect(StrLoc(*d) = alcstr(NULL, total), fatalerr(0,NULL));
+
+   p = StrLoc(*d);
+   prev = NULL;
+   ck = sshf->qhead;
+   while (ck != NULL) {
+      nextck = ck->next;
+      if (ck->tag == SSH_CHUNK_STDERR) {
+         memcpy(p, ck->data, ck->len);
+         p += ck->len;
+         if (prev != NULL)
+            prev->next = nextck;
+         else
+            sshf->qhead = nextck;
+         if (sshf->qtail == ck)
+            sshf->qtail = prev;
+         free(ck);
+         }
+      else
+         prev = ck;
+      ck = nextck;
+      }
+}
+
+/*
+ * ssh_request_interactive_pty() - remote PTY with TERM + window size.
+ * Without a real size, ls(1) and friends fall back to one column.
+ * term NULL => $TERM or "xterm"; cols/rows <= 0 => local TIOCGWINSZ
+ * (or 80x24).
+ */
+static int ssh_request_interactive_pty(ssh_channel chan, const char *term,
+                                       int cols, int rows)
+{
+   const char *t = term;
+#if !NT
+   struct winsize ws;
+#endif                                  /* !NT */
+
+   if (t == NULL || *t == '\0') {
+      t = getenv("TERM");
+      if (t == NULL || *t == '\0')
+         t = "xterm";
+      }
+   if (cols <= 0 || rows <= 0) {
+#if !NT
+      if (ioctl(STDIN_FILENO, TIOCGWINSZ, &ws) == 0 ||
+          ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0) {
+         if (cols <= 0 && ws.ws_col > 0)
+            cols = ws.ws_col;
+         if (rows <= 0 && ws.ws_row > 0)
+            rows = ws.ws_row;
+         }
+#endif                                  /* !NT */
+      if (cols <= 0)
+         cols = 80;
+      if (rows <= 0)
+         rows = 24;
+      }
+   return ssh_channel_request_pty_size(chan, t, cols, rows);
+}
+
+/*
+ * create_ssh_session() - establish an authenticated SSH connection,
+ * optionally with a channel on it, returning a malloc'd SSHfile.
+ * Follows the same attribute-parsing shape as create_ssl_context():
+ * trailing open() arguments are "key=value" strings (a leading integer
+ * is a connect timeout in milliseconds, as for plain sockets).
+ *
+ * The first open() argument is "host", "user@host", or either with
+ * ":port" (same host:port shape as socket open(); IPv6 uses
+ * "[addr]:port").  With a cmd= attribute the channel is a one-shot
+ * exec channel with clean command boundaries; otherwise an interactive
+ * shell on a pty is requested.  channel=no opens a transport-only
+ * session (no channel); use a later open(s, ...) for exec/shell/SFTP.
+ * channel=yes is the default.  Passing do_verify = 0 (the '-' mode
+ * char) skips host-key verification.
+ *
+ * On failure sets &errortext and returns NULL, so open() can fail
+ * rather than raise a runtime error, matching the SSL connect path.
+ */
+struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n, int do_verify)
+{
+   tended char *tmps, *val;
+   tended char *key=NULL, *password=NULL, *keypass=NULL;
+   tended char *hostkeyfile=NULL, *cmd=NULL, *userattr=NULL;
+   tended char *term=NULL;
+   char namebuf[512];
+   char *user, *host, *at, *colon, *rbrack;
+   int auth_order[2];
+   int nauth = 0;
+   struct SSHfile *sshf;
+   ssh_session sess = NULL;
+   ssh_channel chan = NULL;
+   C_integer timeout = 0;
+   C_integer port = 0;
+   C_integer pty_cols = 0, pty_rows = 0;
+   int a, authed, err;
+   int want_channel = 1;                /* channel=yes by default */
+
+   /*
+    * Split "user@host[:port]" (or "[ipv6]:port") into storage that
+    * cannot move if the attribute parsing below triggers a GC.  Port
+    * uses the same host:port form as socket open(), not a port= attr.
+    */
+   if (strlen(fnamestr) >= sizeof(namebuf)) {
+      set_errortext(1320);
+      return NULL;
+      }
+   strncpy(namebuf, fnamestr, sizeof(namebuf)-1);
+   namebuf[sizeof(namebuf)-1] = '\0';
+   user = NULL;
+   host = namebuf;
+   at = strchr(namebuf, '@');
+   if (at != NULL) {
+      *at = '\0';
+      user = namebuf;
+      host = at + 1;
+      }
+   if (*host == '\0') {
+      set_errortext_with_val(1320, fnamestr);
+      return NULL;
+      }
+   /*
+    * Optional :port.  Bracketed IPv6: "[addr]:port".  Otherwise take
+    * host:port only when there is a single colon, so a bare IPv6
+    * literal is not misparsed (same rule as socket open()).
+    */
+   if (host[0] == '[') {
+      rbrack = strchr(host + 1, ']');
+      if (rbrack == NULL || (rbrack[1] != '\0' && rbrack[1] != ':')) {
+         set_errortext_with_val(1320, fnamestr);
+         return NULL;
+         }
+      *rbrack = '\0';
+      host++;                           /* skip '[' */
+      if (*host == '\0') {
+         set_errortext_with_val(1320, fnamestr);
+         return NULL;
+         }
+      if (rbrack[1] == ':') {
+         port = atol(rbrack + 2);
+         if (port <= 0 || port > 65535) {
+            set_errortext_with_val(1320, fnamestr);
+            return NULL;
+            }
+         }
+      }
+   else {
+      colon = strrchr(host, ':');
+      if (colon != NULL && strchr(host, ':') == colon && colon[1] != '\0') {
+         *colon = '\0';
+         port = atol(colon + 1);
+         if (port <= 0 || port > 65535 || *host == '\0') {
+            set_errortext_with_val(1320, fnamestr);
+            return NULL;
+            }
+         }
+      }
+
+   /*
+    * Check the attributes, create_ssl_context() style.
+    */
+   for (a=0; a<n; a++) {
+      if (is:null(attr[a])) {
+         attr[a] = emptystr;
+         continue;
+         }
+      if (a==0 && cnv:C_integer(attr[a], timeout))
+         continue;
+      if (!cnv:C_string(attr[a], tmps)) {
+         set_errortext(1321);
+         return NULL;
+         }
+      if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
+         set_errortext_with_val(1321, tmps);
+         return NULL;
+         }
+      /*
+       * Split a private copy at the '=' sign; cnv:C_string can return
+       * the caller's own string storage, which must not be mutated.
+       */
+      Protect(tmps = alcstr(tmps, (word)strlen(tmps)+1), fatalerr(0,NULL));
+      val = strchr(tmps, '=');
+      if (val == NULL) {
+         set_errortext_with_val(1321, tmps);
+         return NULL;
+         }
+      *val = '\0';
+      val++;
+      if (strlen(val) == 0) {
+         set_errortext_with_val(1321, tmps);
+         return NULL;
+         }
+      if (strcmp(tmps, "user") == 0)
+         userattr = val;
+      else if (strcmp(tmps, "key") == 0) {
+         key = val;
+         if (nauth < 2) auth_order[nauth++] = SSH_AUTH_ATTR_KEY;
+         }
+      else if (strcmp(tmps, "password") == 0) {
+         password = val;
+         if (nauth < 2) auth_order[nauth++] = SSH_AUTH_ATTR_PASSWORD;
+         }
+      else if (strcmp(tmps, "keypass") == 0)
+         keypass = val;
+      else if (strcmp(tmps, "hostkeyfile") == 0)
+         hostkeyfile = val;
+      else if (strcmp(tmps, "cmd") == 0)
+         cmd = val;
+      else if (strcmp(tmps, "term") == 0)
+         term = val;
+      else if (strcmp(tmps, "cols") == 0)
+         pty_cols = atol(val);
+      else if (strcmp(tmps, "rows") == 0)
+         pty_rows = atol(val);
+      else if (strcmp(tmps, "channel") == 0) {
+         want_channel = sock_attr_bool(val);
+         if (want_channel < 0) {
+            set_errortext_with_val(1321, tmps);
+            return NULL;
+            }
+         }
+      else {
+         set_errortext_with_val(1321, tmps);
+         return NULL;
+         }
+      }
+
+   /* an explicit user@host wins over a user= attribute */
+   if (user == NULL && userattr != NULL)
+      user = userattr;
+
+   /* channel=no with cmd= is contradictory */
+   if (!want_channel && cmd != NULL) {
+      set_errortext_with_val(1321, "channel");
+      return NULL;
+      }
+
+   sess = ssh_new();
+   if (sess == NULL) {
+      set_errortext(1320);
+      return NULL;
+      }
+   ssh_options_set(sess, SSH_OPTIONS_HOST, host);
+   if (user != NULL)
+      ssh_options_set(sess, SSH_OPTIONS_USER, user);
+   if (port != 0) {
+      unsigned int p = (unsigned int)port;
+      ssh_options_set(sess, SSH_OPTIONS_PORT, &p);
+      }
+   if (timeout > 0) {
+      long sec = timeout / 1000;
+      long usec = (timeout % 1000) * 1000;
+      ssh_options_set(sess, SSH_OPTIONS_TIMEOUT, &sec);
+      ssh_options_set(sess, SSH_OPTIONS_TIMEOUT_USEC, &usec);
+      }
+   if (hostkeyfile != NULL)
+      ssh_options_set(sess, SSH_OPTIONS_KNOWNHOSTS, hostkeyfile);
+
+   sshf = malloc(sizeof(struct SSHfile));
+   if (sshf == NULL) {
+      ssh_free(sess);
+      set_errortext(1320);
+      return NULL;
+      }
+   memset(sshf, 0, sizeof(struct SSHfile));
+
+   /*
+    * The network phase: no Icon allocation may happen between
+    * DEC_NARTHREADS and INC_NARTHREADS_CONTROLLED, so error text is
+    * only produced at the ssh_fail label after re-registering.
+    */
+   err = 1320;
+   DEC_NARTHREADS;
+
+   if (ssh_connect(sess) != SSH_OK)
+      goto ssh_fail;
+
+   if (do_verify) {
+      if (ssh_session_is_known_server(sess) != SSH_KNOWN_HOSTS_OK) {
+         err = 1323;
+         goto ssh_fail;
+         }
+      }
+
+   /*
+    * Authenticate: attributes in call order; with neither key= nor
+    * password= fall back to the default identities (~/.ssh keys or a
+    * running agent).
+    */
+   authed = 0;
+   if (nauth == 0) {
+      if (ssh_userauth_publickey_auto(sess, NULL, keypass) == SSH_AUTH_SUCCESS)
+         authed = 1;
+      }
+   for (a = 0; a < nauth && !authed; a++) {
+      if (auth_order[a] == SSH_AUTH_ATTR_KEY) {
+         ssh_key privkey = NULL;
+         if (ssh_pki_import_privkey_file(key, keypass, NULL, NULL,
+                                         &privkey) == SSH_OK) {
+            if (ssh_userauth_publickey(sess, NULL, privkey) == SSH_AUTH_SUCCESS)
+               authed = 1;
+            ssh_key_free(privkey);
+            }
+         }
+      else {
+         if (ssh_userauth_password(sess, NULL, password) == SSH_AUTH_SUCCESS)
+            authed = 1;
+         }
+      }
+   if (!authed) {
+      err = 1322;
+      goto ssh_fail;
+      }
+
+   /*
+    * Open a channel unless channel=no (transport-only session for
+    * later open(s, ...) / SFTP).  With a channel: exec when cmd= was
+    * given, otherwise an interactive shell on a pty.  Callbacks are
+    * set before the open so no early data bypasses the event queue.
+    */
+   if (want_channel) {
+      err = 1324;
+      chan = ssh_channel_new(sess);
+      if (chan == NULL)
+         goto ssh_fail;
+      if (ssh_chan_register_callbacks(sshf, chan) < 0)
+         goto ssh_fail;
+      if (ssh_channel_open_session(chan) != SSH_OK)
+         goto ssh_fail;
+      if (cmd != NULL) {
+         if (ssh_channel_request_exec(chan, cmd) != SSH_OK)
+            goto ssh_fail;
+         }
+      else {
+         if (ssh_request_interactive_pty(chan, term,
+                                         (int)pty_cols, (int)pty_rows) != SSH_OK)
+            goto ssh_fail;
+         if (ssh_channel_request_shell(chan) != SSH_OK)
+            goto ssh_fail;
+         }
+      }
+
+   INC_NARTHREADS_CONTROLLED;
+
+   sshf->sess = sess;
+   sshf->chan = chan;                   /* NULL when channel=no */
+   return sshf;
+
+ssh_fail:
+   INC_NARTHREADS_CONTROLLED;
+   set_ssh_errortext(sess, err);
+   if (chan != NULL)
+      ssh_channel_free(chan);
+   ssh_disconnect(sess);
+   ssh_free(sess);
+   ssh_free_file_state(sshf);
+   return NULL;
+}
+
+/*
+ * ssh_close_file() - close-hook cleanup for an SSH file.
+ *
+ * Closing a channel closes/frees just that channel and unlinks it from
+ * its session's list.  Closing the session file cascade-closes every
+ * remaining channel (their SSHfile structs are only freed when their
+ * own file is closed, but they are unusable from here on) and then
+ * tears down the connection.
+ */
+void ssh_close_file(struct SSHfile *sshf)
+{
+   struct SSHfile *ch, *nextch, **pp;
+
+   if (sshf == NULL)
+      return;
+
+   if (sshf->sfile != NULL) {
+      sftp_close(sshf->sfile);
+      sshf->sfile = NULL;
+      }
+   if (sshf->sdir != NULL) {
+      sftp_closedir(sshf->sdir);
+      sshf->sdir = NULL;
+      }
+
+   if (sshf->chan != NULL) {
+      ssh_channel_send_eof(sshf->chan);
+      ssh_channel_close(sshf->chan);
+      ssh_channel_free(sshf->chan);
+      sshf->chan = NULL;
+      }
+
+   if (sshf->parent != NULL) {
+      /* a channel: unlink from its session owner */
+      for (pp = &sshf->parent->children; *pp != NULL; pp = &(*pp)->next)
+         if (*pp == sshf) {
+            *pp = sshf->next;
+            break;
+            }
+      }
+   else if (sshf->sess != NULL) {
+      /*
+       * Session owner: invalidate every remaining channel.  Icon-level
+       * b_file handles stay alive until their own close(), but the
+       * closed flag and cleared queue make them unusable immediately
+       * (no dangling libssh objects, no readable leftovers).
+       */
+      for (ch = sshf->children; ch != NULL; ch = nextch) {
+         nextch = ch->next;
+         if (ch->sfile != NULL) {
+            sftp_close(ch->sfile);
+            ch->sfile = NULL;
+            }
+         if (ch->sdir != NULL) {
+            sftp_closedir(ch->sdir);
+            ch->sdir = NULL;
+            }
+         if (ch->chan != NULL) {
+            ssh_channel_send_eof(ch->chan);
+            ssh_channel_close(ch->chan);
+            ssh_channel_free(ch->chan);
+            ch->chan = NULL;
+            }
+         ch->sftp = NULL;               /* owned here, freed below */
+         ch->sess = NULL;
+         ch->parent = NULL;
+         ch->next = NULL;
+         ch->closed = 1;
+         ssh_clear_file_state(ch);
+         }
+      sshf->children = NULL;
+      if (sshf->sftp != NULL) {
+         sftp_free(sshf->sftp);
+         sshf->sftp = NULL;
+         }
+      ssh_disconnect(sshf->sess);
+      ssh_free(sshf->sess);
+      sshf->sess = NULL;
+      }
+
+   ssh_free_file_state(sshf);
+}
+
+/*
+ * ssh_file_write() - write all n bytes to an SSH channel or SFTP file.
+ * Retries short writes.  Returns n on success, or -1 with &errortext set.
+ */
+int ssh_file_write(struct SSHfile *sshf, char *s, word n)
+{
+   word total = 0;
+   int rc;
+
+   if (sshf == NULL || sshf->closed) {
+      set_errortext(1324);
+      return -1;
+      }
+   if (n == 0)
+      return 0;
+   if (sshf->sfile != NULL) {
+      DEC_NARTHREADS;
+      while (total < n) {
+         rc = sftp_write(sshf->sfile, s + total, (size_t)(n - total));
+         if (rc < 0) {
+            INC_NARTHREADS_CONTROLLED;
+            set_ssh_errortext(sshf->sess, 1325);
+            return -1;
+            }
+         if (rc == 0) {
+            INC_NARTHREADS_CONTROLLED;
+            set_ssh_errortext(sshf->sess, 1325);
+            return -1;
+            }
+         total += rc;
+         }
+      INC_NARTHREADS_CONTROLLED;
+      return (int)n;
+      }
+   if (sshf->chan == NULL) {
+      set_errortext(1324);
+      return -1;
+      }
+   DEC_NARTHREADS;
+   while (total < n) {
+      rc = ssh_channel_write(sshf->chan, s + total, (uint32_t)(n - total));
+      if (rc == SSH_ERROR) {
+         INC_NARTHREADS_CONTROLLED;
+         set_ssh_errortext(sshf->sess, 1324);
+         return -1;
+         }
+      if (rc == 0) {
+         INC_NARTHREADS_CONTROLLED;
+         set_ssh_errortext(sshf->sess, 1324);
+         return -1;
+         }
+      total += rc;
+      }
+   INC_NARTHREADS_CONTROLLED;
+   return (int)n;
+}
+
+/*
+ * ssh_getstrg() - sock_getstrg() equivalent for SSH channels: read a
+ * line of at most maxi characters into buf.  Returns the length not
+ * counting the newline, -1 on EOF, -3 on error.  Like sock_getstrg(),
+ * the newline is delivered separately as a one-character read; libssh
+ * has no MSG_PEEK, so a seen-but-unconsumed newline is remembered in
+ * nl_pending instead of being left in a kernel buffer.
+ */
+int ssh_getstrg(char *buf, int maxi, struct SSHfile *sshf)
+{
+   int i = 0, n;
+   char c;
+
+   /*
+    * Called under DEC_NARTHREADS.  On error return -3 without setting
+    * &errortext (alcstr is unsafe here); the caller re-registers and
+    * then calls set_ssh_errortext.
+    */
+   if (sshf == NULL || sshf->closed ||
+       (sshf->chan == NULL && sshf->sfile == NULL && sshf->q_stdout == 0))
+      return -3;
+   if (sshf->nl_pending) {
+      sshf->nl_pending = 0;
+      buf[0] = '\n';
+      return 1;
+      }
+   while (i < maxi) {
+      n = ssh_chan_read(sshf, &c, 1, 1);
+      if (n == 0)                       /* EOF */
+         return (i > 0) ? i : -1;
+      if (n < 0)                        /* error; caller sets &errortext */
+         return -3;
+      if (c == '\n') {
+         if (i == 0) {
+            buf[0] = '\n';
+            return 1;
+            }
+         sshf->nl_pending = 1;
+         return i;
+         }
+      buf[i++] = c;
+      }
+   return i;
+}
+
+/*
+ * create_ssh_channel() - open another channel on an existing session,
+ * reusing the transport and authentication.  spec is open()'s second
+ * argument, treated as the first attribute when given: with cmd= the
+ * channel is a one-shot exec channel, otherwise an interactive shell
+ * on a pty.  The new SSHfile is linked into the session owner's
+ * children list so that closing the session closes it too.
+ * On failure sets &errortext and returns NULL.
+ */
+struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr spec, dptr attr, int n)
+{
+   tended char *tmps, *val;
+   tended char *cmd = NULL;
+   tended char *term = NULL;
+   struct SSHfile *owner, *sshf;
+   ssh_channel chan = NULL;
+   dptr dp;
+   int a;
+   C_integer pty_cols = 0, pty_rows = 0;
+
+   /* resolve to the session owner: opening on a channel opens a sibling */
+   owner = (sf->parent != NULL) ? sf->parent : sf;
+   if (owner->sess == NULL) {
+      set_errortext(1324);
+      return NULL;
+      }
+
+   for (a = -1; a < n; a++) {
+      dp = (a < 0) ? spec : &attr[a];
+      if (is:null(*dp)) {
+         *dp = emptystr;
+         continue;
+         }
+      if (!cnv:C_string(*dp, tmps)) {
+         set_errortext(1321);
+         return NULL;
+         }
+      if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
+         set_errortext_with_val(1321, tmps);
+         return NULL;
+         }
+      Protect(tmps = alcstr(tmps, (word)strlen(tmps)+1), fatalerr(0,NULL));
+      val = strchr(tmps, '=');
+      if (val == NULL) {
+         set_errortext_with_val(1321, tmps);
+         return NULL;
+         }
+      *val = '\0';
+      val++;
+      if (strlen(val) == 0) {
+         set_errortext_with_val(1321, tmps);
+         return NULL;
+         }
+      if (strcmp(tmps, "cmd") == 0)
+         cmd = val;
+      else if (strcmp(tmps, "term") == 0)
+         term = val;
+      else if (strcmp(tmps, "cols") == 0)
+         pty_cols = atol(val);
+      else if (strcmp(tmps, "rows") == 0)
+         pty_rows = atol(val);
+      else {
+         set_errortext_with_val(1321, tmps);
+         return NULL;
+         }
+      }
+
+   sshf = malloc(sizeof(struct SSHfile));
+   if (sshf == NULL) {
+      set_errortext(1324);
+      return NULL;
+      }
+   memset(sshf, 0, sizeof(struct SSHfile));
+
+   DEC_NARTHREADS;
+   chan = ssh_channel_new(owner->sess);
+   if (chan == NULL)
+      goto chan_fail;
+   if (ssh_chan_register_callbacks(sshf, chan) < 0)
+      goto chan_fail;
+   if (ssh_channel_open_session(chan) != SSH_OK)
+      goto chan_fail;
+   if (cmd != NULL) {
+      if (ssh_channel_request_exec(chan, cmd) != SSH_OK)
+         goto chan_fail;
+      }
+   else {
+      if (ssh_request_interactive_pty(chan, term,
+                                      (int)pty_cols, (int)pty_rows) != SSH_OK)
+         goto chan_fail;
+      if (ssh_channel_request_shell(chan) != SSH_OK)
+         goto chan_fail;
+      }
+   INC_NARTHREADS_CONTROLLED;
+
+   sshf->sess = owner->sess;
+   sshf->chan = chan;
+   sshf->parent = owner;
+   sshf->next = owner->children;
+   owner->children = sshf;
+   return sshf;
+
+chan_fail:
+   INC_NARTHREADS_CONTROLLED;
+   set_ssh_errortext(owner->sess, 1324);
+   if (chan != NULL)
+      ssh_channel_free(chan);
+   ssh_free_file_state(sshf);
+   return NULL;
+}
+
+/*
+ * ssh_owner_sftp() - lazily create (once) the session's shared sftp
+ * subsystem, returning it or NULL with &errortext set.
+ */
+static sftp_session ssh_owner_sftp(struct SSHfile *owner)
+{
+   sftp_session sftp;
+
+   if (owner->sftp != NULL)
+      return owner->sftp;
+   sftp = sftp_new(owner->sess);
+   if (sftp == NULL) {
+      set_ssh_errortext(owner->sess, 1325);
+      return NULL;
+      }
+   if (sftp_init(sftp) != SSH_OK) {
+      set_ssh_errortext(owner->sess, 1325);
+      sftp_free(sftp);
+      return NULL;
+      }
+   owner->sftp = sftp;
+   return sftp;
+}
+
+/*
+ * create_sftp_file() - open a remote path over SFTP on an existing
+ * session.  Recognizes attributes path= (required), and the same r/w/a
+ * intent already parsed into status.  If the path is a directory, opens
+ * it for listing and sets *isdir; otherwise opens a regular file.  On
+ * failure sets &errortext and returns NULL.
+ */
+struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
+                                 int status, int *isdir)
+{
+   tended char *tmps, *val, *path = NULL;
+   struct SSHfile *owner, *sshf;
+   sftp_session sftp;
+   sftp_attributes at;
+   int a, accesstype;
+
+   *isdir = 0;
+   owner = (sf->parent != NULL) ? sf->parent : sf;
+   if (owner->sess == NULL) {
+      set_errortext(1324);
+      return NULL;
+      }
+
+   for (a = 0; a < n; a++) {
+      if (is:null(attr[a])) {
+         attr[a] = emptystr;
+         continue;
+         }
+      if (!cnv:C_string(attr[a], tmps)) {
+         set_errortext(1321);
+         return NULL;
+         }
+      if (strcmp(tmps, "sftp") == 0)   /* the mode selector itself */
+         continue;
+      /*
+       * Mode-only tokens ("w", "r", "a", "b", ...) carry no '=' and are
+       * handled by the caller's mode scan; skip them here.
+       */
+      if (strchr(tmps, '=') == NULL)
+         continue;
+      if (tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
+         set_errortext_with_val(1321, tmps);
+         return NULL;
+         }
+      Protect(tmps = alcstr(tmps, (word)strlen(tmps)+1), fatalerr(0,NULL));
+      val = strchr(tmps, '=');
+      *val = '\0';
+      val++;
+      if (strlen(val) == 0) {
+         set_errortext_with_val(1321, tmps);
+         return NULL;
+         }
+      if (strcmp(tmps, "path") == 0)
+         path = val;
+      else {
+         set_errortext_with_val(1321, tmps);
+         return NULL;
+         }
+      }
+   if (path == NULL) {
+      set_errortext(1325);
+      return NULL;
+      }
+
+   sftp = ssh_owner_sftp(owner);
+   if (sftp == NULL)
+      return NULL;                      /* &errortext already set */
+
+   sshf = malloc(sizeof(struct SSHfile));
+   if (sshf == NULL) {
+      set_errortext(1325);
+      return NULL;
+      }
+   memset(sshf, 0, sizeof(struct SSHfile));
+   sshf->sess = owner->sess;
+   sshf->sftp = sftp;
+   sshf->parent = owner;
+
+   DEC_NARTHREADS;
+   at = sftp_stat(sftp, path);
+   if (at != NULL && at->type == SSH_FILEXFER_TYPE_DIRECTORY) {
+      sftp_attributes_free(at);
+      sshf->sdir = sftp_opendir(sftp, path);
+      INC_NARTHREADS_CONTROLLED;
+      if (sshf->sdir == NULL) {
+         set_ssh_errortext(owner->sess, 1325);
+         free(sshf);
+         return NULL;
+         }
+      *isdir = 1;
+      }
+   else {
+      if (at != NULL)
+         sftp_attributes_free(at);
+      if (status & Fs_Append)
+         accesstype = O_WRONLY | O_CREAT | O_APPEND;
+      else if ((status & Fs_Write) && (status & Fs_Read))
+         accesstype = O_RDWR | O_CREAT;
+      else if (status & Fs_Write)
+         accesstype = O_WRONLY | O_CREAT | O_TRUNC;
+      else
+         accesstype = O_RDONLY;
+      sshf->sfile = sftp_open(sftp, path, accesstype, 0644);
+      INC_NARTHREADS_CONTROLLED;
+      if (sshf->sfile == NULL) {
+         set_ssh_errortext(owner->sess, 1325);
+         free(sshf);
+         return NULL;
+         }
+      }
+
+   sshf->next = owner->children;
+   owner->children = sshf;
+   return sshf;
+}
+
+/*
+ * ssh_sftp_readdir() - copy the next directory entry name into buf,
+ * returning its length, or -1 at end of directory / on error (with
+ * &errortext set only on a real error).
+ */
+int ssh_sftp_readdir(struct SSHfile *sshf, char *buf, int maxi)
+{
+   sftp_attributes at;
+   int len;
+
+   if (sshf->sdir == NULL) {
+      set_errortext(1325);
+      return -1;
+      }
+   DEC_NARTHREADS;
+   at = sftp_readdir(sshf->sftp, sshf->sdir);
+   INC_NARTHREADS_CONTROLLED;
+   if (at == NULL) {
+      if (!sftp_dir_eof(sshf->sdir))
+         set_ssh_errortext(sshf->sess, 1325);
+      return -1;
+      }
+   len = (at->name != NULL) ? (int)strlen(at->name) : 0;
+   if (len > maxi)
+      len = maxi;
+   if (len > 0)
+      memcpy(buf, at->name, len);
+   sftp_attributes_free(at);
+   return len;
+}
+
+/*
+ * sftp2rec() - populate a posix_stat record from SFTP attributes.
+ * Fields the server did not send (SFTP attribute coverage is
+ * protocol-version dependent) are left null rather than reported as
+ * zero, so callers can tell "absent" from "genuinely zero".
+ */
+static void sftp2rec(sftp_attributes at, struct descrip *dp,
+                     struct b_record **rp)
+{
+   int i;
+   char mode[12];
+
+   dp->dword = D_Record;
+   dp->vword.bptr = (union block *)(*rp);
+
+   for (i = 0; i < 14; i++)
+      (*rp)->fields[i] = nulldesc;
+
+   /* size (field 7) */
+   if (at->flags & SSH_FILEXFER_ATTR_SIZE) {
+      (*rp)->fields[7].dword = D_Integer;
+      IntVal((*rp)->fields[7]) = (word)at->size;
+      }
+   /* uid/gid (fields 4,5) */
+   if (at->flags & SSH_FILEXFER_ATTR_UIDGID) {
+      if (at->owner != NULL) {
+         Protect(StrLoc((*rp)->fields[4]) = alcstr(at->owner, strlen(at->owner)),
+                 fatalerr(0,NULL));
+         StrLen((*rp)->fields[4]) = strlen(at->owner);
+         }
+      else {
+         char b[32];
+         snprintf(b, sizeof(b), "%lu", (unsigned long)at->uid);
+         Protect(StrLoc((*rp)->fields[4]) = alcstr(b, strlen(b)), fatalerr(0,NULL));
+         StrLen((*rp)->fields[4]) = strlen(b);
+         }
+      if (at->group != NULL) {
+         Protect(StrLoc((*rp)->fields[5]) = alcstr(at->group, strlen(at->group)),
+                 fatalerr(0,NULL));
+         StrLen((*rp)->fields[5]) = strlen(at->group);
+         }
+      else {
+         char b[32];
+         snprintf(b, sizeof(b), "%lu", (unsigned long)at->gid);
+         Protect(StrLoc((*rp)->fields[5]) = alcstr(b, strlen(b)), fatalerr(0,NULL));
+         StrLen((*rp)->fields[5]) = strlen(b);
+         }
+      }
+   /* times (fields 8,9,10): SFTP carries atime/mtime; no ctime */
+   if (at->flags & SSH_FILEXFER_ATTR_ACMODTIME) {
+      (*rp)->fields[8].dword = D_Integer;
+      IntVal((*rp)->fields[8]) = (word)at->atime;
+      (*rp)->fields[9].dword = D_Integer;
+      IntVal((*rp)->fields[9]) = (word)at->mtime;
+      }
+   /* permissions -> mode string (field 2) */
+   if (at->flags & SSH_FILEXFER_ATTR_PERMISSIONS) {
+      uint32_t m = at->permissions;
+      strcpy(mode, "----------");
+      switch (at->type) {
+         case SSH_FILEXFER_TYPE_DIRECTORY: mode[0] = 'd'; break;
+         case SSH_FILEXFER_TYPE_SYMLINK:   mode[0] = 'l'; break;
+         case SSH_FILEXFER_TYPE_SPECIAL:   mode[0] = 'c'; break;
+         default: break;
+         }
+      if (m & 0400) mode[1] = 'r';
+      if (m & 0200) mode[2] = 'w';
+      if (m & 0100) mode[3] = 'x';
+      if (m & 040)  mode[4] = 'r';
+      if (m & 020)  mode[5] = 'w';
+      if (m & 010)  mode[6] = 'x';
+      if (m & 04)   mode[7] = 'r';
+      if (m & 02)   mode[8] = 'w';
+      if (m & 01)   mode[9] = 'x';
+      Protect(StrLoc((*rp)->fields[2]) = alcstr(mode, 10), fatalerr(0,NULL));
+      StrLen((*rp)->fields[2]) = 10;
+      }
+}
+
+/*
+ * ssh_sftp_stat_rec() - stat a remote path (use_fstat==0, path given)
+ * or an already-open sftp file (use_fstat==1, sf is the file), filling
+ * a freshly allocated posix_stat record.  Returns 1 on success, 0 on
+ * failure with &errortext set.
+ */
+int ssh_sftp_stat_rec(struct SSHfile *sf, char *path, int use_fstat,
+                      struct descrip *dp, struct b_record **rp)
+{
+   struct SSHfile *owner;
+   sftp_session sftp;
+   sftp_attributes at;
+
+   owner = (sf->parent != NULL) ? sf->parent : sf;
+   if (use_fstat) {
+      if (sf->sfile == NULL) {
+         set_errortext(1325);
+         return 0;
+         }
+      sftp = sf->sftp;
+      DEC_NARTHREADS;
+      at = sftp_fstat(sf->sfile);
+      INC_NARTHREADS_CONTROLLED;
+      }
+   else {
+      sftp = ssh_owner_sftp(owner);
+      if (sftp == NULL)
+         return 0;
+      DEC_NARTHREADS;
+      at = sftp_stat(sftp, path);
+      INC_NARTHREADS_CONTROLLED;
+      }
+   if (at == NULL) {
+      set_ssh_errortext(owner->sess, 1325);
+      return 0;
+      }
+   sftp2rec(at, dp, rp);
+   sftp_attributes_free(at);
+   return 1;
+}
+
+/*
+ * ssh_sftp_unlink() / ssh_sftp_rename() - metadata verbs, returning 0
+ * on success or -1 with &errortext set.
+ */
+int ssh_sftp_unlink(struct SSHfile *sf, char *path)
+{
+   struct SSHfile *owner = (sf->parent != NULL) ? sf->parent : sf;
+   sftp_session sftp = ssh_owner_sftp(owner);
+   int rc;
+
+   if (sftp == NULL)
+      return -1;
+   DEC_NARTHREADS;
+   rc = sftp_unlink(sftp, path);
+   INC_NARTHREADS_CONTROLLED;
+   if (rc != SSH_OK) {
+      set_ssh_errortext(owner->sess, 1325);
+      return -1;
+      }
+   return 0;
+}
+
+int ssh_sftp_rename(struct SSHfile *sf, char *from, char *to)
+{
+   struct SSHfile *owner = (sf->parent != NULL) ? sf->parent : sf;
+   sftp_session sftp = ssh_owner_sftp(owner);
+   int rc;
+
+   if (sftp == NULL)
+      return -1;
+   DEC_NARTHREADS;
+   rc = sftp_rename(sftp, from, to);
+   INC_NARTHREADS_CONTROLLED;
+   if (rc != SSH_OK) {
+      set_ssh_errortext(owner->sess, 1325);
+      return -1;
+      }
+   return 0;
+}
+#endif                                  /* HAVE_LIBSSH */
+
 
 #if !NT
 dptr make_pwd(struct passwd *pw, dptr result)
@@ -4281,6 +5559,36 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
       /* Allocate n bytes of char space */
       StrLoc(*d) = alcstr(NULL, n);
       StrLen(*d) = 0;
+#if HAVE_LIBSSH
+      if (fstatus & Fs_SSH) {
+         struct SSHfile *sshf = BlkD(*f,File)->fd.sshf;
+#ifdef Concurrent
+         MUTEX_LOCKID_CONTROLLED(BlkD(*f,File)->mutexid);
+#endif                                  /* Concurrent */
+         if (sshf == NULL || sshf->closed ||
+             (sshf->chan == NULL && sshf->sfile == NULL &&
+              sshf->q_stdout == 0)) {
+            set_errortext(1324);
+            tally = -1;
+            }
+         else if (sshf->nl_pending) {
+            sshf->nl_pending = 0;
+            *StrLoc(*d) = '\n';
+            tally = 1;
+            }
+         else {
+            DEC_NARTHREADS;
+            tally = ssh_chan_read(sshf, StrLoc(*d), n, 1);
+            INC_NARTHREADS_CONTROLLED;
+            if (tally < 0)
+               set_ssh_errortext(sshf->sess, sshf->sfile ? 1325 : 1324);
+            }
+#ifdef Concurrent
+         MUTEX_UNLOCKID(BlkD(*f,File)->mutexid);
+#endif                                  /* Concurrent */
+         }
+      else
+#endif                                  /* HAVE_LIBSSH */
       if (fstatus & Fs_Socket) {
 #if HAVE_LIBSSL
         if (fstatus & Fs_Encrypt) {
@@ -4312,12 +5620,74 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
    else {
       /* Read as much as we can without blocking, in chunks of 1536 bytes */
       long bufsize = 1536, total = 0, i = 0;
+#if HAVE_LIBSSH && defined(Concurrent)
+      word ssh_mtx = 0;
+      int ssh_have_mtx = 0;
+#endif                                  /* HAVE_LIBSSH && Concurrent */
       StrLoc(*d) = strfree;
       StrLen(*d) = 0;
+#if HAVE_LIBSSH && defined(Concurrent)
+      if (fstatus & Fs_SSH) {
+         ssh_mtx = BlkD(*f,File)->mutexid;
+         MUTEX_LOCKID_CONTROLLED(ssh_mtx);
+         ssh_have_mtx = 1;
+         }
+#endif                                  /* HAVE_LIBSSH && Concurrent */
       for(;;) {
          int srv, kk=0;
          fd_set readset;
          struct timeval tv;
+#if HAVE_LIBSSH
+         if (fstatus & Fs_SSH) {
+            /*
+             * select() on the session fd cannot see data already
+             * decrypted and queued inside libssh; pump the channel.
+             * SFTP files have no channel queue -- just try a read.
+             * The shared session mutex (above) covers pump + dequeue.
+             */
+            struct SSHfile *sshf = BlkD(*f,File)->fd.sshf;
+            if (sshf == NULL || sshf->closed ||
+                (sshf->chan == NULL && sshf->sfile == NULL &&
+                 sshf->q_stdout == 0)) {
+               set_errortext(1324);
+#if defined(Concurrent)
+               if (ssh_have_mtx)
+                  MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+               return 0;
+               }
+            if (sshf->sfile != NULL) {
+               /* fall through to the read below */
+               }
+            else if (!sshf->nl_pending && sshf->q_stdout == 0) {
+               int prc;
+               DEC_NARTHREADS;
+               prc = ssh_pump(sshf, 0, 1);
+               INC_NARTHREADS_CONTROLLED;
+               if (prc == -1) {
+                  set_ssh_errortext(sshf->sess, 1324);
+#if defined(Concurrent)
+                  if (ssh_have_mtx)
+                     MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                  return 0;
+                  }
+               if (prc == 2)
+                  break;                /* nothing more is available */
+               if (prc == 0) {          /* EOF */
+                  if (StrLen(*d) == 0) {
+#if defined(Concurrent)
+                     if (ssh_have_mtx)
+                        MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                     return 0;
+                     }
+                  break;
+                  }
+               }
+            }
+         else {
+#endif                                  /* HAVE_LIBSSH */
          FD_ZERO(&readset);
          FD_SET(fd, &readset);
          tv.tv_sec = tv.tv_usec = 0;
@@ -4329,6 +5699,9 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
             set_syserrortext(errno);
             return 0;
             }
+#if HAVE_LIBSSH
+         }
+#endif                                  /* HAVE_LIBSSH */
 
          /* Something is available: allocate another chunk */
          if (i == 0)
@@ -4350,6 +5723,33 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
          }
 tryagain:
 
+#if HAVE_LIBSSH
+         if (fstatus & Fs_SSH) {
+            struct SSHfile *sshf = BlkD(*f,File)->fd.sshf;
+            if (sshf->nl_pending) {
+               sshf->nl_pending = 0;
+               *(StrLoc(*d) + i*bufsize) = '\n';
+               tally = 1;
+               }
+            else {
+               DEC_NARTHREADS;
+               tally = ssh_chan_read(sshf, StrLoc(*d) + i*bufsize,
+                                     bufsize, 0);
+               INC_NARTHREADS_CONTROLLED;
+               if (tally < 0) {
+                  set_ssh_errortext(sshf->sess, sshf->sfile ? 1325 : 1324);
+                  strtotal += bufsize;
+                  strfree = StrLoc(*d);
+#if defined(Concurrent)
+                  if (ssh_have_mtx)
+                     MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                  return 0;
+                  }
+               }
+            }
+         else
+#endif                                  /* HAVE_LIBSSH */
          if (fstatus & Fs_Socket) {
 #if HAVE_LIBSSL
            if (fstatus & Fs_Encrypt) {
@@ -4419,6 +5819,10 @@ tryagain:
          }
          i++;
       }
+#if HAVE_LIBSSH && defined(Concurrent)
+      if (ssh_have_mtx)
+         MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* HAVE_LIBSSH && Concurrent */
    }
    return d;
 }

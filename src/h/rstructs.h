@@ -115,6 +115,62 @@ struct b_unicset {
    };
 #endif                          /* Unicode */
 
+#if HAVE_LIBSSH
+/*
+ * One tagged chunk of SSH channel traffic, kept in true arrival order.
+ * The libssh data/exit-status callbacks append chunks as messages are
+ * parsed off the wire -- the only way to preserve stdout/stderr
+ * ordering, since the plain channel-read API buffers the two streams
+ * separately.  Plain reads consume stdout chunks; Attrib(c,"stderr")
+ * drains stderr chunks; receive(c) pops whatever is at the head.
+ */
+#define SSH_CHUNK_STDOUT 0
+#define SSH_CHUNK_STDERR 1
+#define SSH_CHUNK_EXIT   2
+
+struct SSHchunk {
+   struct SSHchunk *next;
+   int tag;                     /* SSH_CHUNK_* */
+   int off;                     /* stdout bytes already consumed by reads */
+   int len;
+   char data[1];                /* allocated to hold len bytes */
+   };
+
+/*
+ * Per-file SSH state.  Allocated with malloc (like the Messaging MFile)
+ * so pointers to it are stable across garbage collections; freed by the
+ * close hook, never by the collector.
+ *
+ * One file opened as an SSH session owns the ssh_session; channels
+ * opened on it share that session and link themselves into the owner's
+ * children list so that closing the session can close every channel
+ * derived from it.
+ */
+struct SSHfile {
+   ssh_session sess;            /* connection (owned by the session file) */
+   ssh_channel chan;            /* NULL unless this is an exec/shell channel */
+   sftp_session sftp;           /* the session's sftp subsystem, shared by
+                                 * every sftp file/dir; created lazily and
+                                 * freed by the owner */
+   sftp_file sfile;             /* non-NULL for an open sftp regular file */
+   sftp_dir sdir;               /* non-NULL for an open sftp directory */
+   struct SSHfile *parent;      /* session owner; NULL if this is the owner */
+   struct SSHfile *children;    /* head of channel list (session owner only) */
+   struct SSHfile *next;        /* sibling link in the owner's channel list */
+   int nl_pending;              /* line reads: a '\n' was seen but not yet consumed */
+   struct SSHchunk *qhead;      /* arrival-order event queue */
+   struct SSHchunk *qtail;
+   word q_stdout;               /* unconsumed stdout bytes in the queue */
+   void *cbs;                   /* registered ssh_channel_callbacks */
+   int eof_seen;                /* remote sent EOF on the channel */
+   int exit_seen;               /* exit_status below is valid */
+   int exit_status;
+   int closed;                  /* set when cascade-invalidated by close()
+                                 * of the owning session; Icon file still
+                                 * holds this SSHfile until its own close */
+   };
+#endif                                  /* HAVE_LIBSSH */
+
 /*
  * This union was pulled out of struct b_file and made non-anonymous
  * in order to eliminate an error in some version of gcc on amd64.
@@ -142,6 +198,9 @@ union f {
 #if HAVE_LIBSSL
     SSL *ssl;
 #endif                                  /* HAVE_LIBSSL */
+#if HAVE_LIBSSH
+    struct SSHfile *sshf;
+#endif                                  /* HAVE_LIBSSH */
    int fd;        /*   other int-based file descriptor */
    };
 

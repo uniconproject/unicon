@@ -318,6 +318,10 @@ Deliberate Syntax Error
    buf = growcat(buf, &buflen, 1, " -lssl -lcrypto");
 #endif                                  /* HAVE_LIBSSL */
 
+#if HAVE_LIBSSH
+   buf = growcat(buf, &buflen, 1, " -lssh");
+#endif                                  /* HAVE_LIBSSH */
+
 #if NTGCC
    buf = growcat(buf, &buflen, 1, " -lwinmm -lwsock32 -lodbc32 -lws2_32");
 #endif                                  /* NTGCC */

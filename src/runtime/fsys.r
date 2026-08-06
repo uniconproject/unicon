@@ -59,6 +59,27 @@ function{0,1} close(f)
 #endif                                  /* Messaging */
 
 #ifdef PosixFns
+#if HAVE_LIBSSH
+      /*
+       * SSH session/channel/sftp (with or without Fs_Socket): free the
+       * libssh objects.  Cascade-close of a session invalidates children.
+       */
+      if (status & Fs_SSH) {
+#ifdef Concurrent
+         MUTEX_LOCKID_CONTROLLED(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+         ssh_close_file(BlkD(f,File)->fd.sshf);
+#ifdef Concurrent
+         MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+         BlkLoc(f)->File.fd.sshf = NULL;
+         BlkLoc(f)->File.status = 0;
+         BlkLoc(f)->File.sock_gen = 0;
+         StrLoc(BlkLoc(f)->File.fname) = "closed ssh";
+         StrLen(BlkLoc(f)->File.fname) = 10;
+         return C_integer 0;
+         }
+#endif                                  /* HAVE_LIBSSH */
       if (BlkD(f,File)->status & Fs_Socket) {
 #if HAVE_LIBSSL
         if(status & Fs_Encrypt) {
@@ -274,6 +295,121 @@ function{0,1} open(fname, spec)
       tended struct descrip filename;
       }
 
+   abstract {
+      return file
+      }
+
+#if HAVE_LIBSSH
+   /*
+    * open(s, attrs...) where s is an SSH session or channel file: open
+    * a new channel on the same underlying session, reusing the
+    * transport and authentication (no new handshake).
+    */
+   if is:file(fname) then {
+      body {
+         tended struct descrip chanfname;
+         struct SSHfile *chansshf;
+         struct b_file *cfl;
+         int chanstatus;
+         int want_sftp = 0;
+         int isdir = 0;
+         word ai;
+
+         if (!(BlkD(fname,File)->status & Fs_SSH))
+            runerr(103, fname);
+         if (BlkD(fname,File)->fd.sshf == NULL)
+            runerr(103, fname);
+
+         /*
+          * An "sftp" selector (in spec or any trailing attribute)
+          * routes to the SFTP subsystem instead of a shell/exec
+          * channel.  Read/write intent comes from spec's mode chars.
+          */
+         /*
+          * Mode intent and the "sftp" selector may appear in spec or in
+          * any trailing attribute (open(s,"sftp","path=..","w")).  Scan
+          * every mode-only token (no '='); leave key=value attributes to
+          * create_sftp_file / create_ssh_channel.
+          */
+         chanstatus = Fs_SSH;
+         for (ai = -1; ai < n; ai++) {
+            word k;
+            dptr dp = (ai < 0) ? &spec : &attr[ai];
+            if (is:null(*dp) || !cnv:tmp_string(*dp, filename))
+               continue;
+            if (StrLen(filename) == 4 && strncmp(StrLoc(filename), "sftp", 4) == 0) {
+               want_sftp = 1;
+               continue;
+               }
+            for (k = 0; k < StrLen(filename); k++)
+               if (StrLoc(filename)[k] == '=')
+                  break;
+            if (k < StrLen(filename))
+               continue;                /* a key=value attribute */
+            for (k = 0; k < StrLen(filename); k++) {
+               switch (StrLoc(filename)[k]) {
+                  case 'r': case 'R': chanstatus |= Fs_Read; break;
+                  case 'w': case 'W': chanstatus |= Fs_Write; break;
+                  case 'a': case 'A': chanstatus |= Fs_Write|Fs_Append; break;
+                  case 'b': case 'B': chanstatus |= Fs_Read|Fs_Write; break;
+                  }
+               }
+            }
+         if (!(chanstatus & (Fs_Read|Fs_Write)))
+            chanstatus |= Fs_Read;      /* default to reading */
+
+         if (want_sftp) {
+#ifdef Concurrent
+            MUTEX_LOCKID_CONTROLLED(BlkD(fname,File)->mutexid);
+#endif                                  /* Concurrent */
+            chansshf = create_sftp_file(BlkD(fname,File)->fd.sshf,
+                                        attr, n, chanstatus, &isdir);
+#ifdef Concurrent
+            MUTEX_UNLOCKID(BlkD(fname,File)->mutexid);
+#endif                                  /* Concurrent */
+            if (chansshf == NULL)
+               fail;                    /* &errortext already set */
+            if (isdir)
+               chanstatus = Fs_SSH | Fs_Read | Fs_Directory;
+            else {
+               /*
+                * SFTP regular files are plain streams, not sockets:
+                * reads()/writes() transfer raw bytes (design §9.1).
+                */
+               /* chanstatus already has Fs_SSH | Fs_Read/Write */
+               }
+            }
+         else {
+#ifdef Concurrent
+            MUTEX_LOCKID_CONTROLLED(BlkD(fname,File)->mutexid);
+#endif                                  /* Concurrent */
+            chansshf = create_ssh_channel(BlkD(fname,File)->fd.sshf,
+                                          &spec, attr, n);
+#ifdef Concurrent
+            MUTEX_UNLOCKID(BlkD(fname,File)->mutexid);
+#endif                                  /* Concurrent */
+            if (chansshf == NULL)
+               fail;                    /* &errortext already set */
+            chanstatus = Fs_SSH | Fs_Socket | Fs_Read | Fs_Write;
+            }
+
+         chanfname = BlkD(fname,File)->fname;
+         Protect(cfl = alcfile(0, chanstatus, &chanfname), runerr(0));
+         cfl->fd.sshf = chansshf;
+         cfl->sock_gen = 0;
+#ifdef Concurrent
+         /*
+          * Channels on one session share the session's mutex so that
+          * the existing I/O locking serializes them; libssh sessions
+          * are not safe for uncoordinated concurrent access.
+          */
+         cfl->mutexid = BlkD(fname,File)->mutexid;
+#endif                                  /* Concurrent */
+         return file(cfl);
+         }
+      }
+#endif                                  /* HAVE_LIBSSH */
+
    /*
     * fopen and popen require a C string, but it looks terrible in
     *  error messages, so convert it to a string here and use a local
@@ -287,10 +423,6 @@ function{0,1} open(fname, spec)
     */
    if !def:tmp_string(spec, letr) then
       runerr(103, spec)
-
-   abstract {
-      return file
-      }
 
    body {
       tended char *fnamestr;
@@ -394,6 +526,12 @@ Deliberate Syntax Error
 #if HAVE_LIBSSL
                status |= Fs_Encrypt;
 #endif                                  /* HAVE_LIBSSL */
+               continue;
+            case 'h':
+            case 'H':
+#if HAVE_LIBSSH
+               status |= Fs_SSH;
+#endif                                  /* HAVE_LIBSSH */
                continue;
             case 'a':
             case 'A':
@@ -934,6 +1072,29 @@ Deliberate Syntax Error
 #if HAVE_LIBSSL
         SSL *ssl;
 #endif                                  /* HAVE_LIBSSL */
+#if HAVE_LIBSSH
+         if (status & Fs_SSH) {
+            struct SSHfile *sshf;
+            /*
+             * With a channel, Fs_Socket routes stream I/O through the
+             * existing socket dispatch points.  channel=no leaves a
+             * transport-only session (Fs_SSH alone) for later
+             * open(s, ...) / SFTP.
+             */
+            sshf = create_ssh_session(fnamestr, attr, n, do_verify);
+            if (sshf == NULL)
+               fail;                    /* &errortext already set */
+            if (sshf->chan != NULL)
+               status |= Fs_Socket | Fs_Read | Fs_Write;
+            StrLen(filename) = strlen(fnamestr);
+            StrLoc(filename) = fnamestr;
+            Protect(fl = alcfile(0, status, &filename), runerr(0));
+            fl->fd.sshf = sshf;
+            fl->sock_gen = 0;
+            return file(fl);
+            }
+         else
+#endif                                  /* HAVE_LIBSSH */
          if (status & Fs_Socket) {
             if (is_ipv4 && is_ipv6)
                af_fam = AF_UNSPEC;
@@ -1311,6 +1472,58 @@ function{0,1} read(f)
  */
 
 #ifdef PosixFns
+#if HAVE_LIBSSH
+       if ((status & Fs_SSH) && !(status & Fs_Directory)) {
+          /*
+           * Channel and SFTP files: line-oriented read via ssh_getstrg.
+           * Binary SFTP transfers should use reads().
+           */
+#ifdef Concurrent
+          MUTEX_LOCKID_CONTROLLED(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+          StrLen(s) = 0;
+          do {
+             DEC_NARTHREADS;
+             if ((slen = sock_getstrg(sbuf, MaxReadStr, &f)) == -1) {
+                INC_NARTHREADS_CONTROLLED;
+#ifdef Concurrent
+                MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+                fail;
+                }
+             INC_NARTHREADS_CONTROLLED;
+             if (slen == -3) {
+#ifdef Concurrent
+                MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+                set_ssh_errortext(BlkD(f,File)->fd.sshf->sess,
+                                  BlkD(f,File)->fd.sshf->sfile ? 1325 : 1324);
+                fail;
+                }
+             if (slen == 1 && *sbuf == '\n')
+                break;
+             rlen = slen < 0 ? (word)MaxReadStr : slen;
+
+             Protect(reserve(Strings, rlen), runerr(0));
+             if (StrLen(s) > 0 && !InRange(strbase,StrLoc(s),strfree)) {
+                Protect(reserve(Strings, StrLen(s)+rlen), runerr(0));
+                Protect((StrLoc(s) = alcstr(StrLoc(s),StrLen(s))), runerr(0));
+                }
+
+             Protect(sptr = alcstr(sbuf,rlen), runerr(0));
+             if (StrLen(s) == 0)
+                StrLoc(s) = sptr;
+             StrLen(s) += rlen;
+             if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { StrLen(s)--; break; }
+             }
+          while (slen > 0);
+
+#ifdef Concurrent
+          MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+         return s;
+          }
+#endif                                  /* HAVE_LIBSSH */
        if (status & Fs_Socket) {
           StrLen(s) = 0;
           do {
@@ -1322,7 +1535,11 @@ function{0,1} read(f)
                 }
              INC_NARTHREADS_CONTROLLED;
              if (slen == -3) {
-               /* sock_getstrg sets errornumber/text */
+#if HAVE_LIBSSH
+               if (status & Fs_SSH)
+                  set_ssh_errortext(BlkD(f,File)->fd.sshf->sess, 1324);
+#endif                                  /* HAVE_LIBSSH */
+                /* else sock_getstrg already set errornumber/text */
                 fail;
                 }
              if (slen == 1 && *sbuf == '\n')
@@ -1422,6 +1639,14 @@ function{0,1} read(f)
              char *s, *p=sbuf;
              IntVal(amperErrno) = 0;
              slen = 0;
+#if HAVE_LIBSSH
+             if (status & Fs_SSH) {
+                slen = ssh_sftp_readdir(BlkD(f,File)->fd.sshf, sbuf, MaxReadStr);
+                if (slen < 0)
+                   fail;                /* end of dir, or error with text */
+                }
+             else {
+#endif                                  /* HAVE_LIBSSH */
              DEC_NARTHREADS;
              d = readdir((DIR *)fp);
              INC_NARTHREADS_CONTROLLED;
@@ -1434,6 +1659,9 @@ function{0,1} read(f)
                 *p++ = *s++;
              if (slen == MaxReadStr)
                 slen = -2;
+#if HAVE_LIBSSH
+             }
+#endif                                  /* HAVE_LIBSSH */
           }
           else
 #endif
@@ -1652,7 +1880,124 @@ function{0,1} reads(f,i)
 
 
 #ifdef PosixFns
+#if HAVE_LIBSSH
+         if ((status & Fs_SSH) && BlkD(f,File)->fd.sshf != NULL &&
+             BlkD(f,File)->fd.sshf->sfile != NULL) {
+            /*
+             * SFTP regular file: raw byte transfer via sftp_read.
+             * Like sockets/messaging, reads(f,-1) loops until EOF.
+             */
+            int got;
+#ifdef Concurrent
+            MUTEX_LOCKID_CONTROLLED(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+            /* Casting to unsigned lets us use reads(f, -1) */
+            Maxread = (unsigned)i <= MaxReadStr ? i : MaxReadStr;
+            StrLoc(s) = NULL;
+            StrLen(s) = 0;
+            do {
+               if (bytesread > 0) {
+                  if (i >= 0 && i - bytesread <= MaxReadStr)
+                     Maxread = i - bytesread;
+                  else
+                     Maxread = MaxReadStr;
+                  }
+               DEC_NARTHREADS;
+               got = ssh_chan_read(BlkD(f,File)->fd.sshf, sbuf, Maxread, 1);
+               INC_NARTHREADS_CONTROLLED;
+               if (got < 0) {
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+                  set_ssh_errortext(BlkD(f,File)->fd.sshf->sess, 1325);
+                  fail;
+                  }
+               if (got == 0) {
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+                  if (bytesread == 0)
+                     fail;              /* EOF with nothing read */
+                  else
+                     return s;
+                  }
+               bytesread += got;
+               rlen = got;
+               Protect(reserve(Strings, StrLen(s) + rlen), runerr(0));
+               if (StrLen(s) > 0 && !InRange(strbase, StrLoc(s), strfree)) {
+                  Protect((StrLoc(s) =
+                           alcstr(StrLoc(s), StrLen(s))), runerr(0));
+                  }
+               Protect(sptr = alcstr(sbuf, rlen), runerr(0));
+               if (StrLen(s) == 0)
+                  StrLoc(s) = sptr;
+               StrLen(s) += rlen;
+               } while ((i == -1) || (bytesread < i));
+#ifdef Concurrent
+            MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+            return s;
+            }
+#endif                                  /* HAVE_LIBSSH */
          if (status & Fs_Socket) {
+#if HAVE_LIBSSH
+            /*
+             * SSH channel (not SFTP): raw byte stream via u_read.
+             * sock_getstrg() is line-oriented and blocks until '\\n', so
+             * an interactive prompt like "host$ " would hang forever
+             * with the bytes stuck inside ssh_getstrg()'s local buffer.
+             * (SFTP regular files are handled above; read() stays
+             * line-oriented via ssh_getstrg.)
+             */
+            if ((status & Fs_SSH) && BlkD(f,File)->fd.sshf != NULL &&
+                BlkD(f,File)->fd.sshf->sfile == NULL &&
+                BlkD(f,File)->fd.sshf->sdir == NULL) {
+               if (i < 0) {
+                  /* reads(f, -1): concatenate until EOF */
+                  tended struct descrip chunk;
+                  StrLen(s) = 0;
+                  StrLoc(s) = "";
+                  for (;;) {
+                     DEC_NARTHREADS;
+                     if (u_read(&f, MaxReadStr, status, &chunk) == 0) {
+                        INC_NARTHREADS_CONTROLLED;
+                        if (StrLen(s) == 0)
+                           fail;
+                        return s;
+                        }
+                     INC_NARTHREADS_CONTROLLED;
+                     Protect(reserve(Strings, StrLen(s) + StrLen(chunk)),
+                             runerr(0));
+                     if (StrLen(s) > 0 &&
+                         !InRange(strbase, StrLoc(s), strfree)) {
+                        Protect((StrLoc(s) =
+                                 alcstr(StrLoc(s), StrLen(s))), runerr(0));
+                        }
+                     if (StrLen(s) == 0)
+                        s = chunk;
+                     else {
+                        Protect(sptr = alcstr(StrLoc(chunk), StrLen(chunk)),
+                                runerr(0));
+                        StrLen(s) += StrLen(chunk);
+                        }
+                     }
+                  }
+               DEC_NARTHREADS;
+               if (u_read(&f, i, status, &s) == 0) {
+                  INC_NARTHREADS_CONTROLLED;
+                  fail;
+                  }
+               INC_NARTHREADS_CONTROLLED;
+               /* reads(f, 0): nonblocking; fail if nothing available */
+               if (i == 0 && StrLen(s) == 0)
+                  fail;
+               return s;
+               }
+#endif                                  /* HAVE_LIBSSH */
+#if HAVE_LIBSSH && defined(Concurrent)
+            if (status & Fs_SSH)
+               MUTEX_LOCKID_CONTROLLED(BlkD(f,File)->mutexid);
+#endif                                  /* HAVE_LIBSSH && Concurrent */
             StrLen(s) = 0;
             Maxread = (i <= MaxReadStr)? i : MaxReadStr;
             do {
@@ -1666,6 +2011,10 @@ function{0,1} reads(f,i)
                if ((slen = sock_getstrg(sbuf, Maxread, &f)) == -1) {
                     /*IntVal(amperErrno) = errno; */
                     INC_NARTHREADS_CONTROLLED;
+#if HAVE_LIBSSH && defined(Concurrent)
+                    if (status & Fs_SSH)
+                       MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* HAVE_LIBSSH && Concurrent */
                     if (bytesread == 0)
                         fail;
                     else
@@ -1673,7 +2022,15 @@ function{0,1} reads(f,i)
                 }
                 INC_NARTHREADS_CONTROLLED;
                 if (slen == -3) {
-                    /* sock_getstrg sets errortext */
+#if HAVE_LIBSSH
+                    if (status & Fs_SSH) {
+#ifdef Concurrent
+                       MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+                       set_ssh_errortext(BlkD(f,File)->fd.sshf->sess, 1324);
+                       }
+#endif                                  /* HAVE_LIBSSH */
+                    /* else sock_getstrg sets errortext */
                     fail;
                    }
 
@@ -1693,6 +2050,10 @@ function{0,1} reads(f,i)
                     StrLoc(s) = sptr;
                 StrLen(s) += rlen;
             } while ((i == -1) || (bytesread < i));
+#if HAVE_LIBSSH && defined(Concurrent)
+            if (status & Fs_SSH)
+               MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* HAVE_LIBSSH && Concurrent */
             return s;
         }
 
@@ -1700,7 +2061,8 @@ function{0,1} reads(f,i)
          * implemented after release: all I/O is low-level, no stdio. This
          * makes the Fs_Buff/Fs_Unbuf go away and select will work --
          * correctly. */
-        if (strcmp(StrLoc(BlkD(f,File)->fname), "pipe") != 0) {
+        if (!(status & Fs_Unbuf) &&
+            strcmp(StrLoc(BlkD(f,File)->fname), "pipe") != 0) {
             status |= Fs_Buff;
             BlkLoc(f)->File.status = status;
         }
@@ -1733,6 +2095,18 @@ function{0,1} reads(f,i)
       if ((BlkD(f,File)->status & Fs_Directory) != 0) {
          char *sptr;
          struct dirent *de;
+#if HAVE_LIBSSH
+         if (BlkD(f,File)->status & Fs_SSH) {
+            char dbuf[MaxReadStr];
+            int dlen = ssh_sftp_readdir(BlkD(f,File)->fd.sshf, dbuf, MaxReadStr);
+            if (dlen < 0)
+               fail;                    /* end of dir, or error with text */
+            if (dlen > i)
+               dlen = i;
+            Protect(sptr = alcstr(dbuf, dlen), runerr(0));
+            return string(dlen, sptr);
+            }
+#endif                                  /* HAVE_LIBSSH */
          DEC_NARTHREADS;
          de = readdir((DIR*) fp);
          INC_NARTHREADS_CONTROLLED;
@@ -1854,16 +2228,37 @@ end
 
 "remove(s) - remove the file named s."
 
-function{0,1} remove(s)
+function{0,1} remove(s, path)
+
+   abstract {
+      return null
+      }
+
+#if HAVE_LIBSSH
+   /*
+    * remove(session, path): unlink a remote file over SFTP.  The
+    * leading-optional-file-argument idiom (like write(f, ...)); with a
+    * plain string first argument this is the ordinary local remove.
+    */
+   if is:file(s) then {
+      body {
+         tended char *rpath;
+         if (!(BlkD(s,File)->status & Fs_SSH) || BlkD(s,File)->fd.sshf == NULL)
+            runerr(103, s);
+         if (!cnv:C_string(path, rpath))
+            runerr(103, path);
+         if (ssh_sftp_unlink(BlkD(s,File)->fd.sshf, rpath) != 0)
+            fail;                       /* &errortext already set */
+         return nulldesc;
+         }
+      }
+#endif                                  /* HAVE_LIBSSH */
 
    /*
     * Make a C-style string out of s
     */
    if !cnv:C_string(s) then
       runerr(103,s)
-   abstract {
-      return null
-      }
 
    inline {
 #if !ConcurrentCOMPILER
@@ -1887,7 +2282,32 @@ end
 
 "rename(s1,s2) - rename the file named s1 to have the name s2."
 
-function{0,1} rename(s1,s2)
+function{0,1} rename(s1,s2,s3)
+
+   abstract {
+      return null
+      }
+
+#if HAVE_LIBSSH
+   /*
+    * rename(session, from, to): rename a remote file over SFTP,
+    * via the same leading-optional-session-argument idiom as remove().
+    */
+   if is:file(s1) then {
+      body {
+         tended char *rfrom, *rto;
+         if (!(BlkD(s1,File)->status & Fs_SSH) || BlkD(s1,File)->fd.sshf == NULL)
+            runerr(103, s1);
+         if (!cnv:C_string(s2, rfrom))
+            runerr(103, s2);
+         if (!cnv:C_string(s3, rto))
+            runerr(103, s3);
+         if (ssh_sftp_rename(BlkD(s1,File)->fd.sshf, rfrom, rto) != 0)
+            fail;                       /* &errortext already set */
+         return nulldesc;
+         }
+      }
+#endif                                  /* HAVE_LIBSSH */
 
    /*
     * Make C-style strings out of s1 and s2
@@ -1896,10 +2316,6 @@ function{0,1} rename(s1,s2)
       runerr(103,s1)
    if !cnv:C_string(s2) then
       runerr(103,s2)
-
-   abstract {
-      return null
-      }
 
    body {
       if (rename(s1,s2) == 0) return nulldesc;
@@ -2686,6 +3102,19 @@ end
       else
 #endif                                  /* Messaging */
 #ifdef PosixFns
+#if HAVE_LIBSSH
+      if (status & Fs_SSH) {
+         if (ssh_file_write(f.sshf, "\n", 1) < 0) {
+            MUTEX_UNLOCKID(fblk->mutexid);
+#if terminate
+            syserr("ssh write failed in stop()");
+#else
+            fail;                    /* &errortext already set */
+#endif
+          }
+         }
+      else
+#endif                                  /* HAVE_LIBSSH */
       if (status & Fs_Socket) {
          if (sock_write(f.fd, "\n", 1) < 0){
             MUTEX_UNLOCKID(fblk->mutexid);
@@ -2717,7 +3146,11 @@ end
 #endif
 
 #ifdef PosixFns
-      if (!(status & Fs_Socket)) {
+      if (!(status & (Fs_Socket
+#if HAVE_LIBSSH
+                      | Fs_SSH
+#endif
+         ))) {
 #endif                                  /* PosixFns */
 
 #if HAVE_LIBZ
@@ -2930,6 +3363,22 @@ function {1} name(x[nargs])
                         else
 #endif                                  /* Messaging */
 #ifdef PosixFns
+#if HAVE_LIBSSH
+                        if (status & Fs_SSH) {
+                           if (ssh_file_write(f.sshf, "\n", 1) < 0){
+#ifdef Concurrent
+                              if (fblk)
+                              MUTEX_UNLOCKID(fblk->mutexid);
+#endif                                  /* Concurrent */
+#if terminate
+                              syserr("ssh write failed in stop()");
+#else
+                              fail;
+#endif
+                             }
+                        }
+                        else
+#endif                                  /* HAVE_LIBSSH */
                         if (status & Fs_Socket) {
                            if (sock_write(f.fd, "\n", 1) < 0){
 #ifdef Concurrent
@@ -3045,6 +3494,19 @@ function {1} name(x[nargs])
 #endif                                  /* Messaging */
 
 #ifdef PosixFns
+#if HAVE_LIBSSH
+                     if (status & Fs_SSH) {
+                        if (ssh_file_write(f.sshf, StrLoc(t), StrLen(t)) < 0) {
+                           MUTEX_UNLOCKID(fblk->mutexid);
+#if terminate
+                           syserr("ssh write failed in stop()");
+#else
+                           fail;        /* &errortext already set */
+#endif
+                           }
+                        }
+                     else
+#endif                                  /* HAVE_LIBSSH */
                      if (status & Fs_Socket) {
 #if HAVE_LIBSSL
                         if(status & Fs_Encrypt) {

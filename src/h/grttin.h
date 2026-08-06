@@ -319,6 +319,24 @@ typedef int DIR;
 typedef int SSL_CTX, SSL, SSL_METHOD;
 #endif                                  /* LIBSSL */
 
+#if HAVE_LIBSSH
+typedef int ssh_session, ssh_channel, ssh_key, sftp_session, sftp_file, sftp_dir;
+typedef int sftp_attributes;
+typedef int uint32_t;
+/*
+ * rtt only needs to parse member accesses on the callbacks struct;
+ * the generated C sees the real definition from libssh/callbacks.h.
+ */
+struct ssh_channel_callbacks_struct {
+   size_t size;
+   void *userdata;
+   void *channel_data_function;
+   void *channel_eof_function;
+   void *channel_exit_status_function;
+   };
+typedef struct ssh_channel_callbacks_struct *ssh_channel_callbacks;
+#endif                                  /* HAVE_LIBSSH */
+
 #ifdef Concurrent
        typedef int pthread_key_t, sigset_t;
 #endif                                  /* Concurrent */

@@ -46,6 +46,24 @@ class BufferTabItem : TabItem (
       local xpw, pslh, updown, ypos, cw
 
       ypos := (line_no - 1) * parent.line_h + parent.y
+
+      if GuiThemeIsFlat() then {
+         if self === parent.which_one then
+            ThemeFillFace(parent.cbwin, label_x, ypos,
+               label_w, parent.line_h, "up")
+         else
+            ThemeFillFace(parent.cbwin, label_x, ypos,
+               label_w, parent.line_h, "down")
+         FlatBorder(parent.cbwin, label_x, ypos,
+            label_w, parent.line_h, GuiThemePalette().border)
+         left_string(parent.cbwin, label_x + DEFAULT_TEXT_X_SURROUND,
+                     ypos + parent.line_h / 2, label)
+         if is_shaded() then
+            FilterRectangle(parent.cbwin, label_x, ypos + 2,
+               label_w - 2, parent.line_h - 1)
+         return
+         }
+
       cw := Clone(parent.cbwin)
 
       xpw := label_x + label_w

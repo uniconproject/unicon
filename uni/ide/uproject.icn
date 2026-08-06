@@ -194,13 +194,15 @@ $endif
 
    method setup()
       local files_tab, names_lbl1, names_lbl2, names_lbl3, names_lbl4,
-            names_lbl5, names_lbl6, names_tab, ok_btn, sourcefiles_lbl
-      self.set_attribs("size=414,308", "font=serif,bold,14",
-                       "label=New Unicon Project ", "bg=light gray")
+            names_lbl5, names_lbl6, names_tab, ok_btn, sourcefiles_lbl,
+            theme_font
+      theme_font := GuiThemePickFont() | "serif,bold,14"
+      self.set_attribs("size=414,308",
+         "label=New Unicon Project ", "font=" || theme_font)
       uproj_TabSet := TabSet()
       uproj_TabSet.set_pos("5", "5")
       uproj_TabSet.set_size("100%-10", "100%-35")
-      uproj_TabSet.set_attribs("font=serif,14,bold")
+      uproj_TabSet.set_attribs("font=" || theme_font)
       names_tab := TabItem()
       names_tab.set_label("Names")
       names_lbl1 := Label()
@@ -288,7 +290,6 @@ $endif
       sourcefiles_list.set_pos("10", "45")
       sourcefiles_list.set_size("255", "170")
       sourcefiles_list.set_draw_border()
-      sourcefiles_list.set_attribs("bg=white")
       sourcefiles_list.set_contents([""])
       files_tab.add(sourcefiles_list)
       filesAdd_btn := TextButton()

@@ -7,6 +7,7 @@
 #
 
 import parser
+link paths
 
 #
 # Print an error message and exit with code 1
@@ -17,13 +18,10 @@ procedure err(s)
 end
 
 procedure resolve_include(incl)
-   static include_cache, lpath
+   static include_cache
    local s, el
    initial {
       include_cache := table()
-      lpath := []
-      s := getenv("LPATH") | err("no ipath")
-      every put(lpath, parser::split_path_string(s))
    }
 
    if s := \include_cache[incl] then
@@ -34,8 +32,12 @@ procedure resolve_include(incl)
       return include_cache[incl] := incl
    }
 
-   # Path
-   every el := !lpath do {
+   #
+   # Search LPATH plus Unicon defaults via IPL {lpaths_get} (same as the
+   # Unicon preprocessor).
+   #
+   every el := !lpaths_get() do {
+      if *el = 0 then next
       s := el || "/" || incl
       if stat(s) then {
          return include_cache[incl] := s
@@ -46,7 +48,7 @@ procedure resolve_include(incl)
 end
 
 procedure get_include_dependencies(file)
-   local l, f, s, inclname, fullinclname, a, line
+   local l, f, s, inclname, fullinclname, line
    static dependency_cache, filechars
    initial {
       dependency_cache := table()
@@ -58,14 +60,17 @@ procedure get_include_dependencies(file)
 
    l := set()
    f := open(file) | err("Couldn't open " || file)
+   line := 0
    while s := read(f) do {
+      line +:= 1
       s ? {
          tab(many(' '))
          if ="$include" then {
             tab(upto(filechars)) | err("Bad include line: " || s || " in file " || file)
             inclname := tab(many(filechars))
             if not(fullinclname := resolve_include(inclname)) then
-               err("Couldn't resolve include to " || inclname || " in file " || a || " line " || line)
+               err("Couldn't resolve include to " || inclname ||
+                  " in file " || file || " line " || line)
             every insert(l, fullinclname | !get_include_dependencies(fullinclname))
          }
       }
@@ -93,4 +98,3 @@ procedure convert_filename(s)
       return s[1:-4] || ".u"
    fail
 end
-

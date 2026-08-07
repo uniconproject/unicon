@@ -65,8 +65,8 @@ writes ``targetDir/name.html``, plus:
 
 **LaTeX / PDF**: writes ``targetDir/book.tex``. With ``--format=pdf``,
 also writes ``targetDir/book.pdf`` when a TeX engine is available.
-Copy figure files into ``targetDir`` (or a subdirectory matching the
-``.. image::`` path) before building; SVG is not embedded (a boxed
+Local ``.. image::`` files are copied into ``targetDir`` automatically
+(relative paths preserved). SVG is not embedded in LaTeX (a boxed
 placeholder is emitted instead — convert to PDF/PNG for TeX).
 
 Exit status

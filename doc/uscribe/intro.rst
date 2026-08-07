@@ -54,9 +54,9 @@ future ``.. api::`` bridge may connect them.
 How to read this guide
 ----------------------
 
-- :ref:`Installation` — build and install the ``uscribe`` binary
-- :ref:`Quick Start` — generate HTML from a tiny book
-- :ref:`Markup Reference` — headings, lists, inline markup, directives
-- :ref:`Themes` — basic, classic, dark, and the in-page switcher
-- :ref:`Command Line` — CLI options
-- :ref:`uscribe and Sphinx` — what maps to what if you know Sphinx
+- :doc:`install` — build and install the ``uscribe`` binary
+- :doc:`quickstart` — generate HTML from a tiny book
+- :doc:`markup` — headings, lists, inline markup, directives
+- :doc:`themes` — basic, classic, dark, and the in-page switcher
+- :doc:`cli` — CLI options
+- :doc:`sphinx` — what maps to what if you know Sphinx

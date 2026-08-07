@@ -26,8 +26,12 @@ Paragraphs and lists
 --------------------
 
 Blank lines separate paragraphs. Bullet lists use ``-`` or ``*`` with
-a following space. Indented continuation lines belong to the current
-item.
+a following space. Numbered lists use ``1. `` / ``1) `` or auto-number
+``#. ``. Indented continuation lines belong to the current item.
+
+1. Install the ``uscribe`` binary (:doc:`install`)
+2. Write a tiny book (:doc:`quickstart`)
+#. Pick a theme (:doc:`themes`)
 
 Inline markup
 -------------
@@ -36,10 +40,11 @@ Inline markup
 - double asterisks for strong
 - backticks for inline literals
 - a ref role pointing at a section title (same text as the heading)
-- a doc role is parsed; full resolution is still limited
+- a doc role naming a chapter stem (``:doc:`install``` → ``install.rst``)
 
 For cross-chapter links, write a ref role whose label matches the
-target heading exactly (see the links in :ref:`Introduction`).
+target heading exactly, or a doc role with the chapter file stem (see
+the guide TOC in :doc:`intro`).
 
 Directives
 ----------
@@ -60,6 +65,10 @@ Recognized forms (authoring markup):
 
       Hint.
 
+   .. important::
+
+      Also: caution, attention, danger, error, hint.
+
    .. code-block:: unicon
 
       # source lines, indented
@@ -70,6 +79,10 @@ Recognized forms (authoring markup):
    .. image:: images/diagram.svg
 
       Optional alt text on an indented line
+
+   .. figure:: images/diagram.svg
+
+      Same as image (alias).
 
 Unicon listings
 ---------------
@@ -106,4 +119,4 @@ Pass 1 collects every section title (slugified) across all chapters.
 Pass 2 turns pending ref roles into links of the form
 ``chapter.html#anchor``. Prefer unique section titles.
 
-See also :ref:`Quick Start` and :ref:`Command Line`.
+See also :doc:`quickstart` and :doc:`cli`.

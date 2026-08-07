@@ -1,0 +1,696 @@
+import json
+link jsonrpc
+link io
+
+global TEST_PROGRAM, TEST_SOURCE, TEST_BREAKPOINT_LINE
+
+procedure is_windows()
+   return find("NT", &features)
+end
+
+procedure udb_for_tests()
+   local u, path, exe, feature
+
+   exe := if is_windows() then ".exe" else ""
+
+   u := getenv("UDB")
+   if \u & exists(u) then return u
+
+   every feature := &features do {
+      if path := (feature ? (="Binaries at " & tab(0))) then {
+         if *path > 0 then {
+            if not (path[-1] == "/" | path[-1] == "\\") then {
+               if is_windows() then
+                  path ||:= "\\"
+               else
+                  path ||:= "/"
+            }
+            u := path || "udb" || exe
+            if exists(u) then return u
+         }
+      }
+   }
+   if is_windows() then
+      u := "..\\..\\bin\\udb.exe"
+   else
+      u := "../../bin/udb" || exe
+   if exists(u) then return u
+
+   return "udb" || exe
+end
+
+class DAP_TestClient : JSON_HTTPSocket(udb_addr, udb_port, seq, adapter_pid, dapproxy_pid, last_frame_id, 
+   locals_ref, globals_ref, statics_ref, params_ref, passed_count, failed_count)
+
+   method find_port()
+      return string(5000 + ?1000)
+   end
+
+   method start_udb_adapter()
+      local cmd, p
+
+      if is_windows() then
+         cmd := "\"" || udb_for_tests() || "\" --adapter " || udb_port
+      else
+         cmd := udb_for_tests() || " --adapter " || udb_port || " >/dev/null 2>&1 & echo $!"
+      p := open(cmd, "p") | stop("failed to start udb adapter")
+
+      if is_windows() then
+         adapter_pid := &null
+      else
+         adapter_pid := integer(read(p))
+
+      close(p)
+      delay(500)
+      return self
+   end
+
+   method stop_udb_adapter()
+      if \adapter_pid then {
+         if is_windows() then
+            system("taskkill /F /PID " || adapter_pid || " >NUL 2>&1")
+         else
+            system("kill -9 " || adapter_pid || " >/dev/null 2>&1")
+         adapter_pid := &null
+      }
+
+      if \dapproxy_pid then {
+         if is_windows() then
+            system("taskkill /F /PID " || dapproxy_pid || " >NUL 2>&1")
+         else
+            system("kill -9 " || dapproxy_pid || " >/dev/null 2>&1")
+         dapproxy_pid := &null
+      }
+      return self
+   end
+
+   method connect_to_adapter()
+      if sock := open(udb_addr || ":" || udb_port, "n") then
+         return self
+   end
+
+   method start_client_connection()
+      every 1 to 20 do {
+         if connect_to_adapter() then
+            return self
+         delay(500)
+      }
+   end
+
+   method start_adapter_and_connect()
+      every attempt := 1 to 5 do {
+         stop_udb_adapter()
+         udb_port := find_port()
+         start_udb_adapter()
+         if start_client_connection() then
+            return self
+      }
+      stop_udb_adapter()
+      stop("failed to connect to udb adapter")
+   end
+
+   method send_request(command, arguments)
+      local req
+
+      req := table()
+      req["seq"] := seq
+      req["type"] := "request"
+      req["command"] := command
+      req["arguments"] := \arguments | table()
+
+      send_msg(req)
+      seq +:= 1
+      return self
+   end
+
+   method send_response(request_msg, success, body)
+      local resp
+
+      resp := table()
+      resp["seq"] := seq
+      resp["type"] := "response"
+      resp["request_seq"] := request_msg["seq"]
+      resp["success"] := success
+      resp["command"] := request_msg["command"]
+      resp["body"] := \body
+
+      send_msg(resp)
+      seq +:= 1
+      return self
+   end
+
+   method handle_incoming(msg)
+      local args, body, run_cmd, p
+
+      if \msg["type"] == "request" then {
+         if (\msg["command"] | "") == "runInTerminal" then {
+            args := (\msg["arguments"] | table())["args"]
+
+            if type(args) == "list" & *args > 0 then {
+               run_cmd := args[1]
+               if run_cmd[1:5] == "udb " then
+                  run_cmd := udb_for_tests() || " " || run_cmd[5:0]
+
+               if is_windows() then {
+                  p := open("\"" || run_cmd || "\"", "p") | stop("failed to start dapproxy")
+                  dapproxy_pid := &null
+               } else {
+                  p := open(run_cmd || " & echo $!", "p") | stop("failed to start dapproxy")
+                  dapproxy_pid := integer(read(p))
+               }
+               close(p)
+               delay(500)
+            }
+            body := table()
+            body["shellProcessId"] := \dapproxy_pid | 1
+            send_response(msg, "__true__", body)
+         }
+      }
+
+      return self
+   end
+
+   method format_error(error)
+      return tojson(error) | ximage(error) | "<unprintable error>"
+   end
+
+   method fail_test(test_name, reason, error)
+      write("TEST ", test_name, " ... FAIL")
+      write("  reason: ", reason)
+      if \error then
+         write("  error: ", format_error(error))
+      fail
+   end
+
+   method require_value(x)
+      /x & fail
+      return x
+   end
+
+   method pass_test(test_name)
+      write("TEST ", test_name, " ... PASS")
+      return self
+   end
+
+   method drain_messages(timeout)
+      local msg
+
+      while msg := get_msg(timeout) do
+         handle_incoming(msg)
+
+      return self
+   end
+
+   method expect_response(test_name, command)
+      local msg, got_type, got_command
+
+      msg := get_msg(15000) | {
+         fail_test(test_name, "no response for " || command, &null)
+         fail
+      }
+
+      while \msg do {
+         got_type := \msg["type"] | ""
+         got_command := \msg["command"] | ""
+
+         if got_type == "response" & got_command == command then {
+            if /msg["success"] | msg["success"] ~== "__true__" then {
+               fail_test(test_name, "request failed for " || command, msg)
+               fail
+            }
+            return msg
+         }
+
+         handle_incoming(msg)
+         msg := get_msg(3000) | {
+            fail_test(test_name, "no response for " || command, &null)
+            fail
+         }
+      }
+   end
+
+   method expect_event(test_name, event_name, timeout)
+      local msg, got_type, got_event
+
+      msg := get_msg(\timeout | 5000) | {
+         fail_test(test_name, "no event for " || event_name, &null)
+         fail
+      }
+
+      while \msg do {
+         got_type := \msg["type"] | ""
+         got_event := \msg["event"] | ""
+
+         if got_type == "event" & got_event == event_name then
+            return msg
+
+         handle_incoming(msg)
+         msg := get_msg(1000) | {
+            fail_test(test_name, "no event for " || event_name, &null)
+            fail
+         }
+      }
+   end
+
+   method run_request_test(test_name, command, args, drain_timeout)
+      local msg
+
+      send_request(command, \args | table())
+      msg := expect_response(test_name, command)
+
+      if \drain_timeout then
+         drain_messages(drain_timeout)
+
+      return \msg
+   end
+
+   method test_initialize()
+      local msg, evt, test_name
+      test_name := "initialize"
+
+      msg := run_request_test(test_name, "initialize", table())
+
+      evt := get_msg(1000) | {
+         fail_test(test_name, "missing initialized event", &null)
+         fail
+      }
+
+      if /evt["type"] | evt["type"] ~== "event" then {
+         fail_test(test_name, "expected initialized event", evt)
+         fail
+      }
+
+      if /evt["event"] | evt["event"] ~== "initialized" then {
+         fail_test(test_name, "wrong event after initialize", evt)
+         fail
+      }
+
+      drain_messages(200)
+      pass_test(test_name)
+      return self
+   end
+
+   method test_threads()
+      local msg, body, threads, test_name
+      test_name := "threads"
+
+      msg := run_request_test(test_name, "threads", table(), 200)
+      if /msg then fail
+
+      body := msg["body"] | {
+         fail_test(test_name, "threads response missing body", msg)
+         fail
+      }
+
+      threads := body["threads"] | {
+         fail_test(test_name, "threads response missing threads", msg)
+         fail
+      }
+
+      if type(threads) ~== "list" then {
+         fail_test(test_name, "threads field is not a list", msg)
+         fail
+      }
+
+      if *threads = 0 then {
+         fail_test(test_name, "threads list is empty", msg)
+         fail
+      }
+
+      pass_test(test_name)
+      return self
+   end
+
+   method test_setBreakpoints()
+      local args, msg, test_name
+      test_name := "setBreakpoints"
+
+      args := [
+         "source": ["path": TEST_SOURCE];
+         "breakpoints": [["line": TEST_BREAKPOINT_LINE]]
+      ]
+
+      msg := run_request_test(test_name, "setBreakpoints", args, 200)
+      if /msg then fail
+      pass_test(test_name)
+      return self
+   end
+
+   method test_launch()
+      local args, msg, test_name
+      test_name := "launch"
+
+      args := table()
+      args["program"] := TEST_PROGRAM
+
+      msg := require_value(run_request_test(test_name, "launch", args, 200))
+      pass_test(test_name)
+      return self
+   end
+
+   method test_configurationDone()
+      local msg, evt, test_name
+      test_name := "configurationDone"
+
+      msg := require_value(run_request_test(test_name, "configurationDone", table()))
+
+      evt := require_value(expect_event(test_name, "stopped", 20000))
+
+      drain_messages(200)
+      pass_test(test_name)
+      return self
+   end
+
+   method test_continue()
+      local args, msg, test_name
+      test_name := "continue"
+
+      args := table()
+      args["threadId"] := 1
+
+      msg := run_request_test(test_name, "continue", args, 200)
+      pass_test(test_name)
+      return self
+   end
+
+   method test_dataBreakpointInfo()
+      local args, msg, body, test_name
+      test_name := "dataBreakpointInfo"
+
+      args := table()
+      args["name"] := "i"
+
+      msg := run_request_test(test_name, "dataBreakpointInfo", args, 200)
+      if /msg then fail
+
+      body := msg["body"] | {
+         fail_test(test_name, "missing body", msg)
+         fail
+      }
+
+      if /body["dataId"] then {
+         fail_test(test_name, "missing dataId", msg)
+         fail
+      }
+
+      if /body["description"] then {
+         fail_test(test_name, "missing description", msg)
+         fail
+      }
+
+      if /body["accessTypes"] | type(body["accessTypes"]) ~== "list" then {
+         fail_test(test_name, "missing accessTypes list", msg)
+         fail
+      }
+
+      pass_test(test_name)
+      return self
+   end
+
+   method test_setDataBreakpoints()
+      local args, wp, msg, body, breakpoints, test_name
+      test_name := "setDataBreakpoints"
+
+      wp := table()
+      wp["dataId"] := "i"
+      wp["accessType"] := "write"
+
+      args := table()
+      args["breakpoints"] := [wp]
+
+      msg := run_request_test(test_name, "setDataBreakpoints", args, 200)
+      if /msg then fail
+
+      body := msg["body"] | {
+         fail_test(test_name, "missing body", msg)
+         fail
+      }
+      breakpoints := body["breakpoints"] | {
+         fail_test(test_name, "missing breakpoints", msg)
+         fail
+      }
+
+      if type(breakpoints) ~== "list" then {
+         fail_test(test_name, "breakpoints is not a list", msg)
+         fail
+      }
+
+      pass_test(test_name)
+      return self
+   end
+
+   method test_stackTrace()
+      local args, msg, body, frames, frame, test_name
+      test_name := "stackTrace"
+
+      args := table()
+      args["threadId"] := 1
+
+      msg := run_request_test(test_name, "stackTrace", args, 200)
+      if /msg then fail
+
+      body := msg["body"] | {
+         fail_test(test_name, "missing body", msg)
+         fail
+      }
+      frames := body["stackFrames"] | {
+         fail_test(test_name, "missing stackFrames", msg)
+         fail
+      }
+
+      if type(frames) ~== "list" then {
+         fail_test(test_name, "stackFrames is not a list", msg)
+         fail
+      }
+
+      if *frames = 0 then {
+         fail_test(test_name, "stackFrames is empty", msg)
+         fail
+      }
+
+      frame := frames[1]
+      last_frame_id := frame["id"] | {
+         fail_test(test_name, "first stack frame missing id", msg)
+         fail
+      }
+
+      pass_test(test_name)
+      return self
+   end
+
+   method test_scopes()
+      local args, msg, body, scopes, scope, test_name
+      test_name := "scopes"
+
+      if /last_frame_id then {
+         fail_test(test_name, "needs last_frame_id from test_stackTrace", &null)
+         fail
+      }
+
+      args := table()
+      args["frameId"] := last_frame_id
+
+      msg := require_value(run_request_test(test_name, "scopes", args, 200))
+
+      body := msg["body"] | {
+         fail_test(test_name, "missing body", msg)
+         fail
+      }
+      scopes := body["scopes"] | {
+         fail_test(test_name, "missing scopes", msg)
+         fail
+      }
+
+      if type(scopes) ~== "list" then {
+         fail_test(test_name, "scopes field is not a list", msg)
+         fail
+      }
+
+      every scope := !scopes do {
+         case \scope["name"] of {
+            "Globals": globals_ref := scope["variablesReference"]
+            "Locals": locals_ref := scope["variablesReference"]
+            "Statics": statics_ref := scope["variablesReference"]
+            "Parameters": params_ref := scope["variablesReference"]
+         }
+      }
+
+      # Adapter variables() maps refs 1..4 to g/l/s/p.
+      /globals_ref := 1
+      /locals_ref := 2
+      /statics_ref := 3
+      /params_ref := 4
+
+      pass_test(test_name)
+      return self
+   end
+
+   method test_variables()
+      local args, msg, body, vars, test_name
+      test_name := "variables"
+
+      if /locals_ref then {
+         fail_test(test_name, "needs locals_ref from test_scopes", &null)
+         fail
+      }
+
+      args := table()
+      args["variablesReference"] := locals_ref
+
+      msg := require_value(run_request_test(test_name, "variables", args, 200))
+
+      body := msg["body"] | {
+         fail_test(test_name, "missing body", msg)
+         fail
+      }
+      vars := body["variables"] | {
+         fail_test(test_name, "missing variables list", msg)
+         fail
+      }
+
+      if type(vars) ~== "list" then {
+         fail_test(test_name, "variables field is not a list", msg)
+         fail
+      }
+
+      pass_test(test_name)
+      return self
+   end
+
+   method test_setVariable()
+      local args, msg, test_name
+      test_name := "setVariable"
+
+      if /locals_ref then {
+         fail_test(test_name, "needs locals_ref from test_scopes", &null)
+         fail
+      }
+
+      args := table()
+      args["variablesReference"] := locals_ref
+      args["name"] := "i"
+      args["value"] := "99"
+
+      msg := require_value(run_request_test(test_name, "setVariable", args, 200))
+
+      pass_test(test_name)
+      return self
+   end
+
+   method test_next()
+      local args, msg, test_name
+      test_name := "next"
+
+      args := table()
+      args["threadId"] := 1
+
+      msg := require_value(run_request_test(test_name, "next", args, 200))
+      pass_test(test_name)
+      return self
+   end
+
+   method test_evaluate()
+      local args, msg, test_name
+      test_name := "evaluate"
+
+      args := table()
+      args["expression"] := "i"
+      args["context"] := "repl"
+
+      if \last_frame_id then
+         args["frameId"] := last_frame_id
+
+      msg := require_value(run_request_test(test_name, "evaluate", args, 200))
+      pass_test(test_name)
+      return self
+   end
+
+   method test_stepIn()
+      local args, msg, test_name
+      test_name := "stepIn"
+
+      args := table()
+      args["threadId"] := 1
+
+      msg := require_value(run_request_test(test_name, "stepIn", args, 200))
+      pass_test(test_name)
+      return self
+   end
+
+   method test_stepOut()
+      local args, msg, test_name
+      test_name := "stepOut"
+
+      args := table()
+      args["threadId"] := 1
+
+      msg := require_value(run_request_test(test_name, "stepOut", args, 200))
+
+      pass_test(test_name)
+      return self
+   end
+
+   method test_disconnect()
+      local msg, test_name
+      test_name := "disconnect"
+
+      msg := require_value(run_request_test(test_name, "disconnect", table()))
+
+      pass_test(test_name)
+      return self
+   end
+
+   method run_tests()
+      passed_count := 0
+      failed_count := 0
+
+      if test_initialize() then passed_count +:= 1 else failed_count +:= 1
+      if test_launch() then passed_count +:= 1 else failed_count +:= 1
+      if test_setBreakpoints() then passed_count +:= 1 else failed_count +:= 1
+      if test_setDataBreakpoints() then passed_count +:= 1 else failed_count +:= 1
+      if test_dataBreakpointInfo() then passed_count +:= 1 else failed_count +:= 1
+      if test_configurationDone() then passed_count +:= 1 else failed_count +:= 1
+      if test_threads() then passed_count +:= 1 else failed_count +:= 1
+      if test_stackTrace() then passed_count +:= 1 else failed_count +:= 1
+      if test_scopes() then passed_count +:= 1 else failed_count +:= 1
+      if test_variables() then passed_count +:= 1 else failed_count +:= 1
+      if test_setVariable() then passed_count +:= 1 else failed_count +:= 1
+      if test_evaluate() then passed_count +:= 1 else failed_count +:= 1
+      if test_continue() then passed_count +:= 1 else failed_count +:= 1
+      if test_next() then passed_count +:= 1 else failed_count +:= 1
+      if test_stepIn() then passed_count +:= 1 else failed_count +:= 1
+      if test_stepOut() then passed_count +:= 1 else failed_count +:= 1
+      if test_disconnect() then passed_count +:= 1 else failed_count +:= 1
+      write("")
+      write("SUMMARY: ", passed_count, " passed, ", failed_count, " failed")
+      if failed_count = 0 then
+         write("ALL TESTS PASSED")
+      else
+         stop("test run completed with failures")
+      return self
+   end
+
+   initially
+      seq := 1
+
+      if &features == ("MacOS" | "MS Windows NT") then
+         udb_addr := "127.0.0.1"
+      else
+         udb_addr := ""
+
+      udb_port := find_port()
+
+end
+
+procedure main(args)
+   local client
+
+   TEST_PROGRAM := "./data/test_target"
+   TEST_SOURCE := "./data/test_target.icn"
+   TEST_BREAKPOINT_LINE := 6
+   
+
+   client := DAP_TestClient()
+   client.start_adapter_and_connect()
+   client.run_tests()
+end

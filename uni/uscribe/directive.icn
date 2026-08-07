@@ -91,9 +91,10 @@ procedure registerBuiltins(reg)
                     "attention", "danger", "error", "hint"] do
         reg.register(name, handleAdmonition)
     reg.register("image", handleImage)
-    reg.register("figure", handleImage)
+    reg.register("figure", handleFigure)
     reg.register("include", handleInclude)
     reg.register("literalinclude", handleLiteralInclude)
+    reg.register("list-table", handleListTable)
 end
 
 #<p>
@@ -118,48 +119,156 @@ end
 # <[param ctx unused parser context]>
 # <[returns an <tt>Admonition</tt> instance]>
 #</p>
-procedure handleAdmonition(raw, ctx)
-    return mkAdmonitionFromBody(raw.getName(), raw)
-end
-
-#<p>
-# Shared helper: build an <tt>Admonition</tt> whose body is one
-# <tt>Paragraph</tt> of inline-parsed body lines.
-# <[param kind admonition kind string]>
-# <[param raw a <tt>RawDirective</tt> supplying the body lines]>
-# <[returns an <tt>Admonition</tt> instance]>
-#</p>
-procedure mkAdmonitionFromBody(kind, raw)
-    local adm, para, ln
+procedure handleAdmonition(raw, parser)
+    local adm, kids, para, ln
     adm := Admonition()
-    adm.setKind(kind)
-    para := Paragraph()
-    every ln := !raw.getBodyLines() do
-        every put(para.getChildren(), !parseInline(ln))
-    adm.addChild(para)
+    adm.setKind(raw.getName())
+    # Nested blocks (lists, code, nested directives) via parseBlocks.
+    kids := parser.parseBodyLines(raw.getBodyLines())
+    if *kids > 0 then
+        every adm.addChild(!kids)
+    else {
+        # Empty body: keep a single empty paragraph for structure.
+        para := Paragraph()
+        every ln := !raw.getBodyLines() do
+            every put(para.getChildren(), !parseInline(ln))
+        adm.addChild(para)
+        }
     return adm
 end
 
 #<p>
-# Expand <tt>.. image::</tt> / <tt>.. figure::</tt> into an
-# <tt>ImageNode</tt>. The optional first non-blank body line is used
-# as alt text until field-list options (<tt>:alt:</tt>) are parsed.
+# Expand <tt>.. image::</tt> into an <tt>ImageNode</tt>. Body options
+# <tt>:alt:</tt> / <tt>:name:</tt>, or the first non-option line as alt.
 # <[param raw a <tt>RawDirective</tt>]>
-# <[param ctx unused parser context]>
+# <[param parser owning Parser (pending labels)]>
 # <[returns an <tt>ImageNode</tt> instance]>
 #</p>
-procedure handleImage(raw, ctx)
-    local img, alt
+procedure handleImage(raw, parser)
+    local img, opts, alt, ln, l
     img := ImageNode()
     img.setURI(raw.getArg())
-    every alt := !raw.getBodyLines() do {
-        alt := trim(alt, ' ', 0)
-        if *alt > 0 then {
-            img.setAlt(alt)
+    opts := parseFieldOptions(raw.getBodyLines())
+    if alt := \opts["alt"] then
+        img.setAlt(alt)
+    else {
+        every ln := !raw.getBodyLines() do {
+            ln := trim(ln, ' ', 0)
+            if *ln = 0 | ln[1] == ":" then next
+            img.setAlt(ln)
             break
             }
         }
+    if l := \opts["name"] | parser.takePendingLabel() then
+        img.setLabel(l)
     return img
+end
+
+#<p>
+# Expand <tt>.. figure::</tt>: like image, but captionable / numbered.
+# Non-option body lines form the caption; <tt>:alt:</tt> and
+# <tt>:name:</tt> are recognized.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param parser owning Parser]>
+# <[returns an <tt>ImageNode</tt> marked as a figure]>
+#</p>
+procedure handleFigure(raw, parser)
+    local img, opts, cap, ln, l
+    img := handleImage(raw, parser)
+    img.setFigure()
+    opts := parseFieldOptions(raw.getBodyLines())
+    cap := ""
+    every ln := !raw.getBodyLines() do {
+        ln := trim(ln, ' ', 0)
+        if *ln = 0 | ln[1] == ":" then next
+        # First non-option line was used as alt when :alt: absent;
+        # for figures, prefer it as caption when :alt: was given, else
+        # keep alt and also use it as caption.
+        if *cap > 0 then
+            cap ||:= " " || ln
+        else
+            cap := ln
+        }
+    if *cap > 0 then {
+        img.setCaption(cap)
+        if /img.getAlt() then
+            img.setAlt(cap)
+        }
+    # handleImage already consumed pending label; :name: re-check.
+    if l := \opts["name"] then
+        img.setLabel(l)
+    return img
+end
+
+#<p>
+# Expand <tt>.. list-table::</tt> with bullet rows of <tt>-</tt> cells.
+# Option <tt>:header-rows:</tt> (default 0) promotes the first N rows.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param parser owning Parser]>
+# <[returns a <tt>TableNode</tt>]>
+#</p>
+procedure handleListTable(raw, parser)
+    local opts, rows, row, ln, tbl, i, headerN, l, cells, cellText
+    opts := parseFieldOptions(raw.getBodyLines())
+    headerN := integer(\opts["header-rows"] | "0") | 0
+    rows := []
+    row := &null
+    every ln := !raw.getBodyLines() do {
+        ln := trim(ln, ' ', 0)
+        if *ln = 0 then next
+        if ln[1] == ":" then next
+        cellText := &null
+        ln ? {
+            if ="*" then {
+                tab(many(' '))
+                if ="-" then {
+                    tab(many(' '))
+                    cellText := trim(tab(0), ' ', 0)
+                    if \row then put(rows, row)
+                    row := [cellText]
+                    }
+                }
+            else if ="-" then {
+                tab(many(' '))
+                cellText := trim(tab(0), ' ', 0)
+                /row := []
+                put(row, cellText)
+                }
+            }
+        }
+    if \row then put(rows, row)
+
+    tbl := TableNode()
+    if l := parser.takePendingLabel() then
+        tbl.setLabel(l)
+    i := 1
+    every cells := !rows do {
+        if headerN > 0 & i = 1 then
+            tbl.setHeaderRow(listTableRow(cells, 1))
+        else
+            tbl.addChild(listTableRow(cells, &null))
+        i +:= 1
+        }
+    return tbl
+end
+
+#<p>
+# Build a <tt>TableRow</tt> from cell strings for <tt>list-table</tt>.
+# <[param cellStrs list of cell text strings]>
+# <[param asHeader non-null to mark as header]>
+# <[returns a <tt>TableRow</tt>]>
+#</p>
+procedure listTableRow(cellStrs, asHeader)
+    local row, cell, text
+    row := TableRow()
+    if \asHeader then
+        row.setHeader()
+    every text := !cellStrs do {
+        cell := TableCell()
+        every put(cell.getChildren(), !parseInline(text))
+        row.addChild(cell)
+        }
+    return row
 end
 
 #<p>

@@ -23,7 +23,7 @@ import lang
 # Holds a <tt>DirectiveRegistry</tt> used when expanding
 # <tt>".. name::"</tt> directives during <tt>parseBlocks()</tt>.
 # </p>
-class Parser : Object (registry, srcPath, includeStack)
+class Parser : Object (registry, srcPath, includeStack, pendingLabel)
 
     # <p>
     # Install the directive registry used by <tt>parseDirective()</tt>.
@@ -43,6 +43,41 @@ class Parser : Object (registry, srcPath, includeStack)
     # </p>
     method getSrcPath()
         return \srcPath
+    end
+
+    # <p>
+    # Take and clear a pending <tt>.. _label:</tt> target, if any.
+    # <[returns the label string]>
+    # <[fails if none pending]>
+    # </p>
+    method takePendingLabel()
+        local l
+        l := \pendingLabel | fail
+        pendingLabel := &null
+        return l
+    end
+
+    # <p>
+    # Stash a label to apply to the next section, figure, or table.
+    # <[param l label string]>
+    # </p>
+    method setPendingLabel(l)
+        pendingLabel := l
+        return
+    end
+
+    # <p>
+    # Parse indented directive body lines as nested blocks (lists,
+    # code, nested directives, …) and return them.
+    # <[param bodyLines list of body line strings (indent already stripped)]>
+    # <[returns list of block nodes]>
+    # </p>
+    method parseBodyLines(bodyLines)
+        local holder
+        holder := Document()
+        if *bodyLines > 0 then
+            parseBlocks(self, bodyLines, 1, *bodyLines, holder, 0)
+        return holder.getChildren()
     end
 
     # <p>
@@ -118,12 +153,20 @@ end
 # <[returns the index just past the last line consumed]>
 # </p>
 procedure parseBlocks(parser, lines, i, limit, container, level)
-    local blankRun, para, curSection, hLevel
+    local blankRun, para, curSection, hLevel, l
 
     curSection := container
     while i <= limit do {
         # Skip blank lines between blocks.
         if isBlank(lines[i]) then {
+            i +:= 1
+            next
+            }
+
+        # Explicit label target: ".. _name:" applies to the next
+        # section, figure, or table.
+        if isLabelTarget(lines[i]) then {
+            parser.setPendingLabel(labelTargetName(lines[i]))
             i +:= 1
             next
             }
@@ -135,6 +178,8 @@ procedure parseBlocks(parser, lines, i, limit, container, level)
             curSection := Section()
             curSection.setTitle(trim(lines[i], ' ', 0))
             curSection.setLevel(hLevel)
+            if l := parser.takePendingLabel() then
+                curSection.setLabel(l)
             container.addChild(curSection)
             i +:= 2
             next
@@ -159,9 +204,13 @@ procedure parseBlocks(parser, lines, i, limit, container, level)
             next
             }
 
-        # Simple RST table (==== column separators).
+        # Grid table (+---+ borders) or simple table (==== separators).
+        if isGridTableSep(lines[i]) then {
+            i := parseGridTable(parser, lines, i, limit, curSection)
+            next
+            }
         if isTableSepLine(lines[i]) then {
-            i := parseSimpleTable(lines, i, limit, curSection)
+            i := parseSimpleTable(parser, lines, i, limit, curSection)
             next
             }
 
@@ -202,8 +251,9 @@ procedure parseParagraph(lines, i, limit, container)
     local buf, para
     buf := []
     while i <= limit & not isBlank(lines[i]) &
-          not isDirectiveLine(lines[i]) & not isBulletLine(lines[i]) &
-          not isEnumLine(lines[i]) & not isTableSepLine(lines[i]) &
+          not isDirectiveLine(lines[i]) & not isLabelTarget(lines[i]) &
+          not isBulletLine(lines[i]) & not isEnumLine(lines[i]) &
+          not isTableSepLine(lines[i]) & not isGridTableSep(lines[i]) &
           not isLiteralIntro(lines[i]) &
           not isHeadingAt(lines, i, limit) do {
         put(buf, trim(lines[i]))
@@ -563,6 +613,34 @@ procedure isDirectiveLine(s)
 end
 
 # <p>
+# True when <tt>s</tt> is an explicit label target
+# <tt>".. _name:"</tt> (single trailing colon, not a <tt>::</tt>
+# directive).
+# <[param s a source line]>
+# <[fails if not a label target]>
+# </p>
+procedure isLabelTarget(s)
+    local t
+    t := trim(s, ' ', 0)
+    return t ? (=".. _", tab(many(&letters ++ &digits ++ '_-.')) , =":", pos(0))
+end
+
+# <p>
+# Extract the label name from a <tt>".. _name:"</tt> line.
+# <[param s a label-target line]>
+# <[returns the name string]>
+# </p>
+procedure labelTargetName(s)
+    local t, name
+    t := trim(s, ' ', 0)
+    t ? {
+        =".. _"
+        name := tab(many(&letters ++ &digits ++ '_-.'))
+        }
+    return name
+end
+
+# <p>
 # True when <tt>s</tt> is a bullet list item
 # (<tt>"- "</tt> or <tt>"* "</tt>, optionally indented).
 # <[param s a source line]>
@@ -726,8 +804,8 @@ end
 # <[param container parent for the new <tt>TableNode</tt>]>
 # <[returns the index just past the table]>
 # </p>
-procedure parseSimpleTable(lines, i, limit, container)
-    local cols, tbl, headerCells, rowCells
+procedure parseSimpleTable(parser, lines, i, limit, container)
+    local cols, tbl, headerCells, rowCells, l
     cols := tableColumnBounds(lines[i])
     if *cols = 0 then {
         # Not a usable separator; skip the line as a no-op advance.
@@ -742,8 +820,11 @@ procedure parseSimpleTable(lines, i, limit, container)
         return i
     i +:= 1
     tbl := TableNode()
+    if l := parser.takePendingLabel() then
+        tbl.setLabel(l)
     tbl.setHeaderRow(mkTableRowFromCells(headerCells, 1))
-    while i <= limit & not isBlank(lines[i]) & not isTableSepLine(lines[i]) do {
+    while i <= limit & not isBlank(lines[i]) & not isTableSepLine(lines[i]) &
+          not isGridTableSep(lines[i]) do {
         rowCells := splitTableRow(lines[i], cols)
         tbl.addChild(mkTableRowFromCells(rowCells, &null))
         i +:= 1
@@ -752,6 +833,137 @@ procedure parseSimpleTable(lines, i, limit, container)
         i +:= 1
     container.addChild(tbl)
     return i
+end
+
+# <p>
+# True when <tt>s</tt> is a grid-table border line
+# (<tt>"+---+---+"</tt> style).
+# <[param s a source line]>
+# <[fails if not a grid separator]>
+# </p>
+procedure isGridTableSep(s)
+    local t, i, c
+    t := trim(s, ' ', 0)
+    if *t < 3 then fail
+    if t[1] ~== "+" | t[*t] ~== "+" then fail
+    every i := 1 to *t do {
+        c := t[i]
+        if c ~== "+" & c ~== "-" & c ~== "=" then fail
+        }
+    return
+end
+
+# <p>
+# Parse a grid table: border / row / border / … with optional
+# header separator using <tt>"="</tt> in the border.
+# <[param parser owning Parser (pending labels)]>
+# <[param lines source lines]>
+# <[param i index of the opening border]>
+# <[param limit last index]>
+# <[param container parent]>
+# <[returns index past the table]>
+# </p>
+procedure parseGridTable(parser, lines, i, limit, container)
+    local tbl, cols, rowCells, l, border, bodyRows, headerRows, sawHeaderSep, i2
+    cols := gridColumnBounds(lines[i])
+    if *cols = 0 then
+        return i + 1
+    bodyRows := []
+    headerRows := []
+    sawHeaderSep := &null
+    i +:= 1
+    while i <= limit do {
+        if isBlank(lines[i]) then
+            break
+        if isGridTableSep(lines[i]) then {
+            border := trim(lines[i], ' ', 0)
+            # A border with '=' ends the header section.
+            if find("=", border) & /sawHeaderSep then {
+                headerRows := bodyRows
+                bodyRows := []
+                sawHeaderSep := 1
+                }
+            i +:= 1
+            if i > limit | isBlank(lines[i]) |
+               not (isGridTableSep(lines[i]) | isGridTableRow(lines[i])) then
+                break
+            next
+            }
+        if not isGridTableRow(lines[i]) then
+            break
+        rowCells := splitGridRow(lines[i], cols)
+        put(bodyRows, mkTableRowFromCells(rowCells, &null))
+        i +:= 1
+        }
+    tbl := TableNode()
+    if l := parser.takePendingLabel() then
+        tbl.setLabel(l)
+    if *headerRows > 0 then {
+        headerRows[1].setHeader()
+        tbl.setHeaderRow(headerRows[1])
+        every i2 := 2 to *headerRows do
+            tbl.addChild(headerRows[i2])
+        }
+    every tbl.addChild(!bodyRows)
+    container.addChild(tbl)
+    return i
+end
+
+# <p>
+# True when <tt>s</tt> looks like a grid table data row
+# (<tt>"| a | b |"</tt>).
+# <[param s a source line]>
+# <[fails if not a grid row]>
+# </p>
+procedure isGridTableRow(s)
+    local t
+    t := trim(s, ' ', 0)
+    return *t >= 2 & t[1] == "|" & t[-1] == "|"
+end
+
+# <p>
+# Column start/end bounds from a <tt>"+---+---+"</tt> border.
+# <[param sep border line]>
+# <[returns list of <tt>[start, stop]</tt> pairs (1-based, stop exclusive)]>
+# </p>
+procedure gridColumnBounds(sep)
+    local cols, i, start, t
+    t := trim(sep, ' ', 2)
+    # Align to first '+'.
+    cols := []
+    i := 1
+    while i <= *t do {
+        if t[i] == "+" then {
+            start := i + 1
+            i +:= 1
+            while i <= *t & t[i] ~== "+" do
+                i +:= 1
+            if i <= *t & start < i then
+                put(cols, [start, i])
+            }
+        else
+            i +:= 1
+        }
+    return cols
+end
+
+# <p>
+# Split a <tt>"| a | b |"</tt> row using column bounds from the border.
+# <[param row data row line]>
+# <[param cols bounds from <tt>gridColumnBounds</tt>]>
+# <[returns list of cell strings]>
+# </p>
+procedure splitGridRow(row, cols)
+    local out, b, cell
+    out := []
+    every b := !cols do {
+        if b[1] <= *row then
+            cell := trim(row[b[1]:b[2]] | "", ' ', 0)
+        else
+            cell := ""
+        put(out, cell)
+        }
+    return out
 end
 
 # <p>
@@ -766,8 +978,9 @@ procedure isDefListAt(lines, i, limit)
     if i >= limit then fail
     if isBlank(lines[i]) then fail
     if leadingSpaceCount(lines[i]) > 0 then fail
-    if isDirectiveLine(lines[i]) | isBulletLine(lines[i]) |
-       isEnumLine(lines[i]) | isTableSepLine(lines[i]) |
+    if isDirectiveLine(lines[i]) | isLabelTarget(lines[i]) |
+       isBulletLine(lines[i]) | isEnumLine(lines[i]) |
+       isTableSepLine(lines[i]) | isGridTableSep(lines[i]) |
        isLiteralIntro(lines[i]) | isHeadingAt(lines, i, limit) then
         fail
     return isIndented(lines[i + 1])
@@ -814,9 +1027,7 @@ procedure parseDefinitionList(lines, i, limit, container)
             }
         item := DefinitionItem()
         item.setTerm(term)
-        para := Paragraph()
-        every put(para.getChildren(), !parseInline(joinLines(body)))
-        item.addChild(para)
+        fillDefinitionBody(item, body)
         dlist.addChild(item)
         # Skip a single blank between items.
         if i <= limit & isBlank(lines[i]) & i < limit &
@@ -824,6 +1035,39 @@ procedure parseDefinitionList(lines, i, limit, container)
             i +:= 1
         }
     return i
+end
+
+# <p>
+# Attach one or more paragraphs to a definition item, splitting
+# <tt>body</tt> on blank lines.
+# <[param item a <tt>DefinitionItem</tt>]>
+# <[param body list of body lines (blank line = paragraph break)]>
+# </p>
+procedure fillDefinitionBody(item, body)
+    local chunk, ln, para
+    chunk := []
+    every ln := !body do {
+        if ln == "" then {
+            if *chunk > 0 then {
+                para := Paragraph()
+                every put(para.getChildren(), !parseInline(joinLines(chunk)))
+                item.addChild(para)
+                chunk := []
+                }
+            }
+        else
+            put(chunk, ln)
+        }
+    if *chunk > 0 then {
+        para := Paragraph()
+        every put(para.getChildren(), !parseInline(joinLines(chunk)))
+        item.addChild(para)
+        }
+    else if *item.getChildren() = 0 then {
+        para := Paragraph()
+        item.addChild(para)
+        }
+    return
 end
 
 # <p>

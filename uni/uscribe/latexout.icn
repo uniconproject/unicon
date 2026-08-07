@@ -24,7 +24,7 @@ import lang
 # chapter after <tt>writePreamble</tt> / before <tt>writeEpilogue</tt>.
 #</p>
 class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
-                                  chapterBase, chapterIndex)
+                                  chapterBase, chapterIndex, figureNo)
 
     #<p>
     # Set the open file to which LaTeX is written.
@@ -212,7 +212,7 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
     # <[param n a Table node]>
     #</p>
     method visitTable(n)
-        local ncols, row, i, first
+        local ncols, row, i
         ncols := 1
         if \n.getHeaderRow() then
             ncols := *n.getHeaderRow().getChildren() | 1
@@ -231,6 +231,8 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
             writeLatexTableRow(row)
         write(outFile, "\\hline")
         write(outFile, "\\end{tabular}\\end{center}")
+        if \n.getLabel() then
+            write(outFile, "\\label{", latexLabelId(n.getLabel()), "}")
         write(outFile)
         return
     end
@@ -298,17 +300,20 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
     # <[param n an Image node]>
     #</p>
     method visitImage(n)
-        local uri, alt
+        local uri, alt, cap
         uri := n.getURI()
         alt := \n.getAlt() | ""
+        cap := \n.getCaption() | alt
         # pdflatex/xelatex need PDF/PNG/JPEG; SVG is noted as a placeholder
         if *uri >= 4 & map(uri[*uri-3:0], &ucase, &lcase) == ".svg" then {
             write(outFile, "\\begin{center}\\fbox{\\parbox{0.9\\linewidth}{")
             write(outFile, "\\textit{[figure: ", escapeLatex(uri))
-            if *alt > 0 then
-                write(outFile, " — ", escapeLatex(alt))
+            if *cap > 0 then
+                write(outFile, " — ", escapeLatex(cap))
             write(outFile, " (SVG: convert to PDF/PNG for TeX)]}")
             write(outFile, "}\\end{center}")
+            if \n.getLabel() then
+                write(outFile, "\\label{", latexLabelId(n.getLabel()), "}")
             write(&errout, "warning: SVG not embedded in LaTeX: ", uri)
             }
         else {
@@ -319,8 +324,10 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
             # braces can unbalance the \\includegraphics argument.
             write(outFile, "\\includegraphics[width=0.9\\linewidth]{",
                   escapeLatexPath(uri), "}")
-            if *alt > 0 then
-                write(outFile, "\\caption{", escapeLatex(alt), "}")
+            if *cap > 0 then
+                write(outFile, "\\caption{", escapeLatex(cap), "}")
+            if \n.getLabel() then
+                write(outFile, "\\label{", latexLabelId(n.getLabel()), "}")
             write(outFile, "\\end{figure}")
             }
         write(outFile)

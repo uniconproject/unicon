@@ -159,7 +159,7 @@ end
 # Shared CSS/JS come from <tt>--theme</tt>
 # (see <tt>uni/uscribe/themes/</tt>).
 #</p>
-class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref)
+class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo)
 
     #<p>
     # Set the open file to which HTML is written.
@@ -467,7 +467,10 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     # <[param n a Table node]>
     #</p>
     method visitTable(n)
-        write(outFile, "<table>")
+        if \n.getLabel() then
+            write(outFile, "<table id=\"", escapeHtml(n.getLabel()), "\">")
+        else
+            write(outFile, "<table>")
         if \n.getHeaderRow() then {
             write(outFile, "<thead>")
             n.getHeaderRow().accept(self)
@@ -533,17 +536,42 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     end
 
     #<p>
-    # Emit an <tt>&lt;img&gt;</tt> with escaped <tt>src</tt> and <tt>alt</tt>.
+    # Emit an <tt>&lt;img&gt;</tt>, or a numbered <tt>&lt;figure&gt;</tt>
+    # with <tt>&lt;figcaption&gt;</tt> for <tt>.. figure::</tt>.
     # <[param n an Image node]>
     #</p>
     method visitImage(n)
-        local uri, cls
+        local uri, cls, alt, cap, id, num
         uri := n.getURI()
+        alt := escapeHtml(\n.getAlt()) | ""
         cls := "figure"
         if find("logo", map(uri, &ucase, &lcase)) then
             cls := "figure logo"
-        write(outFile, "<img class=\"", cls, "\" src=\"", escapeHtml(uri),
-              "\" alt=\"", escapeHtml(\n.getAlt()) | "", "\">")
+        if n.isFigureNode() | \n.getCaption() then {
+            /figureNo := 0
+            figureNo +:= 1
+            num := figureNo
+            id := \n.getLabel() | ("figure-" || num)
+            write(outFile, "<figure class=\"", cls, "\" id=\"",
+                  escapeHtml(id), "\">")
+            write(outFile, "<img src=\"", escapeHtml(uri),
+                  "\" alt=\"", alt, "\">")
+            cap := \n.getCaption() | \n.getAlt() | ""
+            write(outFile, "<figcaption>Figure ", num)
+            if *cap > 0 then
+                write(outFile, ": ", escapeHtml(cap))
+            write(outFile, "</figcaption>")
+            write(outFile, "</figure>")
+            }
+        else {
+            if \n.getLabel() then
+                write(outFile, "<img class=\"", cls, "\" id=\"",
+                      escapeHtml(n.getLabel()), "\" src=\"",
+                      escapeHtml(uri), "\" alt=\"", alt, "\">")
+            else
+                write(outFile, "<img class=\"", cls, "\" src=\"",
+                      escapeHtml(uri), "\" alt=\"", alt, "\">")
+            }
         return
     end
 

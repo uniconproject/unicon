@@ -95,6 +95,64 @@ procedure registerBuiltins(reg)
     reg.register("include", handleInclude)
     reg.register("literalinclude", handleLiteralInclude)
     reg.register("list-table", handleListTable)
+    reg.register("raw", handleRaw)
+    reg.register("bibliography", handleBibliography)
+    reg.register("math", handleMath)
+end
+
+#<p>
+# Expand <tt>.. math::</tt> into a display <tt>Math</tt> node.
+# Body lines are joined; a single-line argument is also accepted.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param ctx unused]>
+# <[returns a <tt>Math</tt>]>
+#</p>
+procedure handleMath(raw, ctx)
+    local latex, ln
+    latex := trim(\raw.getArg() | "", ' ', 0)
+    every ln := !raw.getBodyLines() do {
+        ln := trim(ln, ' ', 0)
+        if *ln = 0 then next
+        if *latex > 0 then latex ||:= " "
+        latex ||:= ln
+        }
+    return mkMath(latex, 1)
+end
+
+#<p>
+# Expand <tt>.. raw:: html</tt> / <tt>.. raw:: latex</tt> into a
+# <tt>RawBlock</tt>. The argument selects which outputter emits the body.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param ctx unused parser context]>
+# <[returns a <tt>RawBlock</tt> instance]>
+#</p>
+procedure handleRaw(raw, ctx)
+    local n, fmt
+    n := RawBlock()
+    fmt := map(trim(\raw.getArg() | "", ' ', 0), &ucase, &lcase)
+    n.setFormat(fmt)
+    n.setLines(copy(raw.getBodyLines()))
+    return n
+end
+
+#<p>
+# Expand <tt>.. bibliography:: path.bib</tt> into a
+# <tt>Bibliography</tt> node (path resolved like includes).
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param parser the owning <tt>Parser</tt>]>
+# <[returns a <tt>Bibliography</tt>]>
+#</p>
+procedure handleBibliography(raw, parser)
+    local n, path
+    n := Bibliography()
+    path := resolveIncludePath(raw.getArg(), parser) | {
+        write(&errout, "warning: bibliography not found: ",
+              \raw.getArg() | "")
+        n.setPath(\raw.getArg() | "")
+        return n
+        }
+    n.setPath(path)
+    return n
 end
 
 #<p>
@@ -109,6 +167,8 @@ procedure handleCodeBlock(raw, ctx)
     cb.setLanguage(\raw.getArg())
     every ln := !raw.getBodyLines() do
         cb.addLine(ln)
+    # RST puts a blank after ``.. code-block::``; it is not source.
+    cb.trimBlankEdges()
     return cb
 end
 

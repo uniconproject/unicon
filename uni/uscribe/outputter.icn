@@ -146,6 +146,48 @@ class Outputter : Object ()
     abstract method visitReference(n)
 
     #<p>
+    # Render an external hyperlink.
+    # <[param n a Hyperlink node]>
+    #</p>
+    abstract method visitHyperlink(n)
+
+    #<p>
+    # Render subscript or superscript text.
+    # <[param n a ScriptText node]>
+    #</p>
+    abstract method visitScriptText(n)
+
+    #<p>
+    # Render a <tt>raw</tt> passthrough block (format-specific).
+    # <[param n a RawBlock node]>
+    #</p>
+    abstract method visitRawBlock(n)
+
+    #<p>
+    # Render a citation (<tt>:cite:</tt>).
+    # <[param n a Cite node]>
+    #</p>
+    abstract method visitCite(n)
+
+    #<p>
+    # Render a bibliography list.
+    # <[param n a Bibliography node]>
+    #</p>
+    abstract method visitBibliography(n)
+
+    #<p>
+    # Render an inline footnote reference (and collect its body).
+    # <[param n a Footnote node]>
+    #</p>
+    abstract method visitFootnote(n)
+
+    #<p>
+    # Render inline or display math.
+    # <[param n a Math node]>
+    #</p>
+    abstract method visitMath(n)
+
+    #<p>
     # Render an unresolved xref (and typically warn on <tt>&errout</tt>).
     # <[param n a BrokenXref / PendingXref left unresolved]>
     #</p>
@@ -159,7 +201,7 @@ end
 # Shared CSS/JS come from <tt>--theme</tt>
 # (see <tt>uni/uscribe/themes/</tt>).
 #</p>
-class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo)
+class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo, citationTable, footnoteList)
 
     #<p>
     # Set the open file to which HTML is written.
@@ -167,6 +209,15 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     #</p>
     method setOutFile(f)
         outFile := f
+        return
+    end
+
+    #<p>
+    # Attach the shared citation table (optional).
+    # <[param ct a CitationTable, or null]>
+    #</p>
+    method setCitationTable(ct)
+        citationTable := ct
         return
     end
 
@@ -239,12 +290,71 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
         write(outFile, "<div class=\"layout\">")
         writeSidebar()
         write(outFile, "<div class=\"main\">")
+        footnoteList := []
         writePrevNext()
+        if n.isReport() then
+            writeReportMasthead(n)
         every (!n.getChildren()).accept(self)
+        writeFootnotes()
         writePrevNext()
         writeFooter(\n.getSrcName())
         write(outFile, "</div></div>")
         write(outFile, "</body></html>")
+        return
+    end
+
+    #<p>
+    # Emit collected footnote bodies at the end of the page.
+    #</p>
+    method writeFootnotes()
+        local fn, num
+        if *(\footnoteList | []) = 0 then return
+        write(outFile, "<section class=\"footnotes\"><hr>")
+        write(outFile, "<ol class=\"footnote-list\">")
+        every fn := !footnoteList do {
+            num := fn.getNumber()
+            write(outFile, "<li id=\"fn-", string(num), "\" value=\"",
+                  string(num), "\">", escapeHtml(fn.getBody()),
+                  " <a class=\"footnote-back\" href=\"#fnref-",
+                  string(num), "\">↩</a></li>")
+            }
+        write(outFile, "</ol></section>")
+        return
+    end
+
+    #<p>
+    # Emit a UTR-style HTML masthead (title, authors, TR number, date,
+    # abstract) when the document is in report mode.
+    # <[param n a Document with report metadata]>
+    #</p>
+    method writeReportMasthead(n)
+        local a, first
+        write(outFile, "<header class=\"report-masthead\">")
+        write(outFile, "<h1 class=\"report-title\">",
+              escapeHtml(\n.getTitle()) | "Untitled", "</h1>")
+        if *n.getAuthors() > 0 then {
+            writes(outFile, "<p class=\"report-authors\">")
+            first := 1
+            every a := !n.getAuthors() do {
+                if /first then writes(outFile, ", ")
+                writes(outFile, escapeHtml(a))
+                first := &null
+                }
+            write(outFile, "</p>")
+            }
+        if \n.getTrNumber() then
+            write(outFile, "<p class=\"report-tr\">Unicon Technical Report: ",
+                  escapeHtml(n.getTrNumber()), "</p>")
+        if \n.getDate() then
+            write(outFile, "<p class=\"report-date\">",
+                  escapeHtml(n.getDate()), "</p>")
+        if \n.getAbstract() then {
+            write(outFile, "<div class=\"report-abstract\">")
+            write(outFile, "<p class=\"report-abstract-label\">Abstract</p>")
+            write(outFile, "<p>", escapeHtml(n.getAbstract()), "</p>")
+            write(outFile, "</div>")
+            }
+        write(outFile, "</header>")
         return
     end
 
@@ -639,6 +749,128 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
             href ||:= "#" || escapeHtml(anchor)
         write(outFile, "<a href=\"", href, "\">",
               escapeHtml(n.getText()), "</a>")
+        return
+    end
+
+    #<p>
+    # Emit an external <tt>&lt;a href&gt;</tt>.
+    # <[param n a Hyperlink node]>
+    #</p>
+    method visitHyperlink(n)
+        write(outFile, "<a href=\"", escapeHtml(n.getURI()),
+              "\" rel=\"noopener\">", escapeHtml(n.getText()), "</a>")
+        return
+    end
+
+    #<p>
+    # Emit <tt>&lt;sub&gt;</tt> or <tt>&lt;sup&gt;</tt>.
+    # <[param n a ScriptText node]>
+    #</p>
+    method visitScriptText(n)
+        local tag
+        tag := if n.getKind() == "sup" then "sup" else "sub"
+        write(outFile, "<", tag, ">", escapeHtml(n.getText()), "</", tag, ">")
+        return
+    end
+
+    #<p>
+    # Emit raw HTML lines when format is <tt>html</tt>; ignore otherwise.
+    # <[param n a RawBlock node]>
+    #</p>
+    method visitRawBlock(n)
+        local ln
+        if map(n.getFormat(), &ucase, &lcase) ~== "html" then
+            return
+        every ln := !n.getLines() do
+            write(outFile, ln)
+        return
+    end
+
+    #<p>
+    # Emit numbered citation links <tt>[1]</tt>, <tt>[1,2]</tt>.
+    # <[param n a Cite node]>
+    #</p>
+    method visitCite(n)
+        local key, num, first, bits
+        bits := []
+        every key := !n.getKeys() do {
+            num := &null
+            if \citationTable then
+                num := citationTable.getNumber(key)
+            if /num then {
+                put(bits, "<span class=\"broken-cite\">" ||
+                    escapeHtml(key) || "</span>")
+                write(&errout, "warning: unknown citation '", key, "'")
+                }
+            else
+                put(bits, "<a class=\"cite\" href=\"#cite-" ||
+                    escapeHtml(slugify(key)) || "\">" || string(num) || "</a>")
+            }
+        writes(outFile, "[")
+        first := 1
+        every key := !bits do {
+            if /first then writes(outFile, ",")
+            writes(outFile, key)
+            first := &null
+            }
+        writes(outFile, "]")
+        return
+    end
+
+    #<p>
+    # Emit an ordered bibliography of cited works.
+    # <[param n a Bibliography node]>
+    #</p>
+    method visitBibliography(n)
+        local key, entry, num
+        write(outFile, "<div class=\"bibliography\">")
+        write(outFile, "<ol class=\"bibliography-list\">")
+        if \citationTable then
+            every key := !citationTable.getOrderedKeys() do {
+                num := citationTable.getNumber(key)
+                entry := citationTable.getEntry(key)
+                write(outFile, "<li id=\"cite-", escapeHtml(slugify(key)),
+                      "\" value=\"", string(num), "\">")
+                if \entry then
+                    write(outFile, escapeHtml(formatBibEntry(key, entry)))
+                else {
+                    write(outFile, "<span class=\"broken-cite\">",
+                          escapeHtml(key), "</span>")
+                    write(&errout, "warning: no bib entry for '", key, "'")
+                    }
+                write(outFile, "</li>")
+                }
+        write(outFile, "</ol></div>")
+        return
+    end
+
+    #<p>
+    # Emit a footnote marker and collect the body for the page footer.
+    # <[param n a Footnote node]>
+    #</p>
+    method visitFootnote(n)
+        local num
+        /footnoteList := []
+        num := *footnoteList + 1
+        n.setNumber(num)
+        put(footnoteList, n)
+        writes(outFile, "<sup class=\"footnote-ref\" id=\"fnref-",
+               string(num), "\"><a href=\"#fn-", string(num), "\">",
+               string(num), "</a></sup>")
+        return
+    end
+
+    #<p>
+    # Emit math as a styled span/div (TeX source; optional client MathJax).
+    # <[param n a Math node]>
+    #</p>
+    method visitMath(n)
+        if n.isDisplay() then
+            write(outFile, "<div class=\"math math-display\">\\[",
+                  escapeHtml(n.getLatex()), "\\]</div>")
+        else
+            writes(outFile, "<span class=\"math math-inline\">\\(",
+                   escapeHtml(n.getLatex()), "\\)</span>")
         return
     end
 

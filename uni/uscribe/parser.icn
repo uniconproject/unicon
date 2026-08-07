@@ -87,7 +87,7 @@ class Parser : Object (registry, srcPath, includeStack, pendingLabel)
     # <[fails if <tt>path</tt> cannot be opened for reading]>
     # </p>
     method parseFile(path)
-        local f, lines, ln, doc, saved
+        local f, lines, ln, doc, saved, start
         f := open(path, "r") | fail
         lines := []
         while ln := read(f) do put(lines, ln)
@@ -97,7 +97,8 @@ class Parser : Object (registry, srcPath, includeStack, pendingLabel)
         srcPath := path
         doc := Document()
         doc.setSrcName(path)
-        parseBlocks(self, lines, 1, *lines, doc, 0)
+        start := parseDocFields(doc, lines)
+        parseBlocks(self, lines, start, *lines, doc, 0)
         srcPath := saved
         return doc
     end
@@ -133,6 +134,74 @@ class Parser : Object (registry, srcPath, includeStack, pendingLabel)
     initially
         /registry := DirectiveRegistry()
         includeStack := []
+end
+
+# <p>
+# Consume a leading RST field list into report metadata on
+# <tt>doc</tt>: <tt>:title:</tt>, <tt>:author:</tt> (repeatable),
+# <tt>:trnumber:</tt>, <tt>:date:</tt>, <tt>:abstract:</tt>,
+# <tt>:docclass:</tt>. Continuation lines are indented.
+# <[param doc Document being filled]>
+# <[param lines full source line list]>
+# <[returns 1-based index of the first non-field line]>
+# </p>
+procedure parseDocFields(doc, lines)
+    local i, limit, name, val, cont, ln, authors
+    i := 1
+    limit := *lines
+    while i <= limit & isBlank(lines[i]) do
+        i +:= 1
+    authors := doc.getAuthors()
+    while i <= limit do {
+        ln := lines[i]
+        if isBlank(ln) then {
+            # Blank ends the field list only after at least one field.
+            i +:= 1
+            break
+            }
+        name := &null
+        val := ""
+        ln ? {
+            if =":" & (name := tab(find(":"))) then {
+                move(1)
+                tab(many(' '))
+                val := tab(0)
+                }
+            }
+        if /name then
+            break
+        name := map(trim(name, ' ', 0), &ucase, &lcase)
+        val := trim(val, ' ', 0)
+        i +:= 1
+        while i <= limit & not isBlank(lines[i]) &
+              (*lines[i] > 0) & any(' \t', lines[i][1]) do {
+            cont := trim(lines[i], ' \t', 0)
+            if *val > 0 then
+                val ||:= " "
+            val ||:= cont
+            i +:= 1
+            }
+        case name of {
+            "title":
+                doc.setTitle(val)
+            "author":
+                if *val > 0 then
+                    put(authors, val)
+            "trnumber" | "tr-number":
+                doc.setTrNumber(val)
+            "date":
+                doc.setDate(val)
+            "abstract":
+                doc.setAbstract(val)
+            "docclass" | "doc-class":
+                doc.setDocClass(map(val, &ucase, &lcase))
+            default: {
+                # Unknown leading fields still consume the list so
+                # they are not re-parsed as body prose.
+                }
+            }
+        }
+    return i
 end
 
 # <p>

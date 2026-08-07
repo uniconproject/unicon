@@ -113,8 +113,13 @@ end
 # The root of one parsed source file. A <tt>Document</tt> does not itself
 # know about other Documents -- chapter ordering and merging is
 # <tt>Manifest</tt>'s job (<tt>manifest.icn</tt>), not the doctree's.
+# Optional report metadata (<tt>authors</tt>, <tt>trNumber</tt>,
+# <tt>dateStr</tt>, <tt>abstractText</tt>, <tt>docClass</tt>) comes from
+# a leading RST field list; <tt>docClass</tt> of <tt>"report"</tt> (or a
+# set <tt>trNumber</tt>) selects article/UTR rendering.
 #</p>
-class Document : Block (children, title, srcName)
+class Document : Block (children, title, srcName, authors, trNumber,
+                        dateStr, abstractText, docClass)
 
     #<p>
     # Set the source file path for this document.
@@ -153,6 +158,105 @@ class Document : Block (children, title, srcName)
     end
 
     #<p>
+    # Set author list (list of strings).
+    # <[param a list of author name strings]>
+    #</p>
+    method setAuthors(a)
+        authors := a
+        return
+    end
+
+    #<p>
+    # Return author list.
+    # <[returns list of author strings]>
+    #</p>
+    method getAuthors()
+        /authors := []
+        return authors
+    end
+
+    #<p>
+    # Set Unicon Technical Report number (e.g. <tt>"15"</tt>, <tt>"18c"</tt>).
+    # <[param n number string]>
+    #</p>
+    method setTrNumber(n)
+        trNumber := n
+        return
+    end
+
+    #<p>
+    # Return the TR number, if any.
+    # <[returns the number string]>
+    # <[fails if unset]>
+    #</p>
+    method getTrNumber()
+        return \trNumber
+    end
+
+    #<p>
+    # Set the report date string.
+    # <[param d date string]>
+    #</p>
+    method setDate(d)
+        dateStr := d
+        return
+    end
+
+    #<p>
+    # Return the report date, if any.
+    # <[returns the date string]>
+    # <[fails if unset]>
+    #</p>
+    method getDate()
+        return \dateStr
+    end
+
+    #<p>
+    # Set the abstract body text.
+    # <[param a abstract string]>
+    #</p>
+    method setAbstract(a)
+        abstractText := a
+        return
+    end
+
+    #<p>
+    # Return the abstract text, if any.
+    # <[returns the abstract string]>
+    # <[fails if unset]>
+    #</p>
+    method getAbstract()
+        return \abstractText
+    end
+
+    #<p>
+    # Set document class: <tt>"book"</tt> (default) or <tt>"report"</tt>.
+    # <[param c class name string]>
+    #</p>
+    method setDocClass(c)
+        docClass := c
+        return
+    end
+
+    #<p>
+    # Return document class (<tt>"book"</tt> or <tt>"report"</tt>).
+    # <[returns the class string]>
+    #</p>
+    method getDocClass()
+        return \docClass | "book"
+    end
+
+    #<p>
+    # True when this document should use UTR/report rendering
+    # (explicit <tt>report</tt> class or a TR number is set).
+    # <[fails if book mode]>
+    #</p>
+    method isReport()
+        if getDocClass() == "report" then return
+        return \trNumber
+    end
+
+    #<p>
     # Dispatch to <tt>outp.visitDocument()</tt>.
     # <[param outp an <tt>Outputter</tt> instance]>
     #</p>
@@ -170,6 +274,7 @@ class Document : Block (children, title, srcName)
 
     initially
         children := []
+        authors := []
 end
 
 #<p>
@@ -1043,6 +1148,232 @@ class Literal : Inline (str)
 end
 
 #<p>
+# External hyperlink (<tt>`text &lt;url&gt;`_</tt>).
+#</p>
+class Hyperlink : Inline (uri, text)
+
+    method setURI(u)
+        uri := u
+        return
+    end
+
+    method getURI()
+        return uri
+    end
+
+    method setText(t)
+        text := t
+        return
+    end
+
+    method getText()
+        return \text | uri
+    end
+
+    method accept(outp)
+        outp.visitHyperlink(self)
+        return
+    end
+
+    method nodeType()
+        return "Hyperlink"
+    end
+end
+
+#<p>
+# Subscript (<tt>:sub:`text`</tt>) or superscript (<tt>:sup:`text`</tt>).
+# <tt>kind</tt> is <tt>"sub"</tt> or <tt>"sup"</tt>.
+#</p>
+class ScriptText : Inline (str, kind)
+
+    method setText(s)
+        str := s
+        return
+    end
+
+    method getText()
+        return str
+    end
+
+    method setKind(k)
+        kind := k
+        return
+    end
+
+    method getKind()
+        return \kind | "sub"
+    end
+
+    method accept(outp)
+        outp.visitScriptText(self)
+        return
+    end
+
+    method nodeType()
+        return "ScriptText"
+    end
+end
+
+#<p>
+# One or more bibliography citations (<tt>:cite:`key`</tt> or
+# <tt>:cite:`k1,k2`</tt>). Numbers are assigned by
+# <tt>CitationTable</tt> in first-seen order.
+#</p>
+class Cite : Inline (keys)
+
+    method setKeys(L)
+        keys := L
+        return
+    end
+
+    method getKeys()
+        /keys := []
+        return keys
+    end
+
+    method accept(outp)
+        outp.visitCite(self)
+        return
+    end
+
+    method nodeType()
+        return "Cite"
+    end
+
+    initially
+        keys := []
+end
+
+#<p>
+# Auto-numbered footnote from <tt>:footnote:`body`</tt>.
+# <tt>number</tt> is filled by the outputter on first visit.
+#</p>
+class Footnote : Inline (body, number)
+
+    method setBody(s)
+        body := s
+        return
+    end
+
+    method getBody()
+        return \body | ""
+    end
+
+    method setNumber(n)
+        number := n
+        return
+    end
+
+    method getNumber()
+        return \number
+    end
+
+    method accept(outp)
+        outp.visitFootnote(self)
+        return
+    end
+
+    method nodeType()
+        return "Footnote"
+    end
+end
+
+#<p>
+# Inline math (<tt>:math:`...`</tt>) or display math block
+# (<tt>.. math::</tt>). <tt>display</tt> non-null selects block form.
+#</p>
+class Math : Node (latex, display)
+
+    method setLatex(s)
+        latex := s
+        return
+    end
+
+    method getLatex()
+        return \latex | ""
+    end
+
+    method setDisplay(d)
+        display := d
+        return
+    end
+
+    method isDisplay()
+        return \display
+    end
+
+    method accept(outp)
+        outp.visitMath(self)
+        return
+    end
+
+    method nodeType()
+        return "Math"
+    end
+end
+
+#<p>
+# Bibliography block from <tt>.. bibliography:: file.bib</tt>.
+#</p>
+class Bibliography : Node (path)
+
+    method setPath(p)
+        path := p
+        return
+    end
+
+    method getPath()
+        return \path | ""
+    end
+
+    method accept(outp)
+        outp.visitBibliography(self)
+        return
+    end
+
+    method nodeType()
+        return "Bibliography"
+    end
+end
+
+#<p>
+# Passthrough block for <tt>.. raw:: html</tt> / <tt>.. raw:: latex</tt>.
+#</p>
+class RawBlock : Node (format, lines)
+
+    method setFormat(f)
+        format := f
+        return
+    end
+
+    method getFormat()
+        return \format | ""
+    end
+
+    method setLines(L)
+        lines := L
+        return
+    end
+
+    method getLines()
+        /lines := []
+        return lines
+    end
+
+    method accept(outp)
+        outp.visitRawBlock(self)
+        return
+    end
+
+    method nodeType()
+        return "RawBlock"
+    end
+
+    initially
+        lines := []
+end
+
+#<p>
 # A resolved cross-reference (we know the target). Produced from a
 # <tt>PendingXref</tt> by <tt>LabelTable</tt> during pass 2 -- see
 # <tt>labeltable.icn</tt>.
@@ -1260,6 +1591,94 @@ procedure mkPendingXref(label, kind)
     n.setLabel(label)
     n.setKind(kind)
     return n
+end
+
+#<p>
+# Build an external <tt>Hyperlink</tt>.
+# <[param uri destination URL]>
+# <[param text link text (defaults to <tt>uri</tt>)]>
+# <[returns a <tt>Hyperlink</tt> instance]>
+#</p>
+procedure mkHyperlink(uri, text)
+    local n
+    n := Hyperlink()
+    n.setURI(uri)
+    n.setText(\text | uri)
+    return n
+end
+
+#<p>
+# Build a <tt>ScriptText</tt> subscript or superscript.
+# <[param s text content]>
+# <[param kind <tt>"sub"</tt> or <tt>"sup"</tt>]>
+# <[returns a <tt>ScriptText</tt> instance]>
+#</p>
+procedure mkScriptText(s, kind)
+    local n
+    n := ScriptText()
+    n.setText(s)
+    n.setKind(\kind | "sub")
+    return n
+end
+
+#<p>
+# Build a <tt>Cite</tt> from a comma-separated key list payload.
+# <[param payload text inside <tt>:cite:`...`</tt>]>
+# <[returns a <tt>Cite</tt> instance]>
+#</p>
+procedure mkCite(payload)
+    local n, keys, piece
+    n := Cite()
+    keys := []
+    every piece := splitCiteKeys(payload) do
+        put(keys, piece)
+    n.setKeys(keys)
+    return n
+end
+
+#<p>
+# Build a <tt>Footnote</tt> from role payload text.
+# <[param body footnote body string]>
+# <[returns a <tt>Footnote</tt>]>
+#</p>
+procedure mkFootnote(body)
+    local n
+    n := Footnote()
+    n.setBody(body)
+    return n
+end
+
+#<p>
+# Build a <tt>Math</tt> node.
+# <[param latex TeX math source]>
+# <[param display non-null for display math]>
+# <[returns a <tt>Math</tt>]>
+#</p>
+procedure mkMath(latex, display)
+    local n
+    n := Math()
+    n.setLatex(latex)
+    if \display then n.setDisplay(1)
+    return n
+end
+
+#<p>
+# Split <tt>"a, b, c"</tt> into trimmed non-empty keys.
+# <[param payload cite role payload]>
+# <[generates each key string]>
+#</p>
+procedure splitCiteKeys(payload)
+    local s, i, start, c, piece
+    s := trim(payload, ' ', 0)
+    start := 1
+    every i := 1 to *s + 1 do {
+        c := if i <= *s then s[i] else ","
+        if c == "," then {
+            piece := trim(s[start:i], ' ', 0)
+            if *piece > 0 then suspend piece
+            start := i + 1
+            }
+        }
 end
 
 #<p>

@@ -27,12 +27,12 @@ global targetDir, bookTitle, themeName, copyrightNotice, logoHref
 # <[param args command-line argument list]>
 #</p>
 procedure main(args)
-    local manifestPath, mf, parser, registry, labels, chapterPath, doc
-    local docs, format
+    local manifestPath, mf, parser, registry, labels, cites, chapterPath, doc
+    local docs, format, cliDocClass
 
     if *args = 0 then helpMesg()
     Args(args, set("manifest","title","targetDir","theme","themePath","format",
-                   "copyright","logo"),
+                   "copyright","logo","docclass"),
          helpMesg)
 
     manifestPath := Args().getOpt("manifest") | helpMesg()
@@ -43,6 +43,13 @@ procedure main(args)
     if not member(set(["html","latex","pdf"]), format) then
         stop("uscribe: --format must be html, latex, or pdf (got '",
              format, "')")
+    cliDocClass := Args().getOpt("docclass")
+    if \cliDocClass then {
+        cliDocClass := map(cliDocClass, &ucase, &lcase)
+        if not member(set(["book","report"]), cliDocClass) then
+            stop("uscribe: --docclass must be book or report (got '",
+                 cliDocClass, "')")
+        }
 
     if format == "html" then
         targetDir := Args().getOptDef("targetDir", "./htmlBook")
@@ -69,21 +76,34 @@ procedure main(args)
     every chapterPath := !mf.getChapterPaths() do {
         doc := parser.parseFile(chapterPath) |
             stop("uscribe: could not read chapter '", chapterPath, "'")
-        doc.setTitle(bookTitle)
+        if \cliDocClass then
+            doc.setDocClass(cliDocClass)
+        # Preserve report :title: from the field list; book mode still
+        # stamps the CLI --title onto each chapter Document.
+        if not doc.isReport() then
+            doc.setTitle(bookTitle)
+        else if /doc.getTitle() then
+            doc.setTitle(bookTitle)
         mf.setDocument(chapterPath, doc)
         labels.collect(doc)
         }
 
     docs := mf.getOrderedDocuments()
+
+    cites := CitationTable()
+    every doc := !docs do
+        cites.collect(doc)
+    cites.loadAll()
+
     ensureDir(targetDir)
     copyDocumentImages(docs)
 
     if format == "html" then
-        renderHtml(docs, labels)
+        renderHtml(docs, labels, cites)
     else if format == "pdf" then
-        renderLatex(docs, labels, 1)
+        renderLatex(docs, labels, 1, cites)
     else
-        renderLatex(docs, labels)
+        renderLatex(docs, labels, &null, cites)
 end
 
 #<p>
@@ -91,8 +111,9 @@ end
 # <tt>.html</tt> per chapter with resolved xrefs.
 # <[param docs ordered list of Document nodes]>
 # <[param labels LabelTable after collect()]>
+# <[param cites CitationTable after collect/loadAll]>
 #</p>
-procedure renderHtml(docs, labels)
+procedure renderHtml(docs, labels, cites)
     local themePath, themeDir, nav, indexDocs, doc, outp, outPath, f, i
     local logoSrc, logoBase
 
@@ -135,6 +156,7 @@ procedure renderHtml(docs, labels)
         outp := HtmlOutputter()
         outp.setOutFile(f)
         outp.setLabelTable(labels)
+        outp.setCitationTable(cites)
         outp.setNav(bookTitle, nav, i, themeName)
         outp.setCopyright(copyrightNotice)
         outp.setLogo(logoHref)
@@ -156,16 +178,32 @@ end
 # <[param docs ordered list of Document nodes]>
 # <[param labels LabelTable after collect()]>
 # <[param wantPdf non-null to run pdflatex/xelatex/lualatex]>
+# <[param cites CitationTable after collect/loadAll]>
 #</p>
-procedure renderLatex(docs, labels, wantPdf)
-    local outPath, f, outp, doc, engine, rc
+procedure renderLatex(docs, labels, wantPdf, cites)
+    local outPath, f, outp, doc, engine, rc, reportMode, metaDoc
 
     outPath := targetDir || "/book.tex"
     f := open(outPath, "w") | stop("uscribe: could not write '", outPath, "'")
     outp := LatexOutputter()
     outp.setOutFile(f)
     outp.setLabelTable(labels)
+    outp.setCitationTable(cites)
     outp.setBookTitle(bookTitle)
+    reportMode := &null
+    metaDoc := &null
+    every doc := !docs do {
+        if doc.isReport() then {
+            reportMode := 1
+            /metaDoc := doc
+            }
+        }
+    if \reportMode then {
+        outp.setDocClass("report")
+        outp.setReportDoc(\metaDoc | docs[1])
+        }
+    else
+        outp.setDocClass("book")
     outp.writePreamble()
     every doc := !docs do {
         labels.resolve(doc)
@@ -459,6 +497,8 @@ end
 #</p>
 procedure chapterDisplayTitle(doc)
     local n
+    if doc.isReport() & \doc.getTitle() then
+        return doc.getTitle()
     every n := !doc.getChildren() do
         if n.nodeType() == "Section" then
             return n.getTitle()
@@ -504,7 +544,10 @@ procedure collectSearchWalk(nodeList, buf)
                     collectSearchWalk(n.getHeaderRow().getChildren(), buf)
                 collectSearchWalk(n.getChildren(), buf)
                 }
-            "Text" | "Literal": {
+            "Text" | "Literal" | "ScriptText": {
+                put(buf, n.getText())
+                }
+            "Hyperlink": {
                 put(buf, n.getText())
                 }
             "CodeBlock": {
@@ -784,6 +827,11 @@ procedure helpMesg()
     write("                      ./latexBook for latex/pdf)")
     write("  --theme=NAME        HTML theme: basic, classic, dark (default: basic)")
     write("  --themePath=DIR     Directory containing theme subdirs (optional)")
+    write("  --docclass=CLASS    book (default) or report (UTR/article cover)")
+    write()
+    write("  Report mode is also selected by a leading RST field list with")
+    write("  :docclass: report and/or :trnumber: (plus :title:, :author:,")
+    write("  :date:, :abstract:).")
     write()
     write("  HTML footers always include \"Powered by uscribe\".")
     write("  latex writes book.tex; pdf also runs pdflatex/xelatex/lualatex.")

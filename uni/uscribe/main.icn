@@ -492,10 +492,16 @@ procedure collectSearchWalk(nodeList, buf)
                 put(buf, n.getTitle())
                 collectSearchWalk(n.getChildren(), buf)
                 }
-            "Paragraph" | "ListItem" | "Admonition" | "Emphasis" | "Strong": {
+            "Paragraph" | "ListItem" | "Admonition" | "Emphasis" | "Strong" |
+            "TableCell" | "DefinitionItem": {
+                if n.nodeType() == "DefinitionItem" then
+                    put(buf, n.getTerm())
                 collectSearchWalk(n.getChildren(), buf)
                 }
-            "BulletList" | "EnumList" | "Document": {
+            "BulletList" | "EnumList" | "Document" | "Table" | "TableRow" |
+            "DefinitionList": {
+                if n.nodeType() == "Table" & \n.getHeaderRow() then
+                    collectSearchWalk(n.getHeaderRow().getChildren(), buf)
                 collectSearchWalk(n.getChildren(), buf)
                 }
             "Text" | "Literal": {

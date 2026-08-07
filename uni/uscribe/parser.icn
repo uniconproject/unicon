@@ -116,6 +116,18 @@ procedure parseBlocks(parser, lines, i, limit, container, level)
             next
             }
 
+        # Simple RST table (==== column separators).
+        if isTableSepLine(lines[i]) then {
+            i := parseSimpleTable(lines, i, limit, curSection)
+            next
+            }
+
+        # Definition list: term line + immediately indented body.
+        if isDefListAt(lines, i, limit) then {
+            i := parseDefinitionList(lines, i, limit, curSection)
+            next
+            }
+
         # RST literal block: a line ending in "::" followed by an
         # indented block (optionally after a blank line).
         if isLiteralIntro(lines[i]) then {
@@ -148,7 +160,8 @@ procedure parseParagraph(lines, i, limit, container)
     buf := []
     while i <= limit & not isBlank(lines[i]) &
           not isDirectiveLine(lines[i]) & not isBulletLine(lines[i]) &
-          not isEnumLine(lines[i]) & not isLiteralIntro(lines[i]) &
+          not isEnumLine(lines[i]) & not isTableSepLine(lines[i]) &
+          not isLiteralIntro(lines[i]) &
           not isHeadingAt(lines, i, limit) do {
         put(buf, trim(lines[i]))
         i +:= 1
@@ -575,6 +588,198 @@ procedure enumStartNumber(s)
         return n
         }
     return 1
+end
+
+# <p>
+# True when <tt>s</tt> is a simple-table separator: only
+# <tt>=</tt> and spaces, with at least one <tt>=</tt>.
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not a table separator]>
+# </p>
+procedure isTableSepLine(s)
+    local t
+    t := trim(\s | "", ' ', 0)
+    if *t = 0 then fail
+    if not find("=", t) then fail
+    return t ? (tab(many('= ')), pos(0))
+end
+
+# <p>
+# Column character spans from a separator line. Each run of
+# <tt>=</tt> becomes <tt>[start, stop]</tt> (1-based inclusive).
+# <[param sep a table separator line]>
+# <[returns a list of <tt>[start, stop]</tt> pairs]>
+# </p>
+procedure tableColumnBounds(sep)
+    local cols, start, i, c
+    cols := []
+    start := &null
+    every i := 1 to *sep do {
+        c := sep[i]
+        if c == "=" then {
+            if /start then
+                start := i
+            }
+        else if \start then {
+            put(cols, [start, i - 1])
+            start := &null
+            }
+        }
+    if \start then
+        put(cols, [start, *sep])
+    return cols
+end
+
+# <p>
+# Split a table row line into cell strings using column bounds.
+# <[param line a table data line]>
+# <[param cols list of <tt>[start, stop]</tt> bounds]>
+# <[returns a list of trimmed cell strings]>
+# </p>
+procedure splitTableRow(line, cols)
+    local cells, b, piece, a, z
+    cells := []
+    /line := ""
+    every b := !cols do {
+        a := b[1]
+        z := b[2]
+        if a > *line then
+            piece := ""
+        else if z > *line then
+            piece := line[a:0]
+        else
+            piece := line[a:z + 1]
+        put(cells, trim(\piece | "", ' ', 0))
+        }
+    return cells
+end
+
+# <p>
+# Build a <tt>TableRow</tt> from cell strings (inline-parsed).
+# <[param cellStrs list of cell text strings]>
+# <[param asHeader non-null to mark the row as a header]>
+# <[returns a <tt>TableRow</tt>]>
+# </p>
+procedure mkTableRowFromCells(cellStrs, asHeader)
+    local row, cell, text
+    row := TableRow()
+    if \asHeader then
+        row.setHeader()
+    every text := !cellStrs do {
+        cell := TableCell()
+        every put(cell.getChildren(), !parseInline(text))
+        row.addChild(cell)
+        }
+    return row
+end
+
+# <p>
+# Parse a simple RST table starting at a separator line:
+# sep / header / sep / body… / sep.
+# <[param lines list of source lines]>
+# <[param i index of the opening separator]>
+# <[param limit last index (inclusive)]>
+# <[param container parent for the new <tt>TableNode</tt>]>
+# <[returns the index just past the table]>
+# </p>
+procedure parseSimpleTable(lines, i, limit, container)
+    local cols, tbl, headerCells, rowCells
+    cols := tableColumnBounds(lines[i])
+    if *cols = 0 then {
+        # Not a usable separator; skip the line as a no-op advance.
+        return i + 1
+        }
+    i +:= 1
+    if i > limit | isBlank(lines[i]) | isTableSepLine(lines[i]) then
+        return i
+    headerCells := splitTableRow(lines[i], cols)
+    i +:= 1
+    if i > limit | not isTableSepLine(lines[i]) then
+        return i
+    i +:= 1
+    tbl := TableNode()
+    tbl.setHeaderRow(mkTableRowFromCells(headerCells, 1))
+    while i <= limit & not isBlank(lines[i]) & not isTableSepLine(lines[i]) do {
+        rowCells := splitTableRow(lines[i], cols)
+        tbl.addChild(mkTableRowFromCells(rowCells, &null))
+        i +:= 1
+        }
+    if i <= limit & isTableSepLine(lines[i]) then
+        i +:= 1
+    container.addChild(tbl)
+    return i
+end
+
+# <p>
+# True when <tt>lines[i]</tt> is a definition-list term: not indented,
+# not another block starter, and the next line is indented body text.
+# <[param lines list of source lines]>
+# <[param i candidate term index]>
+# <[param limit last index (inclusive)]>
+# <[fails if this is not a definition-list start]>
+# </p>
+procedure isDefListAt(lines, i, limit)
+    if i >= limit then fail
+    if isBlank(lines[i]) then fail
+    if leadingSpaceCount(lines[i]) > 0 then fail
+    if isDirectiveLine(lines[i]) | isBulletLine(lines[i]) |
+       isEnumLine(lines[i]) | isTableSepLine(lines[i]) |
+       isLiteralIntro(lines[i]) | isHeadingAt(lines, i, limit) then
+        fail
+    return isIndented(lines[i + 1])
+end
+
+# <p>
+# Parse one or more consecutive definition-list items into a
+# <tt>DefinitionList</tt>.
+# <[param lines list of source lines]>
+# <[param i index of the first term]>
+# <[param limit last index (inclusive)]>
+# <[param container parent for the new list]>
+# <[returns the index just past the list]>
+# </p>
+procedure parseDefinitionList(lines, i, limit, container)
+    local dlist, item, term, body, para, indentCol
+    dlist := DefinitionList()
+    container.addChild(dlist)
+    while i <= limit & isDefListAt(lines, i, limit) do {
+        term := trim(lines[i], ' ', 0)
+        i +:= 1
+        indentCol := leadingSpaceCount(lines[i])
+        body := []
+        while i <= limit & not isBlank(lines[i]) &
+              leadingSpaceCount(lines[i]) >= indentCol do {
+            put(body, stripIndent(lines[i], indentCol))
+            i +:= 1
+            }
+        # Optional blank lines inside a multi-paragraph definition:
+        # keep reading while the next non-blank stays indented.
+        while i <= limit & isBlank(lines[i]) do {
+            if i < limit & leadingSpaceCount(lines[i + 1]) >= indentCol &
+               not isBlank(lines[i + 1]) then {
+                put(body, "")
+                i +:= 1
+                while i <= limit & not isBlank(lines[i]) &
+                      leadingSpaceCount(lines[i]) >= indentCol do {
+                    put(body, stripIndent(lines[i], indentCol))
+                    i +:= 1
+                    }
+                }
+            else
+                break
+            }
+        item := DefinitionItem()
+        item.setTerm(term)
+        para := Paragraph()
+        every put(para.getChildren(), !parseInline(joinLines(body)))
+        item.addChild(para)
+        dlist.addChild(item)
+        # Skip a single blank between items.
+        if i <= limit & isBlank(lines[i]) & i < limit &
+           isDefListAt(lines, i + 1, limit) then
+            i +:= 1
+        }
+    return i
 end
 
 # <p>

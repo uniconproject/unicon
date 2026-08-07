@@ -208,13 +208,87 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
     end
 
     #<p>
-    # Tables are not fully supported; visit children and leave a
-    # comment marker.
+    # Emit a <tt>tabular</tt> environment for a simple table.
     # <[param n a Table node]>
     #</p>
     method visitTable(n)
-        write(outFile, "% table not fully supported yet")
+        local ncols, row, i, first
+        ncols := 1
+        if \n.getHeaderRow() then
+            ncols := *n.getHeaderRow().getChildren() | 1
+        else if *n.getChildren() > 0 then
+            ncols := *n.getChildren()[1].getChildren() | 1
+        writes(outFile, "\\begin{center}\\begin{tabular}{")
+        every i := 1 to ncols do
+            writes(outFile, "l")
+        write(outFile, "}")
+        write(outFile, "\\hline")
+        if \n.getHeaderRow() then {
+            writeLatexTableRow(n.getHeaderRow())
+            write(outFile, "\\hline")
+            }
+        every row := !n.getChildren() do
+            writeLatexTableRow(row)
+        write(outFile, "\\hline")
+        write(outFile, "\\end{tabular}\\end{center}")
+        write(outFile)
+        return
+    end
+
+    #<p>
+    # Unused for LaTeX tables (rows are written by
+    # <tt>writeLatexTableRow</tt>); kept for the visitor interface.
+    # <[param n a TableRow node]>
+    #</p>
+    method visitTableRow(n)
+        return
+    end
+
+    #<p>
+    # Unused for LaTeX tables; kept for the visitor interface.
+    # <[param n a TableCell node]>
+    #</p>
+    method visitTableCell(n)
+        return
+    end
+
+    #<p>
+    # Emit a <tt>description</tt> environment.
+    # <[param n a DefinitionList node]>
+    #</p>
+    method visitDefinitionList(n)
+        write(outFile, "\\begin{description}")
         every (!n.getChildren()).accept(self)
+        write(outFile, "\\end{description}")
+        write(outFile)
+        return
+    end
+
+    #<p>
+    # Emit one <tt>\\item[term]</tt> plus definition body.
+    # <[param n a DefinitionItem node]>
+    #</p>
+    method visitDefinitionItem(n)
+        write(outFile, "\\item[", escapeLatex(n.getTerm()), "]")
+        every (!n.getChildren()).accept(self)
+        return
+    end
+
+    #<p>
+    # Write one table row as <tt>cell & cell \\\\</tt>.
+    # <[param row a TableRow node]>
+    #</p>
+    method writeLatexTableRow(row)
+        local cell, first
+        first := 1
+        every cell := !row.getChildren() do {
+            if \first then
+                first := &null
+            else
+                writes(outFile, " & ")
+            every (!cell.getChildren()).accept(self)
+            }
+        write(outFile, " \\\\")
         return
     end
 

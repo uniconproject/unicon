@@ -39,7 +39,6 @@ make -C ../../doc/uscribe
 ## Open work
 
 - Wire `scan.icn` into `parser.icn` for nested/balanced directives
-- Tables and definition lists (doctree has `TableNode`; parser does not)
 
 ## Refactors this depends on, back in classic UniDoc
 

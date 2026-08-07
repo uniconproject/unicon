@@ -76,6 +76,7 @@ procedure main(args)
 
     docs := mf.getOrderedDocuments()
     ensureDir(targetDir)
+    copyDocumentImages(docs)
 
     if format == "html" then
         renderHtml(docs, labels)
@@ -291,6 +292,98 @@ procedure installThemeAssets(themesRoot, defaultTheme, destStatic)
     copyFile(destStatic || "/theme-" || defaultTheme || ".css",
              destStatic || "/book.css") |
         write(&errout, "uscribe: could not install book.css alias")
+    return
+end
+
+#<p>
+# Copy every <tt>.. image::</tt> asset referenced by <tt>docs</tt> into
+# <tt>targetDir</tt>, preserving the URI's relative path. Looks next to
+# each chapter source, then under the process cwd. Skips
+# <tt>http:</tt>/<tt>https:</tt>/<tt>data:</tt> URIs.
+# <[param docs ordered list of Document nodes]>
+#</p>
+procedure copyDocumentImages(docs)
+    local doc
+    every doc := !docs do
+        walkCopyImages(doc.getChildren(), dirname(doc.getSrcName()))
+    return
+end
+
+#<p>
+# Recursively find <tt>Image</tt> nodes and copy their local files.
+# <[param nodeList a list of Node]>
+# <[param srcDir directory of the containing chapter source]>
+#</p>
+procedure walkCopyImages(nodeList, srcDir)
+    local n, kids
+    every n := !nodeList do {
+        if n.nodeType() == "Image" then
+            copyImageAsset(n, srcDir)
+        else if kids := tryGetChildren(n) then
+            walkCopyImages(kids, srcDir)
+        }
+    return
+end
+
+#<p>
+# Copy one image node into <tt>targetDir</tt> when its URI names a
+# local file. Relative URIs are resolved next to the chapter, then
+# under cwd, and written under <tt>targetDir</tt> with the same
+# relative path. Absolute paths are copied to
+# <tt>targetDir/&lt;basename&gt;</tt> and the node's URI is rewritten
+# to that basename so HTML/LaTeX hrefs stay in-tree.
+# <[param img an ImageNode]>
+# <[param srcDir chapter source directory for relative lookup]>
+#</p>
+procedure copyImageAsset(img, srcDir)
+    local uri, src, dst, parent, cand, fin, absolute
+    uri := trim(\img.getURI() | "", ' ', 0)
+    if *uri = 0 then return
+    # Remote / embedded: leave the URI as written in the output.
+    if uri ? (match("http:") | match("https:") | match("data:")) then
+        return
+
+    # Absolute POSIX path, or Windows drive path (C:...).
+    if uri[1] == "/" then
+        absolute := 1
+    else if *uri >= 3 & any(&letters, uri[1]) & uri[2] == ":" then
+        absolute := 1
+
+    if \absolute then
+        src := uri
+    else {
+        if srcDir ~== "." then {
+            cand := srcDir || "/" || uri
+            if fin := open(cand) then {
+                close(fin)
+                src := cand
+                }
+            }
+        if /src then {
+            if fin := open(uri) then {
+                close(fin)
+                src := uri
+                }
+            }
+        }
+    if /src | not (fin := open(src)) then {
+        write(&errout, "warning: image not found: ", uri)
+        return
+        }
+    close(fin)
+
+    if \absolute then {
+        dst := targetDir || "/" || basename(uri)
+        img.setURI(basename(uri))
+        }
+    else
+        dst := targetDir || "/" || uri
+    parent := dirname(dst)
+    if parent ~== "." then
+        ensureDir(parent)
+    copyFile(src, dst) |
+        write(&errout, "warning: could not copy image '", src, "' to '",
+              dst, "'")
     return
 end
 

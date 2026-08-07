@@ -72,8 +72,8 @@ end
 
 #<p>
 # The handful of directives the book format needs out of the box:
-# <tt>code-block</tt>, <tt>note</tt>/<tt>warning</tt>/<tt>tip</tt>
-# (thin wrappers producing <tt>Admonition</tt>), and <tt>image</tt>.
+# <tt>code-block</tt>, admonitions (<tt>note</tt>/<tt>warning</tt>/
+# <tt>tip</tt> plus common aliases), and <tt>image</tt>/<tt>figure</tt>.
 # <tt>toctree</tt> is deliberately <i>not</i> here -- chapter order is
 # <tt>Manifest</tt>'s job (<tt>manifest.icn</tt>), read once up front,
 # not a per-file directive, to keep the two-pass build simple.
@@ -82,11 +82,13 @@ end
 # <[param reg a <tt>DirectiveRegistry</tt> to populate]>
 #</p>
 procedure registerBuiltins(reg)
+    local name
     reg.register("code-block", handleCodeBlock)
-    reg.register("note", handleNote)
-    reg.register("warning", handleWarning)
-    reg.register("tip", handleTip)
+    every name := !["note", "warning", "tip", "important", "caution",
+                    "attention", "danger", "error", "hint"] do
+        reg.register(name, handleAdmonition)
     reg.register("image", handleImage)
+    reg.register("figure", handleImage)
 end
 
 #<p>
@@ -105,36 +107,14 @@ procedure handleCodeBlock(raw, ctx)
 end
 
 #<p>
-# Expand <tt>.. note::</tt> into an <tt>Admonition</tt> of kind
-# <tt>"note"</tt>.
+# Expand an admonition directive into an <tt>Admonition</tt> whose
+# kind is the directive name (<tt>note</tt>, <tt>warning</tt>, …).
 # <[param raw a <tt>RawDirective</tt>]>
 # <[param ctx unused parser context]>
 # <[returns an <tt>Admonition</tt> instance]>
 #</p>
-procedure handleNote(raw, ctx)
-    return mkAdmonitionFromBody("note", raw)
-end
-
-#<p>
-# Expand <tt>.. warning::</tt> into an <tt>Admonition</tt> of kind
-# <tt>"warning"</tt>.
-# <[param raw a <tt>RawDirective</tt>]>
-# <[param ctx unused parser context]>
-# <[returns an <tt>Admonition</tt> instance]>
-#</p>
-procedure handleWarning(raw, ctx)
-    return mkAdmonitionFromBody("warning", raw)
-end
-
-#<p>
-# Expand <tt>.. tip::</tt> into an <tt>Admonition</tt> of kind
-# <tt>"tip"</tt>.
-# <[param raw a <tt>RawDirective</tt>]>
-# <[param ctx unused parser context]>
-# <[returns an <tt>Admonition</tt> instance]>
-#</p>
-procedure handleTip(raw, ctx)
-    return mkAdmonitionFromBody("tip", raw)
+procedure handleAdmonition(raw, ctx)
+    return mkAdmonitionFromBody(raw.getName(), raw)
 end
 
 #<p>
@@ -156,9 +136,9 @@ procedure mkAdmonitionFromBody(kind, raw)
 end
 
 #<p>
-# Expand <tt>.. image::</tt> into an <tt>ImageNode</tt>. The optional
-# first non-blank body line is used as alt text until field-list
-# options (<tt>:alt:</tt>) are parsed.
+# Expand <tt>.. image::</tt> / <tt>.. figure::</tt> into an
+# <tt>ImageNode</tt>. The optional first non-blank body line is used
+# as alt text until field-list options (<tt>:alt:</tt>) are parsed.
 # <[param raw a <tt>RawDirective</tt>]>
 # <[param ctx unused parser context]>
 # <[returns an <tt>ImageNode</tt> instance]>

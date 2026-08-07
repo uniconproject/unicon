@@ -40,8 +40,6 @@ make -C ../../doc/uscribe
 
 - Wire `scan.icn` into `parser.icn` for nested/balanced directives
 - Tables and definition lists (doctree has `TableNode`; parser does not)
-- Measure directive body indent from the first body line instead of a
-  fixed 4 spaces
 
 ## Refactors this depends on, back in classic UniDoc
 

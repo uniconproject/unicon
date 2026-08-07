@@ -42,22 +42,23 @@ Rendered:
 Definition lists
 ----------------
 
-A term on its own line followed by an indented body.
+A term on its own line followed by an indented body. Blank lines inside
+the body start a new paragraph.
 
 Source:
 
-.. literalinclude:: includes/ex-deflist.rst
+.. literalinclude:: includes/ex-deflist-multi.rst
 
    :language: rst
 
 Rendered:
 
-.. include:: includes/ex-deflist.rst
+.. include:: includes/ex-deflist-multi.rst
 
 Tables
 ------
 
-Simple RST tables use ``=`` column separators. The first row is the
+**Simple** tables use ``=`` column separators. The first row is the
 header.
 
 Source:
@@ -70,50 +71,115 @@ Rendered:
 
 .. include:: includes/ex-table.rst
 
+**Grid** tables use ``+---+`` borders; a border with ``=`` marks the
+header.
+
+Source:
+
+.. literalinclude:: includes/ex-grid-table.rst
+
+   :language: rst
+
+Rendered:
+
+.. include:: includes/ex-grid-table.rst
+
+**List tables** use the ``list-table`` directive:
+
+Source:
+
+.. literalinclude:: includes/ex-list-table.rst
+
+   :language: rst
+
+Rendered:
+
+.. include:: includes/ex-list-table.rst
+
+Labels and cross-references
+---------------------------
+
+Place ``.. _name:`` immediately before a heading, figure, or table.
+Pass 1 collects explicit labels and title slugs; pass 2 turns ref
+roles into ``chapter.html#anchor`` links.
+
+Source:
+
+.. literalinclude:: includes/ex-labels.rst
+
+   :language: rst
+
+Rendered:
+
+.. include:: includes/ex-labels.rst
+
+Live refs (explicit label and display-text form):
+
+- plain: :ref:`stable-labels`
+- with display text: :ref:`Jump here <stable-labels>`
+- chapter: :doc:`install`
+
+Title-only refs (matching a heading exactly) still work. Full chapter
+sources are linked from each HTML footer as **Page source**.
+
 Inline markup
 -------------
 
 - single asterisks for *emphasis*
 - double asterisks for **strong**
 - backticks for ``inline literals``
-- a ref role pointing at a section title (same text as the heading)
-- a doc role naming a chapter stem (``:doc:`install``` → ``install.rst``)
-
-For cross-chapter links, write a ref role whose label matches the
-target heading exactly, or a doc role with the chapter file stem (see
-the guide TOC in :doc:`intro`). Full chapter sources are also linked
-from each HTML page footer as **Page source** (under ``_sources/``).
 
 Directives
 ----------
 
-Recognized forms. Admonitions — source then rendered:
+Admonition bodies are re-parsed as nested blocks (lists, code, nested
+directives). Source then rendered:
 
-.. literalinclude:: includes/ex-admonitions.rst
+.. literalinclude:: includes/ex-nested-note.rst
 
    :language: rst
 
-.. include:: includes/ex-admonitions.rst
+.. include:: includes/ex-nested-note.rst
 
-Also: ``tip``, ``important``, ``caution``, ``attention``,
-``danger``, ``error``, ``hint``. Other authoring forms:
+Also: ``warning``, ``tip``, ``important``, ``caution``, ``attention``,
+``danger``, ``error``, ``hint``.
+
+Figures take a caption (numbered in HTML/LaTeX) and optional
+``:name:`` / preceding ``.. _label:``:
+
+.. code-block:: rst
+
+   .. _logo-figure:
+
+   .. figure:: images/uscribe-logo.png
+
+      :alt: uscribe logo
+
+      The uscribe mark.
+
+.. _logo-figure:
+
+.. figure:: images/uscribe-logo.png
+
+   :alt: uscribe logo
+
+   The uscribe mark.
+
+See :ref:`logo-figure`.
+
+Other authoring forms (shown literally):
 
 .. code-block:: rst
 
    .. code-block:: unicon
 
-      # source lines, indented
       procedure main()
          write("ok")
       end
 
    .. image:: images/diagram.svg
 
-      Optional alt text on an indented line
-
-   .. figure:: images/diagram.svg
-
-      Same as image (alias).
+      Optional alt text
 
    .. include:: path/to/fragment.rst
 
@@ -187,12 +253,5 @@ a block with no label.
 
 Unknown ``.. name::`` directives become HTML comments so content is
 not silently dropped.
-
-Cross-references
-----------------
-
-Pass 1 collects every section title (slugified) across all chapters.
-Pass 2 turns pending ref roles into links of the form
-``chapter.html#anchor``. Prefer unique section titles.
 
 See also :doc:`quickstart` and :doc:`cli`.

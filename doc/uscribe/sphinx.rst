@@ -25,8 +25,10 @@ Markup
 ------
 
 uscribe understands a **subset** of RST: underline headings, bullets,
-a few directives, and light inline markup. It does not run docutils.
-Sphinx-only roles, domains, and extensions will not work unchanged.
+a few directives (including ``include`` / ``literalinclude`` with
+common line/marker options), and light inline markup. It does not run
+docutils. Sphinx-only roles, domains, and extensions will not work
+unchanged.
 
 Project layout
 --------------

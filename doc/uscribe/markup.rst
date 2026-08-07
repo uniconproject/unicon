@@ -29,70 +29,76 @@ Blank lines separate paragraphs. Bullet lists use ``-`` or ``*`` with
 a following space. Numbered lists use ``1. `` / ``1) `` or auto-number
 ``#. ``. Indented continuation lines belong to the current item.
 
-1. Install the ``uscribe`` binary (:doc:`install`)
-2. Write a tiny book (:doc:`quickstart`)
-#. Pick a theme (:doc:`themes`)
+Source:
+
+.. literalinclude:: includes/ex-lists.rst
+
+   :language: rst
+
+Rendered:
+
+.. include:: includes/ex-lists.rst
 
 Definition lists
 ----------------
 
-A term on its own line followed by an indented body:
+A term on its own line followed by an indented body.
 
-option
-   A command-line flag or value (see :doc:`cli`).
+Source:
 
-theme
-   An HTML skin selected with ``--theme`` (see :doc:`themes`).
+.. literalinclude:: includes/ex-deflist.rst
+
+   :language: rst
+
+Rendered:
+
+.. include:: includes/ex-deflist.rst
 
 Tables
 ------
 
 Simple RST tables use ``=`` column separators. The first row is the
-header:
+header.
 
-=====  ==========
-Flag   Meaning
-=====  ==========
-html   HTML book
-latex  ``book.tex``
-pdf    run a TeX engine
-=====  ==========
+Source:
+
+.. literalinclude:: includes/ex-table.rst
+
+   :language: rst
+
+Rendered:
+
+.. include:: includes/ex-table.rst
 
 Inline markup
 -------------
 
-- single asterisks for emphasis
-- double asterisks for strong
-- backticks for inline literals
+- single asterisks for *emphasis*
+- double asterisks for **strong**
+- backticks for ``inline literals``
 - a ref role pointing at a section title (same text as the heading)
 - a doc role naming a chapter stem (``:doc:`install``` → ``install.rst``)
 
 For cross-chapter links, write a ref role whose label matches the
 target heading exactly, or a doc role with the chapter file stem (see
-the guide TOC in :doc:`intro`).
+the guide TOC in :doc:`intro`). Full chapter sources are also linked
+from each HTML page footer as **Page source** (under ``_sources/``).
 
 Directives
 ----------
 
-Recognized forms (authoring markup):
+Recognized forms. Admonitions — source then rendered:
+
+.. literalinclude:: includes/ex-admonitions.rst
+
+   :language: rst
+
+.. include:: includes/ex-admonitions.rst
+
+Also: ``tip``, ``important``, ``caution``, ``attention``,
+``danger``, ``error``, ``hint``. Other authoring forms:
 
 .. code-block:: rst
-
-   .. note::
-
-      Body lines, indented.
-
-   .. warning::
-
-      Careful.
-
-   .. tip::
-
-      Hint.
-
-   .. important::
-
-      Also: caution, attention, danger, error, hint.
 
    .. code-block:: unicon
 
@@ -109,6 +115,50 @@ Recognized forms (authoring markup):
 
       Same as image (alias).
 
+   .. include:: path/to/fragment.rst
+
+   .. literalinclude:: path/to/file.icn
+
+      :language: unicon
+      :lines: 1-10
+      :start-after: marker
+      :end-before: marker
+      :dedent: 3
+
+Paths are resolved next to the including chapter, then under the
+process cwd. Nested ``include`` is allowed; circular includes warn and
+are skipped.
+
+Include / literalinclude
+------------------------
+
+``literalinclude`` shows a file as a listing; ``include`` parses it as
+markup. The tip below is the same fragment both ways.
+
+Source (``includes/shared-tip.rst``):
+
+.. literalinclude:: includes/shared-tip.rst
+
+   :language: rst
+
+Rendered:
+
+.. include:: includes/shared-tip.rst
+
+Pull a real ``.icn`` file as a listing. Language defaults from the
+extension (``.icn`` → ``unicon``); override with ``:language:``:
+
+.. literalinclude:: includes/hello.icn
+
+   :language: unicon
+
+The same file, only the body between markers:
+
+.. literalinclude:: includes/hello.icn
+
+   :start-after: procedure main()
+   :end-before: end
+
 Unicon listings
 ---------------
 
@@ -117,6 +167,7 @@ syntax highlighting in HTML (via ``highlight-unicon.js``). Other
 languages are emitted as plain
 ``<pre><code class="language-…">`` without Unicon highlighting —
 use ``sh`` for shell, ``rst`` or ``text`` for markup samples.
+``literalinclude`` of ``.icn`` files uses the same highlighting.
 
 Example Unicon program as it appears in the built book:
 

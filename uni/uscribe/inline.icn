@@ -31,6 +31,8 @@ package uscribe
 #   <tt>``literal``</tt>   -> <tt>Literal</tt> (RST-style; preferred)
 #   <tt>`literal`</tt>     -> <tt>Literal</tt> (single-backtick convenience)
 #   <tt>:ref:`label`</tt>  -> <tt>PendingXref</tt>(kind: <tt>"ref"</tt>)
+#   <tt>:ref:`Title &lt;label&gt;`</tt> -> same, with display text
+#     (angle brackets via <tt>parseRolePayload()</tt> / <tt>scan.icn</tt>)
 #   <tt>:doc:`file`</tt>   -> <tt>PendingXref</tt>(kind: <tt>"doc"</tt>)
 # Anything else is plain <tt>Text</tt>. Longer/more specific tokens
 # (<tt>":ref:`"</tt>, <tt>":doc:`"</tt>, <tt>"**"</tt>, <tt>"``"</tt>)
@@ -43,7 +45,7 @@ package uscribe
 # <[returns a list of <tt>Inline</tt> node instances]>
 #</p>
 procedure parseInline(s)
-    local out, buf, tok
+    local out, buf, tok, xref
 
     out := []
     buf := ""
@@ -53,7 +55,7 @@ procedure parseInline(s)
                 if tok := tab(find("`")) then {
                     move(1)
                     flushText(out, buf); buf := ""
-                    put(out, mkPendingXref(tok, "ref"))
+                    put(out, mkPendingXrefFromPayload(tok, "ref"))
                     }
                 else
                     buf ||:= ":ref:`"
@@ -62,7 +64,7 @@ procedure parseInline(s)
                 if tok := tab(find("`")) then {
                     move(1)
                     flushText(out, buf); buf := ""
-                    put(out, mkPendingXref(tok, "doc"))
+                    put(out, mkPendingXrefFromPayload(tok, "doc"))
                     }
                 else
                     buf ||:= ":doc:`"
@@ -120,4 +122,21 @@ end
 #</p>
 procedure flushText(out, buf)
     if *buf > 0 then put(out, mkText(buf))
+end
+
+#<p>
+# Build a <tt>PendingXref</tt> from a role payload, supporting
+# <tt>"label"</tt> and <tt>"Display &lt;label&gt;"</tt> via
+# <tt>parseRolePayload()</tt> in <tt>scan.icn</tt>.
+# <[param payload text inside the role backticks]>
+# <[param kind <tt>"ref"</tt> or <tt>"doc"</tt>]>
+# <[returns a <tt>PendingXref</tt>]>
+#</p>
+procedure mkPendingXrefFromPayload(payload, kind)
+    local parts, xref
+    parts := parseRolePayload(payload)
+    xref := mkPendingXref(parts[1], kind)
+    if \parts[2] then
+        xref.setDisplayText(parts[2])
+    return xref
 end

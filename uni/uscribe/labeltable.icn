@@ -71,6 +71,14 @@ class LabelTable : Object (byLabel, bySlug, byDoc)
                 registerSection(n, srcFile)
                 walkCollect(n.getChildren(), srcFile)
                 }
+            else if n.nodeType() == "Image" then
+                registerLabeled(n.getLabel(), srcFile,
+                    \n.getLabel() | slugify(\n.getCaption() | \n.getAlt() | "figure"),
+                    \n.getCaption() | \n.getAlt() | n.getLabel())
+            else if n.nodeType() == "Table" then
+                registerLabeled(n.getLabel(), srcFile,
+                    \n.getLabel() | "table",
+                    n.getLabel())
             else if kids := tryGetChildren(n) then
                 walkCollect(kids, srcFile)
             }
@@ -84,11 +92,26 @@ class LabelTable : Object (byLabel, bySlug, byDoc)
     # <[param srcFile HTML basename for the containing chapter]>
     # </p>
     method registerSection(sectionNode, srcFile)
-        local anchor, key
+        local anchor
         anchor := \sectionNode.getLabel() | slugify(sectionNode.getTitle())
         if \sectionNode.getLabel() then
-            byLabel[sectionNode.getLabel()] := [srcFile, anchor]
-        bySlug[slugify(sectionNode.getTitle())] := [srcFile, anchor]
+            byLabel[sectionNode.getLabel()] :=
+                [srcFile, anchor, sectionNode.getTitle()]
+        bySlug[slugify(sectionNode.getTitle())] :=
+            [srcFile, anchor, sectionNode.getTitle()]
+        return
+    end
+
+    # <p>
+    # Record an explicit label for a figure/table (or other target).
+    # <[param label explicit label, or null to skip]>
+    # <[param srcFile HTML basename]>
+    # <[param anchor HTML id]>
+    # <[param display default link text]>
+    # </p>
+    method registerLabeled(label, srcFile, anchor, display)
+        if /label then return
+        byLabel[label] := [srcFile, anchor, display]
         return
     end
 
@@ -150,7 +173,7 @@ class LabelTable : Object (byLabel, bySlug, byDoc)
         hit := \byLabel[xref.getLabel()] | \bySlug[slugify(xref.getLabel())] | fail
         ref := Reference()
         ref.setTarget(hit[1], hit[2])
-        ref.setText(\xref.getDisplayText() | xref.getLabel())
+        ref.setText(\xref.getDisplayText() | hit[3] | xref.getLabel())
         return ref
     end
 

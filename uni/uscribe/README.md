@@ -8,14 +8,14 @@ A prose/book doc generator for Unicon.
 | File            | Role |
 |-----------------|------|
 | `node.icn`       | Doctree: `Document, Section, Paragraph, BulletList, EnumList, ListItem, CodeBlock, Admonition, TableNode, ImageNode, RawDirective` (block) + `Text, Emphasis, Strong, Literal, Reference, PendingXref` (inline), plus a `nodeType()` discriminator on every concrete class and safe `mk*()` factory procs. |
-| `scan.icn`       | Generalized version of `UniHTML.icn`'s `checkSpecial()`/`parseClause()` balanced-tag scan, decoupled from HTML output and from UniDoc's specific field names. Not yet wired into `parser.icn` (see Open work). |
-| `inline.icn`     | `parseInline(s)`: `*emph*`, `**strong**`, `` `literal` ``, `` :ref:`label` ``, `` :doc:`file` `` → list of inline nodes. |
+| `scan.icn`       | Balanced-delimiter helpers (`sbalClause`, `scanBalancedDirectives`, `parseRolePayload`) used by inline roles such as `:ref:`Title <label>``. |
+| `inline.icn`     | `parseInline(s)`: `*emph*`, `**strong**`, `` `literal` ``, `` :ref:` `` / `` :doc:` `` (with optional display text) → list of inline nodes. |
 | `outputter.icn`  | Abstract `Outputter` + concrete `HtmlOutputter`. |
 | `latexout.icn`   | `LatexOutputter`: whole-book `book.tex` (and PDF via a TeX engine). |
 | `manifest.icn`   | `Manifest`: ordered chapter list (the toctree equivalent), loaded from a flat manifest file. |
-| `labeltable.icn` | `LabelTable`: two-pass cross-ref resolution — `collect()` over every chapter, then `resolve()` swaps each `PendingXref` for a `Reference`, keyed off each `Section`'s `nodeType()`/slugified title. |
-| `directive.icn`  | `DirectiveRegistry`: name → handler. Ships `code-block`, admonitions, `image`/`figure`, `include`/`literalinclude`; commented-out sketch of an `.. api::` handler that would bridge to UniDoc. |
-| `parser.icn`     | Line-oriented parser: underline headings, blank-line paragraphs, `-`/`*` bullet lists, `.. name:: arg` directives with indented bodies. |
+| `labeltable.icn` | `LabelTable`: two-pass cross-ref resolution — explicit `.. _label:`, title slugs, figures/tables, and `:doc:` stems. |
+| `directive.icn`  | `DirectiveRegistry`: `code-block`, admonitions (nested bodies), `image`/`figure`, `include`/`literalinclude`, `list-table`; sketched `.. api::` UniDoc bridge. |
+| `parser.icn`     | Line-oriented parser: headings, paragraphs, lists, simple/grid tables, deflists, `.. _label:`, directives. |
 | `main.icn`       | Driver: parse every chapter (pass 1) → collect labels → resolve + render (pass 2). |
 | `Makefile`       | Build via `unidep` (same pattern as `uni/unidoc/Makefile`). |
 | `themes/`        | HTML themes (basic, classic, dark) + shared JS/CSS. |
@@ -38,7 +38,7 @@ make -C ../../doc/uscribe
 
 ## Open work
 
-- Wire `scan.icn` into `parser.icn` for nested/balanced directives
+- `.. api::` UniDoc bridge (blocked on the refactors below)
 
 ## Refactors this depends on, back in classic UniDoc
 

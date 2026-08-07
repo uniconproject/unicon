@@ -12,7 +12,7 @@
 import gui
 $include "guih.icn"
 
-link io, font_dlg
+link io, font_dlg, ivibtab
 
 global gotoln, projectCreated, projectOpened
 
@@ -37,8 +37,8 @@ class Mainbar(
    select_all, users_guide_menu, command_reference_menu,
    about_menu, text_menu_item_3, text_menu_item_4,undo,
    view_window_all, view_window_files, view_window_filesclassbrowser,
-   view_window_filesmsgs, window_submenu,menu_bar_1, projectname,
-   projecttype, make_compile_unicon, runProject, makeClean,
+   view_window_filesmsgs, view_window_filesivib, window_submenu,menu_bar_1,
+   projectname, projecttype, make_compile_unicon, runProject, makeClean,
    makeCleanAll, menu_separator, menu_separator2, connect_menu,
    disconnect_menu, menu_act, pswd_menu, avt_menu, face_menu, reg_menu,
    users_guide_file, language_ref, fileOpened,
@@ -48,7 +48,8 @@ class Mainbar(
    cur_ide_win_setup, # the current setup for which windows are being displayed
    cur_ide_tb_status, # the current state of the tool bar
    tb_adj, # tool bar adjust value -4% when the tool bar isn't present
-   preferences, replace_dialog, debuggIt, unicon_manpage
+   preferences, replace_dialog, debuggIt, unicon_manpage,
+   edit, selections_menu, objects_menu, ivib_undo, ivib_redo
    )
 
    method on_print_file(ev)
@@ -258,13 +259,13 @@ class Mainbar(
       projectname := ide.ProjectSave()
 
       if \projectname then {
-         pname := file_name(projectname)
-         filedirectory := projectname[1:(*projectname - *pname)]
+               pname := file_name(projectname)
+               filedirectory := projectname[1:(*projectname - *pname)]
 
-         newUPro := UProject(pname,filedirectory)
+               newUPro := UProject(pname,filedirectory)
 
-         newUPro.show_modal()
-         }
+               newUPro.show_modal()
+            }
       projecttype := "Unicon"
       projectCreated := "TRUE"
       uidlog.tab_item_1.set_label("Messages: (Project Mode)")
@@ -547,16 +548,21 @@ $endif
       uidlog.FileTabSet.set_size("85%", size_y)
       uidlog.ClassTabSet.set_pos("0", pos_y)
       uidlog.ClassTabSet.set_size("15%", size_y)
+      uidlog.IvibTabPanel.set_pos("0", "110%")
       uidlog.MsgBox.set_pos("2", "2")
       uidlog.MsgBox.set_size("100%-4", "100%-4")
       uidlog.EditBox.set_pos("2", "2")
       uidlog.EditBox.set_size("100%-4", "100%-4")
       uidlog.FileBrowser.set_pos("2", "2")
       uidlog.FileBrowser.set_size("100%-4", "100%-4")
+      uidlog.IvibTabPanel.resize()
       uidlog.DevTabSet.resize()
       uidlog.FileTabSet.resize()
       uidlog.ClassTabSet.resize()
       uidlog.pnlToolbar.resize()
+      edit.set_is_shaded()
+      selections_menu.set_is_shaded()
+      objects_menu.set_is_shaded()
    end
 
    method on_view_window_files(ev)
@@ -568,13 +574,18 @@ $endif
       uidlog.DevTabSet.set_size("0", "0")
       uidlog.FileTabSet.set_pos("0", pos_y)
       uidlog.FileTabSet.set_size("100%", size_y)
+      uidlog.IvibTabPanel.set_pos("0", "110%")
       uidlog.ClassTabSet.set_pos("0", "110%")
       uidlog.EditBox.set_pos("2", "2")
       uidlog.EditBox.set_size("100%-4", "100%-4")
+      uidlog.IvibTabPanel.resize()
       uidlog.DevTabSet.resize()
       uidlog.FileTabSet.resize()
       uidlog.ClassTabSet.resize()
       uidlog.pnlToolbar.resize()
+      edit.set_is_shaded()
+      selections_menu.set_is_shaded()
+      objects_menu.set_is_shaded()
    end
 
    method on_view_window_filesmsgs(ev)
@@ -587,14 +598,45 @@ $endif
       uidlog.FileTabSet.set_pos("0", pos_y)
       uidlog.FileTabSet.set_size("100%", size_y)
       uidlog.ClassTabSet.set_pos("0", "110%")
+      uidlog.IvibTabPanel.set_pos("0", "110%")
       uidlog.MsgBox.set_pos("2", "2")
       uidlog.MsgBox.set_size("100%-4", "100%-4")
       uidlog.EditBox.set_pos("2", "2")
       uidlog.EditBox.set_size("100%-4", "100%-4")
+      uidlog.IvibTabPanel.resize()
       uidlog.DevTabSet.resize()
       uidlog.FileTabSet.resize()
       uidlog.ClassTabSet.resize()
       uidlog.pnlToolbar.resize()
+      edit.set_is_shaded()
+      selections_menu.set_is_shaded()
+      objects_menu.set_is_shaded()
+   end
+
+   method on_view_window_filesivib(ev)
+      local pos_y, size_y
+      pos_y := 8+tb_adj||"%"
+      size_y := 92-tb_adj||"%"
+      cur_ide_win_setup := "view_window_filesivib"
+      uidlog.DevTabSet.set_pos("0", "110%")
+      uidlog.DevTabSet.set_size("0", "0")
+      uidlog.IvibTabPanel.set_pos("50%", pos_y)
+      uidlog.IvibTabPanel.set_size("50%", size_y)
+      uidlog.FileTabSet.set_pos("0", pos_y)
+      uidlog.FileTabSet.set_size("50%", size_y)
+      uidlog.ClassTabSet.set_pos("0", "110%")
+      uidlog.EditBox.set_pos("2", "2")
+      uidlog.EditBox.set_size("100%-4", "100%-4")
+      uidlog.ivib_maindialog.canvas.resize()
+      uidlog.IvibTabPanel.resize()
+      uidlog.ivib_maindialog.canvas.restore()
+      uidlog.DevTabSet.resize()
+      uidlog.FileTabSet.resize()
+      uidlog.ClassTabSet.resize()
+      uidlog.pnlToolbar.resize()
+      uidlog.ivib_maindialog.canvas.resize()
+      edit.clear_is_shaded()
+      objects_menu.clear_is_shaded()
    end
 
    method on_view_window_filesclassbrowser(ev)
@@ -608,12 +650,17 @@ $endif
       uidlog.FileTabSet.set_size("85%", size_y)
       uidlog.ClassTabSet.set_pos("0", pos_y)
       uidlog.ClassTabSet.set_size("15%", size_y)
+      uidlog.IvibTabPanel.set_pos("0", "110%")
       uidlog.EditBox.set_pos("2", "2")
       uidlog.EditBox.set_size("100%-4", "100%-4")
+      uidlog.IvibTabPanel.resize()
       uidlog.DevTabSet.resize()
       uidlog.FileTabSet.resize()
       uidlog.ClassTabSet.resize()
       uidlog.pnlToolbar.resize()
+      edit.set_is_shaded()
+      selections_menu.set_is_shaded()
+      objects_menu.set_is_shaded()
    end
 
    method update_view_window(ev)
@@ -621,6 +668,7 @@ $endif
          "view_window_all" : on_view_window_all(ev)
          "view_window_files" : on_view_window_files(ev)
          "view_window_filesmsgs" : on_view_window_filesmsgs(ev)
+   "view_window_filesivib" : on_view_window_filesivib(ev)
          "view_window_filesclassbrowser" : on_view_window_filesclassbrowser(ev)
          default : write("ERROR")
          }
@@ -974,10 +1022,41 @@ $endif
    end
 
    #
+   # Ivib menu functions
+   #
+   method set_selections_menu_shaded(ev)
+      selections_menu.set_is_shaded()
+   end
+
+   method set_selections_menu_cleared(ev)
+      selections_menu.clear_is_shaded()
+   end
+
+   method set_ivib_undo_shaded(ev)
+      ivib_undo.set_is_shaded()
+   end
+
+   method clear_ivib_undo_shaded(ev)
+      ivib_undo.clear_is_shaded()
+   end
+
+   method set_ivib_redo_shaded(ev)
+      ivib_redo.set_is_shaded()
+   end
+
+   method clear_ivib_redo_shaded(ev)
+      ivib_redo.clear_is_shaded()
+   end
+
+   #
    # IDE Main Menu Bar Method: Adds a simple menubar into the IDE tab.
    #
    method Menubar()
-   local graphics2D_ref, graphics3D_ref, new_UniconProject, font
+   local graphics2D_ref, graphics3D_ref, new_UniconProject, font, check_boxes, button_groups, component_load, ivib_undo,
+            ivib_redo, alignment_sub_menu, spacing_sub_menu, copy_sub_menu, centre_horiz, centre_vert, align_horiz, align_vert,
+            end_to_end_horiz, end_to_end_vert, even_horiz, even_vert, even_horiz_container, even_vert_container, grid, mcopy,
+            equalize_widths, equalize_heights, copy_attribs, reorder, mdelete, sel_up, component_save, uis, ui, listener, mi,
+            ui_button, mdialog, ivib_functions
       menu_bar_1 := MenuBar()
       menu_bar_1.set_pos("0", "0")
       menu_bar_1.set_size("100%", "4.5%")
@@ -1042,6 +1121,11 @@ $endif
       view_window_filesmsgs.connect(self, "on_view_window_filesmsgs", ACTION_EVENT)
       view_window_filesmsgs.set_img_left("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
       window_submenu.add(view_window_filesmsgs)
+      view_window_filesivib := TextMenuItem()
+      view_window_filesivib.set_label("Files/IVIB")
+      view_window_filesivib.connect(self, "on_view_window_filesivib", ACTION_EVENT)
+      view_window_filesivib.set_img_left("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>`````>>`````>~~>`````>>`````>~~>`````>>`````>~~>`````>>`````>~~>`666`>>`````>~~>`666`>>`````>~~>`666`>>`````>~~>`````>>`````>~~>`````>>`````>~~>>>>>>>>>>>>>>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
+      window_submenu.add(view_window_filesivib)
       view_window_filesclassbrowser := TextMenuItem()
       view_window_filesclassbrowser.set_label("Files/Class Browser")
       view_window_filesclassbrowser.connect(self, "on_view_window_filesclassbrowser", ACTION_EVENT)
@@ -1298,6 +1382,234 @@ $endif
       about_menu.connect(self, "on_about", ACTION_EVENT)
       menu_2.add(about_menu)
       menu_bar_1.add(menu_2)
+
+
+      ## Beginning of Ivib menu items.
+
+      edit := Menu()
+      edit.set_label("Canvas")
+      edit.set_accel("c")
+      menu_bar_1.add(edit)
+
+      preferences := TextMenuItem()
+      preferences.set_label("Dialog prefs...")
+      preferences.set_accel("d")
+      edit.add(preferences)
+
+      check_boxes := TextMenuItem()
+      check_boxes.set_label("CheckBoxes...")
+      check_boxes.set_accel("c")
+      edit.add(check_boxes)
+
+      button_groups := TextMenuItem()
+      button_groups.set_label("ButtonGroups...")
+      button_groups.set_accel("b")
+      edit.add(button_groups)
+
+      component_load := TextMenuItem()
+      component_load.set_label("Load Component")
+      component_load.set_accel("l")
+      edit.add(component_load)
+
+      ivib_undo := TextMenuItem()
+      ivib_undo.set_label("Ivib Undo")
+      ivib_undo.set_accel("u")
+      ivib_undo.set_label_right("Ctrl-z")
+      edit.add(ivib_undo)
+
+      ivib_redo := TextMenuItem()
+      ivib_redo.set_label("Ivib Redo")
+      ivib_redo.set_accel("r")
+      ivib_redo.set_label_right("Ctrl-y")
+      edit.add(ivib_redo)
+
+      selections_menu := Menu()
+      selections_menu.set_label("Selection")
+      selections_menu.set_accel("s")
+      menu_bar_1.add(selections_menu)
+
+      alignment_sub_menu := Menu()
+      alignment_sub_menu.set_label("Alignment")
+      alignment_sub_menu.set_accel("a")
+      selections_menu.add(alignment_sub_menu)
+
+      spacing_sub_menu := Menu()
+      spacing_sub_menu.set_label("Spacing")
+      spacing_sub_menu.set_accel("s")
+      selections_menu.add(spacing_sub_menu)
+
+      copy_sub_menu := Menu()
+      copy_sub_menu.set_label("Copy")
+      copy_sub_menu.set_accel("c")
+      selections_menu.add(copy_sub_menu)
+
+      centre_horiz := TextMenuItem()
+      centre_horiz.set_label("Centre horizontally")
+      alignment_sub_menu.add(centre_horiz)
+
+      centre_vert := TextMenuItem()
+      centre_vert.set_label("Centre vertically")
+      alignment_sub_menu.add(centre_vert)
+
+      align_horiz := TextMenuItem()
+      align_horiz.set_label("Align horizontally")
+      alignment_sub_menu.add(align_horiz)
+
+      align_vert := TextMenuItem()
+      align_vert.set_label("Align vertically")
+      alignment_sub_menu.add(align_vert)
+
+      end_to_end_horiz := TextMenuItem()
+      end_to_end_horiz.set_label("End to end horizontally")
+      alignment_sub_menu.add(end_to_end_horiz)
+
+      end_to_end_vert := TextMenuItem()
+      end_to_end_vert.set_label("End to end vertically")
+      alignment_sub_menu.add(end_to_end_vert)
+
+      even_horiz := TextMenuItem()
+      even_horiz.set_label("Even space horizontally")
+      spacing_sub_menu.add(even_horiz)
+
+      even_vert := TextMenuItem()
+      even_vert.set_label("Even space vertically")
+      spacing_sub_menu.add(even_vert)
+
+      even_horiz_container := TextMenuItem()
+      even_horiz_container.set_label("Space horizontally in Container")
+      spacing_sub_menu.add(even_horiz_container)
+
+      even_vert_container := TextMenuItem()
+      even_vert_container.set_label("Space vertically in Container")
+      spacing_sub_menu.add(even_vert_container)
+
+      grid := TextMenuItem()
+      grid.set_label("Grid")
+      spacing_sub_menu.add(grid)
+
+      mcopy := TextMenuItem()
+      mcopy.set_label("Copy selections")
+      copy_sub_menu.add(mcopy)
+
+      equalize_widths := TextMenuItem()
+      equalize_widths.set_label("Equalize widths")
+      copy_sub_menu.add(equalize_widths)
+
+      equalize_heights := TextMenuItem()
+      equalize_heights.set_label("Equalize heights")
+      copy_sub_menu.add(equalize_heights)
+
+      copy_attribs := TextMenuItem()
+      copy_attribs.set_label("Copy attribs")
+      copy_sub_menu.add(copy_attribs)
+
+      reorder := TextMenuItem()
+      reorder.set_label("Reorder")
+      reorder.set_accel("r")
+      selections_menu.add(reorder)
+
+      mdelete := TextMenuItem()
+      mdelete.set_label("Delete")
+      mdelete.set_accel("d")
+      selections_menu.add(mdelete)
+
+      mdialog := TextMenuItem()
+      mdialog.set_label("Dialog")
+      mdialog.set_accel("i")
+      selections_menu.add(mdialog)
+
+      sel_up := TextMenuItem()
+      sel_up.set_label("Select up")
+      sel_up.set_accel("u")
+      sel_up.set_label_right("Ctrl-u")
+      selections_menu.add(sel_up)
+
+      component_save := TextMenuItem()
+      component_save.set_label("Save")
+      component_save.set_accel("s")
+      selections_menu.add(component_save)
+
+      uis := [CanvasTextButtonUI(),
+              CanvasLabelUI(),
+              CanvasTextFieldUI(),
+              CanvasBorderUI(),
+              CanvasIconButtonUI(),
+              CanvasIconUI(),
+              CanvasImageUI(),
+              CanvasCheckBoxUI(),
+              CanvasMenuBarUI(),
+              CanvasVScrollBarUI(),
+              CanvasHScrollBarUI(),
+              CanvasPanelUI(),
+              CanvasTabSetUI(),
+              CanvasMenuButtonUI(),
+              CanvasOverlaySetUI(),
+              CanvasTextListUI(),
+              CanvasEditableTextListUI(),
+              CanvasListUI(),
+              CanvasEditListUI(),
+              CanvasToolBarUI(),
+              CanvasListSpinUI(),
+              CanvasRangeSpinUI(),
+              CanvasHSliderUI(),
+              CanvasVSliderUI(),
+              CanvasHLineUI(),
+              CanvasVLineUI(),
+              CanvasHSizerUI(),
+              CanvasVSizerUI(),
+              CanvasTableUI(),
+              CanvasCustomUI(),
+              CanvasTreeUI()
+              ]
+
+#
+# Crashes ~~ On objects fixed, some other menu options still lead to crashes.
+#
+
+      objects_menu := Menu()
+      objects_menu.set_label("Objects")
+      objects_menu.set_accel("o")
+      menu_bar_1.add(objects_menu)
+
+      ivib_functions := uidlog.ivib_maindialog
+
+      every ui := !uis do {
+         listener := ObjectActionListener(ivib_functions, ui)
+         mi := ui.add_to_menu(objects_menu)
+         mi.connect(listener, "on_event", ACTION_EVENT)
+         if ui_button := ui.get_button() then {
+            ui_button.connect(listener, "on_event", ACTION_EVENT)
+         }
+      }
+
+      component_load.connect(ivib_functions, "op_component_load_10", ACTION_EVENT)
+      check_boxes.connect(ivib_functions, "op_check_boxes", ACTION_EVENT)
+      button_groups.connect(ivib_functions, "op_button_groups", ACTION_EVENT)
+      centre_horiz.connect(ivib_functions, "op_Centre_horiz", ACTION_EVENT)
+      centre_vert.connect(ivib_functions, "op_Centre_vert", ACTION_EVENT)
+      align_vert.connect(ivib_functions, "op_Align_vert", ACTION_EVENT)
+      align_horiz.connect(ivib_functions, "op_Align_horiz", ACTION_EVENT)
+      even_horiz.connect(ivib_functions, "op_even_horiz", ACTION_EVENT)
+      even_vert.connect(ivib_functions, "op_even_vert", ACTION_EVENT)
+      end_to_end_vert.connect(ivib_functions, "op_end_to_end_vert", ACTION_EVENT)
+      end_to_end_horiz.connect(ivib_functions, "op_end_to_end_horiz", ACTION_EVENT)
+      even_horiz_container.connect(ivib_functions, "op_even_horiz_container", ACTION_EVENT)
+      even_vert_container.connect(ivib_functions, "op_even_vert_container", ACTION_EVENT)
+      equalize_widths.connect(ivib_functions, "op_equalize_widths", ACTION_EVENT)
+      equalize_heights.connect(ivib_functions, "op_equalize_heights", ACTION_EVENT)
+      copy_attribs.connect(ivib_functions, "op_copy_attribs", ACTION_EVENT)
+      grid.connect(ivib_functions, "op_Grid", ACTION_EVENT)
+      reorder.connect(ivib_functions, "op_Reorder", ACTION_EVENT)
+      preferences.connect(ivib_functions, "op_preferences", ACTION_EVENT)
+      mdialog.connect(ivib_functions, "op_dialog", ACTION_EVENT)
+      sel_up.connect(ivib_functions, "op_select_up", ACTION_EVENT)
+      component_save.connect(ivib_functions, "op_component_save", ACTION_EVENT)
+      mcopy.connect(ivib_functions, "op_Copy", ACTION_EVENT)
+      redo.connect(ivib_functions, "op_Redo", ACTION_EVENT)
+      undo.connect(ivib_functions, "op_Undo", ACTION_EVENT)
+      mdelete.connect(ivib_functions, "op_Delete", ACTION_EVENT)
+
+      ## End of Ivib menu items.
 
       uidlog.add(menu_bar_1)
       #menu_bar_1.init()

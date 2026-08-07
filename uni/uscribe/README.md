@@ -14,7 +14,7 @@ A prose/book doc generator for Unicon.
 | `latexout.icn`   | `LatexOutputter`: whole-book `book.tex` (and PDF via a TeX engine). |
 | `manifest.icn`   | `Manifest`: ordered chapter list (the toctree equivalent), loaded from a flat manifest file. |
 | `labeltable.icn` | `LabelTable`: two-pass cross-ref resolution — `collect()` over every chapter, then `resolve()` swaps each `PendingXref` for a `Reference`, keyed off each `Section`'s `nodeType()`/slugified title. |
-| `directive.icn`  | `DirectiveRegistry`: name → handler. Ships `code-block`/`note`/`warning`/`tip`/`image`; commented-out sketch of an `.. api::` handler that would bridge to UniDoc. |
+| `directive.icn`  | `DirectiveRegistry`: name → handler. Ships `code-block`, admonitions, `image`/`figure`, `include`/`literalinclude`; commented-out sketch of an `.. api::` handler that would bridge to UniDoc. |
 | `parser.icn`     | Line-oriented parser: underline headings, blank-line paragraphs, `-`/`*` bullet lists, `.. name:: arg` directives with indented bodies. |
 | `main.icn`       | Driver: parse every chapter (pass 1) → collect labels → resolve + render (pass 2). |
 | `Makefile`       | Build via `unidep` (same pattern as `uni/unidoc/Makefile`). |

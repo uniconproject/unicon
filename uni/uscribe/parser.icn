@@ -23,7 +23,7 @@ import lang
 # Holds a <tt>DirectiveRegistry</tt> used when expanding
 # <tt>".. name::"</tt> directives during <tt>parseBlocks()</tt>.
 # </p>
-class Parser : Object (registry)
+class Parser : Object (registry, srcPath, includeStack)
 
     # <p>
     # Install the directive registry used by <tt>parseDirective()</tt>.
@@ -35,26 +35,69 @@ class Parser : Object (registry)
     end
 
     # <p>
+    # Path of the file currently being parsed (chapter or include).
+    # Used by <tt>include</tt>/<tt>literalinclude</tt> to resolve
+    # relative paths.
+    # <[returns filesystem path string]>
+    # <[fails if unset]>
+    # </p>
+    method getSrcPath()
+        return \srcPath
+    end
+
+    # <p>
     # Parse one chapter file into a <tt>Document</tt>.
     # <[param path filesystem path to the chapter source]>
     # <[returns a <tt>Document</tt> instance]>
     # <[fails if <tt>path</tt> cannot be opened for reading]>
     # </p>
     method parseFile(path)
-        local f, lines, ln, doc
+        local f, lines, ln, doc, saved
         f := open(path, "r") | fail
         lines := []
         while ln := read(f) do put(lines, ln)
         close(f)
 
+        saved := srcPath
+        srcPath := path
         doc := Document()
         doc.setSrcName(path)
         parseBlocks(self, lines, 1, *lines, doc, 0)
+        srcPath := saved
         return doc
+    end
+
+    # <p>
+    # Parse filtered include lines as RST and return top-level block
+    # children (not a wrapping <tt>Document</tt>). Detects circular
+    # includes via <tt>includeStack</tt>; nested relative includes
+    # resolve against <tt>path</tt>.
+    # <[param path resolved filesystem path (for stack / relatives)]>
+    # <[param lines source lines to parse]>
+    # <[returns list of <tt>Block</tt> nodes]>
+    # <[fails if <tt>path</tt> is already on the include stack]>
+    # </p>
+    method parseIncludeLines(path, lines)
+        local holder, saved, p
+        every p := !includeStack do
+            if p == path then {
+                write(&errout, "warning: circular include: ", path)
+                fail
+                }
+        put(includeStack, path)
+        saved := srcPath
+        srcPath := path
+        holder := Document()
+        holder.setSrcName(path)
+        parseBlocks(self, lines, 1, *lines, holder, 0)
+        srcPath := saved
+        pull(includeStack)
+        return holder.getChildren()
     end
 
     initially
         /registry := DirectiveRegistry()
+        includeStack := []
 end
 
 # <p>
@@ -446,7 +489,8 @@ procedure parseDirective(parser, lines, i, limit, container)
     raw.setArg(arg)
     raw.setBodyLines(body)
 
-    expanded := parser.registry.expand(raw, container) | raw
+    # Handlers receive the Parser (src path, include stack, registry).
+    expanded := parser.registry.expand(raw, parser) | raw
     if type(expanded) == "list" then
         every container.addChild(!expanded)
     else

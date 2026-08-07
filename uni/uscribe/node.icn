@@ -479,13 +479,14 @@ class Admonition : Block (children, kind)
 end
 
 #<p>
-# A table with an optional header row and body rows as children.
+# A simple table: optional <tt>headerRow</tt> (<tt>TableRow</tt>) and
+# body rows as <tt>TableRow</tt> children.
 #</p>
 class TableNode : Block (children, headerRow)
 
     #<p>
     # Set the header row.
-    # <[param row header row node or list]>
+    # <[param row a <tt>TableRow</tt>]>
     #</p>
     method setHeaderRow(row)
         headerRow := row
@@ -494,7 +495,7 @@ class TableNode : Block (children, headerRow)
 
     #<p>
     # Return the header row, if any.
-    # <[returns the header row]>
+    # <[returns a <tt>TableRow</tt>]>
     # <[fails if unset]>
     #</p>
     method getHeaderRow()
@@ -515,6 +516,141 @@ class TableNode : Block (children, headerRow)
     #</p>
     method nodeType()
         return "Table"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# One row of a <tt>TableNode</tt>; children are <tt>TableCell</tt>s.
+# <tt>header</tt> is non-null when this row is the table header.
+#</p>
+class TableRow : Block (children, header)
+
+    #<p>
+    # Mark this row as a header row.
+    #</p>
+    method setHeader()
+        header := 1
+        return
+    end
+
+    #<p>
+    # True when this is the header row.
+    # <[fails if not a header row]>
+    #</p>
+    method isHeaderRow()
+        return \header
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitTableRow()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitTableRow(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"TableRow"</tt>]>
+    #</p>
+    method nodeType()
+        return "TableRow"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# One cell; children are inline nodes.
+#</p>
+class TableCell : Block (children)
+
+    #<p>
+    # Dispatch to <tt>outp.visitTableCell()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitTableCell(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"TableCell"</tt>]>
+    #</p>
+    method nodeType()
+        return "TableCell"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# A definition list of <tt>DefinitionItem</tt> children.
+#</p>
+class DefinitionList : Block (children)
+
+    #<p>
+    # Dispatch to <tt>outp.visitDefinitionList()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitDefinitionList(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"DefinitionList"</tt>]>
+    #</p>
+    method nodeType()
+        return "DefinitionList"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# One definition-list entry: a term string plus indented body children
+# (usually a <tt>Paragraph</tt>).
+#</p>
+class DefinitionItem : Block (children, term)
+
+    #<p>
+    # Set the term text.
+    # <[param t term string]>
+    #</p>
+    method setTerm(t)
+        term := t
+        return
+    end
+
+    #<p>
+    # Return the term text.
+    # <[returns the term string]>
+    #</p>
+    method getTerm()
+        return \term | ""
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitDefinitionItem()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitDefinitionItem(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"DefinitionItem"</tt>]>
+    #</p>
+    method nodeType()
+        return "DefinitionItem"
     end
 
     initially

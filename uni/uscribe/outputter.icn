@@ -74,10 +74,34 @@ class Outputter : Object ()
     abstract method visitAdmonition(n)
 
     #<p>
-    # Render a table (subclass-dependent support).
+    # Render a table.
     # <[param n a Table node]>
     #</p>
     abstract method visitTable(n)
+
+    #<p>
+    # Render a table row.
+    # <[param n a TableRow node]>
+    #</p>
+    abstract method visitTableRow(n)
+
+    #<p>
+    # Render a table cell.
+    # <[param n a TableCell node]>
+    #</p>
+    abstract method visitTableCell(n)
+
+    #<p>
+    # Render a definition list.
+    # <[param n a DefinitionList node]>
+    #</p>
+    abstract method visitDefinitionList(n)
+
+    #<p>
+    # Render one definition-list item.
+    # <[param n a DefinitionItem node]>
+    #</p>
+    abstract method visitDefinitionItem(n)
 
     #<p>
     # Render an image / figure.
@@ -438,13 +462,73 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     end
 
     #<p>
-    # Emit a bare <tt>&lt;table&gt;</tt> and visit row children.
+    # Emit an HTML <tt>&lt;table&gt;</tt> with optional
+    # <tt>&lt;thead&gt;</tt> and <tt>&lt;tbody&gt;</tt>.
     # <[param n a Table node]>
     #</p>
     method visitTable(n)
         write(outFile, "<table>")
+        if \n.getHeaderRow() then {
+            write(outFile, "<thead>")
+            n.getHeaderRow().accept(self)
+            write(outFile, "</thead>")
+            }
+        write(outFile, "<tbody>")
         every (!n.getChildren()).accept(self)
+        write(outFile, "</tbody>")
         write(outFile, "</table>")
+        return
+    end
+
+    #<p>
+    # Emit a <tt>&lt;tr&gt;</tt> of <tt>&lt;th&gt;</tt> or
+    # <tt>&lt;td&gt;</tt> cells.
+    # <[param n a TableRow node]>
+    #</p>
+    method visitTableRow(n)
+        local cell, tag
+        tag := if n.isHeaderRow() then "th" else "td"
+        write(outFile, "<tr>")
+        every cell := !n.getChildren() do {
+            write(outFile, "<", tag, ">")
+            every (!cell.getChildren()).accept(self)
+            write(outFile, "</", tag, ">")
+            }
+        write(outFile, "</tr>")
+        return
+    end
+
+    #<p>
+    # Emit a <tt>&lt;td&gt;</tt> (used when a cell is visited alone).
+    # <[param n a TableCell node]>
+    #</p>
+    method visitTableCell(n)
+        write(outFile, "<td>")
+        every (!n.getChildren()).accept(self)
+        write(outFile, "</td>")
+        return
+    end
+
+    #<p>
+    # Emit a <tt>&lt;dl&gt;</tt>.
+    # <[param n a DefinitionList node]>
+    #</p>
+    method visitDefinitionList(n)
+        write(outFile, "<dl>")
+        every (!n.getChildren()).accept(self)
+        write(outFile, "</dl>")
+        return
+    end
+
+    #<p>
+    # Emit <tt>&lt;dt&gt;</tt>/<tt>&lt;dd&gt;</tt> for one definition item.
+    # <[param n a DefinitionItem node]>
+    #</p>
+    method visitDefinitionItem(n)
+        write(outFile, "<dt>", escapeHtml(n.getTerm()), "</dt>")
+        write(outFile, "<dd>")
+        every (!n.getChildren()).accept(self)
+        write(outFile, "</dd>")
         return
     end
 

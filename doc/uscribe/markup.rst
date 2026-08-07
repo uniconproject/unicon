@@ -33,6 +33,31 @@ a following space. Numbered lists use ``1. `` / ``1) `` or auto-number
 2. Write a tiny book (:doc:`quickstart`)
 #. Pick a theme (:doc:`themes`)
 
+Definition lists
+----------------
+
+A term on its own line followed by an indented body:
+
+option
+   A command-line flag or value (see :doc:`cli`).
+
+theme
+   An HTML skin selected with ``--theme`` (see :doc:`themes`).
+
+Tables
+------
+
+Simple RST tables use ``=`` column separators. The first row is the
+header:
+
+=====  ==========
+Flag   Meaning
+=====  ==========
+html   HTML book
+latex  ``book.tex``
+pdf    run a TeX engine
+=====  ==========
+
 Inline markup
 -------------
 

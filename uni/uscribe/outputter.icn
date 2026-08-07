@@ -520,8 +520,12 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     # <[param n a Reference node]>
     #</p>
     method visitReference(n)
-        write(outFile, "<a href=\"", escapeHtml(n.getTargetFile()), "#",
-              escapeHtml(n.getTargetAnchor()), "\">",
+        local href, anchor
+        href := escapeHtml(n.getTargetFile())
+        anchor := \n.getTargetAnchor() | ""
+        if *anchor > 0 then
+            href ||:= "#" || escapeHtml(anchor)
+        write(outFile, "<a href=\"", href, "\">",
               escapeHtml(n.getText()), "</a>")
         return
     end

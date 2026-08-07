@@ -1,14 +1,15 @@
 #<p>
 # Two-pass cross-reference resolution. Pass 1 (<tt>collect</tt>) walks
 # every parsed <tt>Document</tt> and records every <tt>Section</tt>'s
-# label/title -&gt; (file, anchor). Pass 2 (<tt>resolve</tt>) walks
-# every <tt>Document</tt> again and swaps each <tt>PendingXref</tt>
+# label/title -&gt; (file, anchor), plus each chapter stem for
+# <tt>:doc:`name`</tt>. Pass 2 (<tt>resolve</tt>) walks every
+# <tt>Document</tt> again and swaps each <tt>PendingXref</tt>
 # inline node (see <tt>node.icn</tt>) for a resolved
 # <tt>Reference</tt>, using this table. This is the piece that makes
-# <tt>:ref:`some-label`</tt> work across chapter-file boundaries --
-# something classic UniDoc never needed, since it only ever
-# cross-referenced source entities within a single resolved parse, not
-# author-written prose labels spanning a whole book.
+# <tt>:ref:`some-label`</tt> and <tt>:doc:`chapter`</tt> work across
+# chapter-file boundaries -- something classic UniDoc never needed,
+# since it only ever cross-referenced source entities within a single
+# resolved parse, not author-written prose labels spanning a whole book.
 #</p>
 #<p>
 # <b>Author:</b> Jafar Al-Gharaibeh
@@ -25,23 +26,34 @@ package uscribe
 import lang
 
 # <p>
-# Book-wide label and title-slug lookup table for resolving
-# <tt>PendingXref</tt> nodes into <tt>Reference</tt>s after every
-# chapter has been collected.
+# Book-wide label, title-slug, and chapter-stem lookup table for
+# resolving <tt>PendingXref</tt> nodes into <tt>Reference</tt>s after
+# every chapter has been collected.
 # </p>
-class LabelTable : Object (byLabel, bySlug)
+class LabelTable : Object (byLabel, bySlug, byDoc)
 
     # <p>
-    # Pass 1: register every <tt>Section</tt> in <tt>doc</tt> under
-    # both its explicit label (if any) and a slugified-title fallback,
-    # so <tt>:doc:`file`</tt> links can also target a chapter's top
-    # section by title.
+    # Pass 1: register the chapter for <tt>:doc:`</tt> under its file
+    # stem, then every <tt>Section</tt> under both its explicit label
+    # (if any) and a slugified-title fallback.
     # <[param doc a parsed <tt>Document</tt>]>
     # </p>
     method collect(doc)
+        local outName, stem, title, n, anchor
         # Store the HTML output basename (not the .rst source path) so
         # resolved Reference hrefs point at generated pages.
-        walkCollect(doc.getChildren(), chapterOutputName(doc.getSrcName()))
+        outName := chapterOutputName(doc.getSrcName())
+        stem := safeHtmlFileStem(suffix(basename(doc.getSrcName()))[1])
+        title := stem
+        anchor := ""
+        every n := !doc.getChildren() do
+            if isSectionNode(n) then {
+                title := n.getTitle()
+                anchor := \n.getLabel() | slugify(title)
+                break
+                }
+        byDoc[stem] := [outName, anchor, title]
+        walkCollect(doc.getChildren(), outName)
         return
     end
 
@@ -118,15 +130,23 @@ class LabelTable : Object (byLabel, bySlug)
     end
 
     # <p>
-    # Resolve one <tt>PendingXref</tt> via label table, then title
-    # slug. Builds a <tt>Reference</tt> with target file/anchor and
-    # display text.
+    # Resolve one <tt>PendingXref</tt>: <tt>:doc:`</tt> via chapter
+    # stem table, otherwise label table then title slug. Builds a
+    # <tt>Reference</tt> with target file/anchor and display text.
     # <[param xref a <tt>PendingXref</tt> node]>
     # <[returns a resolved <tt>Reference</tt>]>
     # <[fails if neither label nor slug matches]>
     # </p>
     method lookup(xref)
-        local hit, ref
+        local hit, ref, key
+        if (\xref.getKind() | "ref") == "doc" then {
+            key := normalizeDocKey(xref.getLabel()) | fail
+            hit := \byDoc[key] | fail
+            ref := Reference()
+            ref.setTarget(hit[1], hit[2])
+            ref.setText(\xref.getDisplayText() | hit[3] | xref.getLabel())
+            return ref
+            }
         hit := \byLabel[xref.getLabel()] | \bySlug[slugify(xref.getLabel())] | fail
         ref := Reference()
         ref.setTarget(hit[1], hit[2])
@@ -137,6 +157,7 @@ class LabelTable : Object (byLabel, bySlug)
     initially
         byLabel := table()
         bySlug := table()
+        byDoc := table()
 end
 
 # <p>
@@ -163,6 +184,33 @@ end
 # </p>
 procedure isPendingXref(n)
     return n.nodeType() == "PendingXref"
+end
+
+# <p>
+# Normalize a <tt>:doc:`</tt> label to the chapter stem used as a
+# <tt>byDoc</tt> key: basename, strip a trailing
+# <tt>.rst</tt>/<tt>.txt</tt>/<tt>.html</tt>, then
+# <tt>safeHtmlFileStem</tt>.
+# <[param s raw doc role label]>
+# <[returns the chapter stem]>
+# <[fails if the stem is empty]>
+# </p>
+procedure normalizeDocKey(s)
+    local b, parts, stem, ext
+    /s := ""
+    b := basename(trim(s, ' ', 0))
+    if *b = 0 then fail
+    parts := suffix(b)
+    stem := parts[1]
+    ext := map(\parts[2] | "", &ucase, &lcase)
+    # Strip only known chapter extensions so names like "release.1"
+    # stay intact.
+    if ext == "rst" | ext == "txt" | ext == "html" | ext == "htm" then
+        stem := safeHtmlFileStem(stem)
+    else
+        stem := safeHtmlFileStem(b)
+    if *stem = 0 then fail
+    return stem
 end
 
 # <p>

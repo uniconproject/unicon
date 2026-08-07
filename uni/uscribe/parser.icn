@@ -98,7 +98,7 @@ procedure parseBlocks(parser, lines, i, limit, container, level)
             }
 
         # Directive: ".. name:: arg", body is every following line
-        # indented at least 3 spaces relative to the directive line.
+        # indented at least as deep as the first non-blank body line.
         if isDirectiveLine(lines[i]) then {
             i := parseDirective(parser, lines, i, limit, curSection)
             next
@@ -110,6 +110,12 @@ procedure parseBlocks(parser, lines, i, limit, container, level)
             next
             }
 
+        # Numbered list: "1. "/"1) "/"#. " items.
+        if isEnumLine(lines[i]) then {
+            i := parseEnumList(lines, i, limit, curSection)
+            next
+            }
+
         # RST literal block: a line ending in "::" followed by an
         # indented block (optionally after a blank line).
         if isLiteralIntro(lines[i]) then {
@@ -118,7 +124,7 @@ procedure parseBlocks(parser, lines, i, limit, container, level)
             }
 
         # Otherwise: an ordinary paragraph -- consume until the next
-        # blank line, heading, directive, or bullet line.
+        # blank line, heading, directive, or list line.
         i := parseParagraph(lines, i, limit, curSection)
         }
 
@@ -142,7 +148,7 @@ procedure parseParagraph(lines, i, limit, container)
     buf := []
     while i <= limit & not isBlank(lines[i]) &
           not isDirectiveLine(lines[i]) & not isBulletLine(lines[i]) &
-          not isLiteralIntro(lines[i]) &
+          not isEnumLine(lines[i]) & not isLiteralIntro(lines[i]) &
           not isHeadingAt(lines, i, limit) do {
         put(buf, trim(lines[i]))
         i +:= 1
@@ -319,13 +325,44 @@ procedure parseBulletList(lines, i, limit, container)
         i +:= 1
         # Continuation lines: indented, non-blank, not a new bullet.
         while i <= limit & not isBlank(lines[i]) & not isBulletLine(lines[i]) &
-              isIndented(lines[i]) do {
+              not isEnumLine(lines[i]) & isIndented(lines[i]) do {
             put(buf, trim(lines[i], ' ', 1))
             i +:= 1
             }
         item := ListItem()
         every put(item.getChildren(), !parseInline(joinLines(buf)))
         blist.addChild(item)
+        }
+    return i
+end
+
+# <p>
+# Parse a run of consecutive numbered-list lines into an
+# <tt>EnumList</tt> of <tt>ListItem</tt>s. The first item's number
+# (when not <tt>"#"</tt>) becomes <tt>startAt</tt>.
+# <[param lines list of source lines]>
+# <[param i index of the first enum line]>
+# <[param limit last index (inclusive)]>
+# <[param container parent to receive the new <tt>EnumList</tt>]>
+# <[returns the index just past the last line consumed]>
+# </p>
+procedure parseEnumList(lines, i, limit, container)
+    local elist, item, buf, startAt
+    elist := EnumList()
+    startAt := enumStartNumber(lines[i])
+    elist.setStartAt(startAt)
+    container.addChild(elist)
+    while i <= limit & isEnumLine(lines[i]) do {
+        buf := [stripEnumMarker(lines[i])]
+        i +:= 1
+        while i <= limit & not isBlank(lines[i]) & not isEnumLine(lines[i]) &
+              not isBulletLine(lines[i]) & isIndented(lines[i]) do {
+            put(buf, trim(lines[i], ' ', 1))
+            i +:= 1
+            }
+        item := ListItem()
+        every put(item.getChildren(), !parseInline(joinLines(buf)))
+        elist.addChild(item)
         }
     return i
 end
@@ -343,7 +380,7 @@ end
 # <[returns the index just past the last body line consumed]>
 # </p>
 procedure parseDirective(parser, lines, i, limit, container)
-    local head, dname, arg, body, raw, expanded, indentCol
+    local head, dname, arg, body, raw, expanded, indentCol, nSpaces, j
 
     head := lines[i]
     head ? {
@@ -355,11 +392,35 @@ procedure parseDirective(parser, lines, i, limit, container)
         }
     i +:= 1
     body := []
-    indentCol := 4  # minimum body indent; a stricter parser would
-                     # measure the first body line's actual indent
-    while i <= limit & (isBlank(lines[i]) | isIndented(lines[i])) do {
-        if not isBlank(lines[i]) then put(body, stripIndent(lines[i], indentCol))
-        else put(body, "")
+    # Body indent comes from the first non-blank indented line (not a
+    # fixed width). Later lines must be at least that deep; shallower
+    # content ends the directive.
+    indentCol := &null
+    while i <= limit do {
+        if isBlank(lines[i]) then {
+            # Keep the blank only when more body content follows at
+            # the established (or still-to-be-measured) indent.
+            j := i + 1
+            while j <= limit & isBlank(lines[j]) do
+                j +:= 1
+            if j > limit then
+                break
+            if not isIndented(lines[j]) then
+                break
+            if \indentCol & leadingSpaceCount(lines[j]) < indentCol then
+                break
+            put(body, "")
+            i +:= 1
+            next
+            }
+        if not isIndented(lines[i]) then
+            break
+        nSpaces := leadingSpaceCount(lines[i])
+        if /indentCol then
+            indentCol := nSpaces
+        if nSpaces < indentCol then
+            break
+        put(body, stripIndent(lines[i], indentCol))
         i +:= 1
         }
     # Trim trailing blank lines collected as part of the body. pull()
@@ -470,6 +531,53 @@ procedure stripBulletMarker(s)
 end
 
 # <p>
+# True when <tt>s</tt> is a numbered list item:
+# <tt>"1. "</tt>, <tt>"1) "</tt>, or <tt>"#. "</tt> / <tt>"#) "</tt>
+# (optionally indented).
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not an enum line]>
+# </p>
+procedure isEnumLine(s)
+    return s ? ((tab(many(' ')) | &pos),
+                (tab(many(&digits)) | ="#"),
+                tab(any('.)')),
+                =" ")
+end
+
+# <p>
+# Strip the leading enum marker from a numbered-list line.
+# <[param s an enum line]>
+# <[returns the item text after the marker]>
+# </p>
+procedure stripEnumMarker(s)
+    s ? {
+        tab(many(' ')) | &pos
+        (tab(many(&digits)) | move(1))
+        move(1)
+        tab(many(' ')) | &pos
+        return "" || tab(0)
+        }
+end
+
+# <p>
+# Starting number for an enum line: the leading digits, or <tt>1</tt>
+# when the marker is <tt>"#"</tt>.
+# <[param s an enum line]>
+# <[returns integer start value]>
+# </p>
+procedure enumStartNumber(s)
+    local n
+    s ? {
+        tab(many(' ')) | &pos
+        if ="#" then
+            return 1
+        n := integer(tab(many(&digits))) | return 1
+        return n
+        }
+    return 1
+end
+
+# <p>
 # True when <tt>s</tt> starts with one or more spaces and has
 # non-space content afterward (used for directive bodies, list
 # continuations, and literal blocks).
@@ -482,6 +590,25 @@ procedure isIndented(s)
         if pos(0) then fail
         return
         }
+end
+
+# <p>
+# Count leading space characters on <tt>s</tt> (tabs are not treated
+# as spaces).
+# <[param s a source line]>
+# <[returns the leading-space count (0 if none)]>
+# </p>
+procedure leadingSpaceCount(s)
+    local n
+    n := 0
+    /s := ""
+    s ? {
+        while any(' ') do {
+            move(1)
+            n +:= 1
+            }
+        }
+    return n
 end
 
 # <p>

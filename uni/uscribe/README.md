@@ -9,12 +9,13 @@ A prose/book doc generator for Unicon.
 |-----------------|------|
 | `node.icn`       | Doctree: `Document, Section, Paragraph, BulletList, EnumList, ListItem, CodeBlock, Admonition, TableNode, ImageNode, RawDirective` (block) + `Text, Emphasis, Strong, Literal, Reference, PendingXref` (inline), plus a `nodeType()` discriminator on every concrete class and safe `mk*()` factory procs. |
 | `scan.icn`       | Balanced-delimiter helpers (`sbalClause`, `scanBalancedDirectives`, `parseRolePayload`) used by inline roles such as `:ref:`Title <label>``. |
-| `inline.icn`     | `parseInline(s)`: `*emph*`, `**strong**`, `` `literal` ``, `` :ref:` `` / `` :doc:` `` (with optional display text) → list of inline nodes. |
+| `inline.icn`     | `parseInline(s)`: `*emph*`, `**strong**`, `` `literal` ``, `` `text <url>`_ ``, `` :ref:` `` / `` :doc:` `` / `` :sub:` `` / `` :sup:` `` → inline nodes. |
 | `outputter.icn`  | Abstract `Outputter` + concrete `HtmlOutputter`. |
 | `latexout.icn`   | `LatexOutputter`: whole-book `book.tex` (and PDF via a TeX engine). |
 | `manifest.icn`   | `Manifest`: ordered chapter list (the toctree equivalent), loaded from a flat manifest file. |
 | `labeltable.icn` | `LabelTable`: two-pass cross-ref resolution — explicit `.. _label:`, title slugs, figures/tables, and `:doc:` stems. |
-| `directive.icn`  | `DirectiveRegistry`: `code-block`, admonitions (nested bodies), `image`/`figure`, `include`/`literalinclude`, `list-table`; sketched `.. api::` UniDoc bridge. |
+| `directive.icn`  | `DirectiveRegistry`: `code-block`, admonitions (nested bodies), `image`/`figure`, `include`/`literalinclude`, `list-table`, `raw`; sketched `.. api::` UniDoc bridge. |
+| `UTR-FEATURE-GAPS.md` | Status tracker for UTR migration features (report mode, cite, footnotes, …). |
 | `parser.icn`     | Line-oriented parser: headings, paragraphs, lists, simple/grid tables, deflists, `.. _label:`, directives. |
 | `main.icn`       | Driver: parse every chapter (pass 1) → collect labels → resolve + render (pass 2). |
 | `Makefile`       | Build via `unidep` (same pattern as `uni/unidoc/Makefile`). |

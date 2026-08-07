@@ -13,7 +13,8 @@
 #<p>
 # Node construction goes through <tt>node.icn</tt>'s
 # <tt>mkText()</tt>/<tt>mkEmphasis()</tt>/<tt>mkStrong()</tt>/
-# <tt>mkLiteral()</tt>/<tt>mkPendingXref()</tt> factories rather than
+# <tt>mkLiteral()</tt>/<tt>mkPendingXref()</tt>/<tt>mkHyperlink()</tt>/
+# <tt>mkScriptText()</tt> factories rather than
 # raw <tt>ClassName(...)</tt> calls, so this file never has to count
 # each class's inherited (<tt>parent</tt>/<tt>srcFile</tt>/<tt>srcLine</tt>)
 # field slots by hand.
@@ -30,13 +31,17 @@ package uscribe
 #   <tt>**strong**</tt>    -> <tt>Strong</tt>
 #   <tt>``literal``</tt>   -> <tt>Literal</tt> (RST-style; preferred)
 #   <tt>`literal`</tt>     -> <tt>Literal</tt> (single-backtick convenience)
+#   <tt>`text &lt;url&gt;`_</tt> / <tt>`url`_</tt> -> <tt>Hyperlink</tt>
 #   <tt>:ref:`label`</tt>  -> <tt>PendingXref</tt>(kind: <tt>"ref"</tt>)
 #   <tt>:ref:`Title &lt;label&gt;`</tt> -> same, with display text
 #     (angle brackets via <tt>parseRolePayload()</tt> / <tt>scan.icn</tt>)
 #   <tt>:doc:`file`</tt>   -> <tt>PendingXref</tt>(kind: <tt>"doc"</tt>)
+#   <tt>:sub:`text`</tt> / <tt>:sup:`text`</tt> -> <tt>ScriptText</tt>
+#   <tt>:cite:`key`</tt> / <tt>:cite:`k1,k2`</tt> -> <tt>Cite</tt>
+#   <tt>:footnote:`body`</tt> -> <tt>Footnote</tt>
+#   <tt>:math:`latex`</tt> -> <tt>Math</tt> (inline)
 # Anything else is plain <tt>Text</tt>. Longer/more specific tokens
-# (<tt>":ref:`"</tt>, <tt>":doc:`"</tt>, <tt>"**"</tt>, <tt>"``"</tt>)
-# are tried before shorter ones (<tt>"*"</tt>, <tt>"`"</tt>) so e.g.
+# are tried before shorter ones so e.g.
 # <tt>"**bold**"</tt> is not misread as two adjacent <tt>"*emph*"</tt>
 # runs, and <tt>``code``</tt> is not misread as two empty
 # single-backtick spans. Unclosed delimiters are left as plain text
@@ -45,7 +50,7 @@ package uscribe
 # <[returns a list of <tt>Inline</tt> node instances]>
 #</p>
 procedure parseInline(s)
-    local out, buf, tok, xref
+    local out, buf, tok, parts
 
     out := []
     buf := ""
@@ -68,6 +73,51 @@ procedure parseInline(s)
                     }
                 else
                     buf ||:= ":doc:`"
+                }
+            else if =":cite:`" then {
+                if tok := tab(find("`")) then {
+                    move(1)
+                    flushText(out, buf); buf := ""
+                    put(out, mkCite(tok))
+                    }
+                else
+                    buf ||:= ":cite:`"
+                }
+            else if =":footnote:`" then {
+                if tok := tab(find("`")) then {
+                    move(1)
+                    flushText(out, buf); buf := ""
+                    put(out, mkFootnote(tok))
+                    }
+                else
+                    buf ||:= ":footnote:`"
+                }
+            else if =":math:`" then {
+                if tok := tab(find("`")) then {
+                    move(1)
+                    flushText(out, buf); buf := ""
+                    put(out, mkMath(tok, &null))
+                    }
+                else
+                    buf ||:= ":math:`"
+                }
+            else if =":sub:`" then {
+                if tok := tab(find("`")) then {
+                    move(1)
+                    flushText(out, buf); buf := ""
+                    put(out, mkScriptText(tok, "sub"))
+                    }
+                else
+                    buf ||:= ":sub:`"
+                }
+            else if =":sup:`" then {
+                if tok := tab(find("`")) then {
+                    move(1)
+                    flushText(out, buf); buf := ""
+                    put(out, mkScriptText(tok, "sup"))
+                    }
+                else
+                    buf ||:= ":sup:`"
                 }
             else if ="**" then {
                 if tok := tab(find("**")) then {
@@ -100,7 +150,13 @@ procedure parseInline(s)
                 if tok := tab(find("`")) then {
                     move(1)
                     flushText(out, buf); buf := ""
-                    put(out, mkLiteral(tok))
+                    # Trailing underscore => external hyperlink.
+                    if ="_" then {
+                        parts := parseRolePayload(tok)
+                        put(out, mkHyperlink(parts[1], parts[2]))
+                        }
+                    else
+                        put(out, mkLiteral(tok))
                     }
                 else
                     buf ||:= "`"

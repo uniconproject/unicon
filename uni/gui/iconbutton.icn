@@ -41,7 +41,7 @@ $include "guih.icn"
 #
 class IconButton : Button()
    method display(buffer_flag)
-      local i, cw
+      local i, cw, state
 
       if \self.is_down then
          i := img_down
@@ -50,26 +50,47 @@ class IconButton : Button()
 
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
 
-      DrawImageEx(self.cbwin, self.x + (self.w - self.img_w) / 2, self.y + (self.h - self.img_h) / 2, i)
-      if \self.is_down then {
-         #
-         # Invert the inside of the area
-         #
-         cw := Clone(self.cbwin, "drawop=reverse")
-         FillRectangle(cw, self.x, self.y, self.w, self.h)
-         Uncouple(cw)
-         DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      } else {
-         if \self.draw_border_flag then {
-            if /self.is_checked_flag then
-               DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-            else
+      if GuiThemeIsFlat() then {
+         if \self.is_down then
+            state := "down"
+         else if \self.is_checked_flag then
+            state := "checked"
+         else
+            state := "up"
+         ThemeFillFace(self.cbwin, self.x, self.y, self.w, self.h, state,
+            ThemeComponentBg(self.attribs) | &null)
+         DrawImageEx(self.cbwin, self.x + (self.w - self.img_w) / 2,
+            self.y + (self.h - self.img_h) / 2, i)
+         if \self.draw_border_flag | \self.is_down | \self.is_checked_flag then {
+            if \self.is_down | \self.is_checked_flag then
                DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+            else
+               DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
          }
-      }
+         if /self.no_keyboard_flag & \self.has_focus & /self.is_down then
+            DashedRectangle(self.cbwin, self.x + 2, self.y + 2, self.w - 4, self.h - 4)
+      } else {
+         DrawImageEx(self.cbwin, self.x + (self.w - self.img_w) / 2, self.y + (self.h - self.img_h) / 2, i)
+         if \self.is_down then {
+            #
+            # Invert the inside of the area
+            #
+            cw := Clone(self.cbwin, "drawop=reverse")
+            FillRectangle(cw, self.x, self.y, self.w, self.h)
+            Uncouple(cw)
+            DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+         } else {
+            if \self.draw_border_flag then {
+               if /self.is_checked_flag then
+                  DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+               else
+                  DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+            }
+         }
 
-      if /self.no_keyboard_flag & \self.has_focus then {
-         DashedRectangle(self.cbwin, self.x + BORDER_WIDTH + 1, self.y + BORDER_WIDTH + 1, self.w - 2 * BORDER_WIDTH - 2, self.h - 2 * BORDER_WIDTH - 2)
+         if /self.no_keyboard_flag & \self.has_focus then {
+            DashedRectangle(self.cbwin, self.x + BORDER_WIDTH + 1, self.y + BORDER_WIDTH + 1, self.w - 2 * BORDER_WIDTH - 2, self.h - 2 * BORDER_WIDTH - 2)
+         }
       }
 
       self.do_shading(self.cbwin)

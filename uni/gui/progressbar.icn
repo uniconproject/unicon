@@ -44,14 +44,23 @@ class ProgressBar : Component(
       # Erase and re-draw the border and bar
       #
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      FillRectangle(self.cbwin, self.bar_x, self.bar_y, self.bar_w * p / 100.0, self.bar_h)
-      #
-      # Draw the string in reverse mode
-      #
-      cw := Clone(self.cbwin, "drawop=reverse")
-      center_string(cw, self.x + self.w / 2, self.y + self.h / 2, p || "%")
-      Uncouple(cw)
+      if GuiThemeIsFlat() then {
+         ThemeFillInput(self.cbwin, self.x, self.y, self.w, self.h)
+         DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+         ThemeFillAccent(self.cbwin, self.bar_x, self.bar_y,
+            self.bar_w * p / 100.0, self.bar_h)
+         center_string(self.cbwin, self.x + self.w / 2, self.y + self.h / 2, p || "%")
+         }
+      else {
+         DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+         FillRectangle(self.cbwin, self.bar_x, self.bar_y, self.bar_w * p / 100.0, self.bar_h)
+         #
+         # Draw the string in reverse mode
+         #
+         cw := Clone(self.cbwin, "drawop=reverse")
+         center_string(cw, self.x + self.w / 2, self.y + self.h / 2, p || "%")
+         Uncouple(cw)
+         }
       #
       # Copy from buffer to window if flag not set.
       #

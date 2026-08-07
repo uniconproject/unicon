@@ -235,8 +235,12 @@ class DropDown : Component(
       self.b := IconButton()
       self.b.set_parent(self)
       self.b.connect(self, "on_button")
-      self.b.toggle_draw_border()
-      self.b.set_img(img_style("arrow_down"))
+      if GuiThemeIsFlat() then
+         self.b.set_img(img_style("arrow_down_flat"))
+      else {
+         self.b.toggle_draw_border()
+         self.b.set_img(img_style("arrow_down"))
+         }
       self.b.clear_accepts_focus()
       self.add(b)
       self.selection := 1

@@ -52,7 +52,14 @@ class MenuButton : Component(
 
    method display(buffer_flag)
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      if GuiThemeIsFlat() then {
+         ThemeFillFace(self.cbwin, self.x, self.y, self.w, self.h,
+            if \self.is_open then "down" else "up",
+            ThemeComponentBg(self.attribs) | &null)
+         DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+         }
+      else
+         DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
       left_string(self.cbwin, self.x + DEFAULT_TEXT_X_SURROUND, self.y + self.h / 2, menu.get_label(), menu.get_accel())
       DrawImageEx(self.cbwin, self.x + 2 * DEFAULT_TEXT_X_SURROUND + TextWidth(self.cwin, menu.get_label()),  self.y + (self.h - img_height(self.img)) / 2, self.img)
       self.do_shading(self.cbwin)

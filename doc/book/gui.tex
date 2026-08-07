@@ -23,6 +23,7 @@ filled in to create an application. This chapter shows how to:
 \begin{itemize}
 \item Construct programs that employ a graphical user interface.
 \item Manipulate the attributes of objects such as buttons and scrollbars.
+\item Choose a flat or classic look-and-feel with the theme API.
 \item Draw a program's interface using Unicon's improved visual
       interface builder.
 \end{itemize}
@@ -2348,6 +2349,85 @@ procedure main() \\
 end
 }
 
+\section{Themes and Look-and-Feel}
+
+Package \texttt{gui} includes a small pluggable theme layer
+(\texttt{theme.icn}) so applications can choose a flat
+appearance or the historical bevelled Motif/Win95 look without
+rewriting every widget. Application code that \texttt{import}s
+\texttt{gui} may call the theme procedures directly.
+
+\paragraph{Selecting a theme}
+
+Call \texttt{SetGuiTheme()} early in \texttt{main()}, before the
+first dialog is shown:
+
+\iconcode{
+import gui \\
+\$include "guih.icn" \\
+... \\
+procedure main() \\
+\>   SetGuiTheme("flat")\ \ \ \ \ \ \ \ \ \ \# default; optional \\
+\>   \# SetGuiTheme("classic")\ \ \ \ \# old bevelled chrome \\
+\>   MyDialog().show\_modal() \\
+end
+}
+
+\noindent
+Recognized names include \texttt{flat} and \texttt{classic}
+(aliases \texttt{bevel}, \texttt{motif}). Flat is the package
+default if nothing is set.
+\texttt{GetGuiTheme()} and \texttt{GuiThemeIsFlat()} report the
+active choice.
+
+Alternatively, set the environment variable \texttt{UGUI\_THEME} to the
+same name (for example \texttt{classic}) before running a program.
+The toolkit applies it on the first theme query, so shipped apps such
+as \texttt{ui} and \texttt{ivib} can be checked without editing
+\texttt{main()}. An explicit \texttt{SetGuiTheme()} in the program
+still wins if it sets the theme before any theme query; avoid
+hard-coding \texttt{SetGuiTheme("flat")} when the package default
+already is flat, or \texttt{UGUI\_THEME} cannot take effect.
+
+\paragraph{Fonts and colors}
+
+Flat theme dialogs pick default window attributes (background and
+foreground) via \texttt{GuiThemeDialogAttribs()}; explicit dialog
+attributes still override those defaults. The runtime default font is
+left unchanged unless a theme font is opted in. Flat face and input
+fills honour an explicit widget \texttt{bg=} (for example
+\texttt{bg=green} on a \texttt{TextButton}) instead of painting over
+it with the palette surface or input color. Widget \texttt{fg=}
+continues to apply through the usual window attributes used when
+drawing labels.
+
+\iconcode{
+SetGuiThemeFont("default")\ \ \# opt-in: portable Unicon sans,12 \\
+SetGuiThemeFont("arial")\ \ \ \ \# opt-in: Arial/helvetica size 13 when available
+}
+
+\noindent
+The environment variable \texttt{UGUI\_THEME\_FONT} accepts the same
+style names and is applied like \texttt{UGUI\_THEME}.
+
+\noindent
+\texttt{GuiThemePickFont()} returns the concrete \texttt{font=}
+string for an opted-in style, and fails if none was set. Optional
+colors are carried in a
+\texttt{ThemePalette} record (\texttt{bg}, \texttt{fg},
+\texttt{surface}, borders, focus accent, and so on). Pass a custom
+palette as the second argument to \texttt{SetGuiTheme}:
+
+\iconcode{
+SetGuiTheme("flat", ThemePalette(...))
+}
+
+\noindent
+\texttt{GuiThemePalette()} returns the palette in use.
+Widget drawing helpers such as \texttt{ThemeFillFace()} and
+\texttt{FlatBorder()} follow the active theme; most applications only
+need \texttt{SetGuiTheme} / \texttt{SetGuiThemeFont}.
+
 \section{Programming Techniques}
 
 Some of the earlier example dialogs were effectively
@@ -2863,7 +2943,9 @@ tabbed property sheets, and multi-line text editing capability--that
 are not present in Icon's vidgets GUI
 library. Many components present in both libraries are more
 flexible in the GUI toolkit, supporting fonts, colors, and graphics
-that the vidgets library does not handle. The ivib interface
+that the vidgets library does not handle. A pluggable theme layer
+provides a flat default look-and-feel while preserving the classic
+bevelled appearance when requested. The ivib interface
 builder tool provides programmers with easy access to the GUI toolkit.
 
 Object-orientation mainly affects this class library's

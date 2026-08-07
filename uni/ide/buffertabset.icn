@@ -15,7 +15,9 @@ class BufferTabSet : TabSet()
       # Erase all and display outline of tabbed pane area.
       #
       EraseRectangle(cbwin, x, y, w, h)
-      DrawRaisedRectangle(cbwin, x, y, w, h, 2)
+      if GuiThemeIsFlat() then
+         ThemeFillFace(cbwin, x, y, w, h, "up")
+      DrawRaisedRectangle(cbwin, x, y, w, h, if GuiThemeIsFlat() then 1 else 2)
       #
       # Display all tabs.
       #
@@ -25,22 +27,32 @@ class BufferTabSet : TabSet()
       #
       # Display line under tabs.
       #
-      cw := Clone(cbwin, "drawop=reverse")
-      Fg(cw, "pale gray")
-      DrawLine(cw, x, y + tab_h - 2, which_one.label_x, y + tab_h - 2)
+      if GuiThemeIsFlat() then {
+         cw := Clone(cbwin, "fg=" || GuiThemePalette().border, "linewidth=1")
+         DrawLine(cw, x, y + tab_h - 1, which_one.label_x, y + tab_h - 1)
+         if /last_on_a_line then
+            DrawLine(cw, which_one.label_x + which_one.label_w, y + tab_h - 1,
+                     x + w - 1, y + tab_h - 1)
+         Uncouple(cw)
+         }
+      else {
+         cw := Clone(cbwin, "drawop=reverse")
+         Fg(cw, "pale gray")
+         DrawLine(cw, x, y + tab_h - 2, which_one.label_x, y + tab_h - 2)
 
-      if /last_on_a_line then
-         DrawLine(cw, which_one.label_x + which_one.label_w, y + tab_h - 2,
-                  x + w - 1, y + tab_h - 2)
+         if /last_on_a_line then
+            DrawLine(cw, which_one.label_x + which_one.label_w, y + tab_h - 2,
+                     x + w - 1, y + tab_h - 2)
 
-      Fg(cw, "black")
-      DrawLine(cw, x, y + tab_h - 1, which_one.label_x, y + tab_h - 1)
+         Fg(cw, "black")
+         DrawLine(cw, x, y + tab_h - 1, which_one.label_x, y + tab_h - 1)
 
-      if /last_on_a_line then
-         DrawLine(cw, which_one.label_x + which_one.label_w, y + tab_h - 1,
-                  x + w - 2, y + tab_h - 1)
+         if /last_on_a_line then
+            DrawLine(cw, which_one.label_x + which_one.label_w, y + tab_h - 1,
+                     x + w - 2, y + tab_h - 1)
 
-      Uncouple(cw)
+         Uncouple(cw)
+         }
 
       #
       # Display contents of current tab into buffer

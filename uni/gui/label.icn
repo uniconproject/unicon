@@ -90,8 +90,12 @@ class Label : Component(
       yoff := self.y + self.h / 2
       key := (\linked_accel).accel
 
-      if \self.draw_border_flag then
+      if \self.draw_border_flag then {
+         if GuiThemeIsFlat() then
+            ThemeFillInput(dwin, self.x, self.y, self.w, self.h,
+               ThemeComponentBg(self.attribs) | &null)
          DrawSunkenRectangle(dwin, self.x, self.y, self.w, self.h)
+         }
 
       Clip(dwin, self.tx, self.y, self.tw, self.h)
 

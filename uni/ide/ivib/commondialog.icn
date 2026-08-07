@@ -23,5 +23,13 @@ class CommonDialog : Dialog(global_attribs)
 
    initially
       self.Dialog.initially()
-      global_attribs := ["bg=light gray", "fg=black", "font=serif", "resize=on"]
+      #
+      # Flat theme supplies bg/fg/font via Dialog.open_win; only keep
+      # resize here so we do not override the flat palette.  Classic
+      # keeps the historical Motif-ish defaults.
+      #
+      if GuiThemeIsFlat() then
+         global_attribs := ["resize=on"]
+      else
+         global_attribs := ["bg=light gray", "fg=black", "font=serif", "resize=on"]
 end

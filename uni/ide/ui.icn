@@ -91,7 +91,7 @@ class UIDE : Dialog(
       pnlToolbar.set_pos("0", "4.5%")
       pnlToolbar.set_size("100%", "4.5%")
       pnlToolbar.set_draw_border()
-      pnlToolbar.set_attribs("bg=light whitish gray", "resize=on", "font=mono,16")
+      pnlToolbar.set_attribs("resize=on", "font=mono,16")
       self.add(pnlToolbar)
       menubar.Menubar()
       ide.Toolbar(pnlToolbar) #This call to add a toolbar
@@ -347,7 +347,6 @@ class UIDE : Dialog(
       self.min_width := 645
       self.min_height := 485
       self.set_attribs("size="||width||","||height, "pos="||win_position,
-                       "bg=pale gray",
                        "label=Unicon IDE", "font=mono,16", "resize=on")
 
       DevTabSet := TabSet()
@@ -359,7 +358,7 @@ class UIDE : Dialog(
       MsgBox.set_pos("2", "2")
       MsgBox.set_size("100%-4", "100%-4")
       MsgBox.set_draw_border()
-      MsgBox.set_attribs("bg=white", "font="||fontname)
+      MsgBox.set_attribs("font="||fontname)
       MsgBox.set_contents([""])
       tab_item_1.add(MsgBox)
 
@@ -367,7 +366,7 @@ class UIDE : Dialog(
       PtyBox.set_pos("2", "2")
       PtyBox.set_size("100%-4", "100%-4")
       PtyBox.set_draw_border()
-      PtyBox.set_attribs("bg=yellowish white", "font="||fontname)
+      PtyBox.set_attribs("font="||fontname)
       PtyBox.set_contents([""])
       tab_item_4 := TabItem()
       tab_item_4.set_label("Debug Messages: (Single File Mode)")
@@ -406,7 +405,6 @@ class UIDE : Dialog(
       FileBrowser.set_pos("2", "2")
       FileBrowser.set_size("100%-4", "100%-4")
       FileBrowser.set_draw_border()
-      FileBrowser.set_attribs("bg=white")
       FileBrowser.set_select_one()
       tab_item_3.add(FileBrowser)
       ClassTabSet.add(tab_item_3)
@@ -416,7 +414,7 @@ class UIDE : Dialog(
       pnlToolbar := Panel()
       pnlToolbar.set_pos("0", "4.5%")
       pnlToolbar.set_size("100%", "4.5%")
-      pnlToolbar.set_attribs("bg=light whitish gray", "resize=on", "font=mono,16")
+      pnlToolbar.set_attribs("resize=on", "font=mono,16")
       self.add(pnlToolbar)
       self.connect(self, "on_close", CLOSE_BUTTON_EVENT)
    end
@@ -454,6 +452,10 @@ procedure main(argv)
    local d := argv[1]
    UIDE_VERS := "0.95"
    if not match("graphics", &features) then stop("Graphics not enabled")
+   #
+   # Theme comes from package gui (flat by default) or UGUI_THEME.
+   # Do not call SetGuiTheme("flat") here; that would block the env var.
+   #
    reinitialize()
    trap("SIGINT", ui_trapint)
    Progend := ui_Progend

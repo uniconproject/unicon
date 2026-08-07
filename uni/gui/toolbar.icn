@@ -21,8 +21,12 @@ $include "guih.icn"
 class ToolBar : Panel()
    method display(buffer_flag)
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      if \self.draw_border_flag then
-         DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      if \self.draw_border_flag then {
+         if GuiThemeIsFlat() then
+            ThemeHairline(self.cbwin, self.x, self.y + self.h - 1, self.w)
+         else
+            DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+         }
       every (!self.children).display(1)
       if /buffer_flag then
          CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)

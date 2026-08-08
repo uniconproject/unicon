@@ -1,0 +1,297 @@
+#<p>
+# Two-pass cross-reference resolution. Pass 1 (<tt>collect</tt>) walks
+# every parsed <tt>Document</tt> and records every <tt>Section</tt>'s
+# label/title -&gt; (file, anchor), plus each chapter stem for
+# <tt>:doc:`name`</tt>. Pass 2 (<tt>resolve</tt>) walks every
+# <tt>Document</tt> again and swaps each <tt>PendingXref</tt>
+# inline node (see <tt>node.icn</tt>) for a resolved
+# <tt>Reference</tt>, using this table. This is the piece that makes
+# <tt>:ref:`some-label`</tt> and <tt>:doc:`chapter`</tt> work across
+# chapter-file boundaries -- something classic UniDoc never needed,
+# since it only ever cross-referenced source entities within a single
+# resolved parse, not author-written prose labels spanning a whole book.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
+link basename
+link io
+
+package uscribe
+
+import lang
+
+# <p>
+# Book-wide label, title-slug, and chapter-stem lookup table for
+# resolving <tt>PendingXref</tt> nodes into <tt>Reference</tt>s after
+# every chapter has been collected.
+# </p>
+class LabelTable : Object (byLabel, bySlug, byDoc)
+
+    # <p>
+    # Pass 1: register the chapter for <tt>:doc:`</tt> under its file
+    # stem, then every <tt>Section</tt> under both its explicit label
+    # (if any) and a slugified-title fallback.
+    # <[param doc a parsed <tt>Document</tt>]>
+    # </p>
+    method collect(doc)
+        local outName, stem, title, n, anchor
+        # Store the HTML output basename (not the .rst source path) so
+        # resolved Reference hrefs point at generated pages.
+        outName := chapterOutputName(doc.getSrcName())
+        stem := safeHtmlFileStem(suffix(basename(doc.getSrcName()))[1])
+        title := stem
+        anchor := ""
+        every n := !doc.getChildren() do
+            if isSectionNode(n) then {
+                title := n.getTitle()
+                anchor := \n.getLabel() | slugify(title)
+                break
+                }
+        byDoc[stem] := [outName, anchor, title]
+        walkCollect(doc.getChildren(), outName)
+        return
+    end
+
+    # <p>
+    # Recursively walk a node list, registering each
+    # <tt>Section</tt> under <tt>srcFile</tt>.
+    # <[param nodeList a list of <tt>Node</tt>s]>
+    # <[param srcFile HTML basename for the chapter (e.g.
+    #         <tt>"intro.html"</tt>)]>
+    # </p>
+    method walkCollect(nodeList, srcFile)
+        local n, kids
+        every n := !nodeList do {
+            if isSectionNode(n) then {
+                registerSection(n, srcFile)
+                walkCollect(n.getChildren(), srcFile)
+                }
+            else if n.nodeType() == "Image" then
+                registerLabeled(n.getLabel(), srcFile,
+                    \n.getLabel() | slugify(\n.getCaption() | \n.getAlt() | "figure"),
+                    \n.getCaption() | \n.getAlt() | n.getLabel())
+            else if n.nodeType() == "Table" then
+                registerLabeled(n.getLabel(), srcFile,
+                    \n.getLabel() | "table",
+                    n.getLabel())
+            else if kids := tryGetChildren(n) then
+                walkCollect(kids, srcFile)
+            }
+        return
+    end
+
+    # <p>
+    # Record one section under its explicit label (when present) and
+    # always under a slug of its title.
+    # <[param sectionNode a <tt>Section</tt> node]>
+    # <[param srcFile HTML basename for the containing chapter]>
+    # </p>
+    method registerSection(sectionNode, srcFile)
+        local anchor
+        anchor := \sectionNode.getLabel() | slugify(sectionNode.getTitle())
+        if \sectionNode.getLabel() then
+            byLabel[sectionNode.getLabel()] :=
+                [srcFile, anchor, sectionNode.getTitle()]
+        bySlug[slugify(sectionNode.getTitle())] :=
+            [srcFile, anchor, sectionNode.getTitle()]
+        return
+    end
+
+    # <p>
+    # Record an explicit label for a figure/table (or other target).
+    # <[param label explicit label, or null to skip]>
+    # <[param srcFile HTML basename]>
+    # <[param anchor HTML id]>
+    # <[param display default link text]>
+    # </p>
+    method registerLabeled(label, srcFile, anchor, display)
+        if /label then return
+        byLabel[label] := [srcFile, anchor, display]
+        return
+    end
+
+    # <p>
+    # Pass 2: walk <tt>doc</tt>, replacing every
+    # <tt>PendingXref</tt> inline node with a resolved
+    # <tt>Reference</tt>. Call this only after <tt>collect()</tt> has
+    # run over <i>every</i> chapter, so forward references (chapter 3
+    # linking back to a label defined in chapter 1) resolve correctly
+    # regardless of reading order.
+    # <[param doc a parsed <tt>Document</tt>, mutated in place]>
+    # </p>
+    method resolve(doc)
+        walkResolve(doc.getChildren())
+        return
+    end
+
+    # <p>
+    # Recursively walk a node list, replacing each
+    # <tt>PendingXref</tt> with the result of <tt>lookup()</tt> when
+    # resolution succeeds. Unresolved xrefs are left in place for the
+    # outputter's <tt>visitBrokenXref()</tt>.
+    # <[param nodeList a list of <tt>Node</tt>s (mutated in place)]>
+    # </p>
+    method walkResolve(nodeList)
+        local i, n, kids, resolved
+        every i := 1 to *nodeList do {
+            n := nodeList[i]
+            if isPendingXref(n) then {
+                resolved := lookup(n)
+                if \resolved then nodeList[i] := resolved
+                # else: leave the PendingXref in place; the Outputter's
+                # visitBrokenXref() will surface it as a warning.
+                }
+            else if kids := tryGetChildren(n) then
+                walkResolve(kids)
+            }
+        return
+    end
+
+    # <p>
+    # Resolve one <tt>PendingXref</tt>: <tt>:doc:`</tt> via chapter
+    # stem table, otherwise label table then title slug. Builds a
+    # <tt>Reference</tt> with target file/anchor and display text.
+    # <[param xref a <tt>PendingXref</tt> node]>
+    # <[returns a resolved <tt>Reference</tt>]>
+    # <[fails if neither label nor slug matches]>
+    # </p>
+    method lookup(xref)
+        local hit, ref, key
+        if (\xref.getKind() | "ref") == "doc" then {
+            key := normalizeDocKey(xref.getLabel()) | fail
+            hit := \byDoc[key] | fail
+            ref := Reference()
+            ref.setTarget(hit[1], hit[2])
+            ref.setText(\xref.getDisplayText() | hit[3] | xref.getLabel())
+            return ref
+            }
+        hit := \byLabel[xref.getLabel()] | \bySlug[slugify(xref.getLabel())] | fail
+        ref := Reference()
+        ref.setTarget(hit[1], hit[2])
+        ref.setText(\xref.getDisplayText() | hit[3] | xref.getLabel())
+        return ref
+    end
+
+    initially
+        byLabel := table()
+        bySlug := table()
+        byDoc := table()
+end
+
+# <p>
+# Type-dispatch helpers built on <tt>Node.nodeType()</tt>
+# (<tt>node.icn</tt>) rather than on duck-typed method-presence
+# checks -- referencing a method an object doesn't have (e.g. calling
+# <tt>n.getLevel()</tt> on a <tt>Paragraph</tt>) is a hard runtime
+# error in Unicon, not a graceful failure, so <tt>nodeType()</tt> is
+# the only safe way to branch across a mixed list of <tt>Node</tt>
+# types.
+# </p>
+
+# <p>
+# True when <tt>n</tt> is a <tt>Section</tt> node.
+# <[param n a <tt>Node</tt>]>
+# </p>
+procedure isSectionNode(n)
+    return n.nodeType() == "Section"
+end
+
+# <p>
+# True when <tt>n</tt> is a <tt>PendingXref</tt> node.
+# <[param n a <tt>Node</tt>]>
+# </p>
+procedure isPendingXref(n)
+    return n.nodeType() == "PendingXref"
+end
+
+# <p>
+# Normalize a <tt>:doc:`</tt> label to the chapter stem used as a
+# <tt>byDoc</tt> key: basename, strip a trailing
+# <tt>.rst</tt>/<tt>.txt</tt>/<tt>.html</tt>, then
+# <tt>safeHtmlFileStem</tt>.
+# <[param s raw doc role label]>
+# <[returns the chapter stem]>
+# <[fails if the stem is empty]>
+# </p>
+procedure normalizeDocKey(s)
+    local b, parts, stem, ext
+    /s := ""
+    b := basename(trim(s, ' ', 0))
+    if *b = 0 then fail
+    parts := suffix(b)
+    stem := parts[1]
+    ext := map(\parts[2] | "", &ucase, &lcase)
+    # Strip only known chapter extensions so names like "release.1"
+    # stay intact.
+    if ext == "rst" | ext == "txt" | ext == "html" | ext == "htm" then
+        stem := safeHtmlFileStem(stem)
+    else
+        stem := safeHtmlFileStem(b)
+    if *stem = 0 then fail
+    return stem
+end
+
+# <p>
+# Map a chapter source path to the HTML file basename written by the
+# driver (e.g. <tt>"chapters/intro.rst"</tt> -&gt;
+# <tt>"intro.html"</tt>). Uses IPL <tt>basename()</tt> and
+# <tt>suffix()</tt> so only the final extension is removed
+# (<tt>"release.1.rst"</tt> -&gt; <tt>"release.1.html"</tt>).
+# <[param srcPath chapter source path]>
+# <[returns the HTML basename, including <tt>".html"</tt>]>
+# </p>
+procedure chapterOutputName(srcPath)
+    return safeHtmlFileStem(suffix(basename(srcPath))[1]) || ".html"
+end
+
+# <p>
+# Keep a chapter basename usable as an HTML file stem and in
+# <tt>href</tt> values: letters, digits, <tt>_ . -</tt> only; other
+# characters become <tt>-</tt>. Empty input becomes <tt>"chapter"</tt>.
+# <[param s basename without extension, or null]>
+# <[returns sanitized stem]>
+# </p>
+procedure safeHtmlFileStem(s)
+    local out, c, ok
+    /s := ""
+    ok := &letters ++ &digits ++ '_.-'
+    out := ""
+    every c := !s do {
+        if any(ok, c) then
+            out ||:= c
+        else
+            out ||:= "-"
+        }
+    if *out = 0 then
+        return "chapter"
+    return out
+end
+
+# <p>
+# Return <tt>n.getChildren()</tt> for node types that carry a
+# children list (see <tt>node.icn</tt>'s <tt>Block</tt> subclasses,
+# plus the composite inline types <tt>Emphasis</tt>/<tt>Strong</tt>).
+# Leaf types -- <tt>Text</tt>, <tt>Literal</tt>, <tt>Reference</tt>,
+# <tt>PendingXref</tt>, <tt>CodeBlock</tt>, <tt>ImageNode</tt>,
+# <tt>RawDirective</tt> -- have no <tt>getChildren()</tt> and must not
+# be called into. Matches each class's <tt>nodeType()</tt> string
+# (<tt>TableNode</tt> returns <tt>"Table"</tt>).
+# <[param n a <tt>Node</tt>]>
+# <[returns the children list]>
+# <[fails if <tt>n</tt> is a leaf type]>
+# </p>
+procedure tryGetChildren(n)
+    static withChildren
+    initial withChildren := set(["Document","Section","Paragraph",
+        "BulletList","EnumList","ListItem","Admonition","Table",
+        "TableRow","TableCell","DefinitionList","DefinitionItem",
+        "Emphasis","Strong"])
+    if member(withChildren, n.nodeType()) then
+        return n.getChildren()
+    fail
+end

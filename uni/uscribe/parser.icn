@@ -1,0 +1,1350 @@
+#<p>
+# Line-oriented parser: raw chapter text to a <tt>Document</tt> doctree
+# (<tt>node.icn</tt>). Deliberately a restricted subset of RST-like syntax
+# -- underline-style headings, blank-line-separated paragraphs,
+# <tt>"- "</tt>/<tt>"* "</tt> bullet lists, and <tt>".. name:: arg"</tt>
+# directives with an indented body -- rather than a full docutils
+# reimplementation. Covers what Brian's book and the FRR docs actually
+# use.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
+package uscribe
+
+import lang
+
+# <p>
+# Parse one chapter of RST-like source into a <tt>Document</tt> tree.
+# Holds a <tt>DirectiveRegistry</tt> used when expanding
+# <tt>".. name::"</tt> directives during <tt>parseBlocks()</tt>.
+# </p>
+class Parser : Object (registry, srcPath, includeStack, pendingLabel)
+
+    # <p>
+    # Install the directive registry used by <tt>parseDirective()</tt>.
+    # <[param r a <tt>DirectiveRegistry</tt> instance]>
+    # </p>
+    method setRegistry(r)
+        registry := r
+        return
+    end
+
+    # <p>
+    # Path of the file currently being parsed (chapter or include).
+    # Used by <tt>include</tt>/<tt>literalinclude</tt> to resolve
+    # relative paths.
+    # <[returns filesystem path string]>
+    # <[fails if unset]>
+    # </p>
+    method getSrcPath()
+        return \srcPath
+    end
+
+    # <p>
+    # Take and clear a pending <tt>.. _label:</tt> target, if any.
+    # <[returns the label string]>
+    # <[fails if none pending]>
+    # </p>
+    method takePendingLabel()
+        local l
+        l := \pendingLabel | fail
+        pendingLabel := &null
+        return l
+    end
+
+    # <p>
+    # Stash a label to apply to the next section, figure, or table.
+    # <[param l label string]>
+    # </p>
+    method setPendingLabel(l)
+        pendingLabel := l
+        return
+    end
+
+    # <p>
+    # Parse indented directive body lines as nested blocks (lists,
+    # code, nested directives, …) and return them.
+    # <[param bodyLines list of body line strings (indent already stripped)]>
+    # <[returns list of block nodes]>
+    # </p>
+    method parseBodyLines(bodyLines)
+        local holder
+        holder := Document()
+        if *bodyLines > 0 then
+            parseBlocks(self, bodyLines, 1, *bodyLines, holder, 0)
+        return holder.getChildren()
+    end
+
+    # <p>
+    # Parse one chapter file into a <tt>Document</tt>.
+    # <[param path filesystem path to the chapter source]>
+    # <[returns a <tt>Document</tt> instance]>
+    # <[fails if <tt>path</tt> cannot be opened for reading]>
+    # </p>
+    method parseFile(path)
+        local f, lines, ln, doc, saved, start
+        f := open(path, "r") | fail
+        lines := []
+        while ln := read(f) do put(lines, ln)
+        close(f)
+
+        saved := srcPath
+        srcPath := path
+        doc := Document()
+        doc.setSrcName(path)
+        start := parseDocFields(doc, lines)
+        parseBlocks(self, lines, start, *lines, doc, 0)
+        srcPath := saved
+        return doc
+    end
+
+    # <p>
+    # Parse filtered include lines as RST and return top-level block
+    # children (not a wrapping <tt>Document</tt>). Detects circular
+    # includes via <tt>includeStack</tt>; nested relative includes
+    # resolve against <tt>path</tt>.
+    # <[param path resolved filesystem path (for stack / relatives)]>
+    # <[param lines source lines to parse]>
+    # <[returns list of <tt>Block</tt> nodes]>
+    # <[fails if <tt>path</tt> is already on the include stack]>
+    # </p>
+    method parseIncludeLines(path, lines)
+        local holder, saved, p
+        every p := !includeStack do
+            if p == path then {
+                write(&errout, "warning: circular include: ", path)
+                fail
+                }
+        put(includeStack, path)
+        saved := srcPath
+        srcPath := path
+        holder := Document()
+        holder.setSrcName(path)
+        parseBlocks(self, lines, 1, *lines, holder, 0)
+        srcPath := saved
+        pull(includeStack)
+        return holder.getChildren()
+    end
+
+    initially
+        /registry := DirectiveRegistry()
+        includeStack := []
+end
+
+# <p>
+# Consume a leading RST field list into report metadata on
+# <tt>doc</tt>: <tt>:title:</tt>, <tt>:author:</tt> (repeatable),
+# <tt>:trnumber:</tt>, <tt>:date:</tt>, <tt>:abstract:</tt>,
+# <tt>:docclass:</tt>. Continuation lines are indented.
+# <[param doc Document being filled]>
+# <[param lines full source line list]>
+# <[returns 1-based index of the first non-field line]>
+# </p>
+procedure parseDocFields(doc, lines)
+    local i, limit, name, val, cont, ln, authors
+    i := 1
+    limit := *lines
+    while i <= limit & isBlank(lines[i]) do
+        i +:= 1
+    authors := doc.getAuthors()
+    while i <= limit do {
+        ln := lines[i]
+        if isBlank(ln) then {
+            # Blank ends the field list only after at least one field.
+            i +:= 1
+            break
+            }
+        name := &null
+        val := ""
+        ln ? {
+            if =":" & (name := tab(find(":"))) then {
+                move(1)
+                tab(many(' '))
+                val := tab(0)
+                }
+            }
+        if /name then
+            break
+        name := map(trim(name, ' ', 0), &ucase, &lcase)
+        val := trim(val, ' ', 0)
+        i +:= 1
+        while i <= limit & not isBlank(lines[i]) &
+              (*lines[i] > 0) & any(' \t', lines[i][1]) do {
+            cont := trim(lines[i], ' \t', 0)
+            if *val > 0 then
+                val ||:= " "
+            val ||:= cont
+            i +:= 1
+            }
+        case name of {
+            "title":
+                doc.setTitle(val)
+            "author":
+                if *val > 0 then
+                    put(authors, val)
+            "trnumber" | "tr-number":
+                doc.setTrNumber(val)
+            "date":
+                doc.setDate(val)
+            "abstract":
+                doc.setAbstract(val)
+            "docclass" | "doc-class":
+                doc.setDocClass(map(val, &ucase, &lcase))
+            default: {
+                # Unknown leading fields still consume the list so
+                # they are not re-parsed as body prose.
+                }
+            }
+        }
+    return i
+end
+
+# <p>
+# Core recursive-descent block parser. Consumes
+# <tt>lines[i..limit]</tt> at nesting depth <tt>level</tt>
+# (0 = document top level, matching <tt>Section</tt> level numbering
+# in <tt>node.icn</tt>), attaching parsed <tt>Block</tt> nodes as
+# children of <tt>container</tt>.
+# <[param parser the owning <tt>Parser</tt> (for directive expansion)]>
+# <[param lines list of source lines]>
+# <[param i 1-based start index into <tt>lines</tt>]>
+# <[param limit last index (inclusive) to consider]>
+# <[param container parent <tt>Block</tt> to attach children to]>
+# <[param level current section-nesting depth, used for heading level
+#         bookkeeping and to decide when an underlined heading closes
+#         the current section rather than opening a nested one -- see
+#         <tt>headingLevelFor()</tt>]>
+# <[returns the index just past the last line consumed]>
+# </p>
+procedure parseBlocks(parser, lines, i, limit, container, level)
+    local blankRun, para, curSection, hLevel, l
+
+    curSection := container
+    while i <= limit do {
+        # Skip blank lines between blocks.
+        if isBlank(lines[i]) then {
+            i +:= 1
+            next
+            }
+
+        # Explicit label target: ".. _name:" applies to the next
+        # section, figure, or table.
+        if isLabelTarget(lines[i]) then {
+            parser.setPendingLabel(labelTargetName(lines[i]))
+            i +:= 1
+            next
+            }
+
+        # Underline-style heading: a non-blank line followed by a line
+        # of repeated punctuation at least as long as the title.
+        if isHeadingAt(lines, i, limit) then {
+            hLevel := headingLevelFor(lines[i+1][1])
+            curSection := Section()
+            curSection.setTitle(trim(lines[i], ' ', 0))
+            curSection.setLevel(hLevel)
+            if l := parser.takePendingLabel() then
+                curSection.setLabel(l)
+            container.addChild(curSection)
+            i +:= 2
+            next
+            }
+
+        # Directive: ".. name:: arg", body is every following line
+        # indented at least as deep as the first non-blank body line.
+        if isDirectiveLine(lines[i]) then {
+            i := parseDirective(parser, lines, i, limit, curSection)
+            next
+            }
+
+        # Bullet list: a run of consecutive "- "/"* " lines.
+        if isBulletLine(lines[i]) then {
+            i := parseBulletList(lines, i, limit, curSection)
+            next
+            }
+
+        # Numbered list: "1. "/"1) "/"#. " items.
+        if isEnumLine(lines[i]) then {
+            i := parseEnumList(lines, i, limit, curSection)
+            next
+            }
+
+        # Grid table (+---+ borders) or simple table (==== separators).
+        if isGridTableSep(lines[i]) then {
+            i := parseGridTable(parser, lines, i, limit, curSection)
+            next
+            }
+        if isTableSepLine(lines[i]) then {
+            i := parseSimpleTable(parser, lines, i, limit, curSection)
+            next
+            }
+
+        # Definition list: term line + immediately indented body.
+        if isDefListAt(lines, i, limit) then {
+            i := parseDefinitionList(lines, i, limit, curSection)
+            next
+            }
+
+        # RST literal block: a line ending in "::" followed by an
+        # indented block (optionally after a blank line).
+        if isLiteralIntro(lines[i]) then {
+            i := parseLiteralBlock(lines, i, limit, curSection)
+            next
+            }
+
+        # Otherwise: an ordinary paragraph -- consume until the next
+        # blank line, heading, directive, or list line.
+        i := parseParagraph(lines, i, limit, curSection)
+        }
+
+    return i
+end
+
+# <p>
+# Consume consecutive non-blank lines as one paragraph, stopping at a
+# blank line, heading, directive, bullet, or literal introducer.
+# Always advances at least one line so a too-short underline cannot
+# leave <tt>i</tt> unchanged (that used to infinite-loop in
+# <tt>parseBlocks</tt>).
+# <[param lines list of source lines]>
+# <[param i 1-based start index]>
+# <[param limit last index (inclusive)]>
+# <[param container parent to receive the new <tt>Paragraph</tt>]>
+# <[returns the index just past the last line consumed]>
+# </p>
+procedure parseParagraph(lines, i, limit, container)
+    local buf, para
+    buf := []
+    while i <= limit & not isBlank(lines[i]) &
+          not isDirectiveLine(lines[i]) & not isLabelTarget(lines[i]) &
+          not isBulletLine(lines[i]) & not isEnumLine(lines[i]) &
+          not isTableSepLine(lines[i]) & not isGridTableSep(lines[i]) &
+          not isLiteralIntro(lines[i]) &
+          not isHeadingAt(lines, i, limit) do {
+        put(buf, trim(lines[i]))
+        i +:= 1
+        }
+    # Always make progress: a too-short underline must not leave i
+    # unchanged (that used to infinite-loop in parseBlocks).
+    if *buf = 0 & i <= limit then {
+        put(buf, trim(lines[i]))
+        i +:= 1
+        }
+    para := Paragraph()
+    every put(para.getChildren(), !parseInline(joinLines(buf)))
+    container.addChild(para)
+    return i
+end
+
+# <p>
+# RST <tt>"::"</tt> literal block. The introducer line may be just
+# <tt>"::"</tt> or end with <tt>"::"</tt> (e.g. <tt>"Unicon::"</tt>).
+# Following indented lines become a <tt>CodeBlock</tt> with common
+# leading indent stripped; relative indent inside the block is
+# preserved.
+# <[param lines list of source lines]>
+# <[param i index of the introducer line]>
+# <[param limit last index (inclusive)]>
+# <[param container parent to receive optional leading
+#         <tt>Paragraph</tt> and/or <tt>CodeBlock</tt>]>
+# <[returns the index just past the last line consumed]>
+# </p>
+procedure parseLiteralBlock(lines, i, limit, container)
+    local text, body, cb, para, minInd, ln, stripped, j, n
+
+    text := literalIntroText(trim(lines[i]))
+    i +:= 1
+    while i <= limit & isBlank(lines[i]) do
+        i +:= 1
+
+    body := []
+    while i <= limit do {
+        if isBlank(lines[i]) then {
+            # Blank line inside the block only if more indented content follows.
+            j := i + 1
+            while j <= limit & isBlank(lines[j]) do
+                j +:= 1
+            if j <= limit & isIndented(lines[j]) then {
+                put(body, "")
+                i +:= 1
+                next
+                }
+            break
+            }
+        if not isIndented(lines[i]) then
+            break
+        put(body, rtrimLiteralLine(lines[i]))
+        i +:= 1
+        }
+
+    if *text > 0 then {
+        para := Paragraph()
+        every put(para.getChildren(), !parseInline(text))
+        container.addChild(para)
+        }
+
+    if *body > 0 then {
+        minInd := literalMinIndent(body)
+        cb := CodeBlock()
+        every ln := !body do {
+            if *ln = 0 then
+                cb.addLine("")
+            else {
+                stripped := ln
+                n := minInd
+                stripped ? {
+                    every 1 to n do {
+                        if any(' ') then move(1)
+                        else break
+                        }
+                    stripped := "" || tab(0)
+                    }
+                cb.addLine(stripped)
+                }
+            }
+        # Bare ``::`` blocks have no language; mark Unicon samples so
+        # HTML gets ``language-unicon`` highlighting.
+        if looksLikeUniconCode(cb.getLines()) then
+            cb.setLanguage("unicon")
+        container.addChild(cb)
+        }
+
+    return i
+end
+
+# <p>
+# True when a literal/code body looks like Unicon or Icon source.
+# Used to default language for RST <tt>::</tt> literal blocks.
+# <[param lines list of code lines]>
+# <[fails if the body does not look like Unicon]>
+# </p>
+procedure looksLikeUniconCode(lines)
+    local ln, t, hits
+    hits := 0
+    every ln := !lines do {
+        t := trim(ln)
+        if t == "end" then
+            hits +:= 2
+        if match("procedure ", t) | match("method ", t) |
+           match("class ", t) | match("record ", t) |
+           match("invocable ", t) then
+            hits +:= 2
+        if match("every ", t) | match("suspend ", t) |
+           match("create ", t) | match("thread ", t) |
+           match("initial ", t) | match("global ", t) |
+           match("local ", t) | match("static ", t) |
+           match("link ", t) then
+            hits +:= 1
+        if find("spawn(", t) | find("WAttrib(", t) |
+           find("&window", t) | find("&subject", t) |
+           find("&main", t) then
+            hits +:= 1
+        if match("Draw", t) | match("Fill", t) |
+           match("open(", t) | match("write(", t) |
+           match("Fg(", t) | match("Bg(", t) |
+           match("Texcoord(", t) | match("Event(", t) then
+            hits +:= 1
+        # Short samples like ``W := open("win", "gl")``
+        if find(":=", t) & (find("open(", t) | find("WAttrib(", t) |
+           find("Draw", t) | find("Fill", t) | find("create ", t) |
+           find("spawn(", t) | find("thread ", t)) then
+            hits +:= 2
+        }
+    if hits >= 2 then
+        return
+    fail
+end
+
+# <p>
+# True when <tt>s</tt> is an RST literal-block introducer: a non-empty
+# line ending in <tt>"::"</tt> that is not a <tt>".. name::"</tt>
+# directive.
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not a literal introducer]>
+# </p>
+procedure isLiteralIntro(s)
+    local t
+    t := trim(\s | "")
+    if *t < 2 then fail
+    # Do not treat ".. name::" directives as literal introducers.
+    if isDirectiveLine(t) then fail
+    return t[*t-1:0] == "::"
+end
+
+# <p>
+# Text shown before the literal block. RST keeps one colon when
+# <tt>"::"</tt> is glued to a word (<tt>"Unicon::"</tt> ->
+# <tt>"Unicon:"</tt>); both colons are dropped when preceded by
+# whitespace (<tt>"Unicon ::"</tt> -> <tt>"Unicon"</tt>). A lone
+# <tt>"::"</tt> yields empty text.
+# <[param s the introducer line (already right-trimmed)]>
+# <[returns the paragraph text before the code block, or <tt>""</tt>]>
+# </p>
+procedure literalIntroText(s)
+    local t
+    t := trim(s)
+    if t == "::" then
+        return ""
+    if *t >= 3 & t[*t-2] == " " & t[*t-1:0] == "::" then
+        return trim(t[1:*t-1])   # drop " ::"
+    # glued "::" -> keep one colon ("Unicon::" -> "Unicon:")
+    return t[1:*t]
+end
+
+# <p>
+# Right-trim a line inside a literal block (trailing spaces only).
+# <[param s a literal-block body line]>
+# <[returns <tt>s</tt> with trailing spaces removed]>
+# </p>
+procedure rtrimLiteralLine(s)
+    return trim(s)
+end
+
+# <p>
+# Smallest leading-space indent among non-empty lines in a literal
+# body; used to strip the common indent from a <tt>CodeBlock</tt>.
+# <[param body list of literal-block body lines]>
+# <[returns the minimum indent count, or 0 if all lines are empty]>
+# </p>
+procedure literalMinIndent(body)
+    local ln, n, minInd
+    minInd := &null
+    every ln := !body do {
+        if *ln = 0 then next
+        n := 0
+        ln ? {
+            while any(' ') do {
+                move(1)
+                n +:= 1
+                }
+            }
+        if /minInd | n < minInd then
+            minInd := n
+        }
+    return \minInd | 0
+end
+
+# <p>
+# Parse a run of consecutive bullet lines (<tt>"- "</tt> /
+# <tt>"* "</tt>), including indented continuation lines, into a
+# <tt>BulletList</tt> of <tt>ListItem</tt>s.
+# <[param lines list of source lines]>
+# <[param i index of the first bullet line]>
+# <[param limit last index (inclusive)]>
+# <[param container parent to receive the new <tt>BulletList</tt>]>
+# <[returns the index just past the last line consumed]>
+# </p>
+procedure parseBulletList(lines, i, limit, container)
+    local blist, item, buf
+    blist := BulletList()
+    container.addChild(blist)
+    while i <= limit & isBulletLine(lines[i]) do {
+        buf := [stripBulletMarker(lines[i])]
+        i +:= 1
+        # Continuation lines: indented, non-blank, not a new bullet.
+        while i <= limit & not isBlank(lines[i]) & not isBulletLine(lines[i]) &
+              not isEnumLine(lines[i]) & isIndented(lines[i]) do {
+            put(buf, trim(lines[i], ' ', 1))
+            i +:= 1
+            }
+        item := ListItem()
+        every put(item.getChildren(), !parseInline(joinLines(buf)))
+        blist.addChild(item)
+        }
+    return i
+end
+
+# <p>
+# Parse a run of consecutive numbered-list lines into an
+# <tt>EnumList</tt> of <tt>ListItem</tt>s. The first item's number
+# (when not <tt>"#"</tt>) becomes <tt>startAt</tt>.
+# <[param lines list of source lines]>
+# <[param i index of the first enum line]>
+# <[param limit last index (inclusive)]>
+# <[param container parent to receive the new <tt>EnumList</tt>]>
+# <[returns the index just past the last line consumed]>
+# </p>
+procedure parseEnumList(lines, i, limit, container)
+    local elist, item, buf, startAt
+    elist := EnumList()
+    startAt := enumStartNumber(lines[i])
+    elist.setStartAt(startAt)
+    container.addChild(elist)
+    while i <= limit & isEnumLine(lines[i]) do {
+        buf := [stripEnumMarker(lines[i])]
+        i +:= 1
+        while i <= limit & not isBlank(lines[i]) & not isEnumLine(lines[i]) &
+              not isBulletLine(lines[i]) & isIndented(lines[i]) do {
+            put(buf, trim(lines[i], ' ', 1))
+            i +:= 1
+            }
+        item := ListItem()
+        every put(item.getChildren(), !parseInline(joinLines(buf)))
+        elist.addChild(item)
+        }
+    return i
+end
+
+# <p>
+# Parse a <tt>".. name:: arg"</tt> directive and its indented body,
+# expand it via <tt>parser.registry</tt>, and attach the result to
+# <tt>container</tt>. If expansion fails, the raw
+# <tt>RawDirective</tt> is attached instead.
+# <[param parser the owning <tt>Parser</tt>]>
+# <[param lines list of source lines]>
+# <[param i index of the directive header line]>
+# <[param limit last index (inclusive)]>
+# <[param container parent for the expanded node(s)]>
+# <[returns the index just past the last body line consumed]>
+# </p>
+procedure parseDirective(parser, lines, i, limit, container)
+    local head, dname, arg, body, raw, expanded, indentCol, nSpaces, j
+
+    head := lines[i]
+    head ? {
+        tab(match(".. "))
+        dname := tab(find("::"))
+        move(2)
+        tab(many(' '))
+        arg := trim(tab(0), ' ', 0)
+        }
+    i +:= 1
+    body := []
+    # Body indent comes from the first non-blank indented line (not a
+    # fixed width). Later lines must be at least that deep; shallower
+    # content ends the directive.
+    indentCol := &null
+    while i <= limit do {
+        if isBlank(lines[i]) then {
+            # Keep the blank only when more body content follows at
+            # the established (or still-to-be-measured) indent.
+            j := i + 1
+            while j <= limit & isBlank(lines[j]) do
+                j +:= 1
+            if j > limit then
+                break
+            if not isIndented(lines[j]) then
+                break
+            if \indentCol & leadingSpaceCount(lines[j]) < indentCol then
+                break
+            put(body, "")
+            i +:= 1
+            next
+            }
+        if not isIndented(lines[i]) then
+            break
+        nSpaces := leadingSpaceCount(lines[i])
+        if /indentCol then
+            indentCol := nSpaces
+        if nSpaces < indentCol then
+            break
+        put(body, stripIndent(lines[i], indentCol))
+        i +:= 1
+        }
+    # Trim trailing blank lines collected as part of the body. pull()
+    # removes from the back of the list; pop() (front-removal) would
+    # silently trim the wrong end.
+    while *body > 0 & body[-1] == "" do pull(body) | break
+
+    raw := RawDirective()
+    raw.setName(dname)
+    raw.setArg(arg)
+    raw.setBodyLines(body)
+
+    # Handlers receive the Parser (src path, include stack, registry).
+    expanded := parser.registry.expand(raw, parser) | raw
+    if type(expanded) == "list" then
+        every container.addChild(!expanded)
+    else
+        container.addChild(expanded)
+
+    return i
+end
+
+# <p>
+# Line-classification and small string helpers used by the block
+# parsers above.
+# </p>
+
+# <p>
+# True when <tt>s</tt> is empty or contains only whitespace.
+# <[param s a source line]>
+# </p>
+procedure isBlank(s)
+    return trim(s, ' ', 0) == ""
+end
+
+# <p>
+# True when <tt>lines[i]</tt> is a title and <tt>lines[i+1]</tt> is a
+# long-enough underline.
+# <[param lines list of source lines]>
+# <[param i candidate title-line index]>
+# <[param limit last index (inclusive)]>
+# <[fails if there is no heading at <tt>i</tt>]>
+# </p>
+procedure isHeadingAt(lines, i, limit)
+    return i < limit & isUnderline(lines[i+1]) &
+           *lines[i+1] >= *trim(lines[i])
+end
+
+# <p>
+# True when <tt>s</tt> is a non-empty line of repeated heading
+# underline characters (<tt>=</tt>, <tt>-</tt>, <tt>~</tt>,
+# <tt>^</tt>, or <tt>"</tt>).
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not an underline]>
+# </p>
+procedure isUnderline(s)
+    local t
+    /s := ""
+    t := trim(s, ' ', 0)
+    if *t = 0 then fail
+    return t ? (tab(many('=-~^"')), pos(0))
+end
+
+# <p>
+# Map an underline character to a 1-based section level
+# (<tt>=</tt>=1, <tt>-</tt>=2, <tt>~</tt>=3, <tt>^</tt>=4; anything
+# else defaults to 4).
+# <[param ch the first character of an underline line]>
+# <[returns an integer section level]>
+# </p>
+procedure headingLevelFor(ch)
+    static order
+    initial order := "=-~^"
+    return (find(ch, order) | 4)
+end
+
+# <p>
+# True when <tt>s</tt> looks like <tt>".. name:: ..."</tt>.
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not a directive header]>
+# </p>
+procedure isDirectiveLine(s)
+    return s ? (=".. ", find("::"))
+end
+
+# <p>
+# True when <tt>s</tt> is an explicit label target
+# <tt>".. _name:"</tt> (single trailing colon, not a <tt>::</tt>
+# directive).
+# <[param s a source line]>
+# <[fails if not a label target]>
+# </p>
+procedure isLabelTarget(s)
+    local t
+    t := trim(s, ' ', 0)
+    return t ? (=".. _", tab(many(&letters ++ &digits ++ '_-.')) , =":", pos(0))
+end
+
+# <p>
+# Extract the label name from a <tt>".. _name:"</tt> line.
+# <[param s a label-target line]>
+# <[returns the name string]>
+# </p>
+procedure labelTargetName(s)
+    local t, name
+    t := trim(s, ' ', 0)
+    t ? {
+        =".. _"
+        name := tab(many(&letters ++ &digits ++ '_-.'))
+        }
+    return name
+end
+
+# <p>
+# True when <tt>s</tt> is a bullet list item
+# (<tt>"- "</tt> or <tt>"* "</tt>, optionally indented).
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not a bullet line]>
+# </p>
+procedure isBulletLine(s)
+    return s ? ((tab(many(' ')) | &pos), tab(any('-*')), =" ")
+end
+
+# <p>
+# Strip the leading bullet marker and surrounding spaces from a
+# bullet line, returning the item text.
+# <[param s a bullet line]>
+# <[returns the item text after the marker]>
+# </p>
+procedure stripBulletMarker(s)
+    s ? {
+        tab(many(' ')) | &pos
+        move(1)
+        tab(many(' ')) | &pos
+        return "" || tab(0)
+        }
+end
+
+# <p>
+# True when <tt>s</tt> is a numbered list item:
+# <tt>"1. "</tt>, <tt>"1) "</tt>, or <tt>"#. "</tt> / <tt>"#) "</tt>
+# (optionally indented).
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not an enum line]>
+# </p>
+procedure isEnumLine(s)
+    return s ? ((tab(many(' ')) | &pos),
+                (tab(many(&digits)) | ="#"),
+                tab(any('.)')),
+                =" ")
+end
+
+# <p>
+# Strip the leading enum marker from a numbered-list line.
+# <[param s an enum line]>
+# <[returns the item text after the marker]>
+# </p>
+procedure stripEnumMarker(s)
+    s ? {
+        tab(many(' ')) | &pos
+        (tab(many(&digits)) | move(1))
+        move(1)
+        tab(many(' ')) | &pos
+        return "" || tab(0)
+        }
+end
+
+# <p>
+# Starting number for an enum line: the leading digits, or <tt>1</tt>
+# when the marker is <tt>"#"</tt>.
+# <[param s an enum line]>
+# <[returns integer start value]>
+# </p>
+procedure enumStartNumber(s)
+    local n
+    s ? {
+        tab(many(' ')) | &pos
+        if ="#" then
+            return 1
+        n := integer(tab(many(&digits))) | return 1
+        return n
+        }
+    return 1
+end
+
+# <p>
+# True when <tt>s</tt> is a simple-table separator: only
+# <tt>=</tt> and spaces, with at least one <tt>=</tt>.
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not a table separator]>
+# </p>
+procedure isTableSepLine(s)
+    local t
+    t := trim(\s | "", ' ', 0)
+    if *t = 0 then fail
+    if not find("=", t) then fail
+    return t ? (tab(many('= ')), pos(0))
+end
+
+# <p>
+# Column character spans from a separator line. Each run of
+# <tt>=</tt> becomes <tt>[start, stop]</tt> (1-based inclusive).
+# <[param sep a table separator line]>
+# <[returns a list of <tt>[start, stop]</tt> pairs]>
+# </p>
+procedure tableColumnBounds(sep)
+    local cols, start, i, c
+    cols := []
+    start := &null
+    every i := 1 to *sep do {
+        c := sep[i]
+        if c == "=" then {
+            if /start then
+                start := i
+            }
+        else if \start then {
+            put(cols, [start, i - 1])
+            start := &null
+            }
+        }
+    if \start then
+        put(cols, [start, *sep])
+    return cols
+end
+
+# <p>
+# Split a table row line into cell strings using column bounds.
+# <[param line a table data line]>
+# <[param cols list of <tt>[start, stop]</tt> bounds]>
+# <[returns a list of trimmed cell strings]>
+# </p>
+procedure splitTableRow(line, cols)
+    local cells, b, piece, a, z
+    cells := []
+    /line := ""
+    every b := !cols do {
+        a := b[1]
+        z := b[2]
+        if a > *line then
+            piece := ""
+        else if z > *line then
+            piece := line[a:0]
+        else
+            piece := line[a:z + 1]
+        put(cells, trim(\piece | "", ' ', 0))
+        }
+    return cells
+end
+
+# <p>
+# Build a <tt>TableRow</tt> from cell strings (inline-parsed).
+# <[param cellStrs list of cell text strings]>
+# <[param asHeader non-null to mark the row as a header]>
+# <[returns a <tt>TableRow</tt>]>
+# </p>
+procedure mkTableRowFromCells(cellStrs, asHeader)
+    local row, cell, text
+    row := TableRow()
+    if \asHeader then
+        row.setHeader()
+    every text := !cellStrs do {
+        cell := TableCell()
+        every put(cell.getChildren(), !parseInline(text))
+        row.addChild(cell)
+        }
+    return row
+end
+
+# <p>
+# Build a <tt>TableRow</tt> from span specs: each element is
+# <tt>[text, colspan]</tt> (and optional <tt>rowspan</tt> as a third
+# field).
+# <[param specs list of <tt>[text, colspan]</tt> lists]>
+# <[param asHeader non-null to mark the row as a header]>
+# <[returns a <tt>TableRow</tt>]>
+# </p>
+procedure mkTableRowFromSpanCells(specs, asHeader)
+    local row, cell, spec, text, cs, rs
+    row := TableRow()
+    if \asHeader then
+        row.setHeader()
+    every spec := !specs do {
+        text := spec[1]
+        cs := integer(\spec[2]) | 1
+        if cs < 1 then cs := 1
+        rs := integer(\spec[3]) | 1
+        if rs < 1 then rs := 1
+        cell := TableCell()
+        if cs > 1 then
+            cell.setColSpan(cs)
+        if rs > 1 then
+            cell.setRowSpan(rs)
+        every put(cell.getChildren(), !parseInline(\text | ""))
+        row.addChild(cell)
+        }
+    return row
+end
+
+# <p>
+# Parse a simple RST table starting at a separator line:
+# sep / header / sep / body… / sep.
+# <[param lines list of source lines]>
+# <[param i index of the opening separator]>
+# <[param limit last index (inclusive)]>
+# <[param container parent for the new <tt>TableNode</tt>]>
+# <[returns the index just past the table]>
+# </p>
+procedure parseSimpleTable(parser, lines, i, limit, container)
+    local cols, tbl, headerCells, rowCells, l
+    cols := tableColumnBounds(lines[i])
+    if *cols = 0 then {
+        # Not a usable separator; skip the line as a no-op advance.
+        return i + 1
+        }
+    i +:= 1
+    if i > limit | isBlank(lines[i]) | isTableSepLine(lines[i]) then
+        return i
+    headerCells := splitTableRow(lines[i], cols)
+    i +:= 1
+    if i > limit | not isTableSepLine(lines[i]) then
+        return i
+    i +:= 1
+    tbl := TableNode()
+    if l := parser.takePendingLabel() then
+        tbl.setLabel(l)
+    tbl.setHeaderRow(mkTableRowFromCells(headerCells, 1))
+    while i <= limit & not isBlank(lines[i]) & not isTableSepLine(lines[i]) &
+          not isGridTableSep(lines[i]) do {
+        rowCells := splitTableRow(lines[i], cols)
+        tbl.addChild(mkTableRowFromCells(rowCells, &null))
+        i +:= 1
+        }
+    if i <= limit & isTableSepLine(lines[i]) then
+        i +:= 1
+    container.addChild(tbl)
+    return i
+end
+
+# <p>
+# True when <tt>s</tt> is a grid-table border line
+# (<tt>"+---+---+"</tt> style).
+# <[param s a source line]>
+# <[fails if not a grid separator]>
+# </p>
+procedure isGridTableSep(s)
+    local t, i, c
+    t := trim(s, ' ', 0)
+    if *t < 3 then fail
+    if t[1] ~== "+" | t[*t] ~== "+" then fail
+    every i := 1 to *t do {
+        c := t[i]
+        if c ~== "+" & c ~== "-" & c ~== "=" then fail
+        }
+    return
+end
+
+# <p>
+# Parse a grid table: border / row / border / … with optional
+# header separator using <tt>"="</tt> in the border. Consecutive
+# data lines between borders merge into one logical row. Missing
+# <tt>|</tt> at a column boundary starts a column span.
+# <[param parser owning Parser (pending labels)]>
+# <[param lines source lines]>
+# <[param i index of the opening border]>
+# <[param limit last index]>
+# <[param container parent]>
+# <[returns index past the table]>
+# </p>
+procedure parseGridTable(parser, lines, i, limit, container)
+    local tbl, cols, l, border, bodyRows, headerRows, sawHeaderSep, i2
+    local specs
+    cols := gridColumnBounds(lines[i])
+    if *cols = 0 then
+        return i + 1
+    bodyRows := []
+    headerRows := []
+    sawHeaderSep := &null
+    i +:= 1
+    while i <= limit do {
+        if isBlank(lines[i]) then
+            break
+        if isGridTableSep(lines[i]) then {
+            border := trim(lines[i], ' ', 0)
+            # A border with '=' ends the header section.
+            if find("=", border) & /sawHeaderSep then {
+                headerRows := bodyRows
+                bodyRows := []
+                sawHeaderSep := 1
+                }
+            i +:= 1
+            if i > limit | isBlank(lines[i]) |
+               not (isGridTableSep(lines[i]) | isGridTableRow(lines[i])) then
+                break
+            next
+            }
+        if not isGridTableRow(lines[i]) then
+            break
+        # One logical row: merge consecutive data lines until a border.
+        specs := splitGridRowSpans(lines[i], cols)
+        i +:= 1
+        while i <= limit & isGridTableRow(lines[i]) do {
+            mergeGridSpanLines(specs, splitGridRowSpans(lines[i], cols))
+            i +:= 1
+            }
+        put(bodyRows, mkTableRowFromSpanCells(specs, &null))
+        }
+    tbl := TableNode()
+    if l := parser.takePendingLabel() then
+        tbl.setLabel(l)
+    if *headerRows > 0 then {
+        headerRows[1].setHeader()
+        tbl.setHeaderRow(headerRows[1])
+        every i2 := 2 to *headerRows do
+            tbl.addChild(headerRows[i2])
+        }
+    every tbl.addChild(!bodyRows)
+    container.addChild(tbl)
+    return i
+end
+
+# <p>
+# True when <tt>s</tt> looks like a grid table data row
+# (<tt>"| a | b |"</tt>).
+# <[param s a source line]>
+# <[fails if not a grid row]>
+# </p>
+procedure isGridTableRow(s)
+    local t
+    t := trim(s, ' ', 0)
+    return *t >= 2 & t[1] == "|" & t[-1] == "|"
+end
+
+# <p>
+# Column start/end bounds from a <tt>"+---+---+"</tt> border.
+# <[param sep border line]>
+# <[returns list of <tt>[start, stop]</tt> pairs (1-based, stop exclusive)]>
+# </p>
+procedure gridColumnBounds(sep)
+    local cols, i, start, t
+    t := trim(sep, ' ', 2)
+    # Align to first '+'.
+    cols := []
+    i := 1
+    while i <= *t do {
+        if t[i] == "+" then {
+            start := i + 1
+            i +:= 1
+            while i <= *t & t[i] ~== "+" do
+                i +:= 1
+            if i <= *t & start < i then
+                put(cols, [start, i])
+            }
+        else
+            i +:= 1
+        }
+    return cols
+end
+
+# <p>
+# Split a <tt>"| a | b |"</tt> row using column bounds from the border.
+# <[param row data row line]>
+# <[param cols bounds from <tt>gridColumnBounds</tt>]>
+# <[returns list of cell strings]>
+# </p>
+procedure splitGridRow(row, cols)
+    local out, b, cell
+    out := []
+    every b := !cols do {
+        if b[1] <= *row then
+            cell := trim(row[b[1]:b[2]] | "", ' ', 0)
+        else
+            cell := ""
+        put(out, cell)
+        }
+    return out
+end
+
+# <p>
+# Split a grid data row into <tt>[text, colspan]</tt> specs. A missing
+# <tt>|</tt> at an internal column boundary extends the previous cell.
+# <[param row data row line]>
+# <[param cols bounds from <tt>gridColumnBounds</tt>]>
+# <[returns list of <tt>[text, colspan]</tt>]>
+# </p>
+procedure splitGridRowSpans(row, cols)
+    local out, i, j, start, stop, span, piece, bound
+    out := []
+    /row := ""
+    i := 1
+    while i <= *cols do {
+        start := cols[i][1]
+        span := 1
+        j := i
+        while j < *cols do {
+            bound := cols[j][2]
+            if bound <= *row & row[bound] == "|" then
+                break
+            span +:= 1
+            j +:= 1
+            }
+        stop := cols[j][2]
+        if start > *row then
+            piece := ""
+        else if stop > *row then
+            piece := row[start:0]
+        else
+            piece := row[start:stop]
+        put(out, [trim(\piece | "", ' ', 0), span])
+        i := j + 1
+        }
+    return out
+end
+
+# <p>
+# Append a second span-line's cell texts onto <tt>specs</tt> (same
+# colspan structure), joining with a space.
+# <[param specs mutable list of <tt>[text, colspan]</tt>]>
+# <[param more list of <tt>[text, colspan]</tt> from the next line]>
+# </p>
+procedure mergeGridSpanLines(specs, more)
+    local i, n, extra
+    n := *specs
+    if *more < n then
+        n := *more
+    every i := 1 to n do {
+        extra := trim(\more[i][1] | "", ' ', 0)
+        if *extra > 0 then {
+            if *specs[i][1] > 0 then
+                specs[i][1] := specs[i][1] || " " || extra
+            else
+                specs[i][1] := extra
+            }
+        }
+    return
+end
+
+# <p>
+# True when <tt>lines[i]</tt> is a definition-list term: not indented,
+# not another block starter, and the next line is indented body text.
+# <[param lines list of source lines]>
+# <[param i candidate term index]>
+# <[param limit last index (inclusive)]>
+# <[fails if this is not a definition-list start]>
+# </p>
+procedure isDefListAt(lines, i, limit)
+    if i >= limit then fail
+    if isBlank(lines[i]) then fail
+    if leadingSpaceCount(lines[i]) > 0 then fail
+    if isDirectiveLine(lines[i]) | isLabelTarget(lines[i]) |
+       isBulletLine(lines[i]) | isEnumLine(lines[i]) |
+       isTableSepLine(lines[i]) | isGridTableSep(lines[i]) |
+       isLiteralIntro(lines[i]) | isHeadingAt(lines, i, limit) then
+        fail
+    return isIndented(lines[i + 1])
+end
+
+# <p>
+# Parse one or more consecutive definition-list items into a
+# <tt>DefinitionList</tt>.
+# <[param lines list of source lines]>
+# <[param i index of the first term]>
+# <[param limit last index (inclusive)]>
+# <[param container parent for the new list]>
+# <[returns the index just past the list]>
+# </p>
+procedure parseDefinitionList(lines, i, limit, container)
+    local dlist, item, term, body, para, indentCol
+    dlist := DefinitionList()
+    container.addChild(dlist)
+    while i <= limit & isDefListAt(lines, i, limit) do {
+        term := trim(lines[i], ' ', 0)
+        i +:= 1
+        indentCol := leadingSpaceCount(lines[i])
+        body := []
+        while i <= limit & not isBlank(lines[i]) &
+              leadingSpaceCount(lines[i]) >= indentCol do {
+            put(body, stripIndent(lines[i], indentCol))
+            i +:= 1
+            }
+        # Optional blank lines inside a multi-paragraph definition:
+        # keep reading while the next non-blank stays indented.
+        while i <= limit & isBlank(lines[i]) do {
+            if i < limit & leadingSpaceCount(lines[i + 1]) >= indentCol &
+               not isBlank(lines[i + 1]) then {
+                put(body, "")
+                i +:= 1
+                while i <= limit & not isBlank(lines[i]) &
+                      leadingSpaceCount(lines[i]) >= indentCol do {
+                    put(body, stripIndent(lines[i], indentCol))
+                    i +:= 1
+                    }
+                }
+            else
+                break
+            }
+        item := DefinitionItem()
+        item.setTerm(term)
+        fillDefinitionBody(item, body)
+        dlist.addChild(item)
+        # Skip a single blank between items.
+        if i <= limit & isBlank(lines[i]) & i < limit &
+           isDefListAt(lines, i + 1, limit) then
+            i +:= 1
+        }
+    return i
+end
+
+# <p>
+# Attach one or more paragraphs to a definition item, splitting
+# <tt>body</tt> on blank lines.
+# <[param item a <tt>DefinitionItem</tt>]>
+# <[param body list of body lines (blank line = paragraph break)]>
+# </p>
+procedure fillDefinitionBody(item, body)
+    local chunk, ln, para
+    chunk := []
+    every ln := !body do {
+        if ln == "" then {
+            if *chunk > 0 then {
+                para := Paragraph()
+                every put(para.getChildren(), !parseInline(joinLines(chunk)))
+                item.addChild(para)
+                chunk := []
+                }
+            }
+        else
+            put(chunk, ln)
+        }
+    if *chunk > 0 then {
+        para := Paragraph()
+        every put(para.getChildren(), !parseInline(joinLines(chunk)))
+        item.addChild(para)
+        }
+    else if *item.getChildren() = 0 then {
+        para := Paragraph()
+        item.addChild(para)
+        }
+    return
+end
+
+# <p>
+# True when <tt>s</tt> starts with one or more spaces and has
+# non-space content afterward (used for directive bodies, list
+# continuations, and literal blocks).
+# <[param s a source line]>
+# <[fails if <tt>s</tt> is not indented content]>
+# </p>
+procedure isIndented(s)
+    s ? {
+        tab(many(' ')) | fail
+        if pos(0) then fail
+        return
+        }
+end
+
+# <p>
+# Count leading space characters on <tt>s</tt> (tabs are not treated
+# as spaces).
+# <[param s a source line]>
+# <[returns the leading-space count (0 if none)]>
+# </p>
+procedure leadingSpaceCount(s)
+    local n
+    n := 0
+    /s := ""
+    s ? {
+        while any(' ') do {
+            move(1)
+            n +:= 1
+            }
+        }
+    return n
+end
+
+# <p>
+# Remove up to <tt>n</tt> leading spaces from <tt>s</tt>.
+# <[param s a source line]>
+# <[param n maximum number of spaces to strip]>
+# <[returns the remainder of the line]>
+# </p>
+procedure stripIndent(s, n)
+    local i
+    s ? {
+        every i := 1 to n do {
+            if any(' ') then move(1)
+            else break
+            }
+        return "" || tab(0)
+        }
+end
+
+# <p>
+# Join a list of lines into one string with single spaces between
+# non-empty contributions (used when collapsing paragraph and list
+# item wraps).
+# <[param buf list of line strings]>
+# <[returns a single space-joined string]>
+# </p>
+procedure joinLines(buf)
+    local out, ln
+    out := ""
+    every ln := !buf do
+        out ||:= (if *out > 0 then " " else "") || ln
+    return out
+end

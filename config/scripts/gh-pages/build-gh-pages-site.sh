@@ -2,6 +2,9 @@
 # Build static tree for GitHub Pages under SITE/ (default _site).
 # Lives under config/scripts/gh-pages/; run from repository root — requires pandoc and cp.
 # Local preview (paths use /unicon/... like github.io): bash config/scripts/gh-pages/serve-local.sh
+#
+# Documentation homepage is doc/index.rst (preferred) with fallback to doc/README.md.
+# UTR and unicon HTML are built into the tree when uscribe / pandoc are available.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -33,6 +36,28 @@ BEFORE=(--include-before-body="$INCLUDE_TMP/before-body.html")
 AFTER=(--include-after-body="$INCLUDE_TMP/after-body.html")
 # COPYING and many README files have no extension — set reader to avoid pandoc warnings.
 FROM_MD=(--from=markdown)
+FROM_RST=(--from=rst)
+
+# --- Build HTML documentation trees (optional locally; expected in CI) ---
+build_doc_html() {
+  if [[ -x uni/uscribe/uscribe ]] || [[ -x bin/uscribe ]]; then
+    if command -v pdflatex >/dev/null 2>&1 || command -v xelatex >/dev/null 2>&1 || command -v lualatex >/dev/null 2>&1; then
+      echo "Building UTR PDFs (best-effort; Download links)..."
+      make -C doc/utr pdf || echo "warning: some UTR PDFs failed; continuing" >&2
+    else
+      echo "warning: no TeX engine; UTR PDF downloads will be limited" >&2
+    fi
+    echo "Building UTR HTML (uscribe)..."
+    make -C doc/utr html
+  else
+    echo "warning: uscribe not built; skipping doc/utr HTML" >&2
+  fi
+  if command -v pandoc >/dev/null 2>&1; then
+    echo "Building doc/unicon HTML..."
+    make -C doc/unicon html
+  fi
+}
+build_doc_html
 
 rm -rf "$SITE"
 mkdir -p "$SITE/doc" "$SITE/assets"
@@ -46,11 +71,21 @@ pandoc README.md -o "$SITE/index.html" \
 
 cp -a doc/. "$SITE/doc/"
 
-pandoc doc/README.md -o "$SITE/doc/index.html" \
-  "${HDR[@]}" "${BEFORE[@]}" "${AFTER[@]}" \
-  --standalone \
-  --metadata title="Unicon documentation" \
-  -t html5
+# Documentation homepage: prefer RST portal
+if [[ -f doc/index.rst ]]; then
+  pandoc "${FROM_RST[@]}" doc/index.rst -o "$SITE/doc/index.html" \
+    "${HDR[@]}" "${BEFORE[@]}" "${AFTER[@]}" \
+    --standalone \
+    --shift-heading-level-by=1 \
+    --metadata title="Unicon documentation" \
+    -t html5
+elif [[ -f doc/README.md ]]; then
+  pandoc doc/README.md -o "$SITE/doc/index.html" \
+    "${HDR[@]}" "${BEFORE[@]}" "${AFTER[@]}" \
+    --standalone \
+    --metadata title="Unicon documentation" \
+    -t html5
+fi
 
 test -f CONTRIBUTING.md && test -f COPYING
 cp CONTRIBUTING.md COPYING "$SITE/"
@@ -104,6 +139,11 @@ pandoc "$SCRIPT_DIR/stubs/doc-ib-index.md" -o "$SITE/doc/ib/index.html" \
   --metadata title="Icon implementation book (LaTeX)" \
   -t html5
 
+# Add a class on the documentation homepage for portal styling
+if [[ -f "$SITE/doc/index.html" ]]; then
+  sed -i 's/<body>/<body class="unicon-doc-home">/' "$SITE/doc/index.html"
+fi
+
 touch "$SITE/.nojekyll"
 
 # Normalize internal links for static hosting (same path prefix as nav/includes).
@@ -115,6 +155,7 @@ rewrite_site_links() {
     -e "s|href=\"\\.\\./CONTRIBUTING\\.md\"|href=\"${p}/CONTRIBUTING.html\"|g" \
     -e "s|href=\"\\.\\./\\.\\./CONTRIBUTING\\.md\"|href=\"${p}/CONTRIBUTING.html\"|g" \
     -e "s|href=\"doc/README\\.md\"|href=\"${p}/doc/\"|g" \
+    -e "s|href=\"doc/index\\.rst\"|href=\"${p}/doc/\"|g" \
     -e "s|href=\"\\.\\./doc/README\\.md\"|href=\"${p}/doc/\"|g" \
     -e "s|href=\"COPYING\"|href=\"${p}/COPYING.html\"|g" \
     -e "s|href=\"book/README\"|href=\"${p}/doc/book/\"|g" \

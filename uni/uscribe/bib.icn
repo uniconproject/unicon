@@ -1,0 +1,323 @@
+#<p>
+# Minimal BibTeX reader and citation numbering for uscribe.
+# Supports a practical subset of entry types/fields used by in-tree
+# UTRs; full BibTeX is not a goal. Citations are numbered in order of
+# first <tt>:cite:</tt> appearance (no required <tt>bibtex</tt> binary).
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
+package uscribe
+
+#<p>
+# Tracks bib databases, first-seen cite order, and numeric ids.
+# </p>
+class CitationTable (entries, order, numbers, bibPaths)
+
+    #<p>
+    # Note a cite key (idempotent for numbering).
+    # <[param key bibliography key string]>
+    #</p>
+    method noteKey(key)
+        key := trim(key, ' ', 0)
+        if *key = 0 then return
+        if /numbers[key] then {
+            put(order, key)
+            numbers[key] := *order
+            }
+        return
+    end
+
+    #<p>
+    # Register a <tt>.bib</tt> path to load before rendering.
+    # <[param path filesystem path]>
+    #</p>
+    method addBibPath(path)
+        local p
+        every p := !bibPaths do
+            if p == path then return
+        put(bibPaths, path)
+        return
+    end
+
+    #<p>
+    # Walk a Document for <tt>Cite</tt> / <tt>Bibliography</tt> nodes.
+    # <[param doc a Document]>
+    #</p>
+    method collect(doc)
+        collectWalk(doc)
+        return
+    end
+
+    method collectWalk(n)
+        local kids, k, c
+        if n.nodeType() == "Cite" then
+            every k := !n.getKeys() do
+                noteKey(k)
+        else if n.nodeType() == "Bibliography" then
+            addBibPath(n.getPath())
+        if kids := tryGetChildren(n) then
+            every c := !kids do
+                collectWalk(c)
+        return
+    end
+
+    #<p>
+    # Load every registered <tt>.bib</tt> into <tt>entries</tt>.
+    #</p>
+    method loadAll()
+        local path, tab, k
+        every path := !bibPaths do {
+            tab := parseBibFile(path) | {
+                write(&errout, "warning: could not read bibliography '",
+                      path, "'")
+                next
+                }
+            every k := key(tab) do
+                entries[k] := tab[k]
+            }
+        return
+    end
+
+    #<p>
+    # Return the 1-based citation number for <tt>key</tt>.
+    # <[param key cite key]>
+    # <[returns integer]>
+    # <[fails if key was never cited]>
+    #</p>
+    method getNumber(key)
+        return \numbers[key]
+    end
+
+    #<p>
+    # Return the entry table for <tt>key</tt> (fields + <tt>_type</tt>).
+    # <[param key cite key]>
+    # <[fails if unknown]>
+    #</p>
+    method getEntry(key)
+        return \entries[key]
+    end
+
+    #<p>
+    # Keys in first-citation order.
+    # <[returns list of key strings]>
+    #</p>
+    method getOrderedKeys()
+        return order
+    end
+
+    initially
+        entries := table()
+        order := []
+        numbers := table()
+        bibPaths := []
+end
+
+#<p>
+# Parse a <tt>.bib</tt> file into a table keyed by entry key.
+# Each value is a table of field → string, plus <tt>_type</tt>.
+# <[param path filesystem path]>
+# <[returns table of entries]>
+# <[fails if the file cannot be opened]>
+#</p>
+procedure parseBibFile(path)
+    local f, text, ln, entries
+    f := open(path, "r") | fail
+    text := ""
+    while ln := read(f) do
+        text ||:= ln || "\n"
+    close(f)
+    entries := table()
+    text ? parseBibEntries(entries)
+    return entries
+end
+
+#<p>
+# Scan the subject for <tt>@type{key, ...}</tt> entries.
+# <[param entries output table mutated in place]>
+#</p>
+procedure parseBibEntries(entries)
+    local typ, key, fields, c
+    while not pos(0) do {
+        tab(upto('@') | 0)
+        if pos(0) then break
+        if not ="@" then {
+            move(1)
+            next
+            }
+        # Skip @comment / @string / @preamble for now.
+        typ := tab(many(&letters ++ &digits ++ '_')) | {
+            move(1)
+            next
+            }
+        typ := map(typ, &ucase, &lcase)
+        if member(set(["comment","string","preamble"]), typ) then {
+            skipBibGroup()
+            next
+            }
+        tab(many(' \t\n\r'))
+        if not any("{(") then next
+        c := move(1)
+        tab(many(' \t\n\r'))
+        key := tab(many(&letters ++ &digits ++ "_:-")) | {
+            skipBibRest(c)
+            next
+            }
+        tab(many(' \t\n\r'))
+        if ="," then
+            tab(many(' \t\n\r'))
+        fields := table()
+        fields["_type"] := typ
+        parseBibFields(fields, c)
+        entries[key] := fields
+        }
+    return
+end
+
+#<p>
+# Parse field assignments until the matching close brace/paren.
+# <[param fields entry field table]>
+# <[param openTok <tt>"{"</tt> or <tt>"("</tt>]>
+#</p>
+procedure parseBibFields(fields, openTok)
+    local closeTok, name, val
+    closeTok := if openTok == "(" then ")" else "}"
+    while not pos(0) do {
+        tab(many(' \t\n\r'))
+        if =closeTok then return
+        if ="," then {
+            tab(many(' \t\n\r'))
+            next
+            }
+        name := tab(many(&letters ++ &digits ++ "_:-")) | {
+            move(1)
+            next
+            }
+        name := map(name, &ucase, &lcase)
+        tab(many(' \t\n\r'))
+        if not ="=" then next
+        tab(many(' \t\n\r'))
+        val := readBibValue() | ""
+        fields[name] := trim(val, ' \t\n\r', 0)
+        tab(many(' \t\n\r'))
+        if ="," then
+            tab(many(' \t\n\r'))
+        }
+    return
+end
+
+#<p>
+# Read one BibTeX value: braced, quoted, or bare.
+# <[returns value string]>
+#</p>
+procedure readBibValue()
+    local depth, out, c
+    if ="{" then {
+        depth := 1
+        out := ""
+        while not pos(0) & depth > 0 do {
+            c := move(1)
+            if c == "{" then {
+                depth +:= 1
+                out ||:= c
+                }
+            else if c == "}" then {
+                depth -:= 1
+                if depth > 0 then out ||:= c
+                }
+            else
+                out ||:= c
+            }
+        return stripBibBraces(out)
+        }
+    if ="\"" then {
+        out := ""
+        while not pos(0) do {
+            if ="\"" then return out
+            out ||:= move(1)
+            }
+        return out
+        }
+    return tab(many(&letters ++ &digits ++ "_:+-")) | ""
+end
+
+#<p>
+# Remove outer TeX protection braces used for capitalization,
+# e.g. <tt>{Icon}</tt> → <tt>Icon</tt>, but keep nested content.
+# <[param s raw braced value]>
+# <[returns cleaned string]>
+#</p>
+procedure stripBibBraces(s)
+    local out, depth, i, c
+    out := ""
+    depth := 0
+    every i := 1 to *s do {
+        c := s[i]
+        if c == "{" then
+            depth +:= 1
+        else if c == "}" then {
+            if depth > 0 then depth -:= 1
+            }
+        else
+            out ||:= c
+        }
+    return out
+end
+
+#<p>
+# Skip a braced/paren group after @comment/@string.
+#</p>
+procedure skipBibGroup()
+    local c
+    tab(many(' \t\n\r'))
+    if not any("{(") then return
+    c := move(1)
+    skipBibRest(c)
+    return
+end
+
+procedure skipBibRest(openTok)
+    local closeTok, depth, ch
+    closeTok := if openTok == "(" then ")" else "}"
+    depth := 1
+    while not pos(0) & depth > 0 do {
+        ch := move(1)
+        if ch == openTok then depth +:= 1
+        else if ch == closeTok then depth -:= 1
+        }
+    return
+end
+
+#<p>
+# Format one bibliography entry for display.
+# <[param key cite key]>
+# <[param entry field table]>
+# <[returns plain prose string]>
+#</p>
+procedure formatBibEntry(key, entry)
+    local parts, s, author, title, year, venue, piece
+    /entry := table()
+    parts := []
+    author := \entry["author"]
+    title := \entry["title"]
+    year := \entry["year"]
+    venue := \entry["journal"] | \entry["booktitle"] | \entry["publisher"] |
+             \entry["url"] | \entry["howpublished"]
+    if \author then put(parts, author)
+    if \title then put(parts, "\"" || title || "\"")
+    if \venue then put(parts, venue)
+    if \year then put(parts, year)
+    if *parts = 0 then
+        return key
+    s := ""
+    every piece := !parts do {
+        if *s > 0 then s ||:= ". "
+        s ||:= piece
+        }
+    if s[*s] ~== "." then s ||:= "."
+    return s
+end

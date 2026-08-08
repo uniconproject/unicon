@@ -88,8 +88,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Install Pandoc
-        run: sudo apt-get update && sudo apt-get install -y pandoc
+      - name: Install Pandoc and TeX (UTR PDFs)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc imagemagick \
+            texlive-latex-base texlive-latex-recommended \
+            texlive-fonts-recommended texlive-latex-extra
 
       - name: Install Unicon build dependencies
         run: |
@@ -107,8 +111,10 @@ jobs:
           make -C doc/uscribe html
           test -f doc/uscribe/out/index.html
 
-      - name: Build UTR and general doc HTML
+      - name: Build UTR PDFs/HTML and general doc HTML
         run: |
+          # PDFs first so Download links appear in the HTML index.
+          make -C doc/utr pdf || true
           make -C doc/utr html
           test -f doc/utr/html/index.html
           make -C doc/unicon html

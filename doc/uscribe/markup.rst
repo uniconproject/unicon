@@ -132,7 +132,8 @@ Live refs (explicit label and display-text form):
 - chapter: :doc:`install`
 
 Title-only refs (matching a heading exactly) still work. Full chapter
-sources are linked from each HTML footer as **Page source**.
+sources are linked from each HTML footer as **source** (and **txt**
+in the report index Formats column).
 
 Inline markup
 -------------

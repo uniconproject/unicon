@@ -38,7 +38,7 @@ Manuscripts in the tree; printed/PDF editions are on the project site.
 Tools and how-tos
 -----------------
 
-- `uniphinx user guide <uniphinx/out/index.html>`__ — RST → HTML/PDF doc tool
+- `uscribe user guide <uscribe/out/index.html>`__ — RST → HTML/PDF doc tool
 - `UTR 15 — writing a UTR <utr/html/utr15.html>`__
 - `CGI library example <unicon/html/simple.html>`__
 
@@ -58,7 +58,7 @@ From a configured Unicon tree::
 
    make -C doc/utr html        # technical reports
    make -C doc/unicon html     # FAQ, Posix, …
-   make -C doc/uniphinx html   # uniphinx guide
+   make -C doc/uscribe html   # uscribe guide
 
 Preview this site locally::
 

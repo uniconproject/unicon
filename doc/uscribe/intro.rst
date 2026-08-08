@@ -14,7 +14,7 @@ This manual is the user guide for uscribe itself. Sources live under
 ``doc/uscribe/`` in the unicon tree and are built *with* uscribe.
 
 What uscribe is for
---------------------
+---------------------
 
 - Multi-chapter books and manuals (ordered by a manifest file)
 - HTML output with sidebar navigation, search, and selectable themes

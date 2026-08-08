@@ -352,7 +352,7 @@ stock quotes to yourself throughout the day.
 
    procedure main(args)
 
-   if ∗args ̃= 2 then stop("usage: ", &progname, " url mailto ")
+   if *args ~= 2 then stop("usage: ", &progname, " url mailto ")
 
    web := open(args [1], "m") \| stop(args[1] \|\| ": can' t open")
 

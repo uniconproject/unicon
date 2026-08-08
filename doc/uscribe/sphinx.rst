@@ -1,5 +1,5 @@
 uscribe and Sphinx
-===================
+====================
 
 If you already know Sphinx, this chapter maps familiar ideas onto
 uscribe. It is not a claim of compatibility.

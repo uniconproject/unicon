@@ -724,7 +724,7 @@ end
 #</p>
 procedure escapeVerbatimLine(s)
     local out, c
-    /s := ""
+    s := normalizeLatexUnicode(\s | "")
     out := ""
     every c := !s do
         out ||:= case c of {
@@ -770,18 +770,33 @@ end
 # <[param s input string, or null treated as empty]>
 # <[returns escaped string]>
 #</p>
-procedure escapeLatex(s)
-    local out, c, rest, pair, fromStr, toStr
+#<p>
+# Normalize Unicode punctuation (and a few legacy bytes) to forms
+# <tt>pdflatex</tt> can typeset. Shared by prose, <tt>\\texttt</tt>, and
+# Verbatim escapers.
+# <[param s input string, or null treated as empty]>
+# <[returns normalized string]>
+#</p>
+procedure normalizeLatexUnicode(s)
+    local rest, pair, fromStr, toStr
     static uMap
     initial {
         uMap := [
-            ["—", "---"], ["–", "--"],
+            ["—", "---"], ["–", "--"], ["−", "-"], ["∗", "*"],
+            ["̃", "~"],  # U+0303 combining tilde (seen as broken ~=)
             ["“", "``"], ["”", "''"],
-            ["‘", "`"], ["’", "'"]
+            ["‘", "`"], ["’", "'"],
+            # UTF-8 encodings of C1 controls U+0091..U+0094 (byte-wise
+            # Unicon builds); do not map bare char(0x9x) — that splits
+            # multi-byte UTF-8 sequences.
+            [char(194) || char(147), "``"],
+            [char(194) || char(148), "''"],
+            [char(194) || char(145), "`"],
+            [char(194) || char(146), "'"],
+            [char(15), ""]
             ]
         }
     /s := ""
-    # Normalize a few Unicode punctuation marks TeX-friendly first
     every pair := !uMap do {
         fromStr := pair[1]
         toStr := pair[2]
@@ -795,6 +810,18 @@ procedure escapeLatex(s)
             }
         s := rest
         }
+    return s
+end
+
+#<p>
+# Escape text for ordinary LaTeX prose (not verbatim, not
+# <tt>\\verb</tt>). Normalizes a few Unicode punctuation marks first.
+# <[param s input string, or null treated as empty]>
+# <[returns escaped string]>
+#</p>
+procedure escapeLatex(s)
+    local out, c
+    s := normalizeLatexUnicode(\s | "")
     out := ""
     every c := !s do
         out ||:= case c of {
@@ -821,7 +848,7 @@ end
 #</p>
 procedure escapeLatexTT(s)
     local out, c
-    /s := ""
+    s := normalizeLatexUnicode(\s | "")
     out := ""
     every c := !s do
         out ||:= case c of {

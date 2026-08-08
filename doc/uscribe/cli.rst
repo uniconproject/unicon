@@ -24,7 +24,8 @@ Options
   Optional footer copyright (text after ©), e.g.
   ``2026, Jafar Al-Gharaibeh``. HTML only. Every HTML page always
   ends with ``Powered by uscribe``; chapter pages also link
-  **Page source** under ``_sources/``.
+  **pdf** and **source** (``_sources/name.rst.txt``, viewable as
+  plain text in the browser).
 
 **--logo=FILE**
   Optional sidebar logo. The image is copied into ``targetDir/_static/``
@@ -61,10 +62,12 @@ Outputs
 writes ``targetDir/name.html``, plus:
 
 - ``index.html`` — contents landing page (chapter list, or a UTR
-  table of number / title / author / date for report collections)
+  table with a **Formats** column of ``pdf`` / ``txt`` for report
+  collections)
 - ``search.html`` + ``searchindex.js`` — full-text search
 - ``_static/`` — theme CSS, search JS, highlighter, theme switcher
-- ``_sources/`` — copies of chapter ``.rst`` files (Page source links)
+- ``_sources/`` — chapter sources as ``name.rst.txt`` (browser-viewable
+  text; linked as **txt** / **source**)
 
 **LaTeX / PDF**: book manifests write ``targetDir/book.tex`` (and
 ``book.pdf`` with ``--format=pdf``). Report manifests write one

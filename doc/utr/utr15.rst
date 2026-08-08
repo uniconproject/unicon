@@ -24,7 +24,7 @@ archival survivability and revision control repository difference
 analysis.
 
 The preferred source format is reStructuredText built with
-``uniphinx`` (this file is the RST template). If you use LaTeX, you can
+``uscribe`` (this file is the RST template). If you use LaTeX, you can
 still use ``utr.sty`` and the older ``utr15.tex`` sources in
 ``doc/utr``. In any case, the Unicon Project reserves the right to
 reformat any document submitted for consideration as a Unicon

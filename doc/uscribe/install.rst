@@ -96,7 +96,7 @@ Ensure the installer puts ``pdflatex`` on your ``PATH``, then open a
 new Command Prompt or PowerShell window.
 
 What uscribe LaTeX output needs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Generated ``book.tex`` uses a small set of packages
 (``graphicx``, ``hyperref``, ``xcolor``, ``fancyvrb``, ``booktabs``).
@@ -108,7 +108,7 @@ SVG figures are not embedded in PDF; convert them to PDF or PNG, or
 accept the boxed placeholder uscribe emits for ``.svg`` paths.
 
 Build uscribe
---------------
+---------------
 
 From the unicon tree:
 

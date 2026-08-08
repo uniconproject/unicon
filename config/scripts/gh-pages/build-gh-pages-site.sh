@@ -4,7 +4,7 @@
 # Local preview (paths use /unicon/... like github.io): bash config/scripts/gh-pages/serve-local.sh
 #
 # Documentation homepage is doc/index.rst (preferred) with fallback to doc/README.md.
-# UTR and unicon HTML are built into the tree when uniphinx / pandoc are available.
+# UTR and unicon HTML are built into the tree when uscribe / pandoc are available.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -40,11 +40,17 @@ FROM_RST=(--from=rst)
 
 # --- Build HTML documentation trees (optional locally; expected in CI) ---
 build_doc_html() {
-  if [[ -x uni/uniphinx/uniphinx ]] || [[ -x bin/uniphinx ]]; then
-    echo "Building UTR HTML (uniphinx)..."
+  if [[ -x uni/uscribe/uscribe ]] || [[ -x bin/uscribe ]]; then
+    if command -v pdflatex >/dev/null 2>&1 || command -v xelatex >/dev/null 2>&1 || command -v lualatex >/dev/null 2>&1; then
+      echo "Building UTR PDFs (best-effort; Download links)..."
+      make -C doc/utr pdf || echo "warning: some UTR PDFs failed; continuing" >&2
+    else
+      echo "warning: no TeX engine; UTR PDF downloads will be limited" >&2
+    fi
+    echo "Building UTR HTML (uscribe)..."
     make -C doc/utr html
   else
-    echo "warning: uniphinx not built; skipping doc/utr HTML" >&2
+    echo "warning: uscribe not built; skipping doc/utr HTML" >&2
   fi
   if command -v pandoc >/dev/null 2>&1; then
     echo "Building doc/unicon HTML..."

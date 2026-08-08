@@ -6,14 +6,48 @@
 # Compile/generate PDF and/or HTML version of Unicon TR's.
 # HTML versions may be special-purpose, for Unicon IDE's online help.
 #
+# Preferred path for new/converted reports: RST via uniphinx
+# (``make html`` / ``make latex``). Legacy ``%.pdf: %.tex`` remains
+# for older LaTeX-only sources.
+#
 # Under Fedora (e.g. 27 or 28), you may need to install texlive-tabulary,
 # texlive-wrapfig, and texlive-changepage in order to build utr16.pdf
 # and/or utr18.pdf.
 #
 
-FILES=utr3.pdf utr15.pdf utr16.pdf utr18.pdf utr19.pdf utr22.pdf utr20.pdf utr23.pdf
+TOPDIR=../..
+UNIPHINX_DIR = $(TOPDIR)/uni/uniphinx
+UNIPHINX ?= $(UNIPHINX_DIR)/uniphinx
+THEMES = $(UNIPHINX_DIR)/themes
+HTMLDIR = html
+TEXDIR = latex
+MANIFEST = utr.manifest
+TITLE = Unicon Technical Reports
 
-all: $(FILES)
+# Legacy LaTeX-only leftovers (not yet converted to RST).
+LEGACY_PDF = utr9c.pdf
+
+.PHONY: all html latex pdf-rst Clean clean
+
+all: html
+
+html: $(UNIPHINX)
+	mkdir -p $(HTMLDIR)
+	$(UNIPHINX) --manifest=$(MANIFEST) --title="$(TITLE)" \
+		--themePath=$(THEMES) --targetDir=$(HTMLDIR) --format=html
+
+latex: $(UNIPHINX)
+	mkdir -p $(TEXDIR)
+	$(UNIPHINX) --manifest=$(MANIFEST) --title="$(TITLE)" \
+		--targetDir=$(TEXDIR) --format=latex
+
+pdf-rst: $(UNIPHINX)
+	mkdir -p $(TEXDIR)
+	$(UNIPHINX) --manifest=$(MANIFEST) --title="$(TITLE)" \
+		--targetDir=$(TEXDIR) --format=pdf
+
+$(UNIPHINX):
+	$(MAKE) -C $(UNIPHINX_DIR)
 
 htmlean: htmlean.icn
 	unicon htmlean.icn
@@ -31,4 +65,5 @@ utr9c.pdf: utr9.tex
 	pdflatex $<
 
 Clean clean:
-	rm -f  utr*.png utr*.jpg *.log *.out htmlean $(FILES)
+	rm -f  utr*.png utr*.jpg *.log *.out htmlean $(LEGACY_PDF)
+	rm -rf $(HTMLDIR) $(TEXDIR)

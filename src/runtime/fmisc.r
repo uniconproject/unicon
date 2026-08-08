@@ -2879,22 +2879,44 @@ int improbable = 0;
 #endif                                   /* ConcurrentCOMPILER */
 
 "spawn(x,blocksize,stringsize, stacksize) - evaluate co-expression"
-" or procedure x concurrently"
-function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
-   declare {
-      C_integer _bs_, _ss_, _stks_, isoft;
-      }
-   if !def:C_integer(blocksize,0,_bs_) then
-      runerr(101,blocksize)
-   if !def:C_integer(stringsize,0,_ss_) then
-      runerr(101,stringsize)
-   if !def:C_integer(stacksize,0,_stks_) then
-      runerr(101,stacksize)
-   if !def:C_integer(soft,0,isoft) then
-      runerr(101,soft)
-   if is:coexpr(x) then {
-      abstract { return coexpr }
-      body {
+" or procedure x concurrently.  Optional leading netns File joins that"
+" network namespace on the new OS thread before any Icon code runs."
+function{0,1} spawn(argv[argc])
+   abstract { return coexpr }
+   body {
+      tended struct descrip x;
+      C_integer _bs_ = 0, _ss_ = 0, _stks_ = 0, isoft = 0;
+      int warg = 0;
+      struct b_file *ns = NULL;
+
+      OptNetns(ns);
+
+      if (argc <= warg)
+         runerr(106, nulldesc);
+      x = argv[warg++];
+
+      if (argc > warg) {
+         if (!cnv:C_integer(argv[warg], _bs_))
+            runerr(101, argv[warg]);
+         warg++;
+         }
+      if (argc > warg) {
+         if (!cnv:C_integer(argv[warg], _ss_))
+            runerr(101, argv[warg]);
+         warg++;
+         }
+      if (argc > warg) {
+         if (!cnv:C_integer(argv[warg], _stks_))
+            runerr(101, argv[warg]);
+         warg++;
+         }
+      if (argc > warg) {
+         if (!cnv:C_integer(argv[warg], isoft))
+            runerr(101, argv[warg]);
+         warg++;
+         }
+
+      if (is:coexpr(x)) {
          struct b_coexpr *cp = BlkD(x, Coexpr);
          int i;
 
@@ -2957,6 +2979,16 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
 
          cp->ini_blksize = _bs_;
          cp->ini_ssize = _ss_;
+
+#if HAVE_NETNS
+         /* Hold NetnsFile until nctramp joins (survives close(ns)). */
+         if (ns != NULL && ns->fd.netns != NULL) {
+            netns_hold(ns->fd.netns);
+            cp->pending_ns = ns->fd.netns;
+            }
+         else
+            cp->pending_ns = NULL;
+#endif                                  /* HAVE_NETNS */
 
          /*
           * Loop until I aquire the mutex.
@@ -3022,10 +3054,7 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
 #endif                                  /* ConcurrentCOMPILER*/
          return x;
          }
-      }
-   else if is:proc(x) then {
-     abstract { return coexpr }
-     body {
+      else if (is:proc(x)) {
         tended struct descrip d;
         d = nulldesc;
         TURN_ON_CONCURRENT();
@@ -3036,9 +3065,9 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
          */
         return d;
         }
-     }
-  else { runerr(106,x)
-     }
+      else
+         runerr(106, x);
+      }
 end
 
 #else                                   /* Concurrent */
@@ -3213,6 +3242,50 @@ function{*} Attrib(argv[argc])
 #endif                                  /* HAVE_LIBSSH */
 
 #ifdef PosixFns
+#if HAVE_NETNS
+      /*
+       * Network-namespace attributes (read-only for now): name, persist,
+       * refcount, userns.
+       */
+      if (is:file(argv[0]) && (BlkD(argv[0],File)->status & Fs_NETNS)) {
+         tended struct descrip ans;
+         struct NetnsFile *nsf = BlkD(argv[0],File)->fd.netns;
+         tended char *aname;
+         word i;
+
+         if (argc < 2)
+            runerr(130, nulldesc);
+         if (nsf == NULL)
+            runerr(174, argv[0]);
+
+         for (i = 1; i < argc; i++) {
+            if (is:null(argv[i]))
+               runerr(109, argv[i]);
+            if (!cnv:C_string(argv[i], aname))
+               runerr(103, argv[i]);
+            if (strchr(aname, '=') != NULL)
+               runerr(205, argv[i]); /* writes deferred */
+            if (strcmp(aname, "name") == 0) {
+               StrLen(ans) = strlen(nsf->name);
+               Protect(StrLoc(ans) = alcstr(nsf->name, StrLen(ans)), runerr(0));
+               suspend ans;
+               }
+            else if (strcmp(aname, "persist") == 0) {
+               suspend C_integer nsf->persist;
+               }
+            else if (strcmp(aname, "refcount") == 0) {
+               suspend C_integer nsf->refcount;
+               }
+            else if (strcmp(aname, "userns") == 0) {
+               suspend C_integer nsf->userns;
+               }
+            else
+               runerr(205, argv[i]);
+            }
+         fail;
+         }
+#endif                                  /* HAVE_NETNS */
+
       /*
        * TTY mode on a file (&input, etc.): Attrib(f, "tty=raw") /
        * Attrib(f, "tty=sane").  Entered only when the first attribute

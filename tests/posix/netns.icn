@@ -1,0 +1,153 @@
+#
+# Native network-namespace support: open(...,"j"), Attrib, fork(ns),
+# system(ns,...), spawn(ns,...), close.
+#
+# Forces the rootless path: if started as root, drop to nobody first,
+# then open with userns=yes.  Without a working userns (or CAP after
+# drop), prints "This Program Requires ..." so Makefile.test does not
+# FAIL.
+#
+# On AppArmor hosts with apparmor_restrict_unprivileged_userns=1,
+# unprivileged NEWNET may still be denied; relax that sysctl or use
+# CAP_NET_ADMIN without dropping.  See unicon-netns-design.md §3.7.
+#
+$include "posix.icn"
+
+procedure ifaces()
+   local p, line, names, n
+   names := []
+   p := open("ip -o link show", "pr") | fail
+   while line := read(p) do {
+      line ? {
+         tab(upto(':'))
+         move(1)
+         tab(many(' \t'))
+         n := tab(upto(':') | 0)
+         if *n > 0 then put(names, n)
+         }
+      }
+   close(p)
+   return csv(sort(names))
+end
+
+procedure csv(L)
+   local s, x
+   s := ""
+   every x := !L do
+      s := if *s = 0 then x else s || "," || x
+   return s
+end
+
+# Drop root so userns=yes is actually exercised (CI is often root).
+# Note: Unicon getuid() returns the user *name* string, not a numeric id.
+procedure drop_priv_if_root()
+   local pw
+   if getuid() ~== "root" then return
+   pw := getpw("nobody") | stop("This Program Requires nobody account ",
+                                 "for unprivileged netns coverage")
+   setgid(pw.gid) | stop("setgid(nobody) failed: ", &errortext)
+   setuid(pw.uid) | stop("setuid(nobody) failed: ", &errortext)
+end
+
+# Prefer explicit userns=yes (after optional drop); allow extra attrs.
+procedure open_ns(name, attrs[])
+   local ns
+   if *attrs = 0 then
+      ns := open(name, "j", "userns=yes")
+   else
+      ns := open!([name, "j", "userns=yes"] ||| attrs)
+   /ns & stop("This Program Requires network-namespace privileges ",
+              "(userns=yes or CAP_NET_ADMIN)")
+   return ns
+end
+
+procedure netns_listed(name)
+   local p, line
+   p := open("ip netns list", "pr") | fail
+   while line := read(p) do
+      if match(name, line) then {
+         close(p)
+         return
+         }
+   close(p)
+   fail
+end
+
+# Iface names inside ns via system(ns,...); no trailing newline.
+procedure system_ifaces(ns)
+   system(ns, ["sh", "-c",
+      "ip -o link show | sed -n 's/^[0-9]*: \\([^:]*\\):.*/\\1/p' | sort | paste -sd, - | tr -d '\\n'"])
+end
+
+procedure main()
+   local ns, ns2, pid, t
+
+   if not (&features == "Network namespaces") then
+      stop("This Program Requires Network namespaces")
+
+   drop_priv_if_root()
+   write("feature=yes")
+
+   ns := open_ns("ut-ns")
+   write("open=ok name=", Attrib(ns, "name"),
+         " persist=", Attrib(ns, "persist"),
+         " userns=", Attrib(ns, "userns"),
+         " refcount=", Attrib(ns, "refcount"))
+   # userns=yes (and drop-if-root) must have taken the rootless path.
+   if Attrib(ns, "userns") ~= 1 then
+      stop("expected userns=1 after userns=yes")
+
+   pid := fork(ns) | stop("fork failed: ", &errortext)
+   if pid = 0 then {
+      write("fork-child: ifaces=", ifaces() | "fail")
+      exit(0)
+      }
+   wait(pid)
+   write("fork-parent: ok")
+
+   writes("system: ifaces=")
+   system_ifaces(ns)
+   write()
+
+   if &features == "concurrent threads" then {
+      # spawn starts the OS thread; wait for it to finish (no @t).
+      t := spawn(ns, create {
+         write("spawn: ifaces=", ifaces() | "fail")
+         })
+      wait(t)
+      }
+   else write("spawn: skipped")
+
+   close(ns)
+   write("close=ok")
+
+   ns := open_ns("ut-nsp", "persist=yes", "bridge=yes")
+   write("persist=ok name=", Attrib(ns, "name"),
+         " persist=", Attrib(ns, "persist"))
+   writes("bridge: ifaces=")
+   system_ifaces(ns)
+   write()
+   write("listed=", if netns_listed("ut-nsp") then "yes" else "no")
+   close(ns)
+   write("listed-after-close=", if netns_listed("ut-nsp") then "yes" else "no")
+
+   # Ephemeral: same name may be opened twice (independent objects).
+   ns := open_ns("ut-dup")
+   ns2 := open_ns("ut-dup")
+   write("dup-ephemeral=ok")
+   close(ns)
+   close(ns2)
+
+   # persist=yes: second open of the same name fails (O_EXCL).
+   # Clear ns2 first — a failed open does not overwrite the variable.
+   ns := open_ns("ut-dup-p", "persist=yes")
+   ns2 := &null
+   if ns2 := open("ut-dup-p", "j", "userns=yes", "persist=yes") then {
+      close(ns2)
+      write("dup-persist=unexpected")
+      }
+   else write("dup-persist=eexist")
+   close(ns)
+
+   write("done")
+end

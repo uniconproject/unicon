@@ -1,0 +1,168 @@
+#<p>
+# Network-namespace and link helpers for Linux test topologies.
+# Pure Unicon: shells out to <tt>ip</tt>/<tt>ip netns</tt>.  Complements
+# the native <tt>open(name,"j")</tt> runtime support; use
+# <tt>persist=yes</tt> on native opens when cooperating with this package.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+
+package net
+
+#<p>
+# A named network namespace.  Prefers native
+# <tt>open(name,"j","persist=yes")</tt> when available (keeps the File
+# open for the object's lifetime so the persist mount stays pinned);
+# falls back to <tt>ip netns add</tt>.
+#</p>
+class Netns(name, nsfile)
+
+   method delete()
+      if \nsfile then {
+         close(nsfile)
+         nsfile := &null
+         return
+         }
+      return system(["ip", "netns", "del", name]) = 0
+   end
+
+   initially(n)
+      name := n
+      # Prefer persist so ip(8) can see the ns; fall back to ephemeral
+      # (native File still works with system(nsfile, ...) / fork / spawn).
+      nsfile := open(n, "j", "persist=yes")
+      if /nsfile then
+         nsfile := open(n, "j")
+      if \nsfile then return
+      system("ip netns add " || name || " >/dev/null 2>&1") = 0 | fail
+end
+
+#<p>
+# Base class for network interfaces.  Methods funnel through
+# <tt>run()</tt>, which scopes <tt>ip</tt> via <tt>ip netns exec</tt>
+# when the link currently lives in a namespace.
+#</p>
+class Link(name, ns)
+
+   method up()
+      return run(["ip", "link", "set", name, "up"])
+   end
+
+   method down()
+      return run(["ip", "link", "set", name, "down"])
+   end
+
+   #<p>
+   # Move this link into <tt>target</tt> (a <tt>Netns</tt>, a string
+   # name, or a native netns File from <tt>open(...,"j")</tt>).
+   #</p>
+   method move(target)
+      local tname
+      tname := ns_name(target) | fail
+      if run(["ip", "link", "set", name, "netns", tname]) then {
+         ns := target
+         return
+         }
+      fail
+   end
+
+   method attach(master)
+      local mname
+      mname := \master.name | master
+      return run(["ip", "link", "set", name, "master", mname])
+   end
+
+   method detach()
+      return run(["ip", "link", "set", name, "nomaster"])
+   end
+
+   method addr(cidr)
+      return run(["ip", "addr", "add", cidr, "dev", name])
+   end
+
+   method delete()
+      return run(["ip", "link", "del", name])
+   end
+
+   method run(argv)
+      local n
+      if /ns then
+         return system(argv) = 0
+      # Prefer native netns File (works without persist / ip netns).
+      if type(ns) == "file" then
+         return system(ns, argv) = 0
+      if \ns.nsfile then
+         return system(ns.nsfile, argv) = 0
+      n := ns_name(ns) | fail
+      return system(["ip", "netns", "exec", n] ||| argv) = 0
+   end
+
+   #<p>
+   # Resolve a Netns, native netns File, or string to a namespace name.
+   #</p>
+   method ns_name(target)
+      if /target then fail
+      if type(target) == "string" then return target
+      if type(target) == "file" then
+         return Attrib(target, "name")
+      # Netns instance (type is net__Netns__state; classname is net__Netns)
+      return \target.name
+   end
+
+   initially(n, initns)
+      name := n
+      ns := initns
+end
+
+#<p>
+# A veth pair.  <tt>peer()</tt> returns a <tt>Link</tt> for the peer end.
+#</p>
+class Veth : Link(peer_name)
+
+   # Peer end may not share this end's namespace; caller should move() it.
+   method peer()
+      return Link(peer_name, ns)
+   end
+
+   initially(a, b, initns)
+      self.Link.initially(a, initns)
+      peer_name := b
+      # Use run() so creation can happen inside initns (needed for
+      # unprivileged userns, where host RTNETLINK create is often denied).
+      run(["ip", "link", "add", a, "type", "veth", "peer", "name", b]) | fail
+end
+
+#<p>
+# A bridge device; brought up on creation.
+#</p>
+class Bridge : Link()
+
+   initially(n, initns)
+      self.Link.initially(n, initns)
+      run(["ip", "link", "add", n, "type", "bridge"]) | fail
+      up()
+end
+
+#<p>
+# A VRF device (stub; shaped for later extension).
+#</p>
+class Vrf : Link(table)
+
+   initially(n, t, initns)
+      self.Link.initially(n, initns)
+      table := t
+      run(["ip", "link", "add", n, "type", "vrf", "table", string(t)]) | fail
+      up()
+end
+
+#<p>
+# A TUN/TAP device (stub; shaped for later extension).
+#</p>
+class Tun : Link(mode)
+
+   initially(n, m, initns)
+      self.Link.initially(n, initns)
+      mode := (\m | "tun")
+      run(["ip", "tuntap", "add", "dev", n, "mode", mode]) | fail
+end

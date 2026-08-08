@@ -33,9 +33,11 @@ Options
 **--format=FMT**
   Output format: ``html`` (default), ``latex``, or ``pdf``.
 
-  - ``html`` — one page per chapter plus index/search/themes
-  - ``latex`` — a single ``book.tex`` for the whole manifest
-  - ``pdf`` — write ``book.tex`` and run ``pdflatex``, ``xelatex``, or
+  - ``html`` — one page per chapter plus index/search/themes.
+    Report manifests get a UTR index table on ``index.html``.
+  - ``latex`` — for books, a single ``book.tex``; for report
+    manifests (every chapter is a report), one ``.tex`` per report
+  - ``pdf`` — like ``latex``, then run ``pdflatex``, ``xelatex``, or
     ``lualatex`` (whichever is first in ``PATH``) twice for TOC/xrefs
 
 **--targetDir=DIR**
@@ -58,13 +60,16 @@ Outputs
 **HTML** (``--format=html``): for each chapter ``path/name.rst``,
 writes ``targetDir/name.html``, plus:
 
-- ``index.html`` — contents landing page
+- ``index.html`` — contents landing page (chapter list, or a UTR
+  table of number / title / author / date for report collections)
 - ``search.html`` + ``searchindex.js`` — full-text search
 - ``_static/`` — theme CSS, search JS, highlighter, theme switcher
 - ``_sources/`` — copies of chapter ``.rst`` files (Page source links)
 
-**LaTeX / PDF**: writes ``targetDir/book.tex``. With ``--format=pdf``,
-also writes ``targetDir/book.pdf`` when a TeX engine is available.
+**LaTeX / PDF**: book manifests write ``targetDir/book.tex`` (and
+``book.pdf`` with ``--format=pdf``). Report manifests write one
+``.tex`` / ``.pdf`` per report, named like the HTML stem
+(``ex-report.tex`` beside ``ex-report.html``).
 Local ``.. image::`` files are copied into ``targetDir`` automatically
 (relative paths preserved). SVG is not embedded in LaTeX (a boxed
 placeholder is emitted instead — convert to PDF/PNG for TeX).

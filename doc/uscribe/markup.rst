@@ -59,7 +59,7 @@ Tables
 ------
 
 **Simple** tables use ``=`` column separators. The first row is the
-header.
+header. PDF output uses ``longtable`` so tables can break across pages.
 
 Source:
 
@@ -72,7 +72,19 @@ Rendered:
 .. include:: includes/ex-table.rst
 
 **Grid** tables use ``+---+`` borders; a border with ``=`` marks the
-header.
+header. Omit an internal ``|`` to span columns:
+
+Source:
+
+.. literalinclude:: includes/ex-grid-span.rst
+
+   :language: rst
+
+Rendered:
+
+.. include:: includes/ex-grid-span.rst
+
+A plain grid without spans:
 
 Source:
 

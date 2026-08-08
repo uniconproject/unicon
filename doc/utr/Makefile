@@ -27,7 +27,7 @@ TITLE = Unicon Technical Reports
 # Legacy LaTeX-only leftovers (not yet converted to RST).
 LEGACY_PDF = utr9c.pdf
 
-.PHONY: all html latex pdf-rst Clean clean
+.PHONY: all html latex pdf-rst notes Clean clean
 
 all: html
 
@@ -35,6 +35,9 @@ html: $(UNIPHINX)
 	mkdir -p $(HTMLDIR)
 	$(UNIPHINX) --manifest=$(MANIFEST) --title="$(TITLE)" \
 		--themePath=$(THEMES) --targetDir=$(HTMLDIR) --format=html
+	# Reference data linked from utf8.rst (not image assets)
+	mkdir -p $(HTMLDIR)/assets/utf8
+	cp -f assets/utf8/*.txt $(HTMLDIR)/assets/utf8/
 
 latex: $(UNIPHINX)
 	mkdir -p $(TEXDIR)
@@ -67,3 +70,7 @@ utr9c.pdf: utr9.tex
 Clean clean:
 	rm -f  utr*.png utr*.jpg *.log *.out htmlean $(LEGACY_PDF)
 	rm -rf $(HTMLDIR) $(TEXDIR)
+
+# utf8.rst is in the manifest; `notes` is an alias for a full html rebuild
+notes: html
+

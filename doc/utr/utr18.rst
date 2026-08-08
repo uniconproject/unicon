@@ -143,7 +143,7 @@ Suppose we wanted to construct a pattern that matched any of the following strin
 
 One way to understand patterns is to construct bead diagrams for them. In a bead diagram, pattern matching is the process of attempting to pass a needle and thread through a collection of beads which model the individual pattern components. Pattern subsequents are drawn side-by-side, left-to-right. Pattern alternates are stacked vertically, in columns, with a horizontal line between each alternative. A bead diagram for the preceding pattern is shown in Figure 1.
 
-.. figure:: beaddia.png
+.. figure:: assets/utr18/beaddia.png
 
    Bead Diagram
 
@@ -249,11 +249,11 @@ Pos(i), Rpos(i): Verify cursor position
 
 The ``Pos(i)`` and ``Rpos(i)`` patterns do not match subject characters. Instead, they succeed only if the current cursor position is a specified value. They often are used to tie points of the pattern to specific character positions in the subject. The following shows the cursor positions as used by ``Pos()``:
 
-.. image:: poscurs.png
+.. image:: assets/utr18/poscurs.png
 
 The following are the cursor positions used by Rpos().
 
-.. image:: rposcurs.png
+.. image:: assets/utr18/rposcurs.png
 
 ``Pos(I)`` counts from the left end of the subject string, succeeding if the current cursor position is equal to I. ``Rpos(I)`` is similar, but counts from the right end of the subject. If the subject length is N characters, ``Rpos(I)`` requires the cursor be (N - I). If the cursor is not the correct value, these functions fail, and the pattern matcher tries other pattern alternatives.
 
@@ -512,7 +512,7 @@ and these are not:
 
 .. code-block:: text
 
-)A+B (A*(B+) (X))
+   )A+B (A*(B+) (X))
 
 Unlike string scanning function ``bal()``, pattern ``Bal()`` is hardwired to only look for left and right parentheses. The matching string does not have to be a well-formed expression in the algebraic sense; it might just as easily be a Lisp S-expression or other parenthesis-based notation. Like ``Arb()``, ``Bal()`` is often useful when constrained by other pattern components. For example:
 

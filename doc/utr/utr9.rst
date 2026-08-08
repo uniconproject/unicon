@@ -84,7 +84,7 @@ parameters and eliminating unnecessary function calls.
 The first step in 3D graphics programming is opening windows to render
 3D graphics, as in the line:
 
-::
+.. code-block:: unicon
 
       W := open("win", "gl")
 
@@ -98,7 +98,7 @@ newly opened window can be queried for the specifications of the 3D
 graphics library. The following example demonstrates the use of such
 attributes:
 
-::
+.. code-block:: unicon
 
    procedure main(av)
       &window := open("gl attributes", "gl", "canvas=hidden")
@@ -202,88 +202,86 @@ Picture
 Cube
 
 DrawCube()
+   the x, y, and z coordinates of the lower left front corner, and the
+   length of the sides.
 
-the x, y, and z coordinates of the lower left front corner, and the
-length of the sides.
 
-.. image:: utr9/utr9-img001.png
+.. image:: assets/utr9/utr9-img001.png
 
 Cylinder
 
 DrawCylinder()
+   the x, y, and z coordinates of the center, the height, the radius of the
+   top, the radius of the bottom. If one radius is smaller than the other a
+   cone is formed.
 
-the x, y, and z coordinates of the center, the height, the radius of the
-top, the radius of the bottom. If one radius is smaller than the other a
-cone is formed.
 
- 
 
 Disk
 
 DrawDisk()
+   the x, y, and z coordinates of center, the radius of the inner circle,
+   and the radius of the outer circle. By specifying an additional two
+   angle values a partial disk is obtained.
 
-the x, y, and z coordinates of center, the radius of the inner circle,
-and the radius of the outer circle. By specifying an additional two
-angle values a partial disk is obtained.
 
- 
 
 Filled Polygon
 
 FillPolygon()
+   the x, y, and z coordinates of each vertex of the polygon.
 
-the x, y, and z coordinates of each vertex of the polygon.
 
-.. image:: utr9/utr9-img006.png
+.. image:: assets/utr9/utr9-img006.png
 
 Line
 
 DrawLine()
+   the x, y, and z coordinates of each vertex of the line.
 
-the x, y, and z coordinates of each vertex of the line.
 
-.. image:: utr9/utr9-img007.png
+.. image:: assets/utr9/utr9-img007.png
 
 Polygon
 
 DrawPolygon()
+   the x, y, and z coordinates of each vertex of the polygon.
 
-the x, y, and z coordinates of each vertex of the polygon.
 
-.. image:: utr9/utr9-img008.png
+.. image:: assets/utr9/utr9-img008.png
 
 Point
 
 DrawPoint()
+   the x, y, and z coordinates of each individual point.
 
-the x, y, and z coordinates of each individual point.
 
-.. image:: utr9/utr9-img009.png
+.. image:: assets/utr9/utr9-img009.png
 
 Segment
 
 DrawSegment()
+   the x, y, and z coordinates of each vertex of the line segments.
 
-the x, y, and z coordinates of each vertex of the line segments.
 
-.. image:: utr9/utr9-img010.png
+.. image:: assets/utr9/utr9-img010.png
 
 Sphere
 
 DrawSphere()
+   the x, y, and z coordinates of center and the radius of the sphere.
 
-the x, y, and z coordinates of center and the radius of the sphere.
 
-.. image:: utr9/utr9-img011.png
+.. image:: assets/utr9/utr9-img011.png
 
 Torus
 
 DrawTorus()
+   the x, y, and z coordinates of the center, an inner radius and an outer
+   radius.
 
-the x, y, and z coordinates of the center, an inner radius and an outer
-radius.
 
-.. image:: utr9/utr9-img012.png
+.. image:: assets/utr9/utr9-img012.png
 
 Several functions from the 2D graphics facilities have been extended for
 the 3D graphics facilities. By doing this, learning to use the Unicon 3D
@@ -403,23 +401,21 @@ to what parts of an object.
   textures are turned off. In order to turn on texturing in a scene use
   the following line of code
 
-::
+.. code-block:: unicon
 
    WAttrib(W, "texmode=on")
-
 Once textures are turned on and a texture image is given, the texture
 image will be applied to subsequent objects in the scene. By using the
 following line of code, textures will be disabled for all successive
 objects.
 
-::
+.. code-block:: unicon
 
    WAttrib(W, "texmode=off")
-
-Texture images in OpenGL programs are images that have been encoded into
-an array. So if a programmer wants to use a .gif image file, the file
-must be converted into a format accepted by OpenGL. Often times this is
-a cumbersome process to obtain the desired result. For this reason, the
+   Texture images in OpenGL programs are images that have been encoded into
+   an array. So if a programmer wants to use a .gif image file, the file
+   must be converted into a format accepted by OpenGL. Often times this is
+   a cumbersome process to obtain the desired result. For this reason, the
 Unicon 3D graphics facilities provide several different formats to
 specify a texture image. A texture image can be another Unicon window,
 an image file, or a string. If the texture image is a string it must be
@@ -509,7 +505,8 @@ The texture image is applied to each face of the cube.
 
 None
 
-.. image:: utr9/utr9-img013.jpg
+.. image:: assets/utr9/utr9-img013.jpg
+
    :width: 150px
 
 | Sphere
@@ -546,7 +543,8 @@ The x and y texture coordinates are given by p1x0+p2y0+p3z0+p4w0
 
 None
 
-.. image:: utr9/utr9-img020.jpg
+.. image:: assets/utr9/utr9-img020.jpg
+
    :width: 150px
 
 2.8 Transparency and Blending
@@ -612,24 +610,22 @@ eye direction to look at the positive z-axis on the window w. Since an
 assignment to eyepos, eyedir, eyeup or eye redraws the screen, it is
 important to note that the following will redraw the scene once.
 
-::
+.. code-block:: unicon
 
-      WAttrib(w, "eyepos=0.0,0.0,5.0","eyedir=0.0,0.0,1.0")
-
+   WAttrib(w, "eyepos=0.0,0.0,5.0","eyedir=0.0,0.0,1.0")
 The values of the attributes can also be read by using the function
-WAttrib(). By passing WAttrib() the window and the name of the attribute
-to be read, the user will obtain the value of the specified attributes.
+   WAttrib(). By passing WAttrib() the window and the name of the attribute
+   to be read, the user will obtain the value of the specified attributes.
 For example, to obtain the value of the current eye position, call
 
-::
+.. code-block:: unicon
 
    WAttrib(w, "eyepos")
-
 Multiple attributes can be read with one call to WAttrib(). This is
 shown in the following line of code where the user reads the current
 value of the eye direction and up direction.
 
-::
+.. code-block:: unicon
 
    every put(attrList, WAttrib(w, "eyedir", "eyeup")
 
@@ -641,7 +637,7 @@ value of the eye direction and up direction.
 The following is an example on how to use some of the functions to draw
 primitives.
 
-::
+.. code-block:: unicon
 
    Fg(w, "ambient yellow")
    DrawDisk(w, 0.4, -0.5, -4.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.5, -5.0, 0.5, 1.0)
@@ -655,7 +651,7 @@ primitives.
    DrawSphere(w, 0.5, 1.0, -3.0, 0.5)
    WAttrib(w, "light0=on, diffuse white")
 
-.. image:: utr9/utr9-img021.png
+.. image:: assets/utr9/utr9-img021.png
 
 The function Fg(), specifies the material properties of an object. These
 material properties affect the color and appearance of the primitives.
@@ -688,10 +684,10 @@ pyramid using the DrawCylinder() function. Slices and rings affect
 DrawSphere(), DrawCylin der(), DrawTorus() and DrawDisk() functions. The
 example and figure below illustrates the use of slices and rings.
 
-::
+.. code-block:: unicon
 
    procedure main()
-      &window := open("slices & rings", "gl", "size=800,600") | stop("can’t open window!")
+      &window := open("slices & rings", "gl", "size=800,600") | stop("can't open window!")
       Fg("blue")
       WAttrib( "slices=25", "rings=25" )
       DrawSphere(-2.0, 2.0, 0, 0.5)
@@ -721,7 +717,8 @@ example and figure below illustrates the use of slices and rings.
       Event()
    end
 
-.. image:: utr9/utr9-img022.png
+.. image:: assets/utr9/utr9-img022.png
+
    :width: 300px
 
 .. _lighting-and-materials-1:
@@ -748,17 +745,15 @@ If one does not want to turn on or off a light, a lighting value is
 specified. The following is a line of code which turns light1 on and
 gives it diffuse yellow and ambient gold lighting properties.
 
-::
+.. code-block:: unicon
 
-      WAttrib(w, "light1=on, diffuse yellow; ambient gold")
-
+   WAttrib(w, "light1=on, diffuse yellow; ambient gold")
 The following line of codes sets light0 to the default values for the
 lighting properties.
 
-::
+.. code-block:: unicon
 
-      WAttrib(w, "light0=diffuse white; ambient black; specular white; position 0.0, 1.0, 0.0")
-
+   WAttrib(w, "light0=diffuse white; ambient black; specular white; position 0.0, 1.0, 0.0")
 The following example shows the difference between the different types
 of lighting that can be used in a scene. Each window is the same scene
 rendered using different lighting. The upper right scene has an ambient
@@ -766,10 +761,11 @@ blue-green light. The upper left scene was drawn using a diffuse
 blue-green light. The lower right scene uses only a specular blue-green
 light. The scene in the lower left uses all three types of lighting.
 
-.. image:: utr9/utr9-img024.png
+.. image:: assets/utr9/utr9-img024.png
+
    :width: 300px
 
-::
+.. code-block:: unicon
 
       w := open("ambient.icn","gl","bg=black", "size=400,400")
       WAttrib(w, "light0=on, ambient blue-green", "fg=specular white")
@@ -791,14 +787,13 @@ light. The scene in the lower left uses all three types of lighting.
                   ambient blue-green", "fg=specular white")
       DrawCylinder(z, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0)
       DrawTorus(z, 0.0, -0.2, -3.5, 0.3, 0.7)
-      DrawSphere(z, 0.0, 0.59, -2.2, 0.3)
+DrawSphere(z, 0.0, 0.59, -2.2, 0.3)
+   Materials can be changed using Fg() or WAttrib() with the context
+   attribute fg. A material value is a string containing one or more
+   semi-colon separated material properties. Material properties are of the
+   form
 
-Materials can be changed using Fg() or WAttrib() with the context
-attribute fg. A material value is a string containing one or more
-semi-colon separated material properties. Material properties are of the
-form
-
-.. image:: utr9/utr9-img025.png
+.. image:: assets/utr9/utr9-img025.png
 
 color name or "shininess n", where n is between 0 and 128.
 
@@ -809,14 +804,14 @@ color name or "shininess n", where n is between 0 and 128.
   changes the current material property to diffuse green and ambient
   orange.
 
-::
+.. code-block:: unicon
 
       WAttrib(w, "fg=diffuse green; ambient orange")
 
 a The default values of the material properties are given in the
 following example.
 
-::
+.. code-block:: unicon
 
       Fg(w, "diffuse light grey; ambient grey; _
              specular black; emission black; shininess 50")
@@ -824,9 +819,9 @@ following example.
 The following is an example of several different material properties
 used within one scene.
 
-.. image:: utr9/utr9-img026.jpg
+.. image:: assets/utr9/utr9-img026.jpg
 
-::
+.. code-block:: unicon
 
       Fg(w, "diffuse blue")
       DrawCylinder(w, 0.0, -0.2, -3.5, 1.2, 1.0, 0.0)
@@ -835,36 +830,34 @@ used within one scene.
       Fg(w, "diffuse white; ambient red")
       DrawTorus(w, 0.0, 0.2, -3.5, 0.3, 0.9)
       Fg(w, "shininess 10; diffuse red; specular red; ambient black")
-      DrawTorus(w, 0.0, 0.55, -3.5, 0.3, 0.72)
-
-First a cylinder with a diffuse blue material is drawn. Then the bottom
-torus is drawn, which has a diffuse red material. Next the middle torus
-is draw with a diffuse white and ambient red property. Finally the top
-torus is drawn with a diffuse red, specular red and ambient property,
-and shininess of 10. Notice, that in order an object not to be drawn
-with a previous material property, that property must be reset to its
-default.
+DrawTorus(w, 0.0, 0.55, -3.5, 0.3, 0.72)
+   First a cylinder with a diffuse blue material is drawn. Then the bottom
+   torus is drawn, which has a diffuse red material. Next the middle torus
+   is draw with a diffuse white and ambient red property. Finally the top
+   torus is drawn with a diffuse red, specular red and ambient property,
+   and shininess of 10. Notice, that in order an object not to be drawn
+   with a previous material property, that property must be reset to its
+   default.
 
 The following example shows the effects of emission color on an object.
 
-.. image:: utr9/utr9-img027.jpg
+.. image:: assets/utr9/utr9-img027.jpg
 
-::
+.. code-block:: unicon
 
       Fg(w, "emission blue; diffuse yellow")
       DrawSphere(w, -1.5, 1.0, -5.0, 0.7)
       Fg(w, "emission black")
       DrawSphere(w, 0.0, 0.0, -5.0, 0.7)
       Fg(w, "emission red")
-      DrawSphere(w, 1.5, -1.0, -5.0, 0.7)
-
-In the above example, there are three diffuse yellow spheres drawn. If
-an emission color of blue is applied to the sphere, the sphere appears
-white with a blue ring. If the emission color is red, the sphere remains
-yellow, but now has an orange-red ring. The middle sphere shows the
-effect of having no emission color. Note that in order to obtain the
-diffuse yellow sphere in the center, the emission color had to be change
-to black. It was not needed to change the diffuse material property.
+DrawSphere(w, 1.5, -1.0, -5.0, 0.7)
+   In the above example, there are three diffuse yellow spheres drawn. If
+   an emission color of blue is applied to the sphere, the sphere appears
+   white with a blue ring. If the emission color is red, the sphere remains
+   yellow, but now has an orange-red ring. The middle sphere shows the
+   effect of having no emission color. Note that in order to obtain the
+   diffuse yellow sphere in the center, the emission color had to be change
+   to black. It was not needed to change the diffuse material property.
 
 .. _textures-1:
 
@@ -878,16 +871,16 @@ window. The following example shows how to use a file as a texture. A
 .gif image of a map of the word is used to texture a torus. The texture
 coordinates are the default coordinates as describe in 2.7.
 
-.. image:: utr9/utr9-img028.jpg
+.. image:: assets/utr9/utr9-img028.jpg
+
    :width: 250px
 
-::
+.. code-block:: unicon
 
       WAttrib(w, "texmode=on", "texture=map.gif")
-      DrawTorus(w, 0.0, 0.0, -3.0, 0.3, 0.4)
-
-Instead of using WAttrib(w, "texture=map.gif") to specify the .gif file,
-a call to Texture(w, "map.gif") could be used to obtain the same result.
+DrawTorus(w, 0.0, 0.0, -3.0, 0.3, 0.4)
+   Instead of using WAttrib(w, "texture=map.gif") to specify the .gif file,
+   a call to Texture(w, "map.gif") could be used to obtain the same result.
 
 The next example illustrates the use of an image string to specify a
 texture image. The format of the string is described in section 2.7. The
@@ -895,10 +888,11 @@ string used for this example is taken from Graphics Programming in Icon
 [Griswold98] page 156. This string is used as a texture on a cube using
 the default texture coordinates.
 
-.. image:: utr9/utr9-img029.jpg
+.. image:: assets/utr9/utr9-img029.jpg
+
    :width: 250px
 
-::
+.. code-block:: unicon
 
       WAttrib(w, "texmode=on")
       sphere:= "16,g16, FFFFB98788AEFFFF" ||
@@ -908,20 +902,17 @@ the default texture coordinates.
                "533322221100000A 822222111000003D D41111100000019F"||
                "FA200000000018EF FFA4000000028EFF FFFD9532248BFFFF"
       Texture(w, sphere)
-      DrawCube(w, 0.0, 0.0, -3.0, 1.2)
+DrawCube(w, 0.0, 0.0, -3.0, 1.2)
+   The next example shows the use of another Unicon window as a texture. A
+   simple scene of a lamp is drawn on the first window, which is opened in
+   "gl" mode. This window is then captured and used as a texture on a
+   cylinder. If a Unicon window opened in "g" mode as a texture the same
+   method can be used. Note that in the following code the first window is
+   opened with size 256 x 256. Texture images must have height and width
+   that are powers of 2, or the system must rescale them. The default
+   coordinates for cylinders are used.
 
-The next example shows the use of another Unicon window as a texture. A
-simple scene of a lamp is drawn on the first window, which is opened in
-"gl" mode. This window is then captured and used as a texture on a
-cylinder. If a Unicon window opened in "g" mode as a texture the same
-method can be used. Note that in the following code the first window is
-opened with size 256 x 256. Texture images must have height and width
-that are powers of 2, or the system must rescale them. The default
-coordinates for cylinders are used.
-
- 
-
-::
+.. code-block:: unicon
 
       w := open("win1","gl","bg=light blue","size=256,256")
       Fg(w, "emission pale grey")
@@ -940,55 +931,54 @@ coordinates for cylinders are used.
       WAttrib(w2, "texmode=on")
       Texture(w2, w)
       Fg(w2, "diffuse purple; ambient blue")
-      DrawCylinder(w2, 0.0, 0.0, -3.5, 1.2, 0.7, 0.7)
+DrawCylinder(w2, 0.0, 0.0, -3.5, 1.2, 0.7, 0.7)
+   The next two examples illustrate the use of the default texture
+   coordinates versus texture coordinates spec ified by the programmer. In
+   both examples, a bi-level image is used as the texture image. The format
+   for such a string is described in section 2.7. This image is taken from
+   Graphics Programming in Icon [Griswold98] page 159. The first example
+   uses the default texture coordinates for a filled polygon, which in this
+   case is just a square with sides of length one. In this case the default
+   texture coordinates are as follows. The coordinate (0.0, 0.0) of the
+   texture image is mapped to the vertex (0.0, 0.0, -2.0) of the square,
+   (0.0, 1.0) is mapped to (0.0, 1.0, -2.0), (1.0, 1.0) is mapped to (1.0,
+   1.0, -2.0), and (1.0, 0.0) is mapped to (1.0, 0.0, -2.0).
 
-The next two examples illustrate the use of the default texture
-coordinates versus texture coordinates spec ified by the programmer. In
-both examples, a bi-level image is used as the texture image. The format
-for such a string is described in section 2.7. This image is taken from
-Graphics Programming in Icon [Griswold98] page 159. The first example
-uses the default texture coordinates for a filled polygon, which in this
-case is just a square with sides of length one. In this case the default
-texture coordinates are as follows. The coordinate (0.0, 0.0) of the
-texture image is mapped to the vertex (0.0, 0.0, -2.0) of the square,
-(0.0, 1.0) is mapped to (0.0, 1.0, -2.0), (1.0, 1.0) is mapped to (1.0,
-1.0, -2.0), and (1.0, 0.0) is mapped to (1.0, 0.0, -2.0).
+.. image:: assets/utr9/utr9-img032.jpg
 
-.. image:: utr9/utr9-img032.jpg
    :width: 250px
 
-::
+.. code-block:: unicon
 
       WAttrib(w, "fg=white", "bg=blue", "texmode=on", "texture=4,#8CA9")
       Fg(w, "diffuse purple; ambient blue")
-      FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
+FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
+   This example uses the same texture image and the same object to be
+   textured, but instead uses the texture coordinates (0.0, 1.0), (1.0,
+   1.0), (1.0, 1.0), and (1.0, 0.0). So the coordinate (0.0, 1.0) of the
+   texture image is mapped to the vertex (0.0, 0.0, -2.0) of the square,
+   (1.0, 1.0) is mapped to (0.0, 1.0, -2.0),(1.0, 1.0) is mapped to (1.0,
+   1.0, -2.0), and (1.0, 0.0) is mapped to (1.0, 0.0, -2.0).
 
-This example uses the same texture image and the same object to be
-textured, but instead uses the texture coordinates (0.0, 1.0), (1.0,
-1.0), (1.0, 1.0), and (1.0, 0.0). So the coordinate (0.0, 1.0) of the
-texture image is mapped to the vertex (0.0, 0.0, -2.0) of the square,
-(1.0, 1.0) is mapped to (0.0, 1.0, -2.0),(1.0, 1.0) is mapped to (1.0,
-1.0, -2.0), and (1.0, 0.0) is mapped to (1.0, 0.0, -2.0).
+.. image:: assets/utr9/utr9-img033.jpg
 
-.. image:: utr9/utr9-img033.jpg
    :width: 250px
 
-::
+.. code-block:: unicon
 
        WAttrib(w, "fg=white", "bg=blue", "texmode=on",
                   "texcoord=0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0", "texture=4,\#8CA9")
-       FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
+FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
+   Also instead of using WAttrib() with the attribute texcoord, the
+   function Texcoord() could be used. So the line
 
-Also instead of using WAttrib() with the attribute texcoord, the
-function Texcoord() could be used. So the line
-
-::
+.. code-block:: unicon
 
       WAttrib(w,"texcoord=0.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0, 0.0")
 
 could be replaced by
 
-::
+.. code-block:: unicon
 
    Texcoord(w, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0, 0.0)
 
@@ -1008,17 +998,19 @@ captured using a digital camera. These images were then converted into
 file is one feature of the Unicon 3D graphics facilities that makes
 adding textures simpler than using OpenGL.
 
-.. image:: utr9/utr9-img034.png
+.. image:: assets/utr9/utr9-img034.png
+
    :width: 200px
 
-.. image:: utr9/utr9-img035.png
+.. image:: assets/utr9/utr9-img035.png
+
    :width: 200px
 
 An untextured scene
 
 A textured scene
 
-::
+.. code-block:: unicon
 
    procedure main()
       &window :=open("textured.icn","gl","bg=black","size=700,700")
@@ -1098,9 +1090,8 @@ a disk are used. Texturing is applied to a cylinder and the disk. Notice
 the call
 
 WAttrib(w, "texcoord=auto")
-
-This resets the texture coordinates to the defaults. Finally, texturing
-is turned off to draw the base of the table.
+   This resets the texture coordinates to the defaults. Finally, texturing
+   is turned off to draw the base of the table.
 
 3.7 Animation
 ~~~~~~~~~~~~~
@@ -1130,7 +1121,7 @@ following code fragment illustrates animation by causing a ball to slide
 up and down. In order to “bounce” the program would need to incorporate
 physics.
 
-::
+.. code-block:: unicon
 
       sphere := DrawSphere(w, x, y, z, r)
       increment := 0.2
@@ -1173,23 +1164,21 @@ Attribute "pick" turns on or off selection within portions of a rendered
 scene. To turn on 3D selection at any point in the program, the
 following statement should be inserted at that point:
 
-::
+.. code-block:: unicon
 
-      WAttrib("pick=on")
-
+   WAttrib("pick=on")
 To turn off the 3D selection, simply make another call to WAttrib():
 
-::
+.. code-block:: unicon
 
    WAttrib("pick=off")
-
 To check the current 3D selection state (on or off), the function
-WAttrib can be called with the string parameter "pick" (i.e
-WAttrib("pick") ) and it will return a string value of "on" or "off"
-depending on the current 3D selection state. By default 3D selection is
-turned off. The program can turn on and off the 3D selection depending
-on the program requirements. For a better performance, selection should
-be turned off for all non-selectable objects in the scene.
+   WAttrib can be called with the string parameter "pick" (i.e
+   WAttrib("pick") ) and it will return a string value of "on" or "off"
+   depending on the current 3D selection state. By default 3D selection is
+   turned off. The program can turn on and off the 3D selection depending
+   on the program requirements. For a better performance, selection should
+   be turned off for all non-selectable objects in the scene.
 
 3.8.2 Naming 3D objects
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -1209,7 +1198,7 @@ matter which of these objects is picked. The following code fragment is
 an example of named 3D objects. It simply draws a red rectangle and
 gives it the name "redrect".
 
-::
+.. code-block:: unicon
 
    WSection("redrect") # beginning of a new object named redrect
    Fg("red")
@@ -1237,20 +1226,19 @@ the WSection() names enclosing the object clicked. The following code
 fragment writes all of the objects names that were picked by the mouse
 click:
 
-::
+.. code-block:: unicon
 
       every picked_object := &pick do
-         write(" picked object :", picked_object)
-
-If there were no selectable objects under the cursor at the time of the
-event, &pick just fails and produces no results. &pick gets its results
-from both left-clicks and right-clicks.
+write(" picked object :", picked_object)
+   If there were no selectable objects under the cursor at the time of the
+   event, &pick just fails and produces no results. &pick gets its results
+   from both left-clicks and right-clicks.
 
 These ideas are illustrated in the following example, which draws a
 crude humanoid figure. The rendering function turns "pick=on" and then
 uses WSection() calls to identify different parts of the figure.
 
-::
+.. code-block:: unicon
 
    procedure drawman()
       h := 2.0
@@ -1306,7 +1294,7 @@ uses WSection() calls to identify different parts of the figure.
 The event-handling code for &lpress looks in &pick to see what (if
 anything) the user was selecting.
 
-::
+.. code-block:: unicon
 
    procedure main()
       &window := w := open("picking" , "gl", "size=400,300") |
@@ -1441,15 +1429,14 @@ of such use
 ::
 
    select_id := select3D.selectable("red ball", on_red_ball)
-   WSection(select_id)
-
-In this example a 3D object named "red ball" was registered to be
-selectable. The procedure on_red_ball will be called if this 3D object
-is selected. No event type was passed in the call so this 3D object will
-respond to mouse left click. on_red_ball must be a procedure name (not a
-method) so nothing should be passed as a fourth parameter also. The
-example also shows how is the returned value select_id was passed to
-WSection().
+WSection(select_id)
+   In this example a 3D object named "red ball" was registered to be
+   selectable. The procedure on_red_ball will be called if this 3D object
+   is selected. No event type was passed in the call so this 3D object will
+   respond to mouse left click. on_red_ball must be a procedure name (not a
+   method) so nothing should be passed as a fourth parameter also. The
+   example also shows how is the returned value select_id was passed to
+   WSection().
 
 The second method in Selection3D class is add_action(). This method
 takes four parameters exactly like selectable() except for the first
@@ -1475,7 +1462,7 @@ i.e. 3D object selection would not work as you expect. A correct way to
 use the method handle_event() is shown toward the end of the following
 complete example
 
-::
+.. code-block:: unicon
 
    link selection3D
    global select3D
@@ -1487,7 +1474,7 @@ complete example
    end
    procedure main()
       &window := open("3D selection in Unicon", "gl","size=500,500") |
-      stop("can’t open 3D window")
+      stop("can't open 3D window")
       select3D := Selection3D()
       # begin a new selectable section/object with the name "red ball"
       WAttrib("pick=on") #turn on 3D selection
@@ -2144,49 +2131,39 @@ color name or "shininess n", where n is between 0 and 128.
 References
 ==========
 
-| [Foley82] Foley, J.D; and A.Van Dam. Fundamentals of Interactive
-  Computer Graphics. Reading, MA: Addison-Wesley Publishing Company,
-  1982.
-| [Griswold96] Griswold, Ralph E and Griswold, Madge T. The Icon
-  Programming Language, Third Edition. San Jose, CA: Peer-To-Peer
-  Communications, 1996.
-| [Griswold98] Griswold, Ralph E.; Jeffery, Clinton L.; and Townsend,
-  Gregg M. Graphics Programming in Icon. San Jose, CA. Peer-To-Peer
-  Communications, 1998.
-| [Jeffery03] Jeffery, Clinton; Mohamed, Shamim; Pereda, Ray; and
-  Parlett, Robert. Programming with Unicon. Open book published from
-  http://unicon.org
-| [JeffMart14] Jeffery, Clinton and Martinez, Naomi. The Implementation
-  of Graphics in Unicon Version 12. Unicon Technical Report #5b,
-  `http://unicon.org, <http://unicon.org/>`__ 2014.
-| [OpenGL99] OpenGL Architecture Review Board; Woo, Mason; Neider,
-  Jackie; Davis, Tom; Shreiner, Dave. OpenGL Programming Guide: the
-  Official Guide to Learning OpenGL, Third Edition. Reading, MA:
-  Addison-Wesley Publishing Company, 1999.
-| [OpenGL00] OpenGL Architecture Review Board; Shreiner, Dave. OpenGL
-  Programming Guide: the Official Reference Document to OpenGL, Third
-  Edition. Upper Saddle Reading, MA: Addison-Wesley Pub lishing Company,
-  2000.
-| [Walker94] Walker, Kenneth; The Run-Time Implementation Language for
-  Icon. Technical Report from http://www.cs.arizona.edu/icon/
+1. [Foley82] Foley, J.D; and A.Van Dam. Fundamentals of Interactive Computer Graphics. Reading, MA: Addison-Wesley Publishing Company, 1982.
+2. [Griswold96] Griswold, Ralph E and Griswold, Madge T. The Icon Programming Language, Third Edition. San Jose, CA: Peer-To-Peer Communications, 1996.
+3. [Griswold98] Griswold, Ralph E.; Jeffery, Clinton L.; and Townsend, Gregg M. Graphics Programming in Icon. San Jose, CA. Peer-To-Peer Communications, 1998.
+4. [Jeffery03] Jeffery, Clinton; Mohamed, Shamim; Pereda, Ray; and Parlett, Robert. Programming with Unicon. Open book published from http://unicon.org
+5. [JeffMart14] Jeffery, Clinton and Martinez, Naomi. The Implementation of Graphics in Unicon Version 12. Unicon Technical Report #5b, `http://unicon.org, <http://unicon.org/>`__ 2014.
+6. [OpenGL99] OpenGL Architecture Review Board; Woo, Mason; Neider, Jackie; Davis, Tom; Shreiner, Dave. OpenGL Programming Guide: the Official Guide to Learning OpenGL, Third Edition. Reading, MA: Addison-Wesley Publishing Company, 1999.
+7. [OpenGL00] OpenGL Architecture Review Board; Shreiner, Dave. OpenGL Programming Guide: the Official Reference Document to OpenGL, Third Edition. Upper Saddle Reading, MA: Addison-Wesley Pub lishing Company, 2000.
+8. [Walker94] Walker, Kenneth; The Run-Time Implementation Language for Icon. Technical Report from http://www.cs.arizona.edu/icon/
 
-..  image:: utr9/utr9-img002.png
-..  image:: utr9/utr9-img003.png
-..  image:: utr9/utr9-img004.png
-..  image:: utr9/utr9-img005.png
-..  image:: utr9/utr9-img014.jpg
+.. image:: assets/utr9/utr9-img002.png
+.. image:: assets/utr9/utr9-img003.png
+.. image:: assets/utr9/utr9-img004.png
+.. image:: assets/utr9/utr9-img005.png
+.. image:: assets/utr9/utr9-img014.jpg
+
    :width: 150px
-..  image:: utr9/utr9-img015.jpg
+.. image:: assets/utr9/utr9-img015.jpg
+
    :width: 150px
-..  image:: utr9/utr9-img016.jpg
+.. image:: assets/utr9/utr9-img016.jpg
+
    :width: 150px
-..  image:: utr9/utr9-img017.jpg
+.. image:: assets/utr9/utr9-img017.jpg
+
    :width: 150px
-..  image:: utr9/utr9-img018.jpg
+.. image:: assets/utr9/utr9-img018.jpg
+
    :width: 150px
-..  image:: utr9/utr9-img019.jpg
+.. image:: assets/utr9/utr9-img019.jpg
+
    :width: 150px
-..  image:: utr9/utr9-img023.jpg
-..  image:: utr9/utr9-img030.jpg
-..  image:: utr9/utr9-img031.jpg
+.. image:: assets/utr9/utr9-img023.jpg
+.. image:: assets/utr9/utr9-img030.jpg
+.. image:: assets/utr9/utr9-img031.jpg
+
    :width: 300px

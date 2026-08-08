@@ -406,10 +406,57 @@ procedure parseLiteralBlock(lines, i, limit, container)
                 cb.addLine(stripped)
                 }
             }
+        # Bare ``::`` blocks have no language; mark Unicon samples so
+        # HTML gets ``language-unicon`` highlighting.
+        if looksLikeUniconCode(cb.getLines()) then
+            cb.setLanguage("unicon")
         container.addChild(cb)
         }
 
     return i
+end
+
+# <p>
+# True when a literal/code body looks like Unicon or Icon source.
+# Used to default language for RST <tt>::</tt> literal blocks.
+# <[param lines list of code lines]>
+# <[fails if the body does not look like Unicon]>
+# </p>
+procedure looksLikeUniconCode(lines)
+    local ln, t, hits
+    hits := 0
+    every ln := !lines do {
+        t := trim(ln)
+        if t == "end" then
+            hits +:= 2
+        if match("procedure ", t) | match("method ", t) |
+           match("class ", t) | match("record ", t) |
+           match("invocable ", t) then
+            hits +:= 2
+        if match("every ", t) | match("suspend ", t) |
+           match("create ", t) | match("thread ", t) |
+           match("initial ", t) | match("global ", t) |
+           match("local ", t) | match("static ", t) |
+           match("link ", t) then
+            hits +:= 1
+        if find("spawn(", t) | find("WAttrib(", t) |
+           find("&window", t) | find("&subject", t) |
+           find("&main", t) then
+            hits +:= 1
+        if match("Draw", t) | match("Fill", t) |
+           match("open(", t) | match("write(", t) |
+           match("Fg(", t) | match("Bg(", t) |
+           match("Texcoord(", t) | match("Event(", t) then
+            hits +:= 1
+        # Short samples like ``W := open("win", "gl")``
+        if find(":=", t) & (find("open(", t) | find("WAttrib(", t) |
+           find("Draw", t) | find("Fill", t) | find("create ", t) |
+           find("spawn(", t) | find("thread ", t)) then
+            hits +:= 2
+        }
+    if hits >= 2 then
+        return
+    fail
 end
 
 # <p>

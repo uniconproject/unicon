@@ -1,7 +1,7 @@
 :title: Uflex: A Lexical Analyzer Generator for Unicon
 :author: Clinton Jeffery and Susie Jeffery
 :trnumber: 2b
-:date: 2006-04-03
+:date: 2026-04-03
 :abstract: Uflex is a lexical analyzer generator for Unicon. It strongly
    resembles the original Lex language, and explicitly supports
    development of lexical specifications that can be shared with a tool
@@ -329,7 +329,7 @@ simplistic, definition of a word is any sequence of non-white space
 characters, where white space characters are blanks and tabs. See
 Listing 1 for a Uflex program that operates like wc.
 
-::
+.. code-block:: unicon
 
    ws [ \t]
    nonws [^ \t\n]
@@ -465,7 +465,7 @@ close and can give the reader a feel for the extent to which uflex is
 ready for real-world uses at this point. There is various fancy stuff to
 support semi-colon insertion, etc.
 
-::
+.. code-block:: unicon
 
    %{
    # A Uflex Unicon lexer
@@ -754,7 +754,7 @@ is organized into about 39 procedures and uses string scanning. A test
 program that uses this lexical analyzer to process files named on the
 command line looks like this:
 
-::
+.. code-block:: unicon
 
    link unilex
    procedure main(argv)
@@ -824,21 +824,11 @@ describe ulex and eventually uflex.
 References
 ==========
 
-[Jeffery03] C. Jeffery, S. Mohamed, R. Pereda, and R. Parlett.
-Programming with Unicon. http;//unicon.sf.net/book/ub.pdf, 2003.
-
-[Lesk75] M.E. Lesk and E. Schmidt. LEX – Lexical Analyzer Generator .
-Computer Science Technical Report No. 39, Bell Laboratories, Murray Hill
-New Jersey, October 1975.
-
-[Levine09] J.R. Levine. flex & bison , O'Reilly & Associates, Cambridge,
-Massachusetts, 2009.
-
-[Pereda18] Ray Pereda. Iyacc – a Parser Generator for Icon , Unicon
-Technical Report 3a, http://unicon.org/utr/utr3.pdf, February 2018.
-
-[Jeffery24] Clinton Jeffery. Build Your Own Programming Language, second
-edition. Packt, Birmingham UK, 2024.
+1. [Jeffery03] C. Jeffery, S. Mohamed, R. Pereda, and R. Parlett. Programming with Unicon. http;//unicon.sf.net/book/ub.pdf, 2003.
+2. [Lesk75] M.E. Lesk and E. Schmidt. LEX – Lexical Analyzer Generator . Computer Science Technical Report No. 39, Bell Laboratories, Murray Hill New Jersey, October 1975.
+3. [Levine09] J.R. Levine. flex & bison , O'Reilly & Associates, Cambridge, Massachusetts, 2009.
+4. [Pereda18] Ray Pereda. Iyacc – a Parser Generator for Icon , Unicon Technical Report 3a, http://unicon.org/utr/utr3.pdf, February 2018.
+5. [Jeffery24] Clinton Jeffery. Build Your Own Programming Language, second edition. Packt, Birmingham UK, 2024.
 
 Appendix: Differences Between Uflex and UNIX ``lex(1)`` and ``flex(1)``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

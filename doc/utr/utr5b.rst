@@ -26,7 +26,7 @@ significant improvements to the 2D facilities and major extension in the
 form of 3D graphics capabilities.
 
 1.1 Relevant Source File Summary
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------------
 
 This document assumes a familiarity with the general organization and
 layout of Unicon sources and the configuration and installation process.
@@ -104,8 +104,8 @@ typing
   is performed for other systems; for example, an alternate .bat file is
   used in place of os2.bat or turbo.bat.
 
-**1.2 Graphics #define-d symbols**
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1.2 Graphics #define-d symbols
+------------------------------
 
 The primary, window-system-independent defined symbol that turns on
 window facilities is simply Graphics. Underneath this parent #ifdef, the
@@ -115,8 +115,8 @@ MSWindows, for OS/2 it is PresentationManager, and for the Macintosh,
 MacGraph. Turning on any of the platform specific graphics #define
 symbols turns on Graphics implicitly.
 
-**2. Structures Defined in graphics.h**
----------------------------------------
+2. Structures Defined in graphics.h
+===================================
 
 The header file graphics.h defines a collection of C structures that
 contain pointers to other C structures from graphics.h as well as
@@ -127,7 +127,8 @@ or related color or font management; on the other hand MS Windows maps
 the Unicon context onto a large set of resources, including pens,
 brushes, fonts and bitmaps.
 
-.. image:: utr5b/1000000000000496000003AFC2A4BD63.png
+.. image:: assets/utr5b/1000000000000496000003AFC2A4BD63.png
+
    :width: 6in
    :height: 4.8189in
 
@@ -205,8 +206,8 @@ Platforms that provide backing store may avoid this duplicated effort.
 In practice however it seems most window systems have redraw events even
 if they implement retained windows (for example, MGR [Uhler88]).
 
-**4. Window Manipulation in rxwin.ri and rmswin.ri**
-====================================================
+4. Window Manipulation in rxwin.ri and rmswin.ri
+================================================
 
 The platform-dependent calls in the Unicon run-time system can be
 categorized into several major areas:
@@ -236,6 +237,7 @@ are closed. A call to unbind() removes a binding without necessarily
 closing the window.
 
 4.2 Event Processing
+--------------------
 
 The system software for each graphics platform has a huge number of
 different types of events. Unicon ignores most of them. Of the
@@ -289,6 +291,7 @@ include files. Additional tables mapping strings to integers are found
 in the platform independent source files.
 
 5. Resource Management
+======================
 
 One of the most important tasks performed by platform-specific graphics
 functions is the management of resources, both the on-screen resources
@@ -296,6 +299,7 @@ functions is the management of resources, both the on-screen resources
 performing output.
 
 5.1 Memory Management and r*rsc.ri Files
+----------------------------------------
 
 Memory management for internal window structures is independent of
 Unicon's standard memory management system. Xlib memory is allocated
@@ -313,6 +317,7 @@ lost in the block region. The window interface structures are reference
 counted and freed when the reference count reaches 0.
 
 5.2 Color Management
+--------------------
 
 Historically, managing colors under X Windows was painful. On
 color-indexed systems (such as 256 color displays), if the same color
@@ -329,6 +334,7 @@ present and color allocation code should be read carefully, as various
 portions no longer apply to most modern implementations.
 
 5.3 Font Management
+-------------------
 
 Unicon supports a portable font name syntax. Since the available fonts
 on systems vary widely, "interesting" code has been written to support
@@ -374,7 +380,7 @@ window on Windows OS, the format should be BGR and the data starts at
 the top left corner (no flip).
 
 7. Implementation of 3D Facilities
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+==================================
 
 In order to implement the 3D facilities, the Unicon runtime system was
 modified to support 2D and 3D windows. The Unicon runtime system is
@@ -383,6 +389,7 @@ facilities use the existing 2D facilities code for window creation and
 destruction, as well as handling keyboard and mouse input.
 
 7.1 Requirements
+----------------
 
 The Unicon 3D graphics facilities were developed using OpenGL 1.2;
 OpenGL 1.2 or later must be present on the system in order for the 3D
@@ -392,16 +399,17 @@ is based on the fact that the function glTexBind(), which makes the
 implementation of textures more efficient, is only available in OpenGL
 1.2 and later.
 
-   Also needed for the Unicon 3D graphics facilities is a system that
-   supports a true color visual with a depth buffer of 16 and a double
-   buffer. The requirement of a depth buffer is a necessity to implement
-   lighting. For lighting to work properly in OpenGL, a depth test must
-   be performed, hence the need of a depth buffer. A double buffer is
-   needed to implement smooth animation and the list structure that is
-   used to redraw a window. More information can be found on redrawing
-   of windows in section 7.3.
+Also needed for the Unicon 3D graphics facilities is a system that
+supports a true color visual with a depth buffer of 16 and a double
+buffer. The requirement of a depth buffer is a necessity to implement
+lighting. For lighting to work properly in OpenGL, a depth test must
+be performed, hence the need of a depth buffer. A double buffer is
+needed to implement smooth animation and the list structure that is
+used to redraw a window. More information can be found on redrawing
+of windows in section 7.3.
 
 7.2 Files
+---------
 
 Several files were modified in the implementation of the Unicon 3D
 graphics facilities. Also a new file was added.
@@ -440,6 +448,7 @@ fdefs.h – Unicon 3D graphics facilities function definitions.
 grittin.h – OpenGL type definitions.
 
 7.3 Redrawing Windows
+---------------------
 
 In the 2D graphics facilities, events that require the redrawing of a
 window are handled by using a pixmap. Instead of using a pixmap, for the
@@ -455,7 +464,8 @@ redrawing, the window is cleared, all attributes are reset to the
 defaults, and the Unicon list of lists is traversed to redraw every
 object in the scene.
 
-.. image:: utr5b/100002010000057900000291EAD364DD.png
+.. image:: assets/utr5b/100002010000057900000291EAD364DD.png
+
    :alt: Figure 2. The display list keeps track of all object and
    attributes in the scene
    :width: 6in
@@ -483,6 +493,7 @@ object in the scene.
    record constructor procedure for the appropriate record type.
 
 7.4 Textures
+------------
 
 In OpenGL, textures can be one, two, or three-dimensional and are
 represented as multi-dimensional arrays. In the Unicon 3D graphics
@@ -528,6 +539,7 @@ pointer to the texture structure allowing the reuse of the already built
 texture.
 
 7.5 Texture Coordinates
+-----------------------
 
 The primitives as mentioned in previous sections are cubes, tori,
 cylinders, disks, partial disks, points, lines, polygons, spheres, line
@@ -570,6 +582,7 @@ cubes and tori are a composition of several polygons.
 ..
 
 7.6 3D Object Selection
+-----------------------
 
 Unicon utilizes OpenGL's built-in selection mechanism to support 3D
 object selection. In simple terms, this mechanism works by making an
@@ -631,155 +644,125 @@ These facilities have been ported multiple times and the interface is
 somewhat stable.
 
 ANGLE(a)
-
-Convert from radians into window system units. For example, under X
-these are 1/64 of a degree integer values, while under
-PresentationManager it converts to units of 1/65536 of a degree in a
-fixed-point format.
+   Convert from radians into window system units. For example, under X
+   these are 1/64 of a degree integer values, while under
+   PresentationManager it converts to units of 1/65536 of a degree in a
+   fixed-point format.
 
 ARCHEIGHT(arc)
-
-The height component of an XArc.
+   The height component of an XArc.
 
 ARCWIDTH(arc)
-
-The width component of an XArc.
+   The width component of an XArc.
 
 ASCENT(w)
-
-Returns the number of pixels above the baseline for the current font.
-Note that when Unicon writes text, the (x,y) coordinate gives the left
-edge of the character at its baseline; some window systems may need to
-translate our coordinates.
+   Returns the number of pixels above the baseline for the current font.
+   Note that when Unicon writes text, the (x,y) coordinate gives the left
+   edge of the character at its baseline; some window systems may need to
+   translate our coordinates.
 
 int blimage(w, x, y, width, height, ch, s, len)
-
-Draws a bi-level (i.e. monochrome, 1-bit-per-pixel) image; used in
-DrawImage() which draws bitmap data stored in Unicon strings.
+   Draws a bi-level (i.e. monochrome, 1-bit-per-pixel) image; used in
+   DrawImage() which draws bitmap data stored in Unicon strings.
 
 wcp clone_context(w)
-
-Allocate a new context, cloning attributes from w's context.
+   Allocate a new context, cloning attributes from w's context.
 
 COLTOX(w, i)
-
-Return integer conversion from a 1-based text column to a pixel
-coordinate.
+   Return integer conversion from a 1-based text column to a pixel
+   coordinate.
 
 copyArea(w1, w2, x, y, width, height, x2, y2)
-
-Copies a rectangular block of pixels from w1 to w2.
+   Copies a rectangular block of pixels from w1 to w2.
 
 DESCENT(w)
-
-Returns the number of pixels below the baseline for the current font.
+   Returns the number of pixels below the baseline for the current font.
 
 DISPLAYHEIGHT(w)
-
-Return w's display (screen) height in pixels.
+   Return w's display (screen) height in pixels.
 
 DISPLAYWIDTH(w)
-
-Return w's display width in pixels.
+   Return w's display width in pixels.
 
 bool do_config(w, i)
-
-Performs move/resize operations after one or more attributes have been
-evaluated. Config is a word with two flags: the one bit indicates a
-move, the two bit indicates a resize. The desired sizes are in the
-window state pointer, e.g. w->window->width.
+   Performs move/resize operations after one or more attributes have been
+   evaluated. Config is a word with two flags: the one bit indicates a
+   move, the two bit indicates a resize. The desired sizes are in the
+   window state pointer, e.g. w->window->width.
 
 drawarcs(w, thearcs, i)
-
-Draw i arcs on w, given in an array of XArc structures. Define an
-appropriate XArc structure for your window system; it must include
-fields x, y and width and height fields accessible through macros
-ARCWIDTH() and ARCHEIGHT(). Also, a starting angle angle1 and arc extent
-angle2, assigned through macros ANGLE(), EXTENT(), and FULLARC. This is
-currently a mess. Imitation of the X or PresentationManager code is in
-order.
+   Draw i arcs on w, given in an array of XArc structures. Define an
+   appropriate XArc structure for your window system; it must include
+   fields x, y and width and height fields accessible through macros
+   ARCWIDTH() and ARCHEIGHT(). Also, a starting angle angle1 and arc extent
+   angle2, assigned through macros ANGLE(), EXTENT(), and FULLARC. This is
+   currently a mess. Imitation of the X or PresentationManager code is in
+   order.
 
 drawlines(w, points, i)
-
-Draw i-1 connected lines, connecting the dots given in points.
+   Draw i-1 connected lines, connecting the dots given in points.
 
 drawpoints(w, points, i)
-
-Draw i points.
+   Draw i points.
 
 drawsegments(w, segs, i)
-
-Draw i disconnected line segments; define an Xsegment structure
-appropriate do your window system, consisting of fields x1, y1, x2, y2.
-This type definition requirement should be cleaned up someday.
+   Draw i disconnected line segments; define an Xsegment structure
+   appropriate do your window system, consisting of fields x1, y1, x2, y2.
+   This type definition requirement should be cleaned up someday.
 
 drawstring(w, x, y, s, s_len)
-
-Draw string s at coordinate (x,y) on w. Note that y designates a
-baseline, not an upper-left corner, of the string.
+   Draw string s at coordinate (x,y) on w. Note that y designates a
+   baseline, not an upper-left corner, of the string.
 
 drawrectangles(w, rectangles, i)
-
-Draw i rectangles. Define an XRectangle structure appropriate to your
-window system.
+   Draw i rectangles. Define an XRectangle structure appropriate to your
+   window system.
 
 int dumpimage(w, s, x, y, width, height)
-
-Write an image of a rectangular area in w to file s. Returns Succeeded,
-Failed, or NoCvt if the platform doesn't support the requested format.
-Note that this is the "platform- dependent image writing function";
-requests to write GIF or JPEG are handled outside of this function.
+   Write an image of a rectangular area in w to file s. Returns Succeeded,
+   Failed, or NoCvt if the platform doesn't support the requested format.
+   Note that this is the "platform- dependent image writing function";
+   requests to write GIF or JPEG are handled outside of this function.
 
 eraseArea(w, x, y, width, height)
-
-Erase a rectangular area, that is, set it to the current background
-color. Compare with fillrectangles().
+   Erase a rectangular area, that is, set it to the current background
+   color. Compare with fillrectangles().
 
 EXTENT(a)
-
-Convert from radians into window system units, e.g. under
-PresentationManager it converts to units of 1/65536 of a circle and does
-some weird type conversion.
+   Convert from radians into window system units, e.g. under
+   PresentationManager it converts to units of 1/65536 of a circle and does
+   some weird type conversion.
 
 fillarcs(w, arcs, i)
-
-Fill wedge-like arc sections (pie pieces). See drawarcs().
+   Fill wedge-like arc sections (pie pieces). See drawarcs().
 
 fillrectangles(w, rectangles, i)
-
-Fill i rectangles. See drawrectangles().
+   Fill i rectangles. See drawrectangles().
 
 fillpolygon(w, points, i)
-
-Fill a polygon defined by i points. Connect first and last points if
-they are not the same.
+   Fill a polygon defined by i points. Connect first and last points if
+   they are not the same.
 
 FHEIGHT(w)
-
-Returns the pixel height of the current font, hopefully ASCENT +
-DESCENT.
+   Returns the pixel height of the current font, hopefully ASCENT +
+   DESCENT.
 
 free_binding(w)
-
-Free binding associated with w. This gets rid of a binding that refers
-to w, without necessarily closing the window itself (other bindings may
-point to that window).
+   Free binding associated with w. This gets rid of a binding that refers
+   to w, without necessarily closing the window itself (other bindings may
+   point to that window).
 
 free_context(wc)
-
-Free window context wc.
+   Free window context wc.
 
 free_mutable(w, i)
-
-Free mutable color index i.
+   Free mutable color index i.
 
 free_window(ws)
-
-Free window canvas ws.
+   Free window canvas ws.
 
 freecolor(w, s)
-
-Free a color allocated on w's display.
+   Free a color allocated on w's display.
 
 FS_SOLID
 
@@ -794,392 +777,308 @@ FULLARC
 Window-system value for a complete (360 degree) circle or arc.
 
 FWIDTH(w)
-
-Returns the pixel width of the widest character in the current font.
+   Returns the pixel width of the widest character in the current font.
 
 wsp getactivewindow()
-
-Return a window state pointer to an active window, blocking until a
-window is active. Probably will be generalized to include a non-blocking
-variant. Returns NULL if no windows are opened.
+   Return a window state pointer to an active window, blocking until a
+   window is active. Probably will be generalized to include a non-blocking
+   variant. Returns NULL if no windows are opened.
 
 getbg(w, s)
-
-Returns (writes into s) the current background color.
+   Returns (writes into s) the current background color.
 
 getcanvas(w, s)
-
-Returns (writes into s) the current canvas state.
+   Returns (writes into s) the current canvas state.
 
 getdefault(w, s_prog, s_opt, s)
-
-Get any window system defaults for a program named s_prog resource named
-s_opt, write result in s.
+   Get any window system defaults for a program named s_prog resource named
+   s_opt, write result in s.
 
 getdisplay(w, s)
-
-Write a string to s with the current display name.
+   Write a string to s with the current display name.
 
 getdrawop(w, s)
-
-Return current drawing operation, one of various logical combinations of
-source and destination bits.
+   Return current drawing operation, one of various logical combinations of
+   source and destination bits.
 
 getfg(w, s)
-
-Returns (writes into s) the current foreground color.
+   Returns (writes into s) the current foreground color.
 
 getfntnam(w, s)
-
-Returns (writes into s) the current font. This interface may get changed
-since a portable font naming mechanism is to be installed. Name is
-presently always prefixed by "font=" (pretty stupid, huh); must be an
-artifact of merging window system ports, will be changed.
+   Returns (writes into s) the current font. This interface may get changed
+   since a portable font naming mechanism is to be installed. Name is
+   presently always prefixed by "font=" (pretty stupid, huh); must be an
+   artifact of merging window system ports, will be changed.
 
 geticonic(w, s)
-
-Return current window iconic state in s, could "iconify" or whatever.
-Obsolete (subsumed by canvas attribute, getcanvas()).
+   Return current window iconic state in s, could "iconify" or whatever.
+   Obsolete (subsumed by canvas attribute, getcanvas()).
 
 geticonpos(w, s)
-
-Return icon's position to s, an encoded "x,y" format string.
+   Return icon's position to s, an encoded "x,y" format string.
 
 int getimstr(w, x, y, width, height, paltbl, data)
-
-Gets an image as a string. Used in GIF code.
+   Gets an image as a string. Used in GIF code.
 
 getlinestyle(w, s)
-
-Return current line style, one of solid, dashed, or striped.
+   Return current line style, one of solid, dashed, or striped.
 
 get_mutable_name(w, i)
-
-Returns the string color name currently associated with a mutable color.
+   Returns the string color name currently associated with a mutable color.
 
 getpattern(w, s)
+   Return current fill pattern in s.
 
-Return current fill pattern in s.
+getpixel(w, x, y, long *rv)
+   Assign RGB value for pixel (x,y) into \*rv.
 
-getpixel(w, x, y, long \*rv)
-
-Assign RGB value for pixel (x,y) into \*rv.
-
-getpixel_init(w, struct imgmem \*imem)
-
-Prepare to fetch pixel values from window, obtaining contents from
-server if necessary. This function does all the real work used by
-subsequent calls to getpixel().
+getpixel_init(w, struct imgmem *imem)
+   Prepare to fetch pixel values from window, obtaining contents from
+   server if necessary. This function does all the real work used by
+   subsequent calls to getpixel().
 
 getpointername(w, s)
-
-Write mouse pointer appearance, by name, to s.
+   Write mouse pointer appearance, by name, to s.
 
 getpos(w)
-
-Update the window state's posx and posy fields with the current window
-position.
+   Update the window state's posx and posy fields with the current window
+   position.
 
 getvisual(w, s)
-
-Write a string to s that explains what type of display w is on, e.g.
-"visual=x,y,z", where x is a class, y is the bits per pixel, and z is
-number of colormap entries available. This X-specific anachronism is
-likely to go away.
+   Write a string to s that explains what type of display w is on, e.g.
+   "visual=x,y,z", where x is a class, y is the bits per pixel, and z is
+   number of colormap entries available. This X-specific anachronism is
+   likely to go away.
 
 HideCursor(wsp ws)
-
-Hide the text cursor on window state ws.
+   Hide the text cursor on window state ws.
 
 ICONFILENAME(w)
-
-Produce char \* for window's icon image file name if there is one.
+   Produce char \* for window's icon image file name if there is one.
 
 ICONLABEL(w)
-
-Produce char \* for icon's title if there is one.
+   Produce char \* for icon's title if there is one.
 
 isetbg(w, i)
-
-Set background color to mutable color table entry i. Mutable colors are
-not available on all display types.
+   Set background color to mutable color table entry i. Mutable colors are
+   not available on all display types.
 
 isetfg(w, i)
-
-Set foreground color to mutable color table entry i. Mutable colors are
-not available on all display types.
+   Set foreground color to mutable color table entry i. Mutable colors are
+   not available on all display types.
 
 ISICONIC(w)
-
-Return 1 if the window is presently minimized/iconic, 0 otherwise.
+   Return 1 if the window is presently minimized/iconic, 0 otherwise.
 
 ISFULLSCREEN(w)
-
-Return 1 if the window is presently maximized/fullscreen, 0 otherwise.
+   Return 1 if the window is presently maximized/fullscreen, 0 otherwise.
 
 ISNORMALWINDOW(w)
-
-Return 1 if the window is neither minimized nor maximized, 0 otherwise.
+   Return 1 if the window is neither minimized nor maximized, 0 otherwise.
 
 LEADING(w)
-
-Return current integer leading, the number of pixels from line to line.
+   Return current integer leading, the number of pixels from line to line.
 
 LINEWIDTH(w)
-
-Return current integer line width used during drawing.
+   Return current integer line width used during drawing.
 
 lowerWindow(w)
+   Lower the window to the bottom of the stack.
 
-Lower the window to the bottom of the stack.
-
-mutable_color(w, dptr dp, i, C_integer \*result)
-
-Allocate a mutable color from color spec given by dp and i, placing
-result (a small negative integer) in \*result.
+mutable_color(w, dptr dp, i, C_integer *result)
+   Allocate a mutable color from color spec given by dp and i, placing
+   result (a small negative integer) in \*result.
 
 nativecolor(w, s, r, g, b)
-
-Interpret a platform-specific color name s (define appropriately for
-your window system). Under X, we can do this only if there is a window.
+   Interpret a platform-specific color name s (define appropriately for
+   your window system). Under X, we can do this only if there is a window.
 
 pollevent()
+   Poll for available events on all opened displays. This is where the
+   interpreter calls the window system interface. Return a -1 on an error,
+   otherwise return count of how long before it should be polled (400).
 
-Poll for available events on all opened displays. This is where the
-interpreter calls the window system interface. Return a -1 on an error,
-otherwise return count of how long before it should be polled (400).
+query_pointer(w, XPoint *xp)
+   Produce mouse pointer location relative to w.
 
-query_pointer(w, XPoint \*xp)
-
-Produce mouse pointer location relative to w.
-
-query_rootpointer(XPoint \*xp)
-
-Produce mouse pointer location relative to root window on default
-screen.
+query_rootpointer(XPoint *xp)
+   Produce mouse pointer location relative to root window on default
+   screen.
 
 raiseWindow(w)
+   Raise the window to the top of the stack.
 
-Raise the window to the top of the stack.
-
-bool readimage(w, s, x, y, int \*status)
-
-Read image from file s into w at (x,y). Status is 0 if everything was
-kosher, 1 if some colors weren't available but the image was read OK; if
-a major problem occurs it returns Failed. See loadimage() for the real
-action.
+bool readimage(w, s, x, y, int *status)
+   Read image from file s into w at (x,y). Status is 0 if everything was
+   kosher, 1 if some colors weren't available but the image was read OK; if
+   a major problem occurs it returns Failed. See loadimage() for the real
+   action.
 
 rebind(w, w2)
-
-Assign w's context to that of w2.
+   Assign w's context to that of w2.
 
 RECHEIGHT(rec)
-
-The height component of an XRectangle. Gets "fixed up" (converted) into
-a Y2 value if necessary, in window system specific code.
+   The height component of an XRectangle. Gets "fixed up" (converted) into
+   a Y2 value if necessary, in window system specific code.
 
 RECWIDTH(rec)
-
-The width component of an XRectangle. Gets "fixed up" (converted) into a
-X2 value if necessary, in window system specific code.
+   The width component of an XRectangle. Gets "fixed up" (converted) into a
+   X2 value if necessary, in window system specific code.
 
 RECX(rec)
-
-The x component of an XRectangle.
+   The x component of an XRectangle.
 
 RECY(rec)
-
-The y component of an XRectangle.
+   The y component of an XRectangle.
 
 ROWTOY(w, i)
-
-Return integer conversion from a 1-based text row to a pixel coordinate.
+   Return integer conversion from a 1-based text row to a pixel coordinate.
 
 SCREENDEPTH(w)
-
-Returns the number of bits per pixel.
+   Returns the number of bits per pixel.
 
 int setbg(w, s)
-
-Set the context background color to s. Returns Succeeded or Failed.
+   Set the context background color to s. Returns Succeeded or Failed.
 
 setcanvas(w, s)
-
-Set canvas state to s, make it "iconic", "hidden" or whatever. A canvas
-value extension such as fullscreen would go here. Changes in canvas
-state are tantamount to destroying the old window, creating a new window
-(with appropriate size and style) and adjusting the pixmap size
-correspondingly. Much of the associated logic, however, might be located
-in the event handlers for related window system events.
+   Set canvas state to s, make it "iconic", "hidden" or whatever. A canvas
+   value extension such as fullscreen would go here. Changes in canvas
+   state are tantamount to destroying the old window, creating a new window
+   (with appropriate size and style) and adjusting the pixmap size
+   correspondingly. Much of the associated logic, however, might be located
+   in the event handlers for related window system events.
 
 setclip(w)
-
-Set (enable) clipping on w from its context.
+   Set (enable) clipping on w from its context.
 
 setcursor(w, i)
-
-Turn text cursor on or off. Text cursor is off (invisible) by default.
+   Turn text cursor on or off. Text cursor is off (invisible) by default.
 
 setdisplay(w, s)
-
-Set the display to use for this window; fails if the window is already
-open somewhere.
+   Set the display to use for this window; fails if the window is already
+   open somewhere.
 
 setdrawop(w, s)
-
-Set drawing operation to one of various logical combinations of source
-and destination bits.
+   Set drawing operation to one of various logical combinations of source
+   and destination bits.
 
 int setfg(w, s)
-
-Set the context foreground color to s. Returns Succeeded or Failed.
+   Set the context foreground color to s. Returns Succeeded or Failed.
 
 setfillstyle(w, s)
+   Set fill style to solid, masked, or textured.
 
-Set fill style to solid, masked, or textured.
-
-bool setfont(w, char \**s)
-
-Set the context font to s. This function first attempts to use the
-portable font naming mechanism; it resorts to the system font mechanism
-if the name is not in portable syntax.
+bool setfont(w, char **s)
+   Set the context font to s. This function first attempts to use the
+   portable font naming mechanism; it resorts to the system font mechanism
+   if the name is not in portable syntax.
 
 setgamma(w, gamma)
-
-Set the context's gamma correction factor.
+   Set the context's gamma correction factor.
 
 setgeometry(w, s)
-
-Set the window's size and/or position.
+   Set the window's size and/or position.
 
 setheight(w, i)
-
-Set window height to i, whether or not window is open yet.
+   Set window height to i, whether or not window is open yet.
 
 seticonicstate(w, s)
-
-Set window iconic state to s, it could be "iconify" or whatever.
-Obsolete; setcanvas() is more important.
+   Set window iconic state to s, it could be "iconify" or whatever.
+   Obsolete; setcanvas() is more important.
 
 seticonimage(w, dptr d)
-
-Set window icon to d. Could be string filename or existing pixmap (i.e.
-another window's contents). Pixmap assignment no longer possible, so one
-could simplify this to just take a string parameter.
+   Set window icon to d. Could be string filename or existing pixmap (i.e.
+   another window's contents). Pixmap assignment no longer possible, so one
+   could simplify this to just take a string parameter.
 
 seticonlabel(w, s)
-
-Set icon's string title to s.
+   Set icon's string title to s.
 
 seticonpos(w, s)
-
-Move icon's position to s, an encoded "x,y" format string.
+   Move icon's position to s, an encoded "x,y" format string.
 
 setimage(w, s)
-
-Set an initial image for the window from file s. Only valid during
-open().
+   Set an initial image for the window from file s. Only valid during
+   open().
 
 setleading(w, i)
-
-Set line spacing to i pixels from line to line. This includes font
-height and external leading, so i < fontheight means lines draw partly
-over preceding lines, i > fontheight means extra spacing.
+   Set line spacing to i pixels from line to line. This includes font
+   height and external leading, so i < fontheight means lines draw partly
+   over preceding lines, i > fontheight means extra spacing.
 
 setlinestyle(w, s)
-
-Set line style to solid, dashed, or striped.
+   Set line style to solid, dashed, or striped.
 
 setlinewidth(w, i)
-
-Set line width to i.
+   Set line width to i.
 
 set_mutable(w, i, s)
-
-Set mutable color index i to color s.
+   Set mutable color index i to color s.
 
 SetPattern(w, s, s_len)
-
-Set fill pattern to bits given in s. Fill pattern is not used unless
-fillstyle attribute is changed to "patterned" or "opaquepatterned".
+   Set fill pattern to bits given in s. Fill pattern is not used unless
+   fillstyle attribute is changed to "patterned" or "opaquepatterned".
 
 SetPatternBits(w, width, bits, nbits)
-
-Set fill pattern to bits given in the array of integers named bits. Fill
-pattern is not used unless fillstyle attribute is changed to "patterned"
-or "opaquepatterned".
+   Set fill pattern to bits given in the array of integers named bits. Fill
+   pattern is not used unless fillstyle attribute is changed to "patterned"
+   or "opaquepatterned".
 
 setpointer(w, s)
-
-Set mouse pointer appearance to shape named s.
+   Set mouse pointer appearance to shape named s.
 
 setpos(w, s)
-
-Move window to s, a string encoded "(x,y)" thing.
+   Move window to s, a string encoded "(x,y)" thing.
 
 setwidth(w, i)
-
-Set window width to i, whether or not window is open yet.
+   Set window width to i, whether or not window is open yet.
 
 setwindowlabel(w, s)
-
-Set window's string title to s.
+   Set window's string title to s.
 
 ShowCursor(wsp ws)
-
-Show the text cursor on window state ws.
+   Show the text cursor on window state ws.
 
 int strimage(w, x, y, width, height, e, s, len)
-
-Draws a character-per-pixel image, used in DrawImage(). See blimage().
+   Draws a character-per-pixel image, used in DrawImage(). See blimage().
 
 SysColor
 
 Define this type to be the window system's RGB color structure.
 
 TEXTWIDTH(w, s, s_len)
-
-Returns the integer text width of s using w's current font.
+   Returns the integer text width of s using w's current font.
 
 toggle_fgbg(w)
-
-Swap the foreground and background on w.
+   Swap the foreground and background on w.
 
 unsetclip(w)
-
-Disable clipping on w from its context.
+   Disable clipping on w from its context.
 
 UpdateCursorPos(wsp ws, wcp wc)
-
-Move the text cursor on window state ws and context wc.
+   Move the text cursor on window state ws and context wc.
 
 walert(w, i)
-
-Sounds an alert (beep). i is a volume; it can range between -100 and
-100; 0 is normal.
+   Sounds an alert (beep). i is a volume; it can range between -100 and
+   100; 0 is normal.
 
 warpPointer(w, x, y)
-
-Warp the mouse location to (x,y).
+   Warp the mouse location to (x,y).
 
 wclose(w)
-
-Closes window w. If there are other bindings that refer to the window,
-they are converted into pixmaps, i.e. the window disappears but the
-canvas is still there and can be written on and copied from.
+   Closes window w. If there are other bindings that refer to the window,
+   they are converted into pixmaps, i.e. the window disappears but the
+   canvas is still there and can be written on and copied from.
 
 wflush(w)
-
-Flush output to window w; a no-op on some systems.
+   Flush output to window w; a no-op on some systems.
 
 wgetq(w, dptr result)
-
-Get an event from w's pending queue, put results in descriptor \*res.
-Returns -1 for an error, 1 for success (should fix this).
+   Get an event from w's pending queue, put results in descriptor \*res.
+   Returns -1 for an error, 1 for success (should fix this).
 
 WINDOWLABEL(w)
-
-Produce char \* for window's title if there is one.
+   Produce char \* for window's title if there is one.
 
 FILE \*wopen(s, struct b_list \*lp, dptr attrs, i, int \*err_index,
 is_3d)
@@ -1190,26 +1089,21 @@ defines its own. Copy and modify from rxwin.ri or rmswin.ri. The return
 value is really a wbp, cast to a FILE \*.
 
 wputc(c, w)
-
-Draw character c on window w, interpret newlines, carriage returns,
-tabs, deletes, backspaces, and the bell.
+   Draw character c on window w, interpret newlines, carriage returns,
+   tabs, deletes, backspaces, and the bell.
 
 wsync(w)
-
-Synchronize server and client (a no-op on some systems).
+   Synchronize server and client (a no-op on some systems).
 
 xdis(w, s, s_len)
-
-Draw string s on window w, low-level.
+   Draw string s on window w, low-level.
 
 XTOCOL(w, i)
-
-Return integer conversion from a 0-based pixel coordinate to text
-column.
+   Return integer conversion from a 0-based pixel coordinate to text
+   column.
 
 YTOROW(w, i)
-
-Return integer conversion from a 0-based pixel coordinate to text row.
+   Return integer conversion from a 0-based pixel coordinate to text row.
 
 .. _d-facilities-1:
 
@@ -1221,21 +1115,18 @@ ported. Note that drawing routines generally omit a window to be drawn
 on, because OpenGL tends to assume an implicit / global current drawing
 surface.
 
-add_3dfont(char \*fname, int fsize, char ftype)
-
-Allocate/insert a font matching a given criteria. Doesn't seem to do
-anything useful, it builds a linked list element but doesn't store
-anything much inside it.
+add_3dfont(char *fname, int fsize, char ftype)
+   Allocate/insert a font matching a given criteria. Doesn't seem to do
+   anything useful, it builds a linked list element but doesn't store
+   anything much inside it.
 
 apply_texmodechange(wbp w)
-
-Called when the texture mode has been toggled between “off” and either
-“on”, or a more specific (on) value of replace (default), blend, or
-modulate.
+   Called when the texture mode has been toggled between “off” and either
+   “on”, or a more specific (on) value of replace (default), blend, or
+   modulate.
 
 void cube(double length, double x, double y, double z, int gen)
-
-Draw a cube (due to scaling this may be any rectangular box-like shape).
+   Draw a cube (due to scaling this may be any rectangular box-like shape).
 
 | void cylinder(double radius1, double radius2, double height, double x
 |  double y, double z, int slices, int rings, int gen)
@@ -1248,134 +1139,113 @@ Draw a cylinder.
 
 Draw a disk. Angle2 < 360 (degrees) implies a partial disk.
 
-drawpoly(wbp w, double\* v, int num, int type, int dim)
+drawpoly(wbp w, double* v, int num, int type, int dim)
+   This function draws polygons, lines, points, segments, and filled
+   polygons. There may well be normals and texture coordinates involved.
+   The type parameter determines kind of polygonal primitive drawn.
+   Abstract #defines U3D_POINTS...U3D_POLYGON specify these primitives in a
+   portable way; see h/opengl.h and h/direct3d.h. At the language level
+   they are specified by the meshmode attribute and we may need to reduce
+   the number of supported modes for portability reasons.
 
-This function draws polygons, lines, points, segments, and filled
-polygons. There may well be normals and texture coordinates involved.
-The type parameter determines kind of polygonal primitive drawn.
-Abstract #defines U3D_POINTS...U3D_POLYGON specify these primitives in a
-portable way; see h/opengl.h and h/direct3d.h. At the language level
-they are specified by the meshmode attribute and we may need to reduce
-the number of supported modes for portability reasons.
+drawstrng3d(w, double x, double y, double z, char *s)
+   Draws a string within a 3D window in the current font at location
+   (x,y,z). Might only support Unicon's four portable fonts.
 
-drawstrng3d(w, double x, double y, double z, char \*s)
+int getlight(int light, char *buf)
+   Return the current value of the specified light # in the result buffer
+   buf.
 
-Draws a string within a 3D window in the current font at location
-(x,y,z). Might only support Unicon's four portable fonts.
-
-int getlight(int light, char \*buf)
-
-Return the current value of the specified light # in the result buffer
-buf.
-
-int getmaterials(char \*buf)
-
-Return the current material properties.
+int getmaterials(char *buf)
+   Return the current material properties.
 
 init_3dcanvas(wbp w)
-
-Each window system will have its own initialization; it includes setting
-up the viewport, the matrix mode, lighting, shade model, etc.
+   Each window system will have its own initialization; it includes setting
+   up the viewport, the matrix mode, lighting, shade model, etc.
 
 make_enough_texture_space(wcp wc)
-
-This function wraps around occasional calls to realloc() and
-glGenTextures. Probably all this would be done differently on other
-platforms.
+   This function wraps around occasional calls to realloc() and
+   glGenTextures. Probably all this would be done differently on other
+   platforms.
 
 int popmatrix()
-
-Pop a matrix either the projection or modelview matrix stack.
+   Pop a matrix either the projection or modelview matrix stack.
 
 int pushmatrix()
-
-Push a matrix onto the current stack, that is either the modelview or
-projection stack.
+   Push a matrix onto the current stack, that is either the modelview or
+   projection stack.
 
 int redraw3D(w)
-
-Redraw the 3D contents of window w by traversing its (Unicon) display
-list.
+   Redraw the 3D contents of window w by traversing its (Unicon) display
+   list.
 
 release_3d_resources(wbp w)
-
-This function frees all malloc's and window system resources associated
-with 3D window w. Usually this will include textures, selection
-resources, and a graphics context.
+   This function frees all malloc's and window system resources associated
+   with 3D window w. Usually this will include textures, selection
+   resources, and a graphics context.
 
 rotate(w, dptr argv, int i, dptr f)
-
-Applies a rotation (coordinates in array of 4 descriptors argv, starting
-at subscript i). Output parameter f holds resulting display list record,
-which is inserted into w's display list. Returns 0 for success, -*n* to
-specify runtime error 102 on argument #\ *n*, or 1 for allocation
-failure. The function should be refactored to replace calls to
-glRotated() with something more portable.
+   Applies a rotation (coordinates in array of 4 descriptors argv, starting
+   at subscript i). Output parameter f holds resulting display list record,
+   which is inserted into w's display list. Returns 0 for success, -*n* to
+   specify runtime error 102 on argument #\ *n*, or 1 for allocation
+   failure. The function should be refactored to replace calls to
+   glRotated() with something more portable.
 
 scale(wbp w, dptr argv, int i, dptr f)
-
-Applies a scaling (coordinates in array of 3 descriptors argv, starting
-at subscript i). Output parameter f holds resulting display list record,
-which is inserted into w's display list. Returns 0 for success, -*n* to
-specify runtime error 102 on argument #\ *n*, or 1 for allocation
-failure. The function should be refactored to replace calls to
-glScaled() with something more portable.
+   Applies a scaling (coordinates in array of 3 descriptors argv, starting
+   at subscript i). Output parameter f holds resulting display list record,
+   which is inserted into w's display list. Returns 0 for success, -*n* to
+   specify runtime error 102 on argument #\ *n*, or 1 for allocation
+   failure. The function should be refactored to replace calls to
+   glScaled() with something more portable.
 
 int settexture(int i)
-
-Set the current texture.
+   Set the current texture.
 
 setmaterials(w, s)
+   Given a string of semi-colon separated material properties (ambient,
+   diffuse, specular, emission, and shininess), parse the string and set
+   material properties. Most of this code is portable. The function should
+   be refactored to replace calls to glMaterialfv() with something more
+   portable.
 
-Given a string of semi-colon separated material properties (ambient,
-diffuse, specular, emission, and shininess), parse the string and set
-material properties. Most of this code is portable. The function should
-be refactored to replace calls to glMaterialfv() with something more
-portable.
+setlight(wbp w, char* s, int light)
+   Turn a light on or off and/or set its various component values. Calls to
+   glLightfv() need to be abstracted/pulled out.
 
-setlight(wbp w, char\* s, int light)
+setmeshmode(wbp w, char* s)
+   Set the mesh mode to one of points, lines, linestrip, lineloop,
+   triangles, trianglefan, trianglestrip, quads, quadstrip, or polyon.
+   OpenGL scalars stored need to be abstracted (GL_POINTS, etc.).
 
-Turn a light on or off and/or set its various component values. Calls to
-glLightfv() need to be abstracted/pulled out.
+settexcoords(wbp w, char* s)
+   Set the texture coordinates to either “auto” or to an even-numbered
+   comma-separated list of values denoting alternating x,y pairs.
+   Refactoring is needed to pull out many GL calls from a large amount of
+   portable (string parsing and display list constrution) code.
 
-setmeshmode(wbp w, char\* s)
+setselectionmode(wbp w, char* s)
+   Set the selection mode to “on” or “off”. Portable, move to rwin3d.ri.
 
-Set the mesh mode to one of points, lines, linestrip, lineloop,
-triangles, trianglefan, trianglestrip, quads, quadstrip, or polyon.
-OpenGL scalars stored need to be abstracted (GL_POINTS, etc.).
-
-settexcoords(wbp w, char\* s)
-
-Set the texture coordinates to either “auto” or to an even-numbered
-comma-separated list of values denoting alternating x,y pairs.
-Refactoring is needed to pull out many GL calls from a large amount of
-portable (string parsing and display list constrution) code.
-
-setselectionmode(wbp w, char\* s)
-
-Set the selection mode to “on” or “off”. Portable, move to rwin3d.ri.
-
-setmaterials(wbp w, char\* s)
-
-Given a string of semi-colon separated material properties (ambient,
-diffuse, specular, emission, and shininess), parse the string and set
-material properties. Calls to glMaterialfv() must be abstracted by
-refactoring.
+setmaterials(wbp w, char* s)
+   Given a string of semi-colon separated material properties (ambient,
+   diffuse, specular, emission, and shininess), parse the string and set
+   material properties. Calls to glMaterialfv() must be abstracted by
+   refactoring.
 
 setlinewidth3D(wbp w, LONG linewid)
-
-Set the line width. Call to glLineWidth() must be abstracted by
-refactoring.
+   Set the line width. Call to glLineWidth() must be abstracted by
+   refactoring.
 
 | void sphere(double radius, double x, double y, double z,
 |  int slices, int rings, int gen)
 
 Draw a sphere
 
-wfp srch_3dfont(char \*fname, int fsize, char ftype)
-
-Search for a font matching a given criteria from among existing 3D
-fonts.
+wfp srch_3dfont(char *fname, int fsize, char ftype)
+   Search for a font matching a given criteria from among existing 3D
+   fonts.
 
 | int torus(double radius1, double radius2, double x, double y, double
   z,
@@ -1399,12 +1269,10 @@ int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata
 Update the texture texhandle with new image data.
 
 int TexDrawPoint(wbp w, int texhandle, int x, int y)
-
-Draws a point at x,y in the texture texhandle.
+   Draws a point at x,y in the texture texhandle.
 
 int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
-
-Draws a line in the texture texhandle.
+   Draws a line in the texture texhandle.
 
 int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width,
 int height, int xt, int yt, int width2, int height2)
@@ -1412,21 +1280,18 @@ int height, int xt, int yt, int width2, int height2)
 Copies an area from a window to the texture texhandle.
 
 int texwindow2D(wbp w1, wbp w2)
-
-Use a 2D window as a texture source.
+   Use a 2D window as a texture source.
 
 int texwindow3D(wbp w1, wbp w2)
-
-Use an OpenGL window as a texture source.
+   Use an OpenGL window as a texture source.
 
 translate(wbp w, dptr argv, int i, dptr f)
-
-Applies a translation (coordinates in array of 3 descriptors argv,
-starting at subscript i). Output parameter f holds resulting display
-list record, which is inserted into w's display list. Returns 0 for
-success, -*n* to specify runtime error 102 on argument #\ *n*, or 1 for
-allocation failure. The function should be refactored to replace calls
-to glTranslated() with something more portable.
+   Applies a translation (coordinates in array of 3 descriptors argv,
+   starting at subscript i). Output parameter f holds resulting display
+   list record, which is inserted into w's display list. Returns 0 for
+   success, -*n* to specify runtime error 102 on argument #\ *n*, or 1 for
+   allocation failure. The function should be refactored to replace calls
+   to glTranslated() with something more portable.
 
 FILE \*wopengl(char \*name, struct b_list \*lp, dptr attr, int n, int
 \*err_index)
@@ -1444,14 +1309,12 @@ generic re-usable elements. In some cases, they may be functions that
 need to be added to the OpenGL implementation in order to abstract out
 an OpenGL-specific chunk from an otherwise portable reusable function.
 
-int determinematerial(char \*temp, long r, long g, long b, long a)
-
-Traverse the current display list and set material properties. RGBA are
-X11-style 16-bit color components in the range 0-65535.
+int determinematerial(char *temp, long r, long g, long b, long a)
+   Traverse the current display list and set material properties. RGBA are
+   X11-style 16-bit color components in the range 0-65535.
 
 int identitymatrix()
-
-Revert the current matrix stack top to the identity matrix.
+   Revert the current matrix stack top to the identity matrix.
 
 wtp lookup_texture_byname(wbp w, char \*name, int len, int ttype, int
 curtex)
@@ -1459,12 +1322,10 @@ curtex)
 look up the texture struct given the filename of the texture.
 
 int setautogen(int i)
+   Boolean on automatic texture coordinate generation.
 
-Boolean on automatic texture coordinate generation.
-
-int setmatrixmode(char \*)
-
-Set the current matrix mode to “modelview” or “projection”.
+int setmatrixmode(char *)
+   Set the current matrix mode to “modelview” or “projection”.
 
 Acknowledgements
 ================
@@ -1477,6 +1338,7 @@ process developed most of the separation into platform-dependent and
 independent modules. Xuhua Zhang contributed the JPEG image support.
 
 Appendix A: The X Implementation
+================================
 
 The reference implementation of Unicon's graphics facilities is written
 in terms of Xlib, the lower-level X Window C interface [Nye88]. It does
@@ -1522,119 +1384,67 @@ these sources; the build scripts and "make" process tend to fail on
 older versions of Windows.
 
 1. Unpack the sources.
-^^^^^^^^^^^^^^^^^^^^^^
-
-The best way to obtain the sources is via svn checkout, but you may be
-able to use a .zip file. See Icon Project Document 243 [ipd243] for a
-picture of the directory hierarchy. In particular, there should be a BIN
-directory along with the SRC directory under the unicon/ directory.
+   The best way to obtain the sources is via svn checkout, but you may be
+   able to use a .zip file. See Icon Project Document 243 [ipd243] for a
+   picture of the directory hierarchy. In particular, there should be a BIN
+   directory along with the SRC directory under the unicon/ directory.
 
 2. Configure the sources.
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Run "make W-Configure-GCC" (or "make W-Configure" under MSVC) to
-configure your sources to build wiconx and wicont, the Unicon virtual
-machine interpreter, and the Unicon bytecode compiler, with graphics
-facilities enabled.
+   Run "make W-Configure-GCC" (or "make W-Configure" under MSVC) to
+   configure your sources to build wiconx and wicont, the Unicon virtual
+   machine interpreter, and the Unicon bytecode compiler, with graphics
+   facilities enabled.
 
 3. Compile to make executables.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Run "make Unicon" to build the currently-configured binary set. It is
-worth discussing why I provide makefiles instead of a project file for
-use in the Visual C++ IDE. The reason is that the source files for the
-Unicon virtual machine interpreter (generically called iconx; wiconx.exe
-in this case) are written in an extended dialect of ANSI C called RTL
-[ipd261]. Files in this language have the extension .r instead of .c and
-.ri instead of .h. During compilation, a program called rtt (the run
-time translator) translates .r\* files into .c files. If someone wants
-to show me how to insert this step into the Visual C++ IDE build
-process, I would be happy to use their IDE. You can write project files
-for the other C programs that make up the Unicon system, but most
-modifications to the language are changes to the interpreter.
+   Run "make Unicon" to build the currently-configured binary set. It is
+   worth discussing why I provide makefiles instead of a project file for
+   use in the Visual C++ IDE. The reason is that the source files for the
+   Unicon virtual machine interpreter (generically called iconx; wiconx.exe
+   in this case) are written in an extended dialect of ANSI C called RTL
+   [ipd261]. Files in this language have the extension .r instead of .c and
+   .ri instead of .h. During compilation, a program called rtt (the run
+   time translator) translates .r\* files into .c files. If someone wants
+   to show me how to insert this step into the Visual C++ IDE build
+   process, I would be happy to use their IDE. You can write project files
+   for the other C programs that make up the Unicon system, but most
+   modifications to the language are changes to the interpreter.
 
 Notes on the MS Windows internal functions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------------
 
 The functions documented here are those most likely to be involved in
 projects to add features to Windows Unicon.
 
 handle_child(w, UINT msg, WPARAM wp, LPARAM lp)
+   This procedure handles messages from child window controls such as
+   buttons. In many cases, this enqueues an event on the Unicon window.
 
-This procedure handles messages from child window controls such as
-buttons. In many cases, this enqueues an event on the Unicon window.
+int playmedia(w, char *s)
+   This crude function will call one of several multimedia functions
+   depending on whether s is the name of a multimedia file (.wav, .mid,
+   .rmi are supported) or an MCI command string.
 
-int playmedia(w, char \*s)
+int getselection(w, char *s)
+   Return the current contents of the clipboard text. The design of this
+   and setselection() need to be broadened a bit to support images.
 
-This crude function will call one of several multimedia functions
-depending on whether s is the name of a multimedia file (.wav, .mid,
-.rmi are supported) or an MCI command string.
-
-int getselection(w, char \*s)
-
-Return the current contents of the clipboard text. The design of this
-and setselection() need to be broadened a bit to support images.
-
-int setselection(w, char \*s)
-
-Set the clipboard text to s.
+int setselection(w, char *s)
+   Set the clipboard text to s.
 
 References
 ==========
 
-[LeH91] Arnaud LeHors. The X PixMap Format. Groupe Bull, Koala Project,
-INRIA, France, 1991.
+1. [LeH91] Arnaud LeHors. The X PixMap Format. Groupe Bull, Koala Project, INRIA, France, 1991.
+2. [Nye88] Adrian Nye, editor. Xlib Reference Manual. O'Reilly & Associates, Inc., Sebastopol, California, 1988.
+3. [TGJ96] Gregg M. Townsend, Ralph E. Griswold, and Clinton L. Jeffery. Configuring the Source Code for Version 9 of Icon; Technical Report IPD238c, Department of Computer Science, University of Arizona, April 1996. http://www.cs.arizona.edu/icon/docs/ipd238.htm.
+4. [TGJ98] Gregg M. Townsend, Ralph E. Griswold, and Clinton L. Jeffery. Installing Version 9 of Icon on UNIX Platforms; Technical Report IPD243e, Department of Computer Science, University of Arizona, February 1998. http://www.cs.arizona.edu/icon/docs/ipd243.htm.
+5. [Uhl88] StephenA. Uhler. MGR --- C Language Application Interface. Technical report, Bell Communications Research, July 1988.
+6. [Wal94] Kenneth Walker. The Run-Time Implementation Language for Icon; http://www.cs.arizona.edu/icon/ftp/doc/ipd261.pdf. Technical Report IPD261, Department of Computer Science, University of Arizona, June 1994.
+7. [Foley82] Foley, J.D; and A.Van Dam. *Fundamentals of Interactive Computer Graphics.* Reading, MA: Addison-Wesley Publishing Company, 1982.
+8. [Griswold96] Griswold, Ralph E and Griswold, Madge T. *The Icon Programming Language, Third Edition.* San Jose, CA: Peer-To-Peer Communications, 1996.
+9. [Griswold98] Griswold, Ralph E.; Jeffery, Clinton L.; and Townsend, Gregg M. *Graphics Programming in Icon*. San Jose, CA: Peer-To-Peer Communications, 1998.
+10. [Jeffery00] Jeffery, Clinton; Mohamed, Shamim; Pereda, Ray; and Parlett, Robert. *Programming with Unicon*. Draft manuscript from http://unicon.sourceforge.net
+11. [OpenGL99] OpenGL Architecture Review Board; Woo, Mason; Neider, Jackie; Davis; Tom; Shreiner, Dave. *OpenGL Programming Guide: the Official Guide to Learning OpenGL, Third Edition*. Reading, MA: Addison-Wesley Publishing Company, 1999.
+12. [OpenGL00] OpenGL Architecture Review Board; Shreiner, Dave. *OpenGL Programming Guide: the Official Reference Document to OpenGL, Third Edition*. Upper Saddle Reading, MA: Addison-Wesley Publishing Company, 2000.
+13. [Walker94] Walker, Kenneth; *The Run-Time Implementation Language for Icon*. Technical Report from http://www.cs.arizona.edu/icon/
 
-[Nye88] Adrian Nye, editor. Xlib Reference Manual. O'Reilly &
-Associates, Inc., Sebastopol, California, 1988.
-
-| [TGJ96] Gregg M. Townsend, Ralph E. Griswold, and Clinton L. Jeffery.
-  Configuring the Source Code for Version 9 of Icon; Technical Report
-  IPD238c, Department of Computer Science, University of Arizona, April
-  1996.
-| http://www.cs.arizona.edu/icon/docs/ipd238.htm.
-
-| [TGJ98] Gregg M. Townsend, Ralph E. Griswold, and Clinton L. Jeffery.
-  Installing Version 9 of Icon on UNIX Platforms; Technical Report
-  IPD243e, Department of Computer Science, University of Arizona,
-  February 1998.
-| http://www.cs.arizona.edu/icon/docs/ipd243.htm.
-
-[Uhl88] StephenA. Uhler. MGR --- C Language Application Interface.
-Technical report, Bell Communications Research, July 1988.
-
-[Wal94] Kenneth Walker. The Run-Time Implementation Language for Icon;
-http://www.cs.arizona.edu/icon/ftp/doc/ipd261.pdf. Technical Report
-IPD261, Department of Computer Science, University of Arizona, June
-1994.
-
-[Foley82] Foley, J.D; and A.Van Dam. *Fundamentals of Interactive
-Computer Graphics.* Reading, MA: Addison-Wesley Publishing Company,
-1982.
-
-[Griswold96] Griswold, Ralph E and Griswold, Madge T. *The Icon
-Programming Language, Third Edition.* San Jose, CA: Peer-To-Peer
-Communications, 1996.
-
-[Griswold98] Griswold, Ralph E.; Jeffery, Clinton L.; and Townsend,
-Gregg M. *Graphics Programming in Icon*. San Jose, CA: Peer-To-Peer
-Communications, 1998.
-
-[Jeffery00] Jeffery, Clinton; Mohamed, Shamim; Pereda, Ray; and Parlett,
-Robert. *Programming with Unicon*. Draft manuscript from
-http://unicon.sourceforge.net
-
-[OpenGL99] OpenGL Architecture Review Board; Woo, Mason; Neider, Jackie;
-Davis;
-
-Tom; Shreiner, Dave. *OpenGL Programming Guide: the Official Guide to
-Learning OpenGL, Third Edition*. Reading, MA: Addison-Wesley Publishing
-Company, 1999.
-
-[OpenGL00] OpenGL Architecture Review Board; Shreiner, Dave. *OpenGL
-Programming Guide: the Official Reference Document to OpenGL, Third
-Edition*. Upper Saddle Reading, MA: Addison-Wesley Publishing Company,
-2000.
-
-[Walker94] Walker, Kenneth; *The Run-Time Implementation Language for
-Icon*. Technical Report from http://www.cs.arizona.edu/icon/

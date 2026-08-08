@@ -1,19 +1,13 @@
 :title: Configuring and Building Version 13 of Unicon
-:author: Configuring and Building Version 13 of Unicon
+:author: Jafar Al-Gharaibeh and Clinton Jeffery
 :trnumber: 21
-:date: 2019-02-05
+:date: 2019-04-16
 :abstract: Unicon Version 13 features a fully automatic configuration and build
-   mechanism based on GNU autoconf. The new model has fewer manual
-   steps, and configuration parameters selected via command line options
-   instead of preprocessor #define's. This report describes the
-   configuration system. Architecture Technology Corporation Eden
-   Prairie, Minnesota Department of Computer Science The University of
-   Idaho Moscow, Idaho Adapted from IPD238d , by Gregg Townsend, Ralph
-   Griswold and Clinton Jeffery. Much...
+   mechanism based on GNU autoconf.
 :docclass: report
 
 1. Background
-=============
+~~~~~~~~~~~~~
 
 The implementation of the Unicon programming language is written mostly
 in C and RTL [4], a superset of C, for which a translator to C is
@@ -57,7 +51,7 @@ script does not run is more complex; read this report carefully before
 undertaking such a project.
 
 2. Requirements
-===============
+~~~~~~~~~~~~~~~
 
 C Data Sizes
 ^^^^^^^^^^^^
@@ -100,7 +94,7 @@ While the implementation can be divided into components that can be
 built separately, this approach may be painful.
 
 3. File Structure
-=================
+~~~~~~~~~~~~~~~~~
 
 The files for Unicon are organized in a hierarchy. The top level,
 assuming the hierarchy is rooted in ``unicon`` is:
@@ -174,13 +168,13 @@ Unicon.
 
 ::
 
-                  |-3d-----   3D graphics class libraries
+                  |-3d--------   3D graphics class libraries
                   |-cint------   C interface support
                   |-gprogs----   graphics programs
                   |-gui-------   graphical user interface class library
                   |-ide-------   ui integrated development environment
-                  |-ivib------   version 1 improved visual interface builder
-                  |-iyacc-----   Icon yacc
+                  |-ivib------   version 1 improved visual interface builder (deprecated)
+                  |-iyacc-----   Icon yacc, a parser generator
                   |-lib-------   general purpose Unicon libraries
                   |-monvis----   monitoring and visualization tools
                   |-native----   native something
@@ -199,7 +193,7 @@ The Unicon optimizing compiler (unicon -C) requires the presence of a C
 compiler and is therefore not included in all distributions of Unicon.
 
 4. Parameters and Definitions
-=============================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 | There are many defined constants and macros in the source code for
   Unicon that vary from platform to platform. Over the range of possible
@@ -213,20 +207,20 @@ compiler and is therefore not included in all distributions of Unicon.
   defines are automatically determined by the ``configure`` script and
   placed in ``src/h/auto.h`` using the placeholder and input file
   ``src/h/auto.h.in``. In addition to the C language definitions placed
-  in ``src/h/auto.h`` the ``configure`` script also generates symbols
-  and environment varible definitions which used during the build
-  process or in some cases controls the behavior of the build itself.
+  in ``src/h/auto.h``, the ``configure`` script also generates symbols
+  and environment variable definitions which are used during the build
+  process or in some cases control the behavior of the build itself.
   These additional files are all placed in the top level directory and
-  include
-| :
+  include:
 
-::
-
-     Makefile     - (updated from Makefile.in
-     Makedefs     - (gnerated from Makedefs.in) holds paraneters and symbols used
-                    with the C language compiler)
-     Makedefs.uni - (gnerated from Makedefs.uni.in, holds parameters symbols
-                    used with the Unicon language translator and compiler)
+   ``Makefile``
+   updated from ``Makefile.in``
+   ``Makedefs``
+   generated from ``Makedefs.in``. It holds parameters and symbols used
+   with the C language compiler.
+   ``Makedefs.uni``
+   generated from ``Makedefs.uni.in``. It holds parameters symbols used
+   with the Unicon language translator and compiler.
 
 In the unfortunate event that you need to build Unicon on a system where
 the ``configure`` script does not run, ``src/h/define.h`` can still be
@@ -250,7 +244,7 @@ to a name for the operating system for the new platform (see Section 7).
 Other definitions probably need to be added, of course.
 
 5. Configuring Unicon for a UNIX Platform
-=========================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Unicon has been implemented for many UNIX platforms; support for the
 POSIX standard (see Reference 4) is expected. ``make`` might just do the
@@ -269,11 +263,11 @@ packages of C libraries and header files must be built or installed in
 order for Unicon to provide those features.
 
 5.1 Configure Arguments
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The Unicon configure script will enable many features that it finds
 libraries and header files for, by default. A summary of the enabled and
-diabled features is given at the end of the configuration script. Some
+disabled features is given at the end of the configuration script. Some
 experimental features are not part of the Unicon language canon and not
 turned on by default, but can be turned on from the configure script.
 Disabling unwanted features, or enabling non-canon features, is
@@ -330,7 +324,7 @@ non-default locations, which are specified via arguments to
      --with-ssl[=DIR]        Use ssl package (DIR: custom library path)
 
 5.2 Example: Enabling Graphics Facilities
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 On UNIX systems that run X Windows, you may wish to configure Unicon
 with X support. Unicon's graphics facilities call Xlib, the standard C
@@ -355,8 +349,8 @@ command line option to configure to specify its location:
    ./configure --with-xlib=/my/unusual/location
 
 In a more extreme case, you may have to install the development
-libraries and header include files appropriate for C X11 development on
-your system.
+libraries and header include files appropriate for C language X11
+development on your system.
 
 Historically, the files ``xiconx.mak`` and ``xiconc.def``, if they are
 present, were used during Unicon configuration to supply non-default
@@ -373,18 +367,23 @@ include the new ``-lbsd`` library as follows:
 
         XLIB= -L../../bin -lX11 -lpt -lbsd
 
-FIXME: what about iconc? and a corresponding ``xiconc.def`` file with
-the line
+Historically, and possibly still, there was a corresponding
+``xiconc.def`` file that took a line such as
 
 ::
 
         #define ICONC XLIB "-lX11 -lpt -lbsd"
 
-| The former line gets prepended to the flags passed to the C
-  compiler/linker wjen building ``iconx``, while the latter file gets
+| The former (XLIB=...) line gets prepended to the flags passed to the C
+  compiler/linker when building ``iconx``, while the latter file gets
   included and compiled into ``iconc`` when X is configured. Then
-  proceed to the ``make /CODE> build step.``
-| ``In order to build Unicon with X support, some platforms also will have to specify the location of the X header files. Normally they are in``\ ``/usr/include/X11``\ ``; if they are in some other place on your platform, you will need to locate them and identify the appropriate option to add to the C compiler command line, usually``\ ``-I``\ ````\ *``path``*\ ``, where``\ *``path``*\ ``is the directory above the X11 include directory.``
+  proceed to the ``make`` build step.
+| In order to build Unicon with X support, some platforms also will have
+  to specify the location of the X header files. Normally they are in
+  ``/usr/include/X11``; if they are in some other place on your
+  platform, you will need to locate them and identify the appropriate
+  option to add to the C compiler command line, usually ``-I`` *path*,
+  where *path* is the directory above the X11 include directory.
 
 For the Unicon compiler, this option is added via the ``COpts`` macro in
 ``define.h`` for your configuration. The ``COpts`` macro must define a
@@ -394,7 +393,7 @@ quoted C string. For the interpreter, the option is added to the
 configuration.
 
 6. Configuring Unicon for an MS Windows Platform
-================================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In the case of Windows, the primary considerations in configuring Unicon
 have to do with the C compiler that is used. Historically Icon ran on
@@ -406,16 +405,43 @@ known to build on Windows using either
 -  the Windows Ubuntu shell allows a Unix-like Unicon to be built that
    runs well other than known issues in the threads facilities.
 
-The rest of this section speculates on what it would take to build
+For the 64-bit Mingw version of GCC, the configuration and build step is
+performed by invoking
+
+::
+
+     make WUnicon64
+     make
+
+where the first line is an alias for
+
+::
+
+     sh configure --build=x86_64-w64-ming32 --disable-iconc
+
+This begs the question of how to build Unicon's iconc on Windows.
+Undoubtedly, many Bothan spies will die to bring us this information. A
+Windows iconc port was performed awhile back, but building it does not
+occur by default.
+
+The rest of this section should speculate on what it would take to build
 Unicon using the last-known-but-currently-unsupported Windows Compiler,
 Microsoft's C/C++ compiler.
 
+Unicon's autoconf-based configuration script, ``configure``, has not
+been tested as to whether it would find or use a Microsoft C compiler if
+it was on the path. It is thus expected that a traditional Icon-style
+manual configuration process would be required. Feel free to update the
+files in the config/win32/msvc/ directory for us and have a go at it.
+
 An MS Windows configuration includes ``Makefile``\ s, batch scripts, and
 response files for linking. These files should be modified for the new
-platform as appropriate.
+compiler as appropriate. According to config/win32/msvc/status, the last
+time MSVC was used in a built was 2014 under Visual C++ 18.0 from Visual
+Studio 12.0.
 
 7. Configuring Unicon for a New Operating System
-================================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The conditional compilation for specific operating systems is concerned
 primarily with matters such as differences in file naming, the handling
@@ -529,13 +555,14 @@ with the appropriate code, as in
   nature of operating system differences.
 
 8. Trouble Reports and Feedback
-===============================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you run into problems, contact us at the Unicon Project:
 
    Unicon Project, c/o Clinton Jeffery
    Department of Computer Science
    The University of Idaho
+   875 Perimeter Drive
    Moscow, ID 83844-1010
    U.S.A.
    (208) 885-4789 (voice)
@@ -552,10 +579,10 @@ are not implemented in your installation or any changes that would
 affect users.
 
 References
-==========
+^^^^^^^^^^
 
 | 1. Clinton Jeffery and Donald Ward, editors, *The Implementation of
-  the Icon and Unicon: a Compenium*, unicon.org/book/ib.pdf.
+  the Icon and Unicon: a Compendium*, unicon.org/book/ib.pdf.
 | 2. B. W. Kernighan and D. M. Ritchie, *The C Programming Language*,
   Prentice-Hall, Inc., Englewood Cliffs, NJ, first edition, 1978.
 | 3. *American National Standard for Information Systems -- Programming
@@ -611,8 +638,8 @@ careful to enclose all arguments in parentheses.
 Character Set
 ^^^^^^^^^^^^^
 
-The default character set for Icon is ASCII. If you are configuring Icon
-for a platform that uses the EBCDIC character set, add
+The default character set for Unicon is ASCII. If you are configuring
+Unicon for a platform that uses the EBCDIC character set, add
 
    ::
 
@@ -631,8 +658,8 @@ There are two constants that relate to the size of C data:
       IntBits     (default: WordBits)
 
 ``IntBits`` is the number of bits in a C *int*. It may be 16, 32, or 64.
-``WordBits`` is the number of bits in a C *long* (Icon's "word"). It may
-be 32 or 64.
+``WordBits`` is the number of bits in a C *long* (Unicon's "word"). It
+may be 32 or 64.
 
 If your C library expects *doubles* to be aligned at double-word
 boundaries, add
@@ -698,8 +725,8 @@ to ``define.h``.
 Storage Region Sizes
 ^^^^^^^^^^^^^^^^^^^^
 
-The default sizes of Icon's run-time storage regions for allocated data
-normally are calculated from the amount of physical memory on the
+The default sizes of Unicon's run-time storage regions for allocated
+data normally are calculated from the amount of physical memory on the
 machine. However, different values can be set:
 
 ::
@@ -710,7 +737,7 @@ machine. However, different values can be set:
 Since users can override the set values with environment variables, it
 is unwise to change them from their defaults except in unusual cases.
 
-The sizes for Icon's main interpreter stack and co-expression stacks
+The sizes for Unicon's main interpreter stack and co-expression stacks
 also can be set:
 
 ::
@@ -845,13 +872,13 @@ If your C library includes ``getopt()``, you can add
 
         #define SysOpt
 
-to use the library function instead of Icon's private version.
+to use the library function instead of Unicon's private version.
 
 Host Identification
 ^^^^^^^^^^^^^^^^^^^
 
 If your system does not include a ``uname()`` library function, the
-value of the Icon keyword ``&host`` must be specified by adding
+value of the Unicon keyword ``&host`` must be specified by adding
 
 ::
 
@@ -915,9 +942,9 @@ to ``define.h``.
 X Window Facilities
 ^^^^^^^^^^^^^^^^^^^
 
-The files needed to build Icon with X Window facilities are not in the
-same places on all platforms. If Icon fails to build because an include
-file needed by X cannot be found, it may be necessary to edit
+The files needed to build Unicon with X Window facilities are not in the
+same places on all platforms. If Unicon fails to build because an
+include file needed by X cannot be found, it may be necessary to edit
 ``src/h/sys.h`` to reflect the local location.
 
 Some early versions of X Window Systems, notably X11R3, do not support
@@ -1030,10 +1057,11 @@ for ``HSegs``. Sets and tables grow from 4 hash buckets to a maximum of
 are 8 for ``HSlots`` and 10 for ``HSegs``. Sets and tables grow from 8
 hash buckets to a maximum of 4096, and become full at 20480 elements.
 
-Debugging Code
-^^^^^^^^^^^^^^
+Implementation Debugging Code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Icon contains some code to assist in debugging. It is enabled by the
+Separate from user debugger tools such as ``udb``, Unicon contains some
+code to assist in debugging the implementation. It is enabled by the
 definitions
 
    ::
@@ -1042,7 +1070,7 @@ definitions
       #define DeBugLinker /* debugging code for the linker in icont */
       #define DeBugIconx  /* debugging code for the run-time */
 
-All three of these are automatically defined if ``DeBu``\ g is defined.
+All three of these are automatically defined if ``DeBug`` is defined.
 
 The debugging code for the translator consists of functions for dumping
 symbol tables (see ``icont/tsym.c``). These functions are rarely needed
@@ -1057,11 +1085,11 @@ incorrect.
 
 The debugging code for the executor consists of a few validity checks at
 places where problems have been encountered in the past. It also
-provides functions for dumping Icon values. See ``runtime/rmisc.r`` and
-``runtime/rmemmgt.r``.
+provides functions for dumping Unicon values. See ``runtime/rmisc.r``
+and ``runtime/rmemmgt.r``.
 
-When installing Icon on a new operating system, it is advisable to
-enable the debugging code until Icon is known to be running properly.
+When installing Unicon on a new operating system, it is advisable to
+enable the debugging code until Unicon is known to be running properly.
 The code produced is innocuous and adds only a few percent to the size
 of the executable files. It should be removed by deleting the definition
 listed above from ``define.h`` as the final step in the implementation
@@ -1240,7 +1268,20 @@ openssl-devel
 Windows
 ^^^^^^^
 
+Windows Unicon is built with Mingw64, for which many of the optional
+libraries described above are not easily available in binary form. Some
+of them can be built from source code successfully. The known-successful
+libraries, where to obtain them, and how to compile them should be
+listed here eventually, feel free to pester the authors if you need
+specific functionality on Windows.
+
 MacOS
 ^^^^^
+
+MacOS has its own third-party software sites. For example, the X Window
+System was a part of MacOS for awhile, but is now relegated to a large
+external optional download. How to obtain, install or compile optional
+third party libraries for MacOS should be listed here eventually, feel
+free to pester the authors if you need specific functionality on MacOS.
 
 .. |[logo]| image:: http://www.unicon.org/utr/utr1/Image3.jpg

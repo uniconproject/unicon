@@ -79,19 +79,20 @@ Ui's Find/Replace capabilities include a search text-field on the right
 side of the tool-bar for quickly finding text, and an expanded dialog
 for searching and replacing.
 
-.. image:: utr12/findReplace3.png
+.. image:: assets/utr12/findReplace3.png
+
    :width: 400px
 
-.. image:: utr12/findReplace2.png
+.. image:: assets/utr12/findReplace2.png
+
    :width: 400px
 
 Figure 3: Search from the Toolbar (left) or Find & Replace from the Edit
 Menu (right)
-
-The search text-field is bracketed by two buttons: a find button on the
-far right edge which initiates a search, and a direction toggle button
-to the left of the search text-field that changes the direction of the
-search.
+   The search text-field is bracketed by two buttons: a find button on the
+   far right edge which initiates a search, and a direction toggle button
+   to the left of the search text-field that changes the direction of the
+   search.
 
 For more substantial search tasks, the Find & Replace dialog accessed
 from the Edit menu supports case-insensitive, backwards, and regular
@@ -373,7 +374,7 @@ functions are loaded into a table by means of a recursive call to the
 classbrowser tree which contains the function names and line numbers of
 that project file. The call to the recursive function is here:
 
-::
+.. code-block:: unicon
 
    method treeRecursion(N)
    local t
@@ -437,15 +438,15 @@ http://unicon.org/utr/utr7.html, 2006.
 Graphics Facilities for the Unicon Programming Language Version 9.3, The
 Univ. of Arizona Icon Project Document IPD281, 1996.
 
-..  image:: utr12/unilogo.jpg
-..  image:: utr12/uiopen.png
-..  image:: utr12/uiedit.png
-..  image:: utr12/findReplace1.png
-..  image:: utr12/comperr.png
-..  image:: utr12/runerr.png
-..  image:: utr12/project_dialog_screenshot.png
-..  image:: utr12/userdefined.png
-..  image:: utr12/builtin.png
-..  image:: utr12/View_Menu.jpg
-..  image:: utr12/Preferences.jpg
-..  image:: utr12/usecase.png
+.. image:: assets/utr12/unilogo.jpg
+.. image:: assets/utr12/uiopen.png
+.. image:: assets/utr12/uiedit.png
+.. image:: assets/utr12/findReplace1.png
+.. image:: assets/utr12/comperr.png
+.. image:: assets/utr12/runerr.png
+.. image:: assets/utr12/project_dialog_screenshot.png
+.. image:: assets/utr12/userdefined.png
+.. image:: assets/utr12/builtin.png
+.. image:: assets/utr12/View_Menu.jpg
+.. image:: assets/utr12/Preferences.jpg
+.. image:: assets/utr12/usecase.png

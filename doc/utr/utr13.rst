@@ -1,7 +1,7 @@
 :title: The Unicon Messaging Facilities
 :author: Steven E. Lumos and Clinton L. Jeffery
 :trnumber: 13a
-:date: 2008-11-01
+:date: 2015-06-24
 :abstract: A messaging language provides highly-integrated connectivity
    (networking) along with context sensitivity. This work explores the
    implementation of messaging in a more traditional language by adding
@@ -36,15 +36,17 @@ examples of the use of these facilities.
 A major goal of the messaging facility is to leverage the intuition of
 Unicon programmers. A Messaging program can be as simple as:
 
-procedure main(args)
+.. code-block:: unicon
 
-f := open(args [1], ”m”)
+   procedure main(args)
 
-every write (! f )
+   f := open(args [1], "m")
 
-close ( f )
+   every write (! f )
 
-end
+   close ( f )
+
+   end
 
 This program is completely familiar to a Unicon programmer with the
 exception of ”m” being passed as the mode argument to open(). This
@@ -131,42 +133,42 @@ Messaging extensions, to get an idea of what to expect.
 
 5.1. Finger
 
-open(”finger://<host>[:<port >][/[/w]<username>]”, ”m”)
+open("finger://<host>[:<port >][/[/w]<username>]", "m")
+   Finger is a simple user information protocol. A typical Finger server
+   will report the real name of a user, whether they are currently logged
+   in, and optionally append the contents of a file that the user creates
+   (known as a “dot-plan” file). Since there is no standard URL for Finger
+   requests, the messaging facilities uses the form described in a draft
+   standard [Hoffman], which is unfortunately expired but currently the
+   closest thing to an authoritative description available. The optional /w
+   component of the URL requests a “higher level of verbosity” from the
+   server, but the exact meaning is not specified by the standard and
+   varies among implementations. Finger queries are read-only operations.
+   Examples:
 
-Finger is a simple user information protocol. A typical Finger server
-will report the real name of a user, whether they are currently logged
-in, and optionally append the contents of a file that the user creates
-(known as a “dot-plan” file). Since there is no standard URL for Finger
-requests, the messaging facilities uses the form described in a draft
-standard [Hoffman], which is unfortunately expired but currently the
-closest thing to an authoritative description available. The optional /w
-component of the URL requests a “higher level of verbosity” from the
-server, but the exact meaning is not specified by the standard and
-varies among implementations. Finger queries are read-only operations.
-Examples:
+.. code-block:: unicon
 
-open(”finger://nevada.edu/slumos”, ”m”)
+   open("finger://nevada.edu/slumos", "m")
 
-open(”finger://nevada.edu//w slumos”, ”m”)
+   open("finger://nevada.edu//w slumos", "m")
 
-open(”finger://nevada.edu:79”)
+   open("finger://nevada.edu:79")
 
 5.2. HTTP
 
 open(”http://<host>[:<port>][/[<path>]]”, ”m[s]”)
 
-open(”https://<host>[:<port>][/[<path>]]”, ”m[s]”)
-
-The Hypertext Transfer Protocol (HTTP) is the protocol of the World Wide
-Web. Using HTTP, a Unicon program can access a wide range of resources:
-static data files, online databases, and applications. HTTP messaging
-files can have any of the possible directions, although there is no
-specific support for write-only in the current implementation. The most
-common case is a read-only request initiated by a call to open() such as
-M := open(”http://unicon.org/index.html”, ”m”). The contents of the
-index.html file can be read using any of the normal read operations, and
-the header of the response may be retrieved by using the Unicon table
-operations on the messaging file (e.g. M[”Date”]).
+open("https://<host>[:<port>][/[<path>]]", "m[s]")
+   The Hypertext Transfer Protocol (HTTP) is the protocol of the World Wide
+   Web. Using HTTP, a Unicon program can access a wide range of resources:
+   static data files, online databases, and applications. HTTP messaging
+   files can have any of the possible directions, although there is no
+   specific support for write-only in the current implementation. The most
+   common case is a read-only request initiated by a call to open() such as
+   M := open(”http://unicon.org/index.html”, ”m”). The contents of the
+   index.html file can be read using any of the normal read operations, and
+   the header of the response may be retrieved by using the Unicon table
+   operations on the messaging file (e.g. M[”Date”]).
 
    The secure encrypted variant of HTTP is specified by URLs beginning
    with https. This URI prefix uses the OpenSSL secure sockets library
@@ -225,107 +227,109 @@ put the URL of the new location into the “Location” header field. The
 following program shows how to use this information to automatically
 fetch the URL at it’s new location:
 
-procedure main(args)
+.. code-block:: unicon
 
-if ∗args < 1 then stop(”usage: ”, &progname, ” url ”)
+   procedure main(args)
 
-# Connect to the host specified in the URL, sending some custom
+   if ∗args < 1 then stop("usage: ", &progname, " url ")
 
-# header fields .
+   # Connect to the host specified in the URL, sending some custom
 
-f := open(args [1], ”m”,
+   # header fields .
 
-”User−Agent: Unicon Grab 0.0”,
+   f := open(args [1], "m",
 
-”X−Unicon: http :// icon . cs . unlv . edu /”) \|
+   "User−Agent: Unicon Grab 0.0",
 
-stop(args [1], ”: can’ t open”)
+   "X−Unicon: http :// icon . cs . unlv . edu /") \|
 
-repeat {
+   stop(args [1], ": can' t open")
 
-if f [” Status −Code”] < 300 then {
+   repeat {
 
-# If the server returns a successful status code, read in the
+   if f [" Status −Code"] < 300 then {
 
-# result 64k at a time and write it out .
+   # If the server returns a successful status code, read in the
 
-while writes (reads(f , 65535))
+   # result 64k at a time and write it out .
 
-exit (0)
+   while writes (reads(f , 65535))
 
-}
+   exit (0)
 
-else if f [” Status −Code”] < 400 & \\f[”Location”] then {
+   }
 
-# If the server returns a 3xx error , check for a Location:
+   else if f [" Status −Code"] < 400 & \\f["Location"] then {
 
-# header and follow if found.
+   # If the server returns a 3xx error , check for a Location:
 
-newloc := f [”Location”]
+   # header and follow if found.
 
-close ( f )
+   newloc := f ["Location"]
 
-f := open(newloc, ”m”,
+   close ( f )
 
-”User−Agent: Unicon Grab 0.0”,
+   f := open(newloc, "m",
 
-”X−Unicon: http :// icon . cs . unlv .edu /”) \|
+   "User−Agent: Unicon Grab 0.0",
 
-stop(newloc, ”: can’ t open”)
+   "X−Unicon: http :// icon . cs . unlv .edu /") \|
 
-}
+   stop(newloc, ": can' t open")
 
-else {
+   }
 
-# Some other error , so tell the user what the server told us .
+   else {
 
-stop( f [” Status −Code”], ” ”, \\f[”Reason−Phrase”] \| ””)
+   # Some other error , so tell the user what the server told us .
 
-}
+   stop( f [" Status −Code"], " ", \\f["Reason−Phrase"] \| "")
 
-}
+   }
 
-end
+   }
 
-5.3. POP
+   end
 
-open(”pop://<user>:<pass>@<domain>[:port]”, ”m”)
+   5.3. POP
 
-The POP post office protocol allows Unicon programs to retrieve messages
-from a common class of Internet email servers. The source email address
-is given as e.g. pop://clint:tiger@cs.happy.edu. A POP connection is
-viewed as a list where each complete message is a list element.
-Operators ! and [ ] as well as function pop() work on this list; read()
-does not work because no definition of it would make sense. Function
-pop() effectively removes the e-mail from the server; a POP connection
-must be closed properly for any deletions performed on the connection to
-take place.
+open("pop://<user>:<pass>@<domain>[:port]", "m")
+   The POP post office protocol allows Unicon programs to retrieve messages
+   from a common class of Internet email servers. The source email address
+   is given as e.g. pop://clint:tiger@cs.happy.edu. A POP connection is
+   viewed as a list where each complete message is a list element.
+   Operators ! and [ ] as well as function pop() work on this list; read()
+   does not work because no definition of it would make sense. Function
+   pop() effectively removes the e-mail from the server; a POP connection
+   must be closed properly for any deletions performed on the connection to
+   take place.
 
 # DANGER: This program deletes all messages from your server!
 
-procedure main(av)
+.. code-block:: unicon
 
-if ∗av ˜= 1 then stop("usage: popmail url”)
+   procedure main(av)
 
-if not match(“pop://”, av[1]) then stop(av[1], “ is not a POP url”)
+   if ∗av ˜= 1 then stop("usage: popmail url")
 
-mailbox := open(av[1], “m”) \| stop(“can't open “, av[1])
+   if not match("pop://", av[1]) then stop(av[1], " is not a POP url")
 
-while write(pop(mailbox))
+   mailbox := open(av[1], "m") \| stop("can't open ", av[1])
 
-close(mailbox)
+   while write(pop(mailbox))
 
-end
+   close(mailbox)
+
+   end
 
 5.4. SMTP
 
-open(”mailto:<user>@<domain>”, ”m”)
-
-SMTP support allows Unicon programs to send messages to Internet email
-addresses. The destination email address is given as e.g.
-mailto:unicon-group@cs.unlv.edu. Extensions to the mailto: URL to
-specify header fields such as subject are not supported, this is better
-done using the header mechanism already in place.
+open("mailto:<user>@<domain>", "m")
+   SMTP support allows Unicon programs to send messages to Internet email
+   addresses. The destination email address is given as e.g.
+   mailto:unicon-group@cs.unlv.edu. Extensions to the mailto: URL to
+   specify header fields such as subject are not supported, this is better
+   done using the header mechanism already in place.
 
 In order to construct and send an email message, the runtime must know
 the address of the user sending the message, and the name of a SMTP
@@ -344,45 +348,42 @@ The following program shows how to send a webpage to someone via email.
 An example use could be to have it run periodically to send current
 stock quotes to yourself throughout the day.
 
-procedure main(args)
+.. code-block:: unicon
 
-if ∗args ̃= 2 then stop(”usage: ”, &progname, ” url mailto ”)
+   procedure main(args)
 
-web := open(args [1], ”m”) \| stop(args[1] \|\| ”: can’ t open”)
+   if ∗args ̃= 2 then stop("usage: ", &progname, " url mailto ")
 
-if web[”Status−Code”] < 300 then {
+   web := open(args [1], "m") \| stop(args[1] \|\| ": can' t open")
 
-mail := open(args [2], ”m”, ”Subject : ” \|\| args [1], ”X−Note:
-automatically send by Unicon”) \|
+   if web["Status−Code"] < 300 then {
 
-stop(args[2] \|\| ”: can’ t open”)
+   mail := open(args [2], "m", "Subject : " \|\| args [1], "X−Note:
+   automatically send by Unicon") \|
 
-every write(mail , !web)
+   stop(args[2] \|\| ": can' t open")
 
-close (web)
+   every write(mail , !web)
 
-close (mail)
+   close (web)
 
-}
+   close (mail)
 
-else {
+   }
 
-write(”ERROR: ”, web[”Status−Code”], ” ”, \\web[”Reason−Phrase”] \| ””)
+   else {
 
-}
+   write("ERROR: ", web["Status−Code"], " ", \\web["Reason−Phrase"] \| "")
 
-end
+   }
+
+   end
 
 References
 ==========
 
-Paul E. Hoffman. finger URL specification.
-https://tools.ietf.org/html/draft-ietf-uri-url-finger-02. Note: This is
-an expired IETF draft, but there does not appear to have ever been an
-update.
-
-W3C (World Wide Web Consortium). HTML 4.01 Specification. Section 17.13.
-http://www.w3.org/TR/html401/interact/forms.html#h-17.13
+1. Paul E. Hoffman. Finger URL specification. https://tools.ietf.org/html/draft-ietf-uri-url-finger-02. Note: This is an expired IETF draft, but there does not appear to have ever been an update.
+2. W3C (World Wide Web Consortium). HTML 4.01 Specification. Section 17.13. http://www.w3.org/TR/html401/interact/forms.html#h-17.13
 
 A.     Function and Operator Reference
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -390,32 +391,35 @@ A.     Function and Operator Reference
 This section documents the new behavior of functions and operators which
 act on messaging files.
 
-!M : string\* generate messages from POP
+!M : string* generate messages from POP
+   Generate messages from a POP mailbox (one message per result).
 
-!M : string\* generate lines from a messaging file
+!M : string* generate lines from a messaging file
+   The action of the generate operator depends on the type of the server
+   the messaging file M refers to. A POP connection is treated as a list of
+   messages, so !M will generate messages from the specified mailbox
+   producing each message as a single string. For any other type of
+   connection, !M generates lines of output from the server as strings.
 
-The action of the generate operator depends on the type of the server
-the messaging file M refers to. A POP connection is treated as a list of
-messages, so !M will generate messages from the specified mailbox
-producing each message as a single string. For any other type of
-connection, !M generates lines of output from the server as strings.
 Examples:
 
-M := open(”http://icon.cs.unlv.edu/”, ”m”)
+.. code-block:: unicon
 
-every write (! M) # Writes the contents of a web page by lines
+   M := open("http://icon.cs.unlv.edu/", "m")
 
-M := open(”pop:// user :password@pop.myisp.net”, ”m”)
+   every write (! M) # Writes the contents of a web page by lines
 
-every write (! M) # Writes messages one message at a time
+   M := open("pop:// user :password@pop.myisp.net", "m")
+
+   every write (! M) # Writes messages one message at a time
 
 M[string] : string results header reference
+   HTTP-style response header field reference.
 
 M[number] : string POP message reference
-
-For protocols such as HTTP where responses consist of a header and body,
-M[”S”] will evaluate to the value of the field named ‘S’. In addition,
-two special fields are allowed:
+   For protocols such as HTTP where responses consist of a header and body,
+   M[”S”] will evaluate to the value of the field named ‘S’. In addition,
+   two special fields are allowed:
 
 • M[”Status−Code”] evaluates to the integer code for the status of the
 request, and
@@ -437,42 +441,45 @@ success, 300–399 means an error occurred which may be correctable, and
 The second form (M[n]) is only valid for POP connections. The expression
 returns the n-th message in a POP mailbox. Examples:
 
-M := open(”http :// icon . cs . unlv . edu /”, ”m”)
+.. code-block:: unicon
 
-if (M[”Status−Code”] >= 300) then
+   M := open("http :// icon . cs . unlv . edu /", "m")
 
-# Note: Must handle null Reason−Phrase
+   if (M[”Status−Code”] >= 300) then
 
-stop(M[”Status−Code”], ” ”, (\\M[”Reason−Phrase”] \| ””))
+   # Note: Must handle null Reason−Phrase
 
-M := open(”pop:// user :password@pop.myisp.net”, ”m”)
+   stop(M[”Status−Code”], ” ”, (\\M[”Reason−Phrase”] \| ””))
 
-write(M[3]) # Writes the 3rd message in the mailbox
+.. code-block:: unicon
+
+   M := open("pop:// user :password@pop.myisp.net", "m")
+
+   write(M[3]) # Writes the 3rd message in the mailbox
 
 close(file) : file close a messaging file
-
-close (M) complete any pending request, closes any open connections to
-the server and returns resources associated with the file to the
-operating system. It returns the closed file.
+   close (M) complete any pending request, closes any open connections to
+   the server and returns resources associated with the file to the
+   operating system. It returns the closed file.
 
 delete(file, integer [, integer . . . ]) : file delete a message
+   delete (M, N\ :sub:`1`, ..., N\ :sub:`n`) deletes all messages numbered
+   Nx from a Post-office Protocol (POP) server and returns M. It always
+   succeeds. As a feature of POP, messages are not irreversibly deleted
+   until a successful close (M) is done. If the connection is lost (e.g.
+   because the program exited) without an explicit close, no messages are
+   actually deleted. Examples:
 
-delete (M, N\ :sub:`1`, ..., N\ :sub:`n`) deletes all messages numbered
-Nx from a Post-office Protocol (POP) server and returns M. It always
-succeeds. As a feature of POP, messages are not irreversibly deleted
-until a successful close (M) is done. If the connection is lost (e.g.
-because the program exited) without an explicit close, no messages are
-actually deleted. Examples:
+.. code-block:: unicon
 
-M := open(”pop:// user :password@pop.myisp.net”, ”m”)
+   M := open("pop:// user :password@pop.myisp.net", "m")
 
-delete (M, 1, 3, 5)
+   delete (M, 1, 3, 5)
 
 open(string, ”m”, . . . ) : file? open messaging file
-
-open(U, ”m”, H1, ..., Hn) connects to the Internet server specified by
-the URL U and sends H1 through Hn as headers for the request part of the
-translation. If the connection cannot be made, a runtime error results.
+   open(U, ”m”, H1, ..., Hn) connects to the Internet server specified by
+   the URL U and sends H1 through Hn as headers for the request part of the
+   translation. If the connection cannot be made, a runtime error results.
 
 Some protocols specify default headers if they are not supplied by the
 program. For HTTP, the User-Agent field is automatically given the value
@@ -483,65 +490,73 @@ automatically copied from the UNICON USERADDRESS environment variable if
 it is defined, or built from the username of the user running the
 program and the hostname of the host it is running on. Examples:
 
-M := open(”http :// icon . cs . unlv . edu /”, ”m”, ”User−Agent:
-Unicon”)
+.. code-block:: unicon
 
-M := open(”mailto:unicon−group@cs.unlv.edu”, ”m”,
+   M := open("http :// icon . cs . unlv . edu /", "m", "User−Agent:
+   Unicon”)
 
-”From: Steve Lumos <slumos@cs.unlv.edu>”,
+.. code-block:: unicon
 
-”To: Unicon Group <unicon−group@cs.unlv.edu>”,
+   M := open("mailto:unicon−group@cs.unlv.edu", "m",
 
-”Subject : Unicon Messaging Works!”,
+   ”From: Steve Lumos <slumos@cs.unlv.edu>”,
 
-”X−Unicon: Sent with Unicon!”)
+   ”To: Unicon Group <unicon−group@cs.unlv.edu>”,
+
+   ”Subject : Unicon Messaging Works!”,
+
+   ”X−Unicon: Sent with Unicon!”)
 
 pop(file) : string? ‘pop’ message
+   A POP connection is seen in Unicon as a list of messages, so pop(M) will
+   remove the first message in the POP mailbox specified by M and return it
+   as a single string. No messages are actually deleted from the server
+   until a successful close(M) is performed. Examples:
 
-A POP connection is seen in Unicon as a list of messages, so pop(M) will
-remove the first message in the POP mailbox specified by M and return it
-as a single string. No messages are actually deleted from the server
-until a successful close(M) is performed. Examples:
+.. code-block:: unicon
 
-M := open(”pop:// user :password@pop.myisp.net”, ”m”)
+   M := open("pop:// user :password@pop.myisp.net", "m")
 
-while write(pop(M))
+   while write(pop(M))
 
 read(file) : string? read a line
+   read(M) completes any pending request and reads a line from the server.
+   The end of line marker is discarded. Examples:
 
-read(M) completes any pending request and reads a line from the server.
-The end of line marker is discarded. Examples:
+.. code-block:: unicon
 
-M := open(”finger://nevada.edu”, ”m”)
+   M := open("finger://nevada.edu", "m")
 
-while (s := read(M)) do {
+   while (s := read(M)) do {
 
-write(s)
+.. code-block:: unicon
 
-}
+   write(s)
+
+   }
 
 reads(file, integer:1) : string? read characters
+   reads(M, n) completes any pending request and reads n characters from
+   the server. If n = −1, the maximum number of characters possible are
+   returned, which usually means the entire file. Examples:
 
-reads(M, n) completes any pending request and reads n characters from
-the server. If n = −1, the maximum number of characters possible are
-returned, which usually means the entire file. Examples:
+.. code-block:: unicon
 
-M := open(”http :// icon . cs . unlv . edu/ data ”, ”m”)
+   M := open("http :// icon . cs . unlv . edu/ data ", "m")
 
-data := reads(M, −1)
+   data := reads(M, −1)
 
-M := open(”http :// www.files.com/ big file . dat ”, ”m”)
+   M := open("http :// www.files.com/ big file . dat ", "m")
 
-while ( writes (reads(M, 4096))) # 4k buffer
+   while ( writes (reads(M, 4096))) # 4k buffer
 
 write(x, . . . ) : x write line
-
-write (...) writes out its arguments, each followed by a newline. If any
-argument is a messaging file, subsequent arguments are written as the
-body part of a request to the server.
+   write (...) writes out its arguments, each followed by a newline. If any
+   argument is a messaging file, subsequent arguments are written as the
+   body part of a request to the server.
 
 writes(x, . . . ) : x write strings
+   writes (...) writes out its arguments. If any argument is a messaging
+   file, subsequent arguments are written as the body part of a request to
+   the server.
 
-writes (...) writes out its arguments. If any argument is a messaging
-file, subsequent arguments are written as the body part of a request to
-the server.

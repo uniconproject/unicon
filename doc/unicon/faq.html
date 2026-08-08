@@ -1,254 +1,369 @@
-<html><head>
-<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
-<h1>
-Unicon: Frequently Asked Questions
-</h1>
-
-This FAQ has been prepared by Clint Jeffery with input from Brian Rogoff
-and Chris Harris.  Last updated September 11, 2012. Thanks to
-Jovana Milutinovich the <a href="http://science.webhostinggeeks.com/unicon-cesto-postavljana-pitanja">FAQ is available in Serbian</a>.
-
-<dl>
-<dt>1. What is Unicon?</dt>
-<dd>Unicon is a "modern dialect" descending
-    from the Icon programming language.  Unicon incorporates numerous new
-    features and extensions to make the Icon language more suitable for a
-    broad range of real-world applications.
-<br><br>
-</dd>
-
-<dt>2. What does the name "Unicon" mean?
-</dt><dd>Version 1 of Unicon referred to a set of UNIX extensions for Icon written
-    by Shamim Mohamed.  More recently the name has been broadened to refer to
-    a unified extended dialect of Icon.  The POSIX system interface
-    has been ported to Windows, and the language also bundles OOP,
-    ODBC database support, and other extensions.
-    It also means: the <em>un</em>Icon.
-</dd><br>
-
-<dt>3. Why aren't you calling it Icon Version 10?</dt>
-<dd>The University of Arizona distributes Icon, and they are neither
-    responsible for, nor endorse Unicon.  Do not ask them questions
-    about it.  The current version of Icon is 9.5.  The Icon Project
-    is welcome to incorporate features from Unicon if they wish.
-</dd><br>
-
-<dt>4. Is this a hostile takeover attempt?</dt>
-<dd>No.  Icon Project at University of Arizona is unaffected by
-Unicon.  We will cooperate with them on Icon-related matters.
-We did not want to invent a new language at all, but are marketing
-Unicon as a new language at the insistence of the Icon Project.
-<br><br>
-</dd>
-
-<dt>5.  What is Unicon, <em>really</em>?</dt>
-<dd>
-Unicon is a superset of Icon with "looser slots and a higher payback", to
-use Las Vegas terminology.  It adds objects, networking and file systems
-access, concurrency, execution monitoring and visualization, and an ODBC
-database interface that operates on local files or
-across a network with SQL database servers.  It is portable to (minimally)
-Linux, MS Windows, Mac OS X, IRIX and Solaris environments.
-<br><br>
-</dd>
-
-<dt>6. What is the motivation for Unicon?</dt>
-<dd>
-
-We wish to develop, improve, and promote Icon-style goal-directed very high
-level languages.  One way to do this is to do a new implementation of an
-existing language; Icon translators into C code and Java code are examples
-of this approach.  Another way to do this is to design a new language that
-is not constrained by the syntax or semantics of an existing language; the
-<a href="http://www2.cs.uidaho.edu/%7Ejeffery/godiva/">Godiva programming language</a>
-is (to some extent) an example this approach.
-Unicon pursues a third path: that of evolving an existing
-language to support new capabilities in a manner that is as compatible
-and consistent with the original design philosophy as possible.  <br><br>
-
-</dd>
-
-
-<dt>7. What's with the ludicrous slogan "more Icon than Icon"?</dt>
-<dd>
-
-It is a parody of the Tyrell Corporation's slogan from the movie <u>Blade
-Runner</u>.  As one example, Icon provides support in its run-time system for
-type conversions and defaulting of parameters that comprises some of the
-basic character of the language.  Yet at the source-level, writing
-procedures that coerce their parameters is clumsy.  We have extended to the
-source language some constructs discovered in the implementation; this is
-(part of) how Icon was carved out of Snobol4's legacy.  Beyond this minor
-detail, you can view the slogan as a homage to "feature bloat", or conclude
-that the slogan fits the added high level capabilities provided by
-Unicon.
-<br><br>
-
-</dd>
-
-<dt>8. Who is responsible for Unicon?</dt>
-<dd>
-
-Unicon was originally the creation of Clinton Jeffery and Shamim Mohamed.
-Federico Balbi has contributed an ODBC interface.
-Robert Parlett contributed the implementation of packages, along with
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>faq</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">faq</h1>
+</header>
+<p>This FAQ has been prepared by Clint Jeffery with input from Brian
+Rogoff and Chris Harris. Last updated September 11, 2012. Thanks to
+Jovana Milutinovich the <a
+href="http://science.webhostinggeeks.com/unicon-cesto-postavljana-pitanja">FAQ
+is available in Serbian</a>.</p>
+<h1 id="what-is-unicon">1. What is Unicon?</h1>
+<p>Unicon is a "modern dialect" descending from the Icon programming
+language. Unicon incorporates numerous new features and extensions to
+make the Icon language more suitable for a broad range of real-world
+applications.</p>
+<h1 id="what-does-the-name-unicon-mean">2. What does the name "Unicon"
+mean?</h1>
+<p>Version 1 of Unicon referred to a set of UNIX extensions for Icon
+written by Shamim Mohamed. More recently the name has been broadened to
+refer to a unified extended dialect of Icon. The POSIX system interface
+has been ported to Windows, and the language also bundles OOP, ODBC
+database support, and other extensions. It also means: the
+<em>un</em>Icon.</p>
+<h1 id="why-arent-you-calling-it-icon-version-10">3. Why aren't you
+calling it Icon Version 10?</h1>
+<p>The University of Arizona distributes Icon, and they are neither
+responsible for, nor endorse Unicon. Do not ask them questions about it.
+The current version of Icon is 9.5. The Icon Project is welcome to
+incorporate features from Unicon if they wish.</p>
+<h1 id="is-this-a-hostile-takeover-attempt">4. Is this a hostile
+takeover attempt?</h1>
+<p>No. Icon Project at University of Arizona is unaffected by Unicon. We
+will cooperate with them on Icon-related matters. We did not want to
+invent a new language at all, but are marketing Unicon as a new language
+at the insistence of the Icon Project.</p>
+<h1 id="what-is-unicon-really">5. What is Unicon, <em>really</em>?</h1>
+<p>Unicon is a superset of Icon with "looser slots and a higher
+payback", to use Las Vegas terminology. It adds objects, networking and
+file systems access, concurrency, execution monitoring and
+visualization, and an ODBC database interface that operates on local
+files or across a network with SQL database servers. It is portable to
+(minimally) Linux, MS Windows, Mac OS X, IRIX and Solaris
+environments.</p>
+<h1 id="what-is-the-motivation-for-unicon">6. What is the motivation for
+Unicon?</h1>
+<p>We wish to develop, improve, and promote Icon-style goal-directed
+very high level languages. One way to do this is to do a new
+implementation of an existing language; Icon translators into C code and
+Java code are examples of this approach. Another way to do this is to
+design a new language that is not constrained by the syntax or semantics
+of an existing language; the <span class="title-ref">Godiva programming
+language </span>__ is (to some extent) an example this approach. Unicon
+pursues a third path: that of evolving an existing language to support
+new capabilities in a manner that is as compatible and consistent with
+the original design philosophy as possible.</p>
+<h1 id="whats-with-the-ludicrous-slogan-more-icon-than-icon">7. What's
+with the ludicrous slogan "more Icon than Icon"?</h1>
+<p>It is a parody of the Tyrell Corporation's slogan from the movie
+<em>Blade Runner</em>. As one example, Icon provides support in its
+run-time system for type conversions and defaulting of parameters that
+comprises some of the basic character of the language. Yet at the
+source-level, writing procedures that coerce their parameters is clumsy.
+We have extended to the source language some constructs discovered in
+the implementation; this is (part of) how Icon was carved out of
+Snobol4's legacy. Beyond this minor detail, you can view the slogan as a
+homage to "feature bloat", or conclude that the slogan fits the added
+high level capabilities provided by Unicon.</p>
+<h1 id="who-is-responsible-for-unicon">8. Who is responsible for
+Unicon?</h1>
+<p>Unicon was originally the creation of Clinton Jeffery and Shamim
+Mohamed. Federico Balbi has contributed an ODBC interface. Robert
+Parlett contributed the implementation of packages, along with
 substantive programming tools and class libraries that are distributed
-as part of Unicon. Other contributors are welcome.  Jafar Al Gharaibeh
-has contributed concurrency and extensive improvements to the 3D graphics
-facilities. Unicon has a
-<a href="http://unicon.org/citizens.html">Citizens page</a> that shows many other contributions.
-<br><br>
-
-</dd>
-
-
-<dt>9. Where is the Unicon language definition?</dt>
+as part of Unicon. Other contributors are welcome. Jafar Al Gharaibeh
+has contributed concurrency and extensive improvements to the 3D
+graphics facilities. Unicon has a <span class="title-ref">Citizens page
+</span>__ that shows many other contributions.</p>
+<h1 id="where-is-the-unicon-language-definition">9. Where is the Unicon
+language definition?</h1>
+<p>Unicon is described in an open document book by Clinton Jeffery,
+Shamim Mohamed, Jafar Al Gharaibeh, Robert Parlett, and Ray Pereda,
+titled "Programming with Unicon". A PDF format draft copy of this book
+is available on the unicon.org web site. Hard copies are available. A
+technical report (UTR #8) summarizes the language.</p>
+<h1 id="why-arent-unicons-basic-types-classes">10. Why aren't Unicon's
+basic types classes?</h1>
+<p>Types that Unicon inherits from Icon will retain compatibility with
+Icon. They may eventually gain class status, meaning they'll have
+attributes and operations, and can be subclassed.</p>
+<h1 id="why-isnt-data-structure-x-a-built-in">11. Why isn't data
+structure X a built-in?</h1>
+<p>The built-in types are widely-used, general-purpose information
+elements and structures. Every program pays for their presence in the
+runtime system whether they are used or not. New built-in types may
+occasionally appear, but most data structures will be added as
+classes.</p>
+<h1 id="why-arent-there-abstract-classes-in-unicon">12. Why aren't there
+abstract classes in Unicon?</h1>
+<p>There isn't a strong need for these in a dynamically typed language.
+Robert Parlett has added syntax to support abstract methods; we may at
+some point add syntax for declaring an abstract class.</p>
+<h1 id="is-there-a-convention-for-naming-classes-and-methods">13. Is
+there a convention for naming classes and methods?</h1>
+<p>The Java/Smalltalk style of capitalizing the first letter of a class
+name and using lower case for method names is endorsed, but not yet
+mandated or universally adhered to in class libraries.</p>
+<h1 id="how-compatible-is-unicon-with-icon">14. How compatible is Unicon
+with Icon?</h1>
+<p>Well, it is a superset in principle, but if you get technical you
+will find incompatibilities. The reserved words added in Unicon are no
+longer legal variable names: words like "class" and "method". This
+breaks for example, a grand total of 1 of the 223 files in the Icon
+Program Library procs/ directory, requiring its variable named "method"
+to be changed to "Method" (or whatever). The Unicon translator generates
+out Icon as an intermediate step; for regular Icon source the resulting
+virtual machine code is very similar.</p>
+<h1 id="how-compatible-is-unicon-with-idol">15. How compatible is Unicon
+with Idol?</h1>
+<p>Pretty compatible, and vastly simpler. The $ syntax is available but
+not required in ordinary invocation. The full yacc-based parser is more
+correct than the Idol parser. The file extension changed from .iol to
+.icn. No ugly idolcode.env/ subdirectory is created. Code from a .icn
+file is stored in a single corresponding .u file. An accompanying DBM
+database stores class information on a per-directory bases for use in
+inheritance resolution. DBM databases along the IPATH are searched for
+superclass information.</p>
+<h1 id="what-do-i-have-to-do-to-build-windows-unicon">16. What do I have
+to do to build Windows Unicon?</h1>
+<p>At present the recommended compiler is MinGW32 version of the GNU C
+compiler. A 64-bit Windows configuration has been produced but is not
+very mature yet. MS Visual C++ has been used for production releases in
+the past and the sources might be updated to work with that compiler,
+with modest effort. Other C compilers will require nontrivial effort to
+develop new configuration files under the config/win32 directory,
+comparable to (and possibly starting from) config/win32/gcc or
+config/win32/msvc.</p>
+<p>After you unpack the source files, you have to add the Unicon bin
+directory to your path, or the <code>make</code> or <code>nmake</code>
+command will not build all the way successfully. This author's
+experience is that the Windows build process is at present unfortunately
+not for the faint of heart.</p>
+<h1 id="how-do-i-build-noweb-with-windows-unicon">17. How do I build
+noweb with Windows (Un)Icon?</h1>
+<p>(provided by Chris Harris)</p>
+<ul>
+<li><dl>
+<dt>Get the noweb distribution and extract all of the Icon files in
+the</dt>
 <dd>
-
-Unicon is described in an open document book by Clinton Jeffery,
-Shamim Mohamed, Jafar Al Gharaibeh,
-Robert Parlett, and Ray Pereda, titled "Programming with Unicon". A PDF format
-draft copy of this book is available on the unicon.org web site.  Hard copies
-are available. A technical
-report (UTR #8) summarizes the language.
-<br><br>
-
+<p>icon/ directory.</p>
 </dd>
-<dt>10. Why aren't Unicon's basic types classes?</dt>
-<dd>
-
-Types that Unicon inherits from Icon will retain compatibility with Icon.
-They may eventually gain class status, meaning they'll have attributes and
-operations, and can be subclassed.
-<br><br>
-</dd>
-
-<dt>11. Why isn't data structure X a built-in?</dt>
-<dd>
-
-The built-in types are widely-used, general-purpose information elements and
-structures.  Every program pays for their presence in the runtime system
-whether they are used or not.  New built-in types may occasionally appear,
-but most data structures will be added as classes.
-<br><br>
-</dd>
-
-<dt>12. Why aren't there abstract classes in Unicon?</dt>
-<dd> There isn't a strong need for these in a dynamically typed language.
-     Robert Parlett has added syntax to support abstract methods; we may
-     at some point add syntax for declaring an abstract class.
-<br><br>
-</dd>
-
-<dt>13. Is there a convention for naming classes and methods?</dt>
-<dd>
-
-The Java/Smalltalk style of capitalizing the first letter of a class name
-and using lower case for method names is endorsed, but not yet mandated or
-universally adhered to in class libraries.
-<br><br>
-</dd>
-
-<dt>14. How compatible is Unicon with Icon?</dt>
-<dd>
-
-Well, it is a superset in principle, but if you get technical you will find
-incompatibilities.  The reserved words added in Unicon are no longer legal
-variable names: words like "class" and "method".  This breaks for example,
-a grand total of 1 of the 223 files in the Icon Program Library procs/
-directory, requiring its variable named "method" to be changed to "Method"
-(or whatever). The Unicon translator
-generates out Icon as an intermediate step; for regular Icon source the
-resulting virtual machine code is very similar.
-<br><br>
-</dd>
-
-<dt>15. How compatible is Unicon with Idol?</dt>
-<dd>
-
-Pretty compatible, and vastly simpler. The $ syntax is available but not
-required in ordinary invocation.  The full yacc-based parser is more correct
-than the Idol parser.  The file extension changed from .iol to .icn.  No
-ugly idolcode.env/ subdirectory is created. Code from a .icn file is stored
-in a single corresponding .u file.  An accompanying DBM database stores class
-information on a per-directory bases for use in inheritance resolution.  DBM
-databases along the IPATH are searched for superclass information.
-<br><br>
-</dd>
-
-<dt>16. What do I have to do to build Windows Unicon?</dt>
-<dd>
-At present the recommended compiler is MinGW32 version of the GNU C compiler.
-A 64-bit Windows configuration has been produced but is not very mature yet.
-MS Visual C++ has been used for production releases in the past and the sources
-might be updated to work with that compiler, with modest effort.
-Other C compilers will require nontrivial
-effort to develop new configuration files under the config/win32 directory,
-comparable to (and possibly starting from) config/win32/gcc or config/win32/msvc.
-<p>
-After you unpack the source files, you have to add the Unicon bin directory
-to your path, or the <code>make</code> or <code>nmake</code> command will
-not build all the way successfully. This author's experience is that the
-Windows build process is at present unfortunately not for the faint of heart.
-</p></dd>
-
-<dt>17. How do I build noweb with Windows (Un)Icon?</dt>
-<dd>(provided by Chris Harris)
-<ol>
-<li> Get the noweb distribution and extract all of the Icon files in the
-	icon/ directory.
-</li><li> Build each one using "nticont <filename>"
-</filename></li><li> Copy all of the .exe files built in step #2 into your noweb/bin/
-directory.
-</li><li> Delete old DOS Icon noweb .exe's if you are putting in new Windows .exe's
-</li></ol>
-</dd><br>
-
-<dt>18. How can I use an assert() expression in my programs?</dt>
-<dd>assert(expr) is normally written as expr | stop("expr failed...").
-    Unicon does not provide a built-in macro or control structure for assert.
-    If your system supports m4 you can use it to provide an assert() macro,
-    as in the following example provided by Kostas Oikonomou:
-<pre>	m4 -D assert='($$1) | stop("Assertion failure on line ", &amp;line, "!")'
-</pre>
-    This filter might work on .m4 files to produce .icn files, or might be
-    used in conjunction with noweb, as in Kostas' example makefile rule below.
-    Note that this example assumes GNU m4, which can process your code
-    without accidentally firing off built-in m4 macros if you supply the
-    --prefix-builtins flag:
-<pre>%.icn : %.nw
-	notangle $&lt; | \
-	m4 --prefix-builtins \
-	 -D assert='($$1) | stop("Assertion failure on line ", &amp;line, "!")'\
-	 - &gt; $@
-</pre>
-</dd>
-<dt>19. My SQL/ODBC open() mode "q" is failing.  Why?</dt>
-<dd>Well, first, it should be mode "o", not mode "q"; this is a change
+</dl></li>
+<li>Build each one using "nticont "</li>
+</ul>
+<p>- Copy all of the .exe files built in step #2 into your noweb/bin/
+directory.</p>
+<ul>
+<li>Delete old DOS Icon noweb .exe's if you are putting in new Windows
+.exe's</li>
+</ul>
+<h1 id="how-can-i-use-an-assert-expression-in-my-programs">18. How can I
+use an assert() expression in my programs?</h1>
+<p>assert(expr) is normally written as expr | stop("expr failed...").
+Unicon does not provide a built-in macro or control structure for
+assert. If your system supports m4 you can use it to provide an assert()
+macro, as in the following example provided by Kostas Oikonomou:</p>
+<pre class="text"><code></code></pre>
+<p>m4 -D assert='($$1) | stop("Assertion failure on line ", &amp;line,
+"!")'</p>
+<p>This filter might work on .m4 files to produce .icn files, or might
+be used in conjunction with noweb, as in Kostas' example makefile rule
+below. Note that this example assumes GNU m4, which can process your
+code without accidentally firing off built-in m4 macros if you supply
+the --prefix-builtins flag:</p>
+<pre class="text"><code></code></pre>
+<p>%.icn : %.nw notangle $ $@</p>
+<h1 id="my-sqlodbc-open-mode-q-is-failing.-why">19. My SQL/ODBC open()
+mode "q" is failing. Why?</h1>
+<p>Well, first, it should be mode "o", not mode "q"; this is a change
 not yet reflected in the Unicon book public PDF file. Next, ODBC open()
-will fail if Unicon binaries are built without ODBC facilities.  Third,
+will fail if Unicon binaries are built without ODBC facilities. Third,
 the ODBC Data Source Name and related configuration must be correct on
 your platform (e.g. in the Control Panel for ODBC), lastly you must have
-setup a valid username and password.</dd> <br>
-
-<dt>20. Why haven't Icon and Unicon become more popular?
-</dt><dd>
-
-Boy, what a piece of flame-bait!  It is simply speculation or sour grapes,
-but some people might reasonably speculate that Icon and Unicon
-would be a lot more popular if they were invented at AT&amp;T, Microsoft,
-or IBM.  Icon and Unicon might be a lot more popular if they did
-something other languages really can't easily do (niche) rather than simply
-doing things more elegantly.  Icon and Unicon's inventors have
+setup a valid username and password.</p>
+<h1 id="why-havent-icon-and-unicon-become-more-popular">20. Why haven't
+Icon and Unicon become more popular?</h1>
+<p>Boy, what a piece of flame-bait! It is simply speculation or sour
+grapes, but some people might reasonably speculate that Icon and Unicon
+would be a lot more popular if they were invented at AT&amp;T,
+Microsoft, or IBM. Icon and Unicon might be a lot more popular if they
+did something other languages really can't easily do (niche) rather than
+simply doing things more elegantly. Icon and Unicon's inventors have
 never invested heavily in marketing their wares, viewing them as a
-by-product of research rather than a product to be pushed. Similarly, Icon's
-inventor could easily claim victory by noting the success of languages
-influenced by Icon (e.g. generators or Icon-style strings present in other
-languages like Python), rather than claiming defeat by deploring the failure
-of the mainstream to take advantage of goal-directed evaluation or the best
-collection of data types found in any language.  Clearly, adopters of this
-language family love these features with sometimes extreme levels of passion,
-but they are apparently often missed by the casual observer.
-
-</dd></dl>
-</body></html>
+by-product of research rather than a product to be pushed. Similarly,
+Icon's inventor could easily claim victory by noting the success of
+languages influenced by Icon (e.g. generators or Icon-style strings
+present in other languages like Python), rather than claiming defeat by
+deploring the failure of the mainstream to take advantage of
+goal-directed evaluation or the best collection of data types found in
+any language. Clearly, adopters of this language family love these
+features with sometimes extreme levels of passion, but they are
+apparently often missed by the casual observer.</p>
+</body>
+</html>

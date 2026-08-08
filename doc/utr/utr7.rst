@@ -216,7 +216,7 @@ arguments after the -x:
 These arguments might be the names of files. For example, the main
 procedure might begin as follows:
 
-::
+.. code-block:: unicon
 
            procedure main(args)
               in := open(args[1]) | stop("cannot open file")
@@ -417,14 +417,13 @@ A scroll bar is created with a call like
 
 ::
 
-      WinScrollBar(W, "sb_1", x, y, wd, ht)
-
-This function places a scrollbar with a particular size and position,
-which default to a standard size on the right edge of the window. The
-appearance of a typical scroll bar is illustrated in Figure 6. When
-scroll bar activity takes place, the scroll bar's string id is produced
-(in this case, ``"sb_1"``) by Event(), and ``&x`` and ``&y`` are both
-set to the scroll bar's position.
+WinScrollBar(W, "sb_1", x, y, wd, ht)
+   This function places a scrollbar with a particular size and position,
+   which default to a standard size on the right edge of the window. The
+   appearance of a typical scroll bar is illustrated in Figure 6. When
+   scroll bar activity takes place, the scroll bar's string id is produced
+   (in this case, ``"sb_1"``) by Event(), and ``&x`` and ``&y`` are both
+   set to the scroll bar's position.
 
 | 
 | Figure 6: a Windows scroll bar
@@ -436,13 +435,12 @@ A button is created with a call like
 
 ::
 
-      WinButton(W, "hello", x, y, wd, ht)
-
-This function places a button with a particular size and position. The
-size defaults to a standard size large enough display the button's
-label. The appearance of a pair of buttons is illustrated in Figure 7.
-When a button is pressed, the button's string label is produced (in this
-case, ``"hello"``) by Event().
+WinButton(W, "hello", x, y, wd, ht)
+   This function places a button with a particular size and position. The
+   size defaults to a standard size large enough display the button's
+   label. The appearance of a pair of buttons is illustrated in Figure 7.
+   When a button is pressed, the button's string label is produced (in this
+   case, ``"hello"``) by Event().
 
 | 
 | Figure 7: a pair of Windows buttons
@@ -714,16 +712,16 @@ http://unicon.org/ub/ub.pdf, 2016.
 Graphics Facilities for the Unicon Programming Language Version 9.3, The
 Univ. of Arizona Icon Project Document IPD281, 1996.
 
-..  image:: utr7/unilogo.jpg
-..  image:: utr7/menubar.gif
-..  image:: utr7/scrollba.gif
-..  image:: utr7/button.gif
-..  image:: utr7/colordlg.gif
-..  image:: utr7/fontdlg.gif
-..  image:: utr7/opendlg.gif
-..  image:: utr7/savedlg.gif
-..  image:: utr7/arrow.gif
-..  image:: utr7/cross.gif
-..  image:: utr7/ibeam.gif
-..  image:: utr7/uparrow.gif
-..  image:: utr7/wait.gif
+.. image:: assets/utr7/unilogo.jpg
+.. image:: assets/utr7/menubar.gif
+.. image:: assets/utr7/scrollba.gif
+.. image:: assets/utr7/button.gif
+.. image:: assets/utr7/colordlg.gif
+.. image:: assets/utr7/fontdlg.gif
+.. image:: assets/utr7/opendlg.gif
+.. image:: assets/utr7/savedlg.gif
+.. image:: assets/utr7/arrow.gif
+.. image:: assets/utr7/cross.gif
+.. image:: assets/utr7/ibeam.gif
+.. image:: assets/utr7/uparrow.gif
+.. image:: assets/utr7/wait.gif

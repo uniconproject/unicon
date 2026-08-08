@@ -42,34 +42,45 @@ Implementation-oriented LaTeX (parts 1–3, appendices) for *The Icon Programmin
 
 ## Unicon Technical Reports (UTRs)
 
-Numbered project reports (UTR #1, UTR #2, …). HTML, PDF, and office exports may live under `doc/utr/`, `doc/unicon/`, or `doc/udb/` depending on age and format. The [Technical Reports](https://unicon.sourceforge.io/reports.html) page on [unicon.sourceforge.io](https://unicon.sourceforge.io/) lists reports with links to PDFs/HTML on unicon.org and elsewhere.
+Numbered project reports (UTR #1, UTR #2, …). Canonical sources for converted reports live under `doc/utr/` as RST (built HTML in `doc/utr/html/`). Older PDF/office exports may remain under `doc/unicon/` or `doc/udb/`. The [Technical Reports](https://unicon.sourceforge.io/reports.html) page on [unicon.sourceforge.io](https://unicon.sourceforge.io/) lists reports with links to PDFs/HTML on unicon.org and elsewhere.
 
 Standard Markdown tables use equal column widths, so a narrow “#” column still wastes space. Each report below is one line: **UTR #N** — format links — *title*.
 
-- **UTR #1** — [HTML](unicon/utr1/utr1.htm) — *An ODBC Interface for the Unicon Programming Language*
-- **UTR #2** — [PDF](unicon/utr2.pdf) — *iflex: A Lexical Analyzer Generator for Icon*
-- **UTR #3** — [PDF](unicon/utr3.pdf) — *iyacc: A Parser Generator for Icon*
-- **UTR #4** — [HTML](unicon/utr4.html) — *Writing CGI and PHP Scripts in Icon and Unicon*
-- **UTR #5** — [PDF](unicon/utr5.pdf), [OpenDocument](utr/utr5b.odt) — *The Implementation of Graphics in Unicon* (V10 PDF; V12 internals in ODT **UTR-5b**)
-- **UTR #6** — [HTML](utr/utr6.html), [HTML (Word export)](unicon/utr6.html), [fragment](unicon/utr6/header.htm) — *An IVIB Primer* (`header.htm` is a small fragment; main body is `utr6.html`)
-- **UTR #7** — [HTML](utr/utr7.html) — *Version 13.1 of Unicon for Microsoft Windows*
-- **UTR #8** — [HTML](unicon/utr8.html), [PDF](unicon/utr8.pdf) — *Unicon Language Reference*
-- **UTR #9** — [HTML](utr/utr9.html), [PDF](utr/utr9c.pdf) — *Unicon 3D Graphics User's Guide and Reference Manual*
-- **UTR #10** — [HTML (utr)](utr/utr10.html), [HTML (udb)](udb/utr10.html), [PDF](udb/utr10.pdf), [Word](udb/utr10.docx) — *Debugging With UDB*
-- **UTR #11** — [HTML](unicon/utr11.html) — *Unicon Manual Page*
-- **UTR #12** — [HTML](utr/utr12.html) — *UI: a Unicon Development Environment*
-- **UTR #13** — [OpenDocument](utr/utr13.odt) — *The Unicon Messaging Facilities*
-- **UTR #14** — [Word](utr/utr14.docx) — *Unicon Threads User's Guide and Reference Manual*
-- **UTR #21** — [HTML](utr/utr21.html) — *Configuring and Building Version 13 of Unicon*
+- **UTR #1** — [RST](utr/utr1.rst), [HTML](utr/html/utr1.html) — *An ODBC Interface for the Unicon Programming Language*
+- **UTR #2** — [RST](utr/utr2.rst), [HTML](utr/html/utr2.html) — *iflex: A Lexical Analyzer Generator for Icon*
+- **UTR #2b** — [RST](utr/utr2b.rst), [HTML](utr/html/utr2b.html) — *Uflex: A Lexical Analyzer Generator for Unicon*
+- **UTR #3** — [RST](utr/utr3.rst), [HTML](utr/html/utr3.html) — *iyacc: A Parser Generator for Icon*
+- **UTR #4** — [RST](utr/utr4.rst), [HTML](utr/html/utr4.html) — *Writing CGI and PHP Scripts in Icon and Unicon*
+- **UTR #5** — [RST](utr/utr5.rst), [HTML](utr/html/utr5.html) — *The Implementation of Graphics in Unicon Version 10*
+- **UTR #5b** — [RST](utr/utr5b.rst), [HTML](utr/html/utr5b.html) — *The Implementation of Graphics in Unicon Version 12*
+- **UTR #6** — [RST](utr/utr6.rst), [HTML](utr/html/utr6.html) — *An IVIB Primer*
+- **UTR #7** — [RST](utr/utr7.rst), [HTML](utr/html/utr7.html) — *Version 13.1 of Unicon for Microsoft Windows*
+- **UTR #8** — [RST](utr/utr8.rst), [HTML](utr/html/utr8.html) — *Unicon Language Reference*
+- **UTR #9** — [RST](utr/utr9.rst), [HTML](utr/html/utr9.html) — *Unicon 3D Graphics User's Guide and Reference Manual*
+- **UTR #10** — [RST](utr/utr10.rst), [HTML](utr/html/utr10.html), [HTML (udb)](udb/utr10.html), [PDF](udb/utr10.pdf), [Word](udb/utr10.docx) — *Debugging With UDB*
+- **UTR #11** — [RST](utr/utr11.rst), [HTML](utr/html/utr11.html) — *Unicon Manual Page*
+- **UTR #12** — [RST](utr/utr12.rst), [HTML](utr/html/utr12.html) — *UI: a Unicon Development Environment*
+- **UTR #13** — [RST](utr/utr13.rst), [HTML](utr/html/utr13.html) — *The Unicon Messaging Facilities*
+- **UTR #14** — [RST](utr/utr14.rst), [HTML](utr/html/utr14.html) — *Unicon Threads User's Guide and Reference Manual*
+- **UTR #15** — [RST](utr/utr15.rst), [HTML](utr/html/utr15.html) — *How to Write a Unicon Technical Report*
+- **UTR #16** — [RST](utr/utr16.rst), [HTML](utr/html/utr16.html) — *A Unicon Benchmark Suite*
+- **UTR #17** — [RST](utr/utr17.rst), [HTML](utr/html/utr17.html), [PDF](utr/utr17.pdf) — *A Transformational Interpreter for Goal-Directed Evaluation*
+- **UTR #18**–**#20**, **#22**–**#23** — RST/HTML under `doc/utr/`
+- **UTR #21** — [RST](utr/utr21.rst), [HTML](utr/html/utr21.html) — *Configuring and Building Version 13 of Unicon*
 
-### Unicode reference data (for UTF-8 / UTR work)
+### UTF-8 application notes
 
-Machine-readable tables in `doc/utr/utf8/`:
+Included in the UTR HTML collection (sidebar / index as **Notes**, not a
+numbered UTR):
 
-- [UnicodeData.txt](utr/utf8/UnicodeData.txt) — Unicode character database  
-- [CaseFolding.txt](utr/utf8/CaseFolding.txt) — case-folding mappings  
-- [SpecialCasing.txt](utr/utf8/SpecialCasing.txt) — special-casing rules  
-- [utf8info.txt](utr/utf8/utf8info.txt) — UTF-8 / Unicon notes  
+- [utf8.rst](utr/utf8.rst) / [HTML](utr/html/utf8.html) — *UTF-8 Support Notes* (Bruce Rennie)
+
+Unicode Consortium reference tables live under `doc/utr/assets/utf8/`
+(copied into `html/assets/utf8/` on ``make html``):
+
+- [UnicodeData.txt](utr/assets/utf8/UnicodeData.txt) — Unicode character database  
+- [CaseFolding.txt](utr/assets/utf8/CaseFolding.txt) — case-folding mappings  
+- [SpecialCasing.txt](utr/assets/utf8/SpecialCasing.txt) — special-casing rules  
 
 ---
 
@@ -81,13 +92,13 @@ Pages that are not a single numbered UTR (guides, indexes, examples).
 
 | File | Title / purpose |
 |------|-----------------|
-| [faq.html](unicon/faq.html) | *Unicon: Frequently Asked Questions* |
-| [posix.html](unicon/posix.html) | *Unicon: A Posix Interface for the Icon Programming Language* |
-| [reports.html](unicon/reports.html) | *Technical Reports* — in-tree index; see also the project site [Technical Reports](https://unicon.sourceforge.io/reports.html) |
-| [svn.html](unicon/svn.html) | *Unicon Source Code SVN Repository* — **legacy** (SVN; development uses Git today) |
-| [simple.html](unicon/simple.html), [simp.html](unicon/simp.html) | *A Simple Example — Using the CGI Icon Library* |
+| [faq.rst](unicon/faq.rst) / [HTML](unicon/faq.html) | *Unicon: Frequently Asked Questions* |
+| [posix.rst](unicon/posix.rst) / [HTML](unicon/posix.html) | *Unicon: A Posix Interface for the Icon Programming Language* |
+| [reports.rst](unicon/reports.rst) / [HTML](unicon/reports.html) | *Technical Reports* — in-tree index; see also the project site [Technical Reports](https://unicon.sourceforge.io/reports.html) |
+| [svn.rst](unicon/svn.rst) / [HTML](unicon/svn.html) | *Unicon Source Code SVN Repository* — **legacy** (SVN; development uses Git today) |
+| [simple.rst](unicon/simple.rst) / [HTML](unicon/simple.html) | *A Simple Example — Using the CGI Icon Library* |
 
-*Location in tree: `doc/unicon/`.*
+*Location in tree: `doc/unicon/` (RST is canonical; HTML regenerated with pandoc).*
 
 ### uscribe user guide
 

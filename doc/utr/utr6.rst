@@ -46,7 +46,7 @@ it. For the sake of tradition, let's suppose our procedure ``p()`` is as
 follows. Go ahead and type this procedure in using the ui program or
 your favorite text editor, and save it to a file named ``p.icn``.
 
-::
+.. code-block:: unicon
 
    procedure p()
       write("hello, world")
@@ -132,7 +132,7 @@ by clicking the Apply button.
 Click OK, and then save your file. At this point if you go into file
 ``go.icn`` and look at the code, the dialog has an empty method
 
-::
+.. code-block:: unicon
 
    method on_go(ev)
    end
@@ -140,7 +140,7 @@ Click OK, and then save your file. At this point if you go into file
 into which we can insert a call to ``p()`` using the ui IDE, or emacs or
 another text editor:
 
-::
+.. code-block:: unicon
 
    method on_go(ev)
       p()
@@ -517,7 +517,7 @@ editor. This file contains the main procedure, which starts the
 application by displaying the main screen. Some of the methods in the
 file main.icn are shown below:
 
-::
+.. code-block:: unicon
 
    import gui
    $include "guih.icn"
@@ -544,7 +544,7 @@ Find the main() procedure and change it if needed so it looks as shown
 below. This will cause the main screen to be displayed when the program
 starts up.
 
-::
+.. code-block:: unicon
 
    procedure main()
       local d
@@ -555,7 +555,7 @@ starts up.
 Add code so the About Canvas is displayed when the About Menu item is
 selected. Add the following code to on_about():
 
-::
+.. code-block:: unicon
 
    method on_about(ev)
       aboutdialog().show_modal()
@@ -564,7 +564,7 @@ selected. Add the following code to on_about():
 Add code so the Help Canvas is displayed when the Help Menu item is
 selected. Add the following code to on_help():
 
-::
+.. code-block:: unicon
 
    method on_help(ev)
       helpdialog().show_modal()
@@ -573,7 +573,7 @@ selected. Add the following code to on_help():
 We also need to add code to terminate the application when the Exit menu
 item is selected. Add the dispose() function to on_exit().
 
-::
+.. code-block:: unicon
 
    method on_exit(ev)
       dispose()
@@ -651,7 +651,7 @@ to hit the menu items and view the help and about dialogs.
 **The About Box**. Edit the file about.icn using your favorite editor.
 Some of the methods in the file about.icn are shown below
 
-::
+.. code-block:: unicon
 
    #
    # aboutdialog is the class created by Ivib in the file about.icn
@@ -672,7 +672,7 @@ code to ``init_dialog()`` so the Text List is filled when the canvas is
 displayed. Edit about.icn and add the following code to the
 ``init_dialog()`` and ``on_aboutdialog()`` methods.
 
-::
+.. code-block:: unicon
 
    method init_dialog()
       local l
@@ -693,7 +693,7 @@ displayed. Edit about.icn and add the following code to the
 **The Help Screen**. Edit the file help.icn using your favorite editor.
 Some of the methods in the file help.icn are shown below.
 
-::
+.. code-block:: unicon
 
    #
    # helpdialog is the class created by Ivib in the file help.icn
@@ -713,7 +713,7 @@ we created. We'll add code to the method init_dialog() to open the help
 file and display it. Edit the file help.icn and add the following code
 to the method init_dialog():
 
-::
+.. code-block:: unicon
 
       method init_dialog()
       local l, helpfile, fd
@@ -733,7 +733,7 @@ We also need to add code to terminate the application when the Cancel
 Button is clicked. Add a call to the dispose() function to
 on_CloseBtn().
 
-::
+.. code-block:: unicon
 
    method on_CloseBtn(ev)
       dispose()
@@ -759,7 +759,7 @@ Add the following code to the ``on_ListBtn()`` method. The file dialog
 will be displayed when the List button is pressed and the selected file
 will be displayed in the MsgBox.
 
-::
+.. code-block:: unicon
 
    method on_ListBtn(ev)
       local s, fd
@@ -898,7 +898,7 @@ Under Event: Scroll down to ``BUTTON_RELEASE_EVENT``
 Move the exit button to the bottom right side of the dialog as shown in
 Figure 6 of main.icn below:
 
-.. image:: utr6/modeless.gif
+.. image:: assets/utr6/modeless.gif
 
 Figure 6: main.icn my button Tab
 
@@ -993,7 +993,7 @@ On the **Other** tab check the:
 You may need to resize the button so the text will fit. Move the Exit
 button to bottom right corner as shown in Figure 7 of edit.icn below:
 
-.. image:: utr6/editicn.png
+.. image:: assets/utr6/editicn.png
 
 Figure 7: edit.icn
 
@@ -1044,7 +1044,7 @@ it in Ivib.
 Edit main.icn and add the following code to the on_text_button_modeless
 method:
 
-::
+.. code-block:: unicon
 
     method on_text_button_modeless(ev)
       dedit := dialogedit()                   
@@ -1061,7 +1061,7 @@ dialog from dedit, the dialogedit, you will not need this line.
 Also, add ``dispose()`` to the ``on_text_button_exit()`` method to close
 the dialog.
 
-::
+.. code-block:: unicon
 
    method on_text_button_exit(ev)
      dispose()
@@ -1070,7 +1070,7 @@ the dialog.
 Add the following code to on_dialogmain so the dialog will close for the
 X event
 
-::
+.. code-block:: unicon
 
    method on_dialogmain(ev)
      if \ev.param = -11 then  #windows x box
@@ -1082,7 +1082,7 @@ Save main.icn.
 **Edit edit.icn** and add the following code to
 ``on_text_button_exit()`` to close the dialog.
 
-::
+.. code-block:: unicon
 
    method on_text_button_exit(ev)
       dispose()
@@ -1090,7 +1090,7 @@ Save main.icn.
 
 Also add the following code to on_dialogedit.
 
-::
+.. code-block:: unicon
 
    method on_dialogedit(ev)
      if \ev.param = -11 then  #windows x box
@@ -1133,7 +1133,7 @@ will tell us if the dialog is open.
 Add the following code to the ``on_text_button_modeless()`` method and
 the ``int_dialog()`` method.
 
-::
+.. code-block:: unicon
 
    method on_text_button_modeless(ev)
       local winedit
@@ -1157,7 +1157,7 @@ the ``int_dialog()`` method.
 Save main.icn in the correct directory. In edit.icn, add the dedit :=
 &null line to the on_text_button_exit method:
 
-::
+.. code-block:: unicon
 
    method on_text_button_exit(ev)
        dedit := &null
@@ -1247,7 +1247,7 @@ Tool Bar. It is the fourth component from the left in the bottom row.
 Move the table from the main canvas to the my table tab. Resize it as
 shown in the Figure 8 of main.icn below:
 
-.. image:: utr6/mainicn.png
+.. image:: assets/utr6/mainicn.png
 
 Figure 8: main.icn
 
@@ -1261,7 +1261,7 @@ On the **General** tab in Table Setup, Hit the Add button.
 Now we will add the first column to our information table. Add the
 following to the **General** tab:
 
-::
+.. code-block:: unicon
 
    Label :Name
    Width: 200
@@ -1272,7 +1272,7 @@ Hit Apply
 
 Add another column by clicking the **Add** button:
 
-::
+.. code-block:: unicon
 
    Label :# of Players
    Width: 125
@@ -1306,7 +1306,7 @@ From the Ivib Menu, Save As ``main.icn``.
 
 Add the following code to the ``init_dialog()`` method in ``main.icn``:
 
-::
+.. code-block:: unicon
 
    method init_dialog()
       local lst
@@ -1348,7 +1348,7 @@ line initializes and creates the table ``editdlg``. The second new line
 sets the click delay so we can distinguish double clicks from single
 clicks.
 
-::
+.. code-block:: unicon
 
    method init_dialog()
    local lst
@@ -1361,7 +1361,7 @@ clicks.
 
 Add the following code to the method ``on_table_1()``:
 
-::
+.. code-block:: unicon
 
    method on_table_1(ev)
    local posn,poslst,msg,gamelst,cc
@@ -1414,7 +1414,7 @@ Add the following code to the method ``on_table_1()``:
         return
 
       }  # end cc > 1
-     
+
       if posn >= *gamelst then
           posn := 1
        else
@@ -1453,7 +1453,7 @@ We are also passing the game name and its position to the edit dialog.
 So two variables will need to be added to the class definition for
 dialogedit in edit.icn as follows:
 
-::
+.. code-block:: unicon
 
    class dialogedit : Dialog(posn, msg, label_msgbox, text_button_exit)
 
@@ -1466,7 +1466,7 @@ Since we now have more multiple dialogs, we need to make sure they are
 set to &null when the edit dialog terminates. Therefore, the following
 code will also need to be added to edit.icn.
 
-::
+.. code-block:: unicon
 
     method init_dialog()
     if \msg & \posn then
@@ -1658,7 +1658,7 @@ and second variable.
 The class variables should look something like this when you are
 finished:
 
-::
+.. code-block:: unicon
 
    class dialogedit : Dialog(posn, msg, text_button_copy, text_button_cut,
       text_button_paste, text_button_redo, text_button_undo, text_button_ok,
@@ -1676,7 +1676,7 @@ make the user wait. This demonstrates the use of the hour glass mouse
 pointer. (Although, usually we use the hourglass when the program is
 processing). Add the following code to edit.icn as follows:
 
-::
+.. code-block:: unicon
 
    method init_dialog()
    if \msg & \posn then {
@@ -1723,7 +1723,7 @@ have to wait.
 Open up edit.icn using your editor. Add the following code to the
 ``init_dialog()`` method:
 
-::
+.. code-block:: unicon
 
     method init_dialog()
      text_button_copy.clear_accepts_focus()  # keeps selected region 
@@ -1739,7 +1739,7 @@ INVOKED.
 
 Now add the following code for copy, cut, paste, redo and undo.
 
-::
+.. code-block:: unicon
 
    method on_button_cut(ev)
    editable_text_list_instruct.handle_cut()
@@ -1778,7 +1778,7 @@ will inherit all the methods of editabletext list except for:
 
 Create a new file myeditabletextlist.icn and copy in the following code:
 
-::
+.. code-block:: unicon
 
    #
    # myeditabletextlist subclass of EditableTextList to 
@@ -1790,7 +1790,7 @@ Create a new file myeditabletextlist.icn and copy in the following code:
    $include "guih.icn"
 
    class myeditabletextlist : EditableTextList()
-      
+
       method handle_cut(e)
          start_handle(e)
          if has_region() then {
@@ -1799,7 +1799,7 @@ Create a new file myeditabletextlist.icn and copy in the following code:
          }
          end_handle(e)
       end
-     
+
       method handle_copy(e)
          start_handle(e)
          if has_region() then {
@@ -1834,7 +1834,7 @@ Create a new file myeditabletextlist.icn and copy in the following code:
       large_str := WAttrib("selection")
       if /large_str then fail
       l := []
-    
+
       while   end1  :=   upto("\n",large_str,start,0) do {
          str := large_str[start:end1]
          if p := upto(&ascii--blank1,str) then
@@ -1856,9 +1856,9 @@ Create a new file myeditabletextlist.icn and copy in the following code:
          local x, t, s, c
          x := []
          t := ""
-    
+
          x :=  get_list_from_clipboard() | fail
-       
+
           every j := 1 to *x do  t := t || trim(string(x[j]))  || " "
 
          # Apply the filter to the string to paste
@@ -1928,7 +1928,7 @@ There are a few more things we will add to the demonstration:
 the changes from Ivib from above. Add the following code to the
 ``init_dialog()`` method:
 
-::
+.. code-block:: unicon
 
     method init_dialog()
     editable_text_list_game.clear_accepts_focus() # allows tab jump or disables tab insert
@@ -1952,7 +1952,7 @@ edit.icn. Suppose, we would like the tab key to jump to another
 component. To do this, you need to add the following methods to the
 subclass myeditabletextlist.icn:
 
-::
+.. code-block:: unicon
 
       method keeps(e)
          # This component keeps all events.
@@ -2015,7 +2015,7 @@ undo single edits, you will need to create a subclass of the
 undomanager. Create a file ``myundomanager.icn`` and copy the following
 code in to it.
 
-::
+.. code-block:: unicon
 
    import undo
    # UndoManager is a CompoundEdit.  Until it is closed it allows undos and redos
@@ -2040,7 +2040,7 @@ code in to it.
 Now, edit ``myeditabletextlist.icn``, and add initially code to use
 ``MyUndoManager``. Add this code right before the class end statement:
 
-::
+.. code-block:: unicon
 
       initially(a[])
          wordlist := []
@@ -2080,13 +2080,13 @@ Edit main.icn. Add a class variable ``table_1_col_select`` to the class
 declaration. We will use this variable to tell us if the column has been
 clicked. The class declaration should look like the following:
 
-::
+.. code-block:: unicon
 
    class dialogmain : Dialog (table_1_col_select, tab_item_btn, ..........
 
 Add the following lines to the end of ``init_dialog()``:
 
-::
+.. code-block:: unicon
 
    method init_dialog()
       .......
@@ -2100,7 +2100,7 @@ MOUSE_RELEASE_EVENT to listen for a column event.
 
 Add the following code to the beginning of the method on_table_1():
 
-::
+.. code-block:: unicon
 
    method on_table_1(ev)
     local posn,poslst,msg,gamelst,cc
@@ -2130,7 +2130,7 @@ Add the following code to the beginning of the method on_table_1():
 Add the following to methods to handle the events. These methods Sort
 the selected columns:
 
-::
+.. code-block:: unicon
 
    method on_table_column_1()
    local lst,k,slst ,T
@@ -2146,7 +2146,7 @@ the selected columns:
    lst := sort(T,1)
    table_1.set_contents(lst) # sort by table key
    end
-    
+
    method on_table_column_2()
    local lst,k,slst ,T
    lst := []
@@ -2198,5 +2198,5 @@ Programming in Icon", Peer-to-Peer Communications, 1998.
 C. Jeffery, S. Mohamed, R. Pereda, R. Parlett, "Programming with
 Unicon", unicon.sourceforge.net/ub/ub.pdf, 2001-2005.
 
-..  image:: utr6/unilogo.jpg
-..  image:: utr6/dlogpref.png
+.. image:: assets/utr6/unilogo.jpg
+.. image:: assets/utr6/dlogpref.png

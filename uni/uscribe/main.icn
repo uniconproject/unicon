@@ -140,12 +140,12 @@ procedure renderHtml(docs, labels, cites)
     every doc := !docs do
         put(indexDocs, [
             chapterOutputName(doc.getSrcName()),
-            chapterDisplayTitle(doc),
+            chapterNavTitle(doc),
             collectSearchText(doc)
             ])
     writeSearchIndex(targetDir, indexDocs)
     writeSearchPage(targetDir, bookTitle, nav)
-    writeIndexPage(targetDir, bookTitle, nav)
+    writeIndexPage(targetDir, bookTitle, nav, docs)
     ensureDir(targetDir || "/_sources")
 
     every i := 1 to *docs do {
@@ -172,16 +172,46 @@ procedure renderHtml(docs, labels, cites)
 end
 
 #<p>
-# LaTeX / PDF builder: one <tt>book.tex</tt> for the whole manifest.
-# If <tt>wantPdf</tt> is non-null, run a TeX engine twice afterward to
-# produce <tt>book.pdf</tt> (TOC / xrefs).
+# LaTeX / PDF builder. Book manifests write one <tt>book.tex</tt>
+# (and optional <tt>book.pdf</tt>). When every chapter is a report,
+# emit one <tt>.tex</tt> / <tt>.pdf</tt> per report (UTR-style).
 # <[param docs ordered list of Document nodes]>
 # <[param labels LabelTable after collect()]>
 # <[param wantPdf non-null to run pdflatex/xelatex/lualatex]>
 # <[param cites CitationTable after collect/loadAll]>
 #</p>
 procedure renderLatex(docs, labels, wantPdf, cites)
-    local outPath, f, outp, doc, engine, rc, reportMode, metaDoc
+    if allDocsAreReports(docs) then {
+        renderReportLatex(docs, labels, wantPdf, cites)
+        return
+        }
+    renderBookLatex(docs, labels, wantPdf, cites)
+    return
+end
+
+#<p>
+# Succeed when every document is report-mode.
+# <[param docs list of Document nodes]>
+# <[fails if empty or any non-report]>
+#</p>
+procedure allDocsAreReports(docs)
+    local doc
+    if *docs = 0 then fail
+    every doc := !docs do
+        if not doc.isReport() then
+            fail
+    return
+end
+
+#<p>
+# Combined book LaTeX / PDF (non-report manifests).
+# <[param docs ordered Documents]>
+# <[param labels LabelTable]>
+# <[param wantPdf non-null to run a TeX engine]>
+# <[param cites CitationTable]>
+#</p>
+procedure renderBookLatex(docs, labels, wantPdf, cites)
+    local outPath, f, outp, doc, engine, rc
 
     outPath := targetDir || "/book.tex"
     f := open(outPath, "w") | stop("uscribe: could not write '", outPath, "'")
@@ -190,20 +220,7 @@ procedure renderLatex(docs, labels, wantPdf, cites)
     outp.setLabelTable(labels)
     outp.setCitationTable(cites)
     outp.setBookTitle(bookTitle)
-    reportMode := &null
-    metaDoc := &null
-    every doc := !docs do {
-        if doc.isReport() then {
-            reportMode := 1
-            /metaDoc := doc
-            }
-        }
-    if \reportMode then {
-        outp.setDocClass("report")
-        outp.setReportDoc(\metaDoc | docs[1])
-        }
-    else
-        outp.setDocClass("book")
+    outp.setDocClass("book")
     outp.writePreamble()
     every doc := !docs do {
         labels.resolve(doc)
@@ -228,6 +245,66 @@ procedure renderLatex(docs, labels, wantPdf, cites)
              "); see ", targetDir, "/book.log")
     write("wrote ", targetDir, "/book.pdf")
     return
+end
+
+#<p>
+# One LaTeX / PDF file per report document. Basename matches the
+# HTML stem (<tt>ex-report.tex</tt> alongside <tt>ex-report.html</tt>).
+# <[param docs ordered report Documents]>
+# <[param labels LabelTable]>
+# <[param wantPdf non-null to run a TeX engine]>
+# <[param cites CitationTable]>
+#</p>
+procedure renderReportLatex(docs, labels, wantPdf, cites)
+    local doc, base, outPath, f, outp, engine, rc
+
+    every doc := !docs do {
+        labels.resolve(doc)
+        base := chapterTexBase(doc.getSrcName())
+        outPath := targetDir || "/" || base || ".tex"
+        f := open(outPath, "w") |
+            stop("uscribe: could not write '", outPath, "'")
+        outp := LatexOutputter()
+        outp.setOutFile(f)
+        outp.setLabelTable(labels)
+        outp.setCitationTable(cites)
+        outp.setBookTitle(\doc.getTitle() | bookTitle)
+        outp.setDocClass("report")
+        outp.setReportDoc(doc)
+        outp.writePreamble()
+        doc.accept(outp)
+        outp.writeEpilogue()
+        close(f)
+        write("wrote ", outPath)
+
+        if \wantPdf then {
+            /engine := findPdfEngine() |
+                stop("uscribe: --format=pdf needs pdflatex, xelatex, or lualatex",
+                     " in PATH")
+            write("running ", engine, " on ", base, " (pass 1)…")
+            rc := runLatex(engine, targetDir, base)
+            write("running ", engine, " on ", base, " (pass 2)…")
+            rc := runLatex(engine, targetDir, base)
+            if rc ~= 0 then
+                stop("uscribe: ", engine, " failed for ", base,
+                     " (exit ", rc, "); see ", targetDir, "/", base, ".log")
+            write("wrote ", targetDir, "/", base, ".pdf")
+            }
+        }
+    return
+end
+
+#<p>
+# TeX basename for a chapter source (HTML stem without <tt>.html</tt>).
+# <[param srcPath chapter source path]>
+# <[returns basename without extension]>
+#</p>
+procedure chapterTexBase(srcPath)
+    local base
+    base := chapterOutputName(srcPath)
+    if *base >= 5 & base[*base-4:0] == ".html" then
+        base := base[1:*base-4]
+    return base
 end
 
 #<p>
@@ -478,6 +555,7 @@ end
 
 #<p>
 # Build sidebar/nav entries from ordered documents.
+# Reports use <tt>UTR N</tt> (plus short title) when a TR number is set.
 # <[param docs list of Document nodes]>
 # <[returns list of [htmlFile, displayTitle] pairs]>
 #</p>
@@ -485,13 +563,34 @@ procedure buildNavEntries(docs)
     local nav, doc
     nav := []
     every doc := !docs do
-        put(nav, [chapterOutputName(doc.getSrcName()), chapterDisplayTitle(doc)])
+        put(nav, [chapterOutputName(doc.getSrcName()), chapterNavTitle(doc)])
     return nav
 end
 
 #<p>
-# Display title for a chapter: first <tt>Section</tt> title, else the
-# HTML basename.
+# Sidebar label for a chapter.
+# <[param doc a Document node]>
+# <[returns title string]>
+#</p>
+procedure chapterNavTitle(doc)
+    local tr, title
+    if doc.isReport() then {
+        tr := \doc.getTrNumber()
+        title := \doc.getTitle() | chapterDisplayTitle(doc)
+        if \tr then {
+            if \doc.getTitle() then
+                return "UTR " || tr || ": " || title
+            return "UTR " || tr
+            }
+        if \doc.getTitle() then
+            return title
+        }
+    return chapterDisplayTitle(doc)
+end
+
+#<p>
+# Display title for a chapter: report <tt>:title:</tt>, else first
+# <tt>Section</tt> title, else the HTML basename.
 # <[param doc a Document node]>
 # <[returns title string]>
 #</p>
@@ -503,6 +602,28 @@ procedure chapterDisplayTitle(doc)
         if n.nodeType() == "Section" then
             return n.getTitle()
     return chapterOutputName(doc.getSrcName())
+end
+
+#<p>
+# Join report authors with <tt>", "</tt>.
+# <[param doc a Document node]>
+# <[returns author string (may be empty)]>
+#</p>
+procedure reportAuthorsText(doc)
+    local parts, a, s, first
+    parts := doc.getAuthors()
+    if *parts = 0 then
+        return ""
+    s := ""
+    first := 1
+    every a := !parts do {
+        if \first then
+            first := &null
+        else
+            s ||:= ", "
+        s ||:= a
+        }
+    return s
 end
 
 #<p>
@@ -687,12 +808,14 @@ procedure writeSidebarStatic(f, title, nav, currentFile)
 end
 
 #<p>
-# Write <tt>index.html</tt>: book title and ordered chapter links.
+# Write <tt>index.html</tt>. Book manifests get an ordered chapter
+# list; report manifests get a UTR table (number, title, author, date).
 # <[param dir output directory]>
-# <[param title book title]>
+# <[param title book / collection title]>
 # <[param nav list of [htmlFile, chapterTitle] pairs]>
+# <[param docs ordered Document nodes (for report metadata)]>
 #</p>
-procedure writeIndexPage(dir, title, nav)
+procedure writeIndexPage(dir, title, nav, docs)
     local f, e
     f := open(dir || "/index.html", "w") |
         stop("uscribe: could not write '", dir, "/index.html'")
@@ -700,16 +823,59 @@ procedure writeIndexPage(dir, title, nav)
     writeSidebarStatic(f, title, nav, "index.html")
     write(f, "<div class=\"main\">")
     write(f, "<h1>", escapeHtml(title), "</h1>")
-    write(f, "<p>Contents</p>")
-    write(f, "<ol>")
-    every e := !nav do
-        write(f, "<li><a href=\"", escapeHtml(e[1]), "\">",
-              escapeHtml(e[2]), "</a></li>")
-    write(f, "</ol>")
+    if allDocsAreReports(docs) then
+        writeReportIndex(f, docs)
+    else {
+        write(f, "<p>Contents</p>")
+        write(f, "<ol>")
+        every e := !nav do
+            write(f, "<li><a href=\"", escapeHtml(e[1]), "\">",
+                  escapeHtml(e[2]), "</a></li>")
+        write(f, "</ol>")
+        }
     writeFooterStatic(f)
     write(f, "</div></div></body></html>")
     close(f)
     write("wrote ", dir, "/index.html")
+    return
+end
+
+#<p>
+# Emit a report-collection index table into an open HTML file.
+# <[param f open HTML file]>
+# <[param docs ordered report Documents]>
+#</p>
+procedure writeReportIndex(f, docs)
+    local doc, href, tr, title, authors, date
+    write(f, "<p>Unicon Technical Reports</p>")
+    write(f, "<table class=\"report-index\">")
+    write(f, "<thead><tr>")
+    write(f, "<th>UTR</th><th>Title</th><th>Author</th>")
+    write(f, "<th class=\"report-index-date\">Date</th>")
+    write(f, "</tr></thead>")
+    write(f, "<tbody>")
+    every doc := !docs do {
+        href := chapterOutputName(doc.getSrcName())
+        tr := \doc.getTrNumber() | ""
+        title := \doc.getTitle() | chapterDisplayTitle(doc)
+        authors := reportAuthorsText(doc)
+        date := \doc.getDate() | ""
+        write(f, "<tr>")
+        write(f, "<td class=\"report-index-tr\">")
+        if *tr > 0 then
+            write(f, "<a href=\"", escapeHtml(href), "\">",
+                  escapeHtml(tr), "</a>")
+        else
+            write(f, "<a href=\"", escapeHtml(href), "\">—</a>")
+        write(f, "</td>")
+        write(f, "<td><a href=\"", escapeHtml(href), "\">",
+              escapeHtml(title), "</a></td>")
+        write(f, "<td>", escapeHtml(authors), "</td>")
+        write(f, "<td class=\"report-index-date\">",
+              escapeHtml(date), "</td>")
+        write(f, "</tr>")
+        }
+    write(f, "</tbody></table>")
     return
 end
 

@@ -512,6 +512,19 @@ class CodeBlock : Node (lines, language)
     end
 
     #<p>
+    # Drop empty lines at the start and end of the block. RST
+    # separators after <tt>::</tt> / <tt>code-block</tt> are not
+    # source. <tt>pop</tt> is the front; <tt>pull</tt> is the back.
+    #</p>
+    method trimBlankEdges()
+        while *lines > 0 & lines[1] == "" do
+            pop(lines)
+        while *lines > 0 & lines[-1] == "" do
+            pull(lines)
+        return
+    end
+
+    #<p>
     # Return the list of raw code lines.
     # <[returns the lines list]>
     #</p>
@@ -689,9 +702,44 @@ class TableRow : Block (children, header)
 end
 
 #<p>
-# One cell; children are inline nodes.
+# One cell; children are inline nodes. Optional <tt>colspan</tt> /
+# <tt>rowspan</tt> (default 1) from grid-table spans.
 #</p>
-class TableCell : Block (children)
+class TableCell : Block (children, colspan, rowspan)
+
+    #<p>
+    # Set how many columns this cell spans (at least 1).
+    # <[param n column span count]>
+    #</p>
+    method setColSpan(n)
+        colspan := n
+        return
+    end
+
+    #<p>
+    # Return the column span (default 1).
+    # <[returns an integer &gt;= 1]>
+    #</p>
+    method getColSpan()
+        return \colspan | 1
+    end
+
+    #<p>
+    # Set how many rows this cell spans (at least 1).
+    # <[param n row span count]>
+    #</p>
+    method setRowSpan(n)
+        rowspan := n
+        return
+    end
+
+    #<p>
+    # Return the row span (default 1).
+    # <[returns an integer &gt;= 1]>
+    #</p>
+    method getRowSpan()
+        return \rowspan | 1
+    end
 
     #<p>
     # Dispatch to <tt>outp.visitTableCell()</tt>.
@@ -711,6 +759,8 @@ class TableCell : Block (children)
 
     initially
         children := []
+        colspan := 1
+        rowspan := 1
 end
 
 #<p>

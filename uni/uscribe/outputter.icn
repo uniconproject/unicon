@@ -595,15 +595,22 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
 
     #<p>
     # Emit a <tt>&lt;tr&gt;</tt> of <tt>&lt;th&gt;</tt> or
-    # <tt>&lt;td&gt;</tt> cells.
+    # <tt>&lt;td&gt;</tt> cells (with colspan/rowspan when &gt; 1).
     # <[param n a TableRow node]>
     #</p>
     method visitTableRow(n)
-        local cell, tag
+        local cell, tag, cs, rs
         tag := if n.isHeaderRow() then "th" else "td"
         write(outFile, "<tr>")
         every cell := !n.getChildren() do {
-            write(outFile, "<", tag, ">")
+            writes(outFile, "<", tag)
+            cs := cell.getColSpan()
+            rs := cell.getRowSpan()
+            if cs > 1 then
+                writes(outFile, " colspan=\"", cs, "\"")
+            if rs > 1 then
+                writes(outFile, " rowspan=\"", rs, "\"")
+            write(outFile, ">")
             every (!cell.getChildren()).accept(self)
             write(outFile, "</", tag, ">")
             }
@@ -616,7 +623,15 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     # <[param n a TableCell node]>
     #</p>
     method visitTableCell(n)
-        write(outFile, "<td>")
+        local cs, rs
+        writes(outFile, "<td")
+        cs := n.getColSpan()
+        rs := n.getRowSpan()
+        if cs > 1 then
+            writes(outFile, " colspan=\"", cs, "\"")
+        if rs > 1 then
+            writes(outFile, " rowspan=\"", rs, "\"")
+        write(outFile, ">")
         every (!n.getChildren()).accept(self)
         write(outFile, "</td>")
         return

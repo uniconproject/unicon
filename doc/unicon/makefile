@@ -1,12 +1,15 @@
-# Legacy man-page HTML was previously generated as utr11.html here.
-# The Unicon man page now lives as doc/utr/utr11.rst (built under doc/utr/html/).
-# General pages: rebuild HTML from RST with pandoc, e.g.
-#   pandoc -s -f rst -t html5 faq.rst -o faq.html
+# General Unicon pages: RST is canonical; HTML is a build artifact.
+#   make -C doc/unicon html
 
-.PHONY: html
+.PHONY: html clean
+
 html:
-	pandoc -s -f rst -t html5 faq.rst -o faq.html
-	pandoc -s -f rst -t html5 posix.rst -o posix.html
-	pandoc -s -f rst -t html5 svn.rst -o svn.html
-	pandoc -s -f rst -t html5 simple.rst -o simple.html
-	pandoc -s -f rst -t html5 reports.rst -o reports.html
+	mkdir -p html
+	pandoc -s -f rst -t html5 --metadata title="Unicon FAQ" faq.rst -o html/faq.html
+	pandoc -s -f rst -t html5 --metadata title="Posix Interface" posix.rst -o html/posix.html
+	pandoc -s -f rst -t html5 --metadata title="SVN Repository" svn.rst -o html/svn.html
+	pandoc -s -f rst -t html5 --metadata title="CGI Example" simple.rst -o html/simple.html
+	pandoc -s -f rst -t html5 --metadata title="Technical Reports" reports.rst -o html/reports.html
+
+clean:
+	rm -rf html

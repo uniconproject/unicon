@@ -92,13 +92,13 @@ Pages that are not a single numbered UTR (guides, indexes, examples).
 
 | File | Title / purpose |
 |------|-----------------|
-| [faq.rst](unicon/faq.rst) / [HTML](unicon/faq.html) | *Unicon: Frequently Asked Questions* |
-| [posix.rst](unicon/posix.rst) / [HTML](unicon/posix.html) | *Unicon: A Posix Interface for the Icon Programming Language* |
-| [reports.rst](unicon/reports.rst) / [HTML](unicon/reports.html) | *Technical Reports* — in-tree index; see also the project site [Technical Reports](https://unicon.sourceforge.io/reports.html) |
-| [svn.rst](unicon/svn.rst) / [HTML](unicon/svn.html) | *Unicon Source Code SVN Repository* — **legacy** (SVN; development uses Git today) |
-| [simple.rst](unicon/simple.rst) / [HTML](unicon/simple.html) | *A Simple Example — Using the CGI Icon Library* |
+| [faq.rst](unicon/faq.rst) | *Unicon: Frequently Asked Questions* |
+| [posix.rst](unicon/posix.rst) | *Unicon: A Posix Interface for the Icon Programming Language* |
+| [reports.rst](unicon/reports.rst) | *Technical Reports* — in-tree index; see also the project site [Technical Reports](https://unicon.sourceforge.io/reports.html) |
+| [svn.rst](unicon/svn.rst) | *Unicon Source Code SVN Repository* — **legacy** (SVN; development uses Git today) |
+| [simple.rst](unicon/simple.rst) | *A Simple Example — Using the CGI Icon Library* |
 
-*Location in tree: `doc/unicon/` (RST is canonical; HTML regenerated with pandoc).*
+*Location in tree: `doc/unicon/` (RST only; ``make -C doc/unicon html`` writes under `html/`).*
 
 ### uscribe user guide
 

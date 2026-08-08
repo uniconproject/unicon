@@ -107,6 +107,13 @@ jobs:
           make -C doc/uscribe html
           test -f doc/uscribe/out/index.html
 
+      - name: Build UTR and general doc HTML
+        run: |
+          make -C doc/utr html
+          test -f doc/utr/html/index.html
+          make -C doc/unicon html
+          test -f doc/unicon/html/faq.html
+
       - name: Build site
         env:
           # Production: /unicon ; PR preview: /unicon/previews/pr-<N>
@@ -195,6 +202,8 @@ jobs:
               `${marker}\n` +
               `### Pages preview\n\n` +
               `- Site: ${url}\n` +
+              `- Documentation: ${url}doc/\n` +
+              `- UTR collection: ${url}doc/utr/html/\n` +
               `- uscribe user guide: ${guide}\n\n` +
               `_Updated on each Pages workflow run; removed when the PR is closed._`;
 

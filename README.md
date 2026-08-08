@@ -14,9 +14,10 @@ Unicon is a very high level programming language descended from [Icon](https://w
 
 ## Documentation
 
-Shipped manuals, technical reports, and other files are indexed under **[`doc/`](doc/)** (the documentation index — use its table of contents for the full list). On [unicon.sourceforge.io](https://unicon.sourceforge.io/), **[Books](https://unicon.sourceforge.io/ubooks.html)** lists editions and free PDFs (including *Programming with Unicon* and related titles), and **[Unicon Programming](https://unicon.sourceforge.io/up/index.html)** is an example-oriented online guide. **[Rosetta Code](https://rosettacode.org/wiki/Category:Unicon)** has Unicon solutions for many programming tasks. More technical reports and resources are linked from the project site.
+Shipped manuals, technical reports, and other files are indexed under **[`doc/`](doc/)**
+([`doc/index.rst`](doc/index.rst) — documentation homepage). On [unicon.sourceforge.io](https://unicon.sourceforge.io/), **[Books](https://unicon.sourceforge.io/ubooks.html)** lists editions and free PDFs (including *Programming with Unicon* and related titles), and **[Unicon Programming](https://unicon.sourceforge.io/up/index.html)** is an example-oriented online guide. **[Rosetta Code](https://rosettacode.org/wiki/Category:Unicon)** has Unicon solutions for many programming tasks. More technical reports and resources are linked from the project site.
 
-**GitHub Pages:** [uniconproject.github.io/unicon](https://uniconproject.github.io/unicon/) (this README) · **[`doc/`](doc/)** for the documentation index.
+**GitHub Pages:** [uniconproject.github.io/unicon](https://uniconproject.github.io/unicon/) (this README) · **[Documentation](https://uniconproject.github.io/unicon/doc/)** · **[UTR collection](https://uniconproject.github.io/unicon/doc/utr/html/)**.
 
 ### Editors and IDEs
 

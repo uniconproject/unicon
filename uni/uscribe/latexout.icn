@@ -3,8 +3,9 @@
 # <tt>Document</tt> tree as LaTeX, plus helpers <tt>escapeLatex</tt>,
 # <tt>escapeLatexTT</tt>, <tt>escapeLatexPath</tt>,
 # <tt>escapeVerbatimLine</tt>, and <tt>latexLabelId</tt>. The driver writes
-# one <tt>book.tex</tt> (preamble + every chapter +
-# <tt>\\end{document}</tt>); <tt>--format=pdf</tt> then runs a TeX engine.
+# one <tt>--name</tt>.tex (default <tt>book.tex</tt>; preamble + every
+# chapter + <tt>\\end{document}</tt>); <tt>--format=pdf</tt> then runs
+# a TeX engine.
 #</p>
 #<p>
 # <b>Author:</b> Jafar Al-Gharaibeh
@@ -26,7 +27,7 @@ import lang
 class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
                                   chapterBase, chapterIndex, figureNo,
                                   docClass, reportDoc, citationTable,
-                                  footnoteList)
+                                  footnoteList, logoFile)
 
     #<p>
     # Set the open file to which LaTeX is written.
@@ -83,6 +84,17 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
     end
 
     #<p>
+    # Optional cover / title-page logo (basename already copied into
+    # the output directory). Empty/null keeps the plain
+    # <tt>\\maketitle</tt> / report cover.
+    # <[param file image basename, or null]>
+    #</p>
+    method setLogo(file)
+        logoFile := file
+        return
+    end
+
+    #<p>
     # True when emitting article/UTR layout.
     # <[fails if book mode]>
     #</p>
@@ -115,7 +127,19 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         write(outFile, "\\author{}")
         write(outFile, "\\date{}")
         write(outFile, "\\begin{document}")
-        write(outFile, "\\maketitle")
+        if \logoFile & *logoFile > 0 then {
+            write(outFile, "\\begin{titlepage}")
+            write(outFile, "\\centering")
+            write(outFile, "\\vspace*{1.6cm}")
+            write(outFile, "\\includegraphics[width=0.55\\textwidth,",
+                  "keepaspectratio]{", escapeLatexPath(logoFile), "}\\\\[2em]")
+            write(outFile, "{\\Huge\\bfseries ",
+                  escapeLatex(\bookTitle) | "Untitled", "\\par}")
+            write(outFile, "\\vfill")
+            write(outFile, "\\end{titlepage}")
+            }
+        else
+            write(outFile, "\\maketitle")
         write(outFile, "\\tableofcontents")
         write(outFile, "\\clearpage")
         return
@@ -134,6 +158,10 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         write(outFile, "\\begin{titlepage}")
         write(outFile, "\\null\\vfil\\vskip 40pt")
         write(outFile, "\\begin{center}")
+        if \logoFile & *logoFile > 0 then
+            write(outFile, "\\includegraphics[width=0.42\\textwidth,",
+                  "keepaspectratio]{", escapeLatexPath(logoFile),
+                  "}\\\\[1.5em]")
         write(outFile, "{\\LARGE\\bfseries ",
               escapeLatex((\d.getTitle()) | (\bookTitle) | "Untitled"),
               " \\par}")
@@ -192,7 +220,7 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         write(outFile, "\\usepackage{fancyvrb}")
         write(outFile, "\\usepackage{booktabs}")
         write(outFile, "\\usepackage{longtable}")
-        write(outFile, "\\usepackage{multirow}")
+        write(outFile, "\\IfFileExists{multirow.sty}{\\usepackage{multirow}}{}")
         write(outFile, "\\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}")
         return
     end
@@ -724,7 +752,7 @@ end
 #</p>
 procedure escapeVerbatimLine(s)
     local out, c
-    /s := ""
+    s := normalizeLatexUnicode(\s | "")
     out := ""
     every c := !s do
         out ||:= case c of {
@@ -770,18 +798,33 @@ end
 # <[param s input string, or null treated as empty]>
 # <[returns escaped string]>
 #</p>
-procedure escapeLatex(s)
-    local out, c, rest, pair, fromStr, toStr
+#<p>
+# Normalize Unicode punctuation (and a few legacy bytes) to forms
+# <tt>pdflatex</tt> can typeset. Shared by prose, <tt>\\texttt</tt>, and
+# Verbatim escapers.
+# <[param s input string, or null treated as empty]>
+# <[returns normalized string]>
+#</p>
+procedure normalizeLatexUnicode(s)
+    local rest, pair, fromStr, toStr
     static uMap
     initial {
         uMap := [
-            ["—", "---"], ["–", "--"],
+            ["—", "---"], ["–", "--"], ["−", "-"], ["∗", "*"],
+            ["̃", "~"],  # U+0303 combining tilde (seen as broken ~=)
             ["“", "``"], ["”", "''"],
-            ["‘", "`"], ["’", "'"]
+            ["‘", "`"], ["’", "'"],
+            # UTF-8 encodings of C1 controls U+0091..U+0094 (byte-wise
+            # Unicon builds); do not map bare char(0x9x) — that splits
+            # multi-byte UTF-8 sequences.
+            [char(194) || char(147), "``"],
+            [char(194) || char(148), "''"],
+            [char(194) || char(145), "`"],
+            [char(194) || char(146), "'"],
+            [char(15), ""]
             ]
         }
     /s := ""
-    # Normalize a few Unicode punctuation marks TeX-friendly first
     every pair := !uMap do {
         fromStr := pair[1]
         toStr := pair[2]
@@ -795,6 +838,18 @@ procedure escapeLatex(s)
             }
         s := rest
         }
+    return s
+end
+
+#<p>
+# Escape text for ordinary LaTeX prose (not verbatim, not
+# <tt>\\verb</tt>). Normalizes a few Unicode punctuation marks first.
+# <[param s input string, or null treated as empty]>
+# <[returns escaped string]>
+#</p>
+procedure escapeLatex(s)
+    local out, c
+    s := normalizeLatexUnicode(\s | "")
     out := ""
     every c := !s do
         out ||:= case c of {
@@ -821,7 +876,7 @@ end
 #</p>
 procedure escapeLatexTT(s)
     local out, c
-    /s := ""
+    s := normalizeLatexUnicode(\s | "")
     out := ""
     every c := !s do
         out ||:= case c of {

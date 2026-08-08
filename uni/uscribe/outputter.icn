@@ -201,7 +201,7 @@ end
 # Shared CSS/JS come from <tt>--theme</tt>
 # (see <tt>uni/uscribe/themes/</tt>).
 #</p>
-class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo, citationTable, footnoteList)
+class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo, citationTable, footnoteList, outDir, bookPdfHref)
 
     #<p>
     # Set the open file to which HTML is written.
@@ -270,6 +270,26 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     end
 
     #<p>
+    # Output directory for sibling assets (e.g. per-report PDFs).
+    # <[param dir filesystem path, or null]>
+    #</p>
+    method setOutDir(dir)
+        outDir := dir
+        return
+    end
+
+    #<p>
+    # Book-wide PDF href for chapter footers (e.g.
+    # <tt>uscribe-userguide.pdf</tt>). Null keeps the per-chapter
+    # sibling name used for report collections.
+    # <[param href relative PDF href, or null]>
+    #</p>
+    method setBookPdf(href)
+        bookPdfHref := href
+        return
+    end
+
+    #<p>
     # Emit a complete HTML document: head (theme boot, CSS/JS), sidebar,
     # prev/next, body children, footer, and closing tags.
     # <[param n a Document node]>
@@ -328,7 +348,7 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     # <[param n a Document with report metadata]>
     #</p>
     method writeReportMasthead(n)
-        local a, first
+        local a, first, pdfName, pdfPath, pf, bits
         write(outFile, "<header class=\"report-masthead\">")
         write(outFile, "<h1 class=\"report-title\">",
               escapeHtml(\n.getTitle()) | "Untitled", "</h1>")
@@ -348,6 +368,34 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
         if \n.getDate() then
             write(outFile, "<p class=\"report-date\">",
                   escapeHtml(n.getDate()), "</p>")
+        # Formats: sibling PDF (when present) and viewable source txt.
+        bits := &null
+        if \outDir & \n.getSrcName() then {
+            pdfName := chapterOutputName(n.getSrcName())
+            if *pdfName >= 5 & pdfName[*pdfName-4:0] == ".html" then
+                pdfName := pdfName[1:*pdfName-4] || ".pdf"
+            else
+                pdfName := pdfName || ".pdf"
+            pdfPath := outDir || "/" || pdfName
+            if pf := open(pdfPath) then {
+                close(pf)
+                writes(outFile, "<p class=\"report-pdf\"><a href=\"",
+                       escapeHtml(pdfName), "\">pdf</a>")
+                bits := 1
+                }
+            }
+        if \n.getSrcName() then {
+            if \bits then
+                writes(outFile, " · ")
+            else
+                writes(outFile, "<p class=\"report-pdf\">")
+            writes(outFile, "<a href=\"_sources/",
+                   escapeHtml(basename(n.getSrcName()) || ".txt"),
+                   "\">txt</a>")
+            bits := 1
+            }
+        if \bits then
+            write(outFile, "</p>")
         if \n.getAbstract() then {
             write(outFile, "<div class=\"report-abstract\">")
             write(outFile, "<p class=\"report-abstract-label\">Abstract</p>")
@@ -456,12 +504,14 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
 
     #<p>
     # Page footer: optional copyright, always
-    # <tt>Powered by uscribe</tt>, and a Page source link when a
-    # chapter source path is known (file under <tt>_sources/</tt>).
+    # <tt>Powered by uscribe</tt>, then <tt>pdf</tt> (book PDF, or a
+    # sibling PDF for reports) and <tt>source</tt>
+    # (<tt>_sources/*.txt</tt> so browsers display the text instead
+    # of downloading).
     # <[param srcPath chapter source path, or null]>
     #</p>
     method writeFooter(srcPath)
-        local base, needSep
+        local base, needSep, pdfName
         needSep := &null
         write(outFile, "<footer class=\"footer\" role=\"contentinfo\">")
         if \copyrightNotice & *copyrightNotice > 0 then {
@@ -471,9 +521,19 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
         if \needSep then writes(outFile, " | ")
         writes(outFile, "Powered by uscribe")
         if \srcPath then {
-            base := basename(srcPath)
+            if \bookPdfHref & *bookPdfHref > 0 then
+                pdfName := bookPdfHref
+            else {
+                pdfName := chapterOutputName(srcPath)
+                if *pdfName >= 5 & pdfName[*pdfName-4:0] == ".html" then
+                    pdfName := pdfName[1:*pdfName-4] || ".pdf"
+                else
+                    pdfName := pdfName || ".pdf"
+                }
+            writes(outFile, " | <a href=\"", escapeHtml(pdfName), "\">pdf</a>")
+            base := basename(srcPath) || ".txt"
             writes(outFile, " | <a href=\"_sources/", escapeHtml(base),
-                   "\" rel=\"nofollow\">Page source</a>")
+                   "\" rel=\"nofollow\">source</a>")
             }
         write(outFile)
         write(outFile, "</footer>")
@@ -551,7 +611,9 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
         if lang == "icon" | lang == "icn" then
             lang := "unicon"
         cls := "language-" || lang
-        write(outFile, "<pre><code class=\"", escapeHtml(cls), "\">")
+        # writes() so the first source line is not preceded by a
+        # newline inside <code> (that would show as a blank line).
+        writes(outFile, "<pre><code class=\"", escapeHtml(cls), "\">")
         every ln := !n.getLines() do
             write(outFile, escapeHtml(ln))
         write(outFile, "</code></pre>")
@@ -962,6 +1024,28 @@ procedure safeCssIdent(s)
             out ||:= c
     if *out = 0 then
         return "text"
+    return out
+end
+
+#<p>
+# Book <tt>--name</tt> stem: letters, digits, <tt>_</tt>, and
+# <tt>-</tt> only. Empty input fails.
+# <[param s candidate stem]>
+# <[returns s unchanged when already safe]>
+# <[fails if empty or contains other characters]>
+#</p>
+procedure safeOutputName(s)
+    local out, c, ok
+    /s := ""
+    if *s = 0 then fail
+    ok := &letters ++ &digits ++ '_-'
+    out := ""
+    every c := !s do
+        if any(ok, c) then
+            out ||:= c
+        else
+            fail
+    if *out = 0 then fail
     return out
 end
 

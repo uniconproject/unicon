@@ -19,7 +19,7 @@ import util
 import json
 import uscribe
 
-global targetDir, bookTitle, themeName, copyrightNotice, logoHref
+global targetDir, bookTitle, bookOutputName, themeName, copyrightNotice, logoHref
 
 #<p>
 # Parse CLI options, load the manifest, run the two-pass build, and
@@ -32,11 +32,12 @@ procedure main(args)
 
     if *args = 0 then helpMesg()
     Args(args, set("manifest","title","targetDir","theme","themePath","format",
-                   "copyright","logo","docclass"),
+                   "copyright","logo","docclass","name"),
          helpMesg)
 
     manifestPath := Args().getOpt("manifest") | helpMesg()
     bookTitle    := Args().getOptDef("title", "Untitled Book")
+    bookOutputName := parseBookOutputName()
     copyrightNotice := Args().getOpt("copyright")
     logoHref := &null
     format       := map(Args().getOptDef("format", "html"), &ucase, &lcase)
@@ -115,7 +116,7 @@ end
 #</p>
 procedure renderHtml(docs, labels, cites)
     local themePath, themeDir, nav, indexDocs, doc, outp, outPath, f, i
-    local logoSrc, logoBase
+    local logoSrc, logoBase, bookPdf
 
     themePath := Args().getOpt("themePath")
     themeDir := resolveThemeDir(themeName, themePath) |
@@ -143,8 +144,12 @@ procedure renderHtml(docs, labels, cites)
             chapterNavTitle(doc),
             collectSearchText(doc)
             ])
+    bookPdf := &null
+    if not allDocsAreReports(docs) then
+        bookPdf := bookOutputName || ".pdf"
+
     writeSearchIndex(targetDir, indexDocs)
-    writeSearchPage(targetDir, bookTitle, nav)
+    writeSearchPage(targetDir, bookTitle, nav, bookPdf)
     writeIndexPage(targetDir, bookTitle, nav, docs)
     ensureDir(targetDir || "/_sources")
 
@@ -160,11 +165,14 @@ procedure renderHtml(docs, labels, cites)
         outp.setNav(bookTitle, nav, i, themeName)
         outp.setCopyright(copyrightNotice)
         outp.setLogo(logoHref)
+        outp.setOutDir(targetDir)
+        outp.setBookPdf(bookPdf)
         doc.accept(outp)
         close(f)
         write("wrote ", outPath)
         copyFile(doc.getSrcName(),
-                 targetDir || "/_sources/" || basename(doc.getSrcName())) |
+                 targetDir || "/_sources/" || basename(doc.getSrcName()) ||
+                 ".txt") |
             write(&errout, "warning: could not copy page source '",
                   doc.getSrcName(), "'")
         }
@@ -172,8 +180,9 @@ procedure renderHtml(docs, labels, cites)
 end
 
 #<p>
-# LaTeX / PDF builder. Book manifests write one <tt>book.tex</tt>
-# (and optional <tt>book.pdf</tt>). When every chapter is a report,
+# LaTeX / PDF builder. Book manifests write one
+# <tt>--name</tt>.tex (default <tt>book.tex</tt>) and optional PDF.
+# When every chapter is a report,
 # emit one <tt>.tex</tt> / <tt>.pdf</tt> per report (UTR-style).
 # <[param docs ordered list of Document nodes]>
 # <[param labels LabelTable after collect()]>
@@ -211,9 +220,9 @@ end
 # <[param cites CitationTable]>
 #</p>
 procedure renderBookLatex(docs, labels, wantPdf, cites)
-    local outPath, f, outp, doc, engine, rc
+    local outPath, f, outp, doc, engine, rc, logoFile
 
-    outPath := targetDir || "/book.tex"
+    outPath := targetDir || "/" || bookOutputName || ".tex"
     f := open(outPath, "w") | stop("uscribe: could not write '", outPath, "'")
     outp := LatexOutputter()
     outp.setOutFile(f)
@@ -221,6 +230,8 @@ procedure renderBookLatex(docs, labels, wantPdf, cites)
     outp.setCitationTable(cites)
     outp.setBookTitle(bookTitle)
     outp.setDocClass("book")
+    if logoFile := copyLogoForLatex() then
+        outp.setLogo(logoFile)
     outp.writePreamble()
     every doc := !docs do {
         labels.resolve(doc)
@@ -237,13 +248,13 @@ procedure renderBookLatex(docs, labels, wantPdf, cites)
         stop("uscribe: --format=pdf needs pdflatex, xelatex, or lualatex",
              " in PATH (wrote ", outPath, " only)")
     write("running ", engine, " (pass 1)…")
-    rc := runLatex(engine, targetDir, "book")
+    rc := runLatex(engine, targetDir, bookOutputName)
     write("running ", engine, " (pass 2, for TOC/xrefs)…")
-    rc := runLatex(engine, targetDir, "book")
+    rc := runLatex(engine, targetDir, bookOutputName)
     if rc ~= 0 then
         stop("uscribe: ", engine, " failed (exit ", rc,
-             "); see ", targetDir, "/book.log")
-    write("wrote ", targetDir, "/book.pdf")
+             "); see ", targetDir, "/", bookOutputName, ".log")
+    write("wrote ", targetDir, "/", bookOutputName, ".pdf")
     return
 end
 
@@ -256,8 +267,9 @@ end
 # <[param cites CitationTable]>
 #</p>
 procedure renderReportLatex(docs, labels, wantPdf, cites)
-    local doc, base, outPath, f, outp, engine, rc
+    local doc, base, outPath, f, outp, engine, rc, logoFile
 
+    logoFile := copyLogoForLatex()
     every doc := !docs do {
         labels.resolve(doc)
         base := chapterTexBase(doc.getSrcName())
@@ -271,6 +283,8 @@ procedure renderReportLatex(docs, labels, wantPdf, cites)
         outp.setBookTitle(\doc.getTitle() | bookTitle)
         outp.setDocClass("report")
         outp.setReportDoc(doc)
+        if \logoFile then
+            outp.setLogo(logoFile)
         outp.writePreamble()
         doc.accept(outp)
         outp.writeEpilogue()
@@ -286,9 +300,11 @@ procedure renderReportLatex(docs, labels, wantPdf, cites)
             write("running ", engine, " on ", base, " (pass 2)…")
             rc := runLatex(engine, targetDir, base)
             if rc ~= 0 then
-                stop("uscribe: ", engine, " failed for ", base,
-                     " (exit ", rc, "); see ", targetDir, "/", base, ".log")
-            write("wrote ", targetDir, "/", base, ".pdf")
+                write(&errout, "warning: ", engine, " failed for ", base,
+                      " (exit ", rc, "); see ", targetDir, "/", base,
+                      ".log — continuing")
+            else
+                write("wrote ", targetDir, "/", base, ".pdf")
             }
         }
     return
@@ -490,15 +506,52 @@ procedure copyImageAsset(img, srcDir)
     if \absolute then {
         dst := targetDir || "/" || basename(uri)
         img.setURI(basename(uri))
+        uri := basename(uri)
         }
     else
         dst := targetDir || "/" || uri
     parent := dirname(dst)
     if parent ~== "." then
         ensureDir(parent)
+
+    # pdflatex cannot include GIF; convert to PNG when convert(1) exists.
+    if *uri >= 4 & map(uri[*uri-3:0], &ucase, &lcase) == ".gif" then {
+        if convertGifToPng(src, dst, img, uri) then
+            return
+        }
+
     copyFile(src, dst) |
         write(&errout, "warning: could not copy image '", src, "' to '",
               dst, "'")
+    return
+end
+
+#<p>
+# Convert a GIF source to PNG under <tt>targetDir</tt> and rewrite the
+# image URI. Uses ImageMagick <tt>convert</tt> when available.
+# <[param src resolved GIF filesystem path]>
+# <[param dstGif intended GIF destination path (used to derive PNG)]>
+# <[param img ImageNode to update]>
+# <[param uri relative or basename URI currently on the node]>
+# <[fails if convert is missing or the conversion fails]>
+#</p>
+procedure convertGifToPng(src, dstGif, img, uri)
+    local dstPng, uriPng, rc, nullf
+    if not pathfind("convert") then fail
+    if *uri >= 4 then
+        uriPng := uri[1:*uri-3] || ".png"
+    else
+        fail
+    dstPng := dstGif[1:*dstGif-3] || ".png"
+    nullf := open("/dev/null", "w") | open("NUL", "w")
+    rc := system(["convert", src, dstPng], , nullf, nullf)
+    close(\nullf)
+    if rc ~= 0 then {
+        write(&errout, "warning: convert failed for GIF '", src, "'")
+        fail
+        }
+    img.setURI(uriPng)
+    write("converted GIF → PNG: ", uriPng)
     return
 end
 
@@ -833,7 +886,10 @@ procedure writeIndexPage(dir, title, nav, docs)
                   escapeHtml(e[2]), "</a></li>")
         write(f, "</ol>")
         }
-    writeFooterStatic(f)
+    if allDocsAreReports(docs) then
+        writeFooterStatic(f)
+    else
+        writeFooterStatic(f, &null, bookOutputName || ".pdf")
     write(f, "</div></div></body></html>")
     close(f)
     write("wrote ", dir, "/index.html")
@@ -842,20 +898,26 @@ end
 
 #<p>
 # Emit a report-collection index table into an open HTML file.
+# Includes a Formats column with <tt>pdf</tt> (when the sibling
+# <tt>.pdf</tt> exists) and <tt>txt</tt> (viewable page source under
+# <tt>_sources/</tt>).
 # <[param f open HTML file]>
 # <[param docs ordered report Documents]>
 #</p>
 procedure writeReportIndex(f, docs)
-    local doc, href, tr, title, authors, date
+    local doc, href, pdfHref, srcTxt, tr, title, authors, date
     write(f, "<p>Unicon Technical Reports</p>")
     write(f, "<table class=\"report-index\">")
     write(f, "<thead><tr>")
     write(f, "<th>UTR</th><th>Title</th><th>Author</th>")
     write(f, "<th class=\"report-index-date\">Date</th>")
+    write(f, "<th class=\"report-index-fmt\">Formats</th>")
     write(f, "</tr></thead>")
     write(f, "<tbody>")
     every doc := !docs do {
         href := chapterOutputName(doc.getSrcName())
+        pdfHref := chapterTexBase(doc.getSrcName()) || ".pdf"
+        srcTxt := basename(doc.getSrcName()) || ".txt"
         tr := \doc.getTrNumber() | ""
         title := \doc.getTitle() | chapterDisplayTitle(doc)
         authors := reportAuthorsText(doc)
@@ -873,9 +935,31 @@ procedure writeReportIndex(f, docs)
         write(f, "<td>", escapeHtml(authors), "</td>")
         write(f, "<td class=\"report-index-date\">",
               escapeHtml(date), "</td>")
+        write(f, "<td class=\"report-index-fmt\">")
+        if reportPdfExists(pdfHref) then
+            writes(f, "<a href=\"", escapeHtml(pdfHref), "\">pdf</a> · ")
+        else
+            writes(f, "<span class=\"report-pdf-missing\">pdf</span> · ")
+        write(f, "<a href=\"_sources/", escapeHtml(srcTxt),
+              "\">txt</a>")
+        write(f, "</td>")
         write(f, "</tr>")
         }
     write(f, "</tbody></table>")
+    return
+end
+
+#<p>
+# Succeed when <tt>name</tt> exists as a readable file under
+# <tt>targetDir</tt> (relative PDF names from the report index).
+# <[param name basename such as <tt>utr15.pdf</tt>]>
+#</p>
+procedure reportPdfExists(name)
+    local path, f
+    path := targetDir || "/" || name
+    f := open(path)
+    if /f then fail
+    close(f)
     return
 end
 
@@ -885,8 +969,9 @@ end
 # <[param dir output directory]>
 # <[param title book title]>
 # <[param nav list of [htmlFile, chapterTitle] pairs]>
+# <[param pdfHref optional book PDF href (omit for report collections)]>
 #</p>
-procedure writeSearchPage(dir, title, nav)
+procedure writeSearchPage(dir, title, nav, pdfHref)
     local f
     f := open(dir || "/search.html", "w") |
         stop("uscribe: could not write search.html")
@@ -923,7 +1008,7 @@ procedure writeSearchPage(dir, title, nav)
     write(f, "input.addEventListener('input',function(){run(input.value)});")
     write(f, "})();")
     write(f, "</script>")
-    writeFooterStatic(f)
+    writeFooterStatic(f, &null, pdfHref)
     write(f, "</div></div></body></html>")
     close(f)
     write("wrote ", dir, "/search.html")
@@ -931,11 +1016,13 @@ procedure writeSearchPage(dir, title, nav)
 end
 
 #<p>
-# Page footer for shell pages (index/search): optional copyright
-# and always <tt>Powered by uscribe</tt> (no page source).
+# Page footer for shell pages (index/search): optional copyright,
+# <tt>Powered by uscribe</tt>, optional <tt>pdf</tt> / <tt>source</tt>.
 # <[param f open output file]>
+# <[param sourceHref optional href for source txt]>
+# <[param pdfHref optional href for a PDF (e.g. uscribe-userguide.pdf)]>
 #</p>
-procedure writeFooterStatic(f)
+procedure writeFooterStatic(f, sourceHref, pdfHref)
     local needSep
     needSep := &null
     write(f, "<footer class=\"footer\" role=\"contentinfo\">")
@@ -945,6 +1032,11 @@ procedure writeFooterStatic(f)
         }
     if \needSep then writes(f, " | ")
     writes(f, "Powered by uscribe")
+    if \pdfHref & *pdfHref > 0 then
+        writes(f, " | <a href=\"", escapeHtml(pdfHref), "\">pdf</a>")
+    if \sourceHref & *sourceHref > 0 then
+        writes(f, " | <a href=\"", escapeHtml(sourceHref),
+              "\" rel=\"nofollow\">source</a>")
     write(f)
     write(f, "</footer>")
     return
@@ -978,6 +1070,42 @@ procedure ensureDir(d)
 end
 
 #<p>
+# Copy <tt>--logo</tt> into <tt>targetDir</tt> for
+# <tt>\\includegraphics</tt> on the title page.
+# <[returns image basename]>
+# <[fails if --logo was omitted]>
+#</p>
+procedure copyLogoForLatex()
+    local src, base
+    src := Args().getOpt("logo")
+    if /src then fail
+    base := basename(src)
+    copyFile(src, targetDir || "/" || base) |
+        stop("uscribe: could not copy logo '", src, "'")
+    write("logo: ", base)
+    return base
+end
+
+#<p>
+# Book output stem from <tt>--name</tt> (default <tt>book</tt>).
+# A trailing <tt>.pdf</tt> / <tt>.tex</tt> is stripped. Only letters,
+# digits, <tt>_</tt>, and <tt>-</tt> are allowed.
+# <[returns sanitized stem]>
+#</p>
+procedure parseBookOutputName()
+    local raw, stem
+    raw := Args().getOptDef("name", "book")
+    stem := raw
+    if *stem >= 4 & (map(stem[-4:0], &ucase, &lcase) == ".pdf" |
+          map(stem[-4:0], &ucase, &lcase) == ".tex") then
+        stem := stem[1:-4]
+    if stem ~== safeOutputName(stem) then
+        stop("uscribe: invalid --name '", raw,
+             "'; use only letters, digits, '_' or '-'")
+    return safeOutputName(stem)
+end
+
+#<p>
 # Print usage and exit via <tt>stop()</tt>.
 #</p>
 procedure helpMesg()
@@ -986,8 +1114,11 @@ procedure helpMesg()
     write("  --manifest=FILE     Plain-text chapter list, one source path per")
     write("                      line (# comments and blank lines allowed).")
     write("  --title=TITLE       Book title (default: \"Untitled Book\")")
+    write("  --name=STEM         Book .tex/.pdf basename (default: book).")
+    write("                      HTML footers link to STEM.pdf. Ignored for")
+    write("                      report collections (one PDF per report).")
     write("  --copyright=TEXT    Footer © line (e.g. \"2026, Jafar Al-Gharaibeh\")")
-    write("  --logo=FILE         Sidebar logo image (copied to _static/; HTML only)")
+    write("  --logo=FILE         Logo: HTML sidebar and PDF/LaTeX title page")
     write("  --format=FMT        html (default), latex, or pdf")
     write("  --targetDir=DIR     Output directory (default: ./htmlBook or")
     write("                      ./latexBook for latex/pdf)")
@@ -1000,6 +1131,7 @@ procedure helpMesg()
     write("  :date:, :abstract:).")
     write()
     write("  HTML footers always include \"Powered by uscribe\".")
-    write("  latex writes book.tex; pdf also runs pdflatex/xelatex/lualatex.")
+    write("  latex writes STEM.tex (default book.tex); pdf also runs")
+    write("  pdflatex/xelatex/lualatex.")
     stop()
 end

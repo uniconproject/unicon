@@ -865,6 +865,36 @@ procedure mkTableRowFromCells(cellStrs, asHeader)
 end
 
 # <p>
+# Build a <tt>TableRow</tt> from span specs: each element is
+# <tt>[text, colspan]</tt> (and optional <tt>rowspan</tt> as a third
+# field).
+# <[param specs list of <tt>[text, colspan]</tt> lists]>
+# <[param asHeader non-null to mark the row as a header]>
+# <[returns a <tt>TableRow</tt>]>
+# </p>
+procedure mkTableRowFromSpanCells(specs, asHeader)
+    local row, cell, spec, text, cs, rs
+    row := TableRow()
+    if \asHeader then
+        row.setHeader()
+    every spec := !specs do {
+        text := spec[1]
+        cs := integer(\spec[2]) | 1
+        if cs < 1 then cs := 1
+        rs := integer(\spec[3]) | 1
+        if rs < 1 then rs := 1
+        cell := TableCell()
+        if cs > 1 then
+            cell.setColSpan(cs)
+        if rs > 1 then
+            cell.setRowSpan(rs)
+        every put(cell.getChildren(), !parseInline(\text | ""))
+        row.addChild(cell)
+        }
+    return row
+end
+
+# <p>
 # Parse a simple RST table starting at a separator line:
 # sep / header / sep / body… / sep.
 # <[param lines list of source lines]>
@@ -924,7 +954,9 @@ end
 
 # <p>
 # Parse a grid table: border / row / border / … with optional
-# header separator using <tt>"="</tt> in the border.
+# header separator using <tt>"="</tt> in the border. Consecutive
+# data lines between borders merge into one logical row. Missing
+# <tt>|</tt> at a column boundary starts a column span.
 # <[param parser owning Parser (pending labels)]>
 # <[param lines source lines]>
 # <[param i index of the opening border]>
@@ -933,7 +965,8 @@ end
 # <[returns index past the table]>
 # </p>
 procedure parseGridTable(parser, lines, i, limit, container)
-    local tbl, cols, rowCells, l, border, bodyRows, headerRows, sawHeaderSep, i2
+    local tbl, cols, l, border, bodyRows, headerRows, sawHeaderSep, i2
+    local specs
     cols := gridColumnBounds(lines[i])
     if *cols = 0 then
         return i + 1
@@ -960,9 +993,14 @@ procedure parseGridTable(parser, lines, i, limit, container)
             }
         if not isGridTableRow(lines[i]) then
             break
-        rowCells := splitGridRow(lines[i], cols)
-        put(bodyRows, mkTableRowFromCells(rowCells, &null))
+        # One logical row: merge consecutive data lines until a border.
+        specs := splitGridRowSpans(lines[i], cols)
         i +:= 1
+        while i <= limit & isGridTableRow(lines[i]) do {
+            mergeGridSpanLines(specs, splitGridRowSpans(lines[i], cols))
+            i +:= 1
+            }
+        put(bodyRows, mkTableRowFromSpanCells(specs, &null))
         }
     tbl := TableNode()
     if l := parser.takePendingLabel() then
@@ -1033,6 +1071,65 @@ procedure splitGridRow(row, cols)
         put(out, cell)
         }
     return out
+end
+
+# <p>
+# Split a grid data row into <tt>[text, colspan]</tt> specs. A missing
+# <tt>|</tt> at an internal column boundary extends the previous cell.
+# <[param row data row line]>
+# <[param cols bounds from <tt>gridColumnBounds</tt>]>
+# <[returns list of <tt>[text, colspan]</tt>]>
+# </p>
+procedure splitGridRowSpans(row, cols)
+    local out, i, j, start, stop, span, piece, bound
+    out := []
+    /row := ""
+    i := 1
+    while i <= *cols do {
+        start := cols[i][1]
+        span := 1
+        j := i
+        while j < *cols do {
+            bound := cols[j][2]
+            if bound <= *row & row[bound] == "|" then
+                break
+            span +:= 1
+            j +:= 1
+            }
+        stop := cols[j][2]
+        if start > *row then
+            piece := ""
+        else if stop > *row then
+            piece := row[start:0]
+        else
+            piece := row[start:stop]
+        put(out, [trim(\piece | "", ' ', 0), span])
+        i := j + 1
+        }
+    return out
+end
+
+# <p>
+# Append a second span-line's cell texts onto <tt>specs</tt> (same
+# colspan structure), joining with a space.
+# <[param specs mutable list of <tt>[text, colspan]</tt>]>
+# <[param more list of <tt>[text, colspan]</tt> from the next line]>
+# </p>
+procedure mergeGridSpanLines(specs, more)
+    local i, n, extra
+    n := *specs
+    if *more < n then
+        n := *more
+    every i := 1 to n do {
+        extra := trim(\more[i][1] | "", ' ', 0)
+        if *extra > 0 then {
+            if *specs[i][1] > 0 then
+                specs[i][1] := specs[i][1] || " " || extra
+            else
+                specs[i][1] := extra
+            }
+        }
+    return
 end
 
 # <p>

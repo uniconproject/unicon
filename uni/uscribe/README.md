@@ -11,7 +11,7 @@ A prose/book doc generator for Unicon.
 | `scan.icn`       | Balanced-delimiter helpers (`sbalClause`, `scanBalancedDirectives`, `parseRolePayload`) used by inline roles such as `:ref:`Title <label>``. |
 | `inline.icn`     | `parseInline(s)`: `*emph*`, `**strong**`, `` `literal` ``, `` `text <url>`_ ``, `` :ref:` `` / `` :doc:` `` / `` :sub:` `` / `` :sup:` `` → inline nodes. |
 | `outputter.icn`  | Abstract `Outputter` + concrete `HtmlOutputter`. |
-| `latexout.icn`   | `LatexOutputter`: whole-book `book.tex` (and PDF via a TeX engine). |
+| `latexout.icn`   | `LatexOutputter`: book `book.tex` / PDF, or one article `.tex` per report. |
 | `manifest.icn`   | `Manifest`: ordered chapter list (the toctree equivalent), loaded from a flat manifest file. |
 | `labeltable.icn` | `LabelTable`: two-pass cross-ref resolution — explicit `.. _label:`, title slugs, figures/tables, and `:doc:` stems. |
 | `directive.icn`  | `DirectiveRegistry`: `code-block`, admonitions (nested bodies), `image`/`figure`, `include`/`literalinclude`, `list-table`, `raw`; sketched `.. api::` UniDoc bridge. |

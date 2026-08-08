@@ -191,6 +191,8 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         write(outFile, "\\usepackage{xcolor}")
         write(outFile, "\\usepackage{fancyvrb}")
         write(outFile, "\\usepackage{booktabs}")
+        write(outFile, "\\usepackage{longtable}")
+        write(outFile, "\\usepackage{multirow}")
         write(outFile, "\\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}")
         return
     end
@@ -333,29 +335,36 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
     end
 
     #<p>
-    # Emit a <tt>tabular</tt> environment for a simple table.
+    # Emit a <tt>longtable</tt> (page-breakable) for a table, using
+    # <tt>\\multicolumn</tt> / <tt>\\multirow</tt> when cells span.
     # <[param n a Table node]>
     #</p>
     method visitTable(n)
-        local ncols, row, i
-        ncols := 1
-        if \n.getHeaderRow() then
-            ncols := *n.getHeaderRow().getChildren() | 1
-        else if *n.getChildren() > 0 then
-            ncols := *n.getChildren()[1].getChildren() | 1
-        writes(outFile, "\\begin{center}\\begin{tabular}{")
-        every i := 1 to ncols do
+        local ncols, row
+        ncols := tableColumnCount(n)
+        writes(outFile, "\\begin{longtable}{")
+        every 1 to ncols do
             writes(outFile, "l")
         write(outFile, "}")
         write(outFile, "\\hline")
         if \n.getHeaderRow() then {
             writeLatexTableRow(n.getHeaderRow())
             write(outFile, "\\hline")
+            write(outFile, "\\endfirsthead")
+            write(outFile, "\\hline")
+            writeLatexTableRow(n.getHeaderRow())
+            write(outFile, "\\hline")
+            write(outFile, "\\endhead")
+            write(outFile, "\\hline")
+            write(outFile, "\\endfoot")
+            write(outFile, "\\hline")
+            write(outFile, "\\endlastfoot")
             }
         every row := !n.getChildren() do
             writeLatexTableRow(row)
-        write(outFile, "\\hline")
-        write(outFile, "\\end{tabular}\\end{center}")
+        if /n.getHeaderRow() then
+            write(outFile, "\\hline")
+        write(outFile, "\\end{longtable}")
         if \n.getLabel() then
             write(outFile, "\\label{", latexLabelId(n.getLabel()), "}")
         write(outFile)
@@ -402,18 +411,56 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
     end
 
     #<p>
-    # Write one table row as <tt>cell & cell \\\\</tt>.
+    # Logical column count for a table (sum of colspans on the header
+    # or first body row).
+    # <[param n a Table node]>
+    # <[returns an integer &gt;= 1]>
+    #</p>
+    method tableColumnCount(n)
+        local row, cell, ncols
+        ncols := 0
+        row := \n.getHeaderRow() | {
+            if *n.getChildren() > 0 then
+                n.getChildren()[1]
+            else
+                &null
+            }
+        if /row then
+            return 1
+        every cell := !row.getChildren() do
+            ncols +:= cell.getColSpan()
+        if ncols < 1 then
+            ncols := 1
+        return ncols
+    end
+
+    #<p>
+    # Write one table row as <tt>cell & cell \\\\</tt>, wrapping
+    # spans with <tt>\\multicolumn</tt> / <tt>\\multirow</tt>.
     # <[param row a TableRow node]>
     #</p>
     method writeLatexTableRow(row)
-        local cell, first
+        local cell, first, cs, rs
         first := 1
         every cell := !row.getChildren() do {
             if \first then
                 first := &null
             else
                 writes(outFile, " & ")
+            cs := cell.getColSpan()
+            rs := cell.getRowSpan()
+            if cs > 1 & rs > 1 then
+                writes(outFile, "\\multicolumn{", cs, "}{l}{\\multirow{",
+                       rs, "}{*}{")
+            else if cs > 1 then
+                writes(outFile, "\\multicolumn{", cs, "}{l}{")
+            else if rs > 1 then
+                writes(outFile, "\\multirow{", rs, "}{*}{")
             every (!cell.getChildren()).accept(self)
+            if cs > 1 & rs > 1 then
+                writes(outFile, "}}")
+            else if cs > 1 | rs > 1 then
+                writes(outFile, "}")
             }
         write(outFile, " \\\\")
         return

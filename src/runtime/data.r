@@ -449,6 +449,14 @@ struct errtab errtab[] = {
    1307, "private key and certificate mismatch",
    1308, "unknown protocol",
 
+   1311, "unknown cryptographic algorithm or cipher",
+   1312, "cryptographic handle lacks required material",
+   1313, "duplicate cryptographic material role",
+   1314, "AEAD authentication failed",
+   1315, "signature verification failed",
+   1316, "invalid cryptographic operation state",
+   1317, "cryptographic material could not be loaded",
+
 #endif                                  /* HAVE_LIBSSL */
 
 #endif                                  /* Messaging */

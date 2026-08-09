@@ -1179,6 +1179,17 @@ void set_errortext_with_val(int i, char* errval);
 SSL_CTX* create_ssl_context(dptr attr, int n, int type);
 int set_ssl_connection_errortext(SSL *ssl, int err);
 void set_ssl_context_errortext(int err, char* errtext);
+
+struct CryptoFile *crypto_open_material(dptr target, int israw, dptr attr,
+                                        int nattr, int *rc);
+int   crypto_write   (struct CryptoFile *cf, char *buf, word len);
+int   crypto_read    (struct CryptoFile *cf, char **bufp, word *lenp);
+void  crypto_free    (struct CryptoFile *cf);
+int   crypto_setattr (struct CryptoFile *cf, char *name, char *val, word vlen);
+int   crypto_merge   (struct CryptoFile *cf, char *name, char *val);
+int   crypto_borrow  (struct CryptoFile *op, struct CryptoFile *src);
+int   crypto_getstate(struct CryptoFile *cf, char **blobp, word *lenp);
+char *crypto_rolename(struct CryptoFile *cf);
 #endif                                  /* HAVE_LIBSSL */
 
 #if HAVE_LIBSSH

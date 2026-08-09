@@ -1177,6 +1177,7 @@ void set_errortext_with_val(int i, char* errval);
 #define DTLS_CLIENT 4
 
 SSL_CTX* create_ssl_context(dptr attr, int n, int type);
+int is_ssl_attr(char *name);
 int set_ssl_connection_errortext(SSL *ssl, int err);
 void set_ssl_context_errortext(int err, char* errtext);
 
@@ -1184,7 +1185,7 @@ struct CryptoFile *crypto_open_material(dptr target, int israw, dptr attr,
                                         int nattr, int *rc);
 int   crypto_write   (struct CryptoFile *cf, char *buf, word len);
 int   crypto_read    (struct CryptoFile *cf, char **bufp, word *lenp);
-void  crypto_free    (struct CryptoFile *cf);
+void  cryptofile_free    (struct CryptoFile *cf);
 int   crypto_setattr (struct CryptoFile *cf, char *name, char *val, word vlen);
 int   crypto_merge   (struct CryptoFile *cf, char *name, char *val);
 int   crypto_borrow  (struct CryptoFile *op, struct CryptoFile *src);

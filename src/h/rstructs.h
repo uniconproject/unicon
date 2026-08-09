@@ -175,7 +175,7 @@ struct SSHfile {
 /*
  * Cryptographic handle (UTR 27).  Material handles hold parsed keys and
  * certificates; operation handles accumulate via write() and finalize on
- * read().  Allocated with malloc like SSHfile; freed by close/crypto_free.
+ * read().  Allocated with malloc like SSHfile; freed by close/cryptofile_free.
  */
 #define CRYPTO_ROLE_NONE    0
 #define CRYPTO_ROLE_PRIVKEY 01

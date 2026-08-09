@@ -131,7 +131,7 @@ xkeyword.$(O): keyword.r $(HDRS) ../h/feature.h ../h/revision.h
 	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c xkeyword.c
 	$(SLNT)$(RM) xkeyword.c
 
-xrposix.$(O): rposix.r $(HDRS) ../h/posix.h
+xrposix.$(O): rposix.r rcrypto.ri $(HDRS) ../h/posix.h
 
 xrmsg.$(O): rmsg.r $(HDRS) ../h/messagin.h
 

@@ -51,6 +51,17 @@ function{0,1} close(f)
       /*
        * Close f, using fclose, pclose, closedir, or wclose as appropriate.
        */
+#if HAVE_LIBSSL
+      if (status & Fs_Crypto) {
+         if (BlkD(f,File)->fd.cf != NULL) {
+            cryptofile_free(BlkD(f,File)->fd.cf);
+            BlkLoc(f)->File.fd.cf = NULL;
+            }
+         BlkLoc(f)->File.status = 0;
+         return f;
+         }
+#endif                                  /* HAVE_LIBSSL */
+
 #ifdef Messaging
       if (status & Fs_Messaging) {
          BlkLoc(f)->File.status = 0;
@@ -299,23 +310,113 @@ function{0,1} open(fname, spec)
       return file
       }
 
-#if HAVE_LIBSSH
+#if HAVE_LIBSSL || HAVE_LIBSSH
    /*
-    * open(s, "hc"/"hs", attrs...) where s is an SSH session or channel
-    * file: open a new channel or SFTP handle on the same session
-    * (no new handshake).  The second argument is a mode string, as
-    * for every other open(); 'c' is cmd/channel and 's' is SFTP.
+    * open() with a file as the first argument:
+    *   - crypto material handle + mode "e": derive an operation (UTR 27)
+    *   - SSH session/channel + "hc"/"hs": open a channel or SFTP on the
+    *     same session (no new handshake).  The second argument is a mode
+    *     string, as for every other open(); 'c' is cmd/channel and 's' is SFTP.
     */
    if is:file(fname) then {
       body {
+#if HAVE_LIBSSH
          tended struct descrip chanfname;
          struct SSHfile *chansshf;
-         struct b_file *cfl;
          int chanstatus;
          int want_sftp = 0, want_cmd = 0;
          int isdir = 0;
          word ai, k;
+#endif                                  /* HAVE_LIBSSH */
+         struct b_file *cfl;
 
+#if HAVE_LIBSSL
+         /*
+          * Crypto: open(material_handle, mode, attrs...).  Mode must
+          * contain 'e'; op= selects the operation.
+          */
+         if (BlkD(fname,File)->status & Fs_Crypto) {
+            struct CryptoFile *cf, *src;
+            tended struct descrip cfname;
+            int crypto_op = CRYPTO_OP_MATERIAL;
+            int status = 0;
+            int rc = 0;
+            word a, k;
+            char *p;
+
+            if (is:null(spec) || !cnv:tmp_string(spec, cfname))
+               runerr(103, spec);
+            p = StrLoc(cfname);
+            for (k = 0; k < StrLen(cfname); k++) {
+               switch (p[k]) {
+                  case 'e': case 'E':
+                     status |= Fs_Encrypt | Fs_Crypto;
+                     break;
+                  case 'r': case 'R':
+                     break;
+                  case 'h': case 'H':
+                     if (status & Fs_Encrypt)
+                        crypto_op = CRYPTO_OP_HASH;
+                     break;
+                  }
+               }
+            if (!(status & Fs_Crypto))
+               runerr(209, spec);
+
+            cf = calloc(1, sizeof(struct CryptoFile));
+            if (cf == NULL) { set_errortext(1317); fail; }
+            cf->op = crypto_op;
+
+            for (a = 0; a < n; a++) {
+               tended struct descrip as;
+               char nbuf[64];
+               word eq, vlen;
+               char *v;
+               if (is:null(attr[a]) || is:file(attr[a])) continue;
+               if (!cnv:string(attr[a], as)) continue;
+               for (eq = 0; eq < StrLen(as); eq++)
+                  if (StrLoc(as)[eq] == '=') break;
+               if (eq >= StrLen(as) || eq >= (word)sizeof(nbuf)) continue;
+               memcpy(nbuf, StrLoc(as), eq);
+               nbuf[eq] = '\0';
+               v = StrLoc(as) + eq + 1;
+               vlen = StrLen(as) - eq - 1;
+               if ((rc = crypto_setattr(cf, nbuf, v, vlen)) != 0) {
+                  cryptofile_free(cf); set_errortext(rc); fail;
+                  }
+               }
+
+            if (cf->op == CRYPTO_OP_MATERIAL) {
+               cryptofile_free(cf);
+               set_errortext(1316);
+               fail;
+               }
+
+            src = BlkD(fname,File)->fd.cf;
+            if (src == NULL) { cryptofile_free(cf); set_errortext(1312); fail; }
+            if ((rc = crypto_borrow(cf, src)) != 0) {
+               cryptofile_free(cf); set_errortext(rc); fail;
+               }
+
+            for (a = 0; a < n; a++) {
+               if (is:null(attr[a]) || !is:file(attr[a])) continue;
+               if (!(BlkD(attr[a],File)->status & Fs_Crypto)) {
+                  cryptofile_free(cf); set_errortext(1312); fail;
+                  }
+               if ((rc = crypto_borrow(cf, BlkD(attr[a],File)->fd.cf)) != 0) {
+                  cryptofile_free(cf); set_errortext(rc); fail;
+                  }
+               }
+
+            status |= Fs_Read | Fs_Write;
+            cfname = BlkD(fname,File)->fname;
+            Protect(cfl = alcfile(NULL, status, &cfname), runerr(0));
+            cfl->fd.cf = cf;
+            return file(cfl);
+            }
+#endif                                  /* HAVE_LIBSSL */
+
+#if HAVE_LIBSSH
          if (!(BlkD(fname,File)->status & Fs_SSH))
             runerr(103, fname);
          if (BlkD(fname,File)->fd.sshf == NULL)
@@ -433,9 +534,12 @@ function{0,1} open(fname, spec)
          cfl->mutexid = BlkD(fname,File)->mutexid;
 #endif                                  /* Concurrent */
          return file(cfl);
+#else                                   /* HAVE_LIBSSH */
+         runerr(103, fname);
+#endif                                  /* HAVE_LIBSSH */
          }
       }
-#endif                                  /* HAVE_LIBSSH */
+#endif                                  /* HAVE_LIBSSL || HAVE_LIBSSH */
 
    /*
     * fopen and popen require a C string, but it looks terrible in
@@ -501,6 +605,10 @@ Deliberate Syntax Error
       int is_ipv6 = 0;
       int af_fam;
 #endif                                  /* PosixFns || Messaging */
+#if HAVE_LIBSSL
+      int crypto_op = CRYPTO_OP_MATERIAL;
+      int crypto_raw = 0;
+#endif                                  /* HAVE_LIBSSL */
 
 #if UNIX || VMS || NT
       extern FILE *popen(const char*, const char*);
@@ -559,6 +667,14 @@ Deliberate Syntax Error
                continue;
             case 'h':
             case 'H':
+#if HAVE_LIBSSL
+               /* "eh": hash.  Target is an algorithm name. */
+               if (status & Fs_Encrypt) {
+                  status |= Fs_Crypto;
+                  crypto_op = CRYPTO_OP_HASH;
+                  continue;
+                  }
+#endif                                  /* HAVE_LIBSSL */
 #if HAVE_LIBSSH
                status |= Fs_SSH;
 #endif                                  /* HAVE_LIBSSH */
@@ -598,6 +714,13 @@ Deliberate Syntax Error
                   continue;
                   }
 #endif                                  /* PosixFns */
+#if HAVE_LIBSSL
+               /* "er": target is raw key material rather than a path */
+               if (status & Fs_Encrypt) {
+                  crypto_raw = 1;
+                  continue;
+                  }
+#endif                                  /* HAVE_LIBSSL */
                status |= Fs_Read;
                continue;
             case 'w':
@@ -767,6 +890,20 @@ Deliberate Syntax Error
             }
          }
 
+#if HAVE_LIBSSL
+      /*
+       * Pure crypto modes ("e" / "er" / "eh"): Fs_Encrypt without a
+       * socket, SSH session, or ordinary file r/w intent.
+       */
+      if ((status & Fs_Encrypt) && !(status & Fs_Socket)
+#if HAVE_LIBSSH
+          && !(status & Fs_SSH)
+#endif                                  /* HAVE_LIBSSH */
+          && !(status & (Fs_Read|Fs_Write|Fs_Append|Fs_Create))) {
+         status |= Fs_Crypto;
+         }
+#endif                                  /* HAVE_LIBSSL */
+
       /*
        * Construct a mode field for fopen/popen.
        */
@@ -836,6 +973,115 @@ Deliberate Syntax Error
        * Open the file with fopen or popen.
        */
 
+#if HAVE_LIBSSL
+      if (status & Fs_Crypto) {
+         struct CryptoFile *cf = NULL;
+         int rc = 0;
+         word a;
+
+         status |= Fs_Read | Fs_Write;
+
+         if (crypto_op == CRYPTO_OP_HASH) {
+            /* "eh": target is the algorithm name */
+            tended char *alg;
+            cf = calloc(1, sizeof(struct CryptoFile));
+            if (cf == NULL) { set_errortext(1317); fail; }
+            cf->op = CRYPTO_OP_HASH;
+            if (!cnv:C_string(fname, alg)) {
+               cryptofile_free(cf); runerr(103, fname);
+               }
+            cf->md = EVP_get_digestbyname(alg);
+            if (cf->md == NULL) {
+               cryptofile_free(cf); set_errortext(1311); fail;
+               }
+            for (a = 0; a < n; a++) {
+               tended struct descrip as;
+               char nbuf[64];
+               word eq, vlen;
+               char *v;
+               if (is:null(attr[a]) || is:file(attr[a])) continue;
+               if (!cnv:string(attr[a], as)) continue;
+               for (eq = 0; eq < StrLen(as); eq++)
+                  if (StrLoc(as)[eq] == '=') break;
+               if (eq >= StrLen(as) || eq >= (word)sizeof(nbuf)) continue;
+               memcpy(nbuf, StrLoc(as), eq);
+               nbuf[eq] = '\0';
+               v = StrLoc(as) + eq + 1;
+               vlen = StrLen(as) - eq - 1;
+               if (strcmp(nbuf, "alg") == 0) continue;
+               if ((rc = crypto_setattr(cf, nbuf, v, vlen)) != 0) {
+                  cryptofile_free(cf); set_errortext(rc); fail;
+                  }
+               }
+            }
+         else {
+            int have_op = 0;
+            for (a = 0; a < n; a++) {
+               tended char *tmps;
+               if (is:null(attr[a]) || is:file(attr[a])) continue;
+               if (!cnv:C_string(attr[a], tmps)) continue;
+               if (strncmp(tmps, "op=", 3) == 0) { have_op = 1; break; }
+               }
+
+            if (!have_op) {
+               cf = crypto_open_material(&fname, crypto_raw, attr, n, &rc);
+               if (cf == NULL) { set_errortext(rc); fail; }
+               }
+            else {
+               cf = calloc(1, sizeof(struct CryptoFile));
+               if (cf == NULL) { set_errortext(1317); fail; }
+               cf->op = CRYPTO_OP_MATERIAL;
+
+               for (a = 0; a < n; a++) {
+                  tended struct descrip as;
+                  char nbuf[64];
+                  word eq, vlen;
+                  char *v;
+                  if (is:null(attr[a]) || is:file(attr[a])) continue;
+                  if (!cnv:string(attr[a], as)) continue;
+                  for (eq = 0; eq < StrLen(as); eq++)
+                     if (StrLoc(as)[eq] == '=') break;
+                  if (eq >= StrLen(as) || eq >= (word)sizeof(nbuf)) continue;
+                  memcpy(nbuf, StrLoc(as), eq);
+                  nbuf[eq] = '\0';
+                  v = StrLoc(as) + eq + 1;
+                  vlen = StrLen(as) - eq - 1;
+                  if ((rc = crypto_setattr(cf, nbuf, v, vlen)) != 0) {
+                     cryptofile_free(cf); set_errortext(rc); fail;
+                     }
+                  }
+               if (cf->op == CRYPTO_OP_MATERIAL) {
+                  cryptofile_free(cf); set_errortext(1316); fail;
+                  }
+
+               {
+                  struct CryptoFile *m;
+                  m = crypto_open_material(&fname, crypto_raw, attr, n, &rc);
+                  if (m == NULL) { cryptofile_free(cf); set_errortext(rc); fail; }
+                  rc = crypto_borrow(cf, m);
+                  cryptofile_free(m);
+                  if (rc != 0) { cryptofile_free(cf); set_errortext(rc); fail; }
+                  }
+
+               for (a = 0; a < n; a++) {
+                  if (is:null(attr[a]) || !is:file(attr[a])) continue;
+                  if (!(BlkD(attr[a],File)->status & Fs_Crypto)) {
+                     cryptofile_free(cf); set_errortext(1312); fail;
+                     }
+                  if ((rc = crypto_borrow(cf, BlkD(attr[a],File)->fd.cf)) != 0) {
+                     cryptofile_free(cf); set_errortext(rc); fail;
+                     }
+                  }
+               }
+            }
+
+         StrLen(filename) = strlen(fnamestr);
+         StrLoc(filename) = fnamestr;
+         Protect(fl = alcfile(NULL, status, &filename), runerr(0));
+         fl->fd.cf = cf;
+         return file(fl);
+         }
+#endif                                  /* HAVE_LIBSSL */
 
 #ifdef Graphics
       if (status & Fs_Window) {
@@ -1561,6 +1807,19 @@ function{0,1} read(f)
          if (status & Fs_Pipe) fail;
          runerr(212, f);
          }
+
+#if HAVE_LIBSSL
+      if (status & Fs_Crypto) {
+         char *buf;
+         word len;
+         int rc;
+         rc = crypto_read(BlkD(f,File)->fd.cf, &buf, &len);
+         if (rc != 0) { set_errortext(rc); fail; }
+         Protect(StrLoc(s) = alcstr(buf, len), runerr(0));
+         StrLen(s) = len;
+         return s;
+         }
+#endif                                  /* HAVE_LIBSSL */
 
 /*
  * Should probably move these cases into getstrg() in rsys.r, where
@@ -3149,6 +3408,9 @@ end
    /*
     * Append a newline to the file.
     */
+#if HAVE_LIBSSL
+   if (!(status & Fs_Crypto)) {
+#endif                                  /* HAVE_LIBSSL */
 #ifdef Graphics
    pollctr >>= 1;
    pollctr++;
@@ -3226,6 +3488,9 @@ end
 #endif                                  /* PosixFns */
          putc('\n', f.fp);
 
+#if HAVE_LIBSSL
+      } /* !(status & Fs_Crypto) */
+#endif                                  /* HAVE_LIBSSL */
 #endif                                  /* nl */
 
    /*
@@ -3245,6 +3510,9 @@ end
       if (!(status & (Fs_Socket
 #if HAVE_LIBSSH
                       | Fs_SSH
+#endif
+#if HAVE_LIBSSL
+                      | Fs_Crypto
 #endif
          ))) {
 #endif                                  /* PosixFns */
@@ -3459,6 +3727,11 @@ function {1} name(x[nargs])
                         else
 #endif                                  /* Messaging */
 #ifdef PosixFns
+#if HAVE_LIBSSL
+                        if (status & Fs_Crypto)
+                           ; /* no newline between crypto writes */
+                        else
+#endif                                  /* HAVE_LIBSSL */
 #if HAVE_LIBSSH
                         if (status & Fs_SSH) {
                            if (ssh_file_write(f.sshf, "\n", 1) < 0){
@@ -3590,6 +3863,21 @@ function {1} name(x[nargs])
 #endif                                  /* Messaging */
 
 #ifdef PosixFns
+#if HAVE_LIBSSL
+                     if (status & Fs_Crypto) {
+                        int rc = crypto_write(f.cf, StrLoc(t), StrLen(t));
+                        if (rc != 0) {
+                           MUTEX_UNLOCKID(fblk->mutexid);
+#if terminate
+                           syserr("crypto write failed in stop()");
+#else
+                           set_errortext(rc);
+                           fail;
+#endif
+                           }
+                        }
+                     else
+#endif                                  /* HAVE_LIBSSL */
 #if HAVE_LIBSSH
                      if (status & Fs_SSH) {
                         if (ssh_file_write(f.sshf, StrLoc(t), StrLen(t)) < 0) {

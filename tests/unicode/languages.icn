@@ -1,0 +1,131 @@
+#
+# Sample: uniqual strings across scripts (Phase 0 native Unicode).
+#
+# Phase 0 tags UTF-8 string descriptors as "uniqual": *s and s[i] count
+# Unicode codepoints, not bytes. Without that, multi-byte letters would
+# make *s over-count and s[i] land mid-character.
+#
+# Scripts covered here and what they exercise:
+#   Arabic, Hebrew  — RTL scripts (2-byte letters; BiDi is display-only)
+#   Spanish         — Latin with accents (ñ, á, ¿)
+#   Japanese        — kana / CJK (usually 3-byte UTF-8)
+#   Chinese         — CJK ideographs (3-byte)
+#   Korean          — Hangul syllables (precomposed; usually 3-byte)
+#   Russian         — Cyrillic (2-byte)
+#   Greek           — another European non-Latin alphabet
+#   Hindi           — Devanagari; conjuncts use virama + combining marks
+#   hieroglyphs     — Egyptian (plane 1; 4-byte UTF-8)
+#   emoji           — often several codepoints per "character"; Phase 0
+#                     does not merge grapheme clusters (see ZWJ family)
+#
+# Storage is always logical order (first character first in memory), the
+# same as other languages. Visual RTL is BiDi at display time — not
+# something *s / s[i] reverse. The bytes this program writes are fine:
+# open the output (or this source) in a BiDi-aware editor and Arabic /
+# Hebrew read RTL. Many terminal emulators do not apply BiDi, so the same
+# output can look LTR only there. Spaced codepoint dumps in the output
+# of this program are intentionally LTR (logical index order), even in
+# a BiDi-aware viewer.
+#
+# Not yet uniqual-aware: s[i:j] (section) still uses byte indices.
+#
+
+# Byte length of a uniqual (or plain) string: sum UTF-8 widths of each
+# codepoint. s[i] returns an untagged slice, so *c is bytes for that
+# character — *s alone is codepoints on a tagged string.
+procedure nbytes(s)
+   local n, c
+   n := 0
+   every c := s[1 to *s] do
+      n +:= *c
+   return n
+end
+
+# Print a labeled string, codepoint/byte sizes, and a spaced dump.
+procedure show(label, s)
+   write(label, " = ", s)
+   write("  * = ", *s, " codepoints, ", nbytes(s), " bytes")
+   writes("  codepoints: ")
+   every writes(s[1 to *s], " ")
+   write()
+   write()
+end
+
+procedure main()
+   local s, i, j, c, greeting, name, word
+
+   # --- Arabic (detailed: also dump UTF-8 bytes per codepoint) ---
+   # Literals with non-ASCII UTF-8 are tagged uniqual on first execution.
+   s := "يونيكود"                 # "Unicode" (phonetic)
+   greeting := "مرحباً بالعالم"     # "Hello, world"
+   name := "جعفر الغرايبة"         # Jafar Al Gharaibeh
+
+   # *s is O(1) when cp_count was cached at tagging time (string literals).
+   write("=== Arabic ===")
+   write("s = ", s)
+   write("*s = ", *s, " codepoints, ", nbytes(s), " bytes")
+
+   # s[i] selects by codepoint index. The extracted character is itself a
+   # short string (often still multi-byte); ord()/c[j] walk its raw bytes.
+   write("each codepoint:")
+   every i := 1 to *s do {
+      c := s[i]
+      writes("  [", i, "] ", c, "  utf8:")
+      every j := 1 to *c do
+         writes(" ", right(string(ord(c[j])), 3))
+      write()
+      }
+
+   write()
+   # Combining mark in مرحباً (ً) is its own codepoint — Phase 0 does not
+   # merge grapheme clusters.
+   show("greeting", greeting)
+   show("name", name)
+
+   # || propagates the uniqual tag; *concat is the sum of codepoint counts
+   # when both sides have a cached cp_count (literals do).
+   word := greeting || " — " || name
+   write("concat = ", word)
+   write("*concat = ", *word, " codepoints, ", nbytes(word), " bytes")
+   write()
+
+   # --- Other scripts ---
+   write("=== Spanish ===")
+   show("es", "¡Hola, mundo! Año español: niño")
+
+   write("=== Hebrew ===")
+   show("he", "שלום עולם")              # "Hello world"
+
+   write("=== Japanese ===")
+   show("ja", "こんにちは世界")          # "Hello world" (konnichiwa sekai)
+
+   write("=== Chinese ===")
+   show("zh", "你好，世界")              # "Hello, world"
+
+   write("=== Russian ===")
+   show("ru", "Привет, мир")            # "Hello, world"
+
+   write("=== Greek ===")
+   show("el", "Γειά σου κόσμε")         # "Hello, world"
+
+   write("=== Korean ===")
+   show("ko", "안녕하세요 세계")         # "Hello world" (annyeonghaseyo segye)
+
+   # Devanagari: "नमस्ते" looks like a few glyphs but is several codepoints
+   # (consonants + virama + vowel signs). Phase 0 counts each codepoint.
+   write("=== Hindi ===")
+   show("hi", "नमस्ते दुनिया")           # "Hello world" (namaste duniya)
+
+   # Egyptian hieroglyphs live in plane 1 (U+13000+): four UTF-8 bytes each.
+   write("=== Egyptian hieroglyphs ===")
+   show("egy", "𓀀𓃭𓎛𓃀")               # sample Gardiner signs
+
+   # Simple emoji: one codepoint each (plus ASCII).
+   write("=== emoji (simple) ===")
+   show("emoji", "Hello 👋🌍")
+
+   # ZWJ sequences: one "character" on screen, many codepoints in *s
+   # (people + ZWJ + …). Phase 0 does not merge grapheme clusters.
+   write("=== emoji (ZWJ family = many codepoints) ===")
+   show("family", "👨‍👩‍👧‍👦")
+end

@@ -1,0 +1,27 @@
+#
+# AEAD decrypt rejects a tampered ciphertext (error 1314).
+#
+
+procedure main()
+   local ky, cipher, ciphertext
+
+   ky := open("sixteen-byte-key-material-here!!", "er") |
+      stop("open key failed: ", &errortext)
+   cipher := open(ky, "e", "op=encrypt") | stop("open encrypt failed: ", &errortext)
+   write(cipher, "auth me")
+   ciphertext := read(cipher) | stop("encrypt failed: ", &errortext)
+   close(cipher)
+
+   # Flip the last byte (part of the AEAD tag).
+   ciphertext[*ciphertext] := char(ixor(ord(ciphertext[*ciphertext]), 1))
+
+   # Decrypt must fail authentication on the mangled blob.
+   cipher := open(ky, "e", "op=decrypt") | stop("open decrypt failed: ", &errortext)
+   write(cipher, ciphertext)
+   if read(cipher) then
+      write("tamper:fail")
+   else
+      write("tamper:ok ", &errornumber)
+   close(cipher)
+   close(ky)
+end

@@ -1,0 +1,15 @@
+#
+# A certificate-only handle cannot sign (error 1312).
+#
+
+procedure main()
+   local cert
+
+   cert := open("data/client.crt", "e") | stop("load cert failed: ", &errortext)
+   # Cert supplies a public key only; signing needs a private key.
+   if open(cert, "e", "op=sign") then
+      write("badrole:fail")
+   else
+      write("badrole:ok ", &errornumber)
+   close(cert)
+end

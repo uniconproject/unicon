@@ -1,0 +1,26 @@
+#
+# Verify fails when the message does not match the signature (error 1315).
+#
+
+procedure main()
+   local ky, cert, signer, verifier, signature
+
+   ky := open("data/client.key", "e") | stop("load key failed: ", &errortext)
+   cert := open("data/client.crt", "e") | stop("load cert failed: ", &errortext)
+   signer := open(ky, "e", "op=sign", "alg=sha256") |
+      stop("open sign failed: ", &errortext)
+   verifier := open(cert, "e", "op=verify", "alg=sha256") |
+      stop("open verify failed: ", &errortext)
+
+   write(signer, "original")
+   signature := read(signer)
+   Attrib(verifier, "sig=" || signature)
+   # Different message than the one that was signed => verify fails.
+   write(verifier, "tampered")
+   if read(verifier) then
+      write("badverify:fail")
+   else
+      write("badverify:ok ", &errornumber)
+
+   every close(signer | verifier | ky | cert)
+end

@@ -1,0 +1,40 @@
+#
+# Explicit iv=: no IV prefix; same IV yields identical ciphertext.
+#
+
+procedure main()
+   local ky, cipher, ciphertext, ciphertext2, plaintext, iv
+
+   # AES-GCM default IV length is 12 bytes.
+   iv := "0123456789ab"
+   ky := open("sixteen-byte-key-material-here!!", "er") |
+      stop("open key failed: ", &errortext)
+
+   cipher := open(ky, "e", "op=encrypt", "iv=" || iv) |
+      stop("open encrypt failed: ", &errortext)
+   write(cipher, "fixed")
+   ciphertext := read(cipher) | stop("encrypt failed: ", &errortext)
+   close(cipher)
+
+   # Same key, plaintext, and IV => byte-identical ciphertext.
+   cipher := open(ky, "e", "op=encrypt", "iv=" || iv)
+   write(cipher, "fixed")
+   ciphertext2 := read(cipher)
+   if ciphertext == ciphertext2 then
+      write("same:ok")
+   else
+      write("same:fail")
+   close(cipher)
+
+   # Caller supplies the same iv= (it is not framed in the blob).
+   # Decrypting yields the original plaintext.
+   cipher := open(ky, "e", "op=decrypt", "iv=" || iv)
+   write(cipher, ciphertext)
+   plaintext := read(cipher) | stop("decrypt failed: ", &errortext)
+   if plaintext == "fixed" then
+      write("roundtrip:ok")
+   else
+      write("roundtrip:fail")
+   close(cipher)
+   close(ky)
+end

@@ -1,0 +1,41 @@
+#
+# Symmetric encrypt/decrypt with auto-IV framing (aes-256-gcm default).
+#
+
+procedure main()
+   local ky, cipher, ciphertext, plaintext
+   local messages, msg, ciphertexts
+
+   # Inline 32-byte key via "er".
+   ky := open("sixteen-byte-key-material-here!!", "er") |
+      stop("open key failed: ", &errortext)
+   write("type=", Attrib(ky, "type"))
+
+   cipher := open(ky, "e", "op=encrypt", "cipher=aes-256-gcm") |
+      stop("open encrypt failed: ", &errortext)
+
+   # Each write/read is one message; auto-IV is prefixed on the ciphertext.
+   messages := ["alpha", "beta", "gamma"]
+   ciphertexts := []
+   every msg := !messages do {
+      write(cipher, msg)
+      ciphertext := read(cipher) | stop("encrypt failed: ", &errortext)
+      put(ciphertexts, ciphertext)
+      write("enc ", msg, " bytes=", *ciphertext)
+      }
+   close(cipher)
+
+   # Decrypting each saved ciphertext yields the original plaintext.
+   cipher := open(ky, "e", "op=decrypt", "cipher=aes-256-gcm") |
+      stop("open decrypt failed: ", &errortext)
+   every msg := 1 to *messages do {
+      write(cipher, ciphertexts[msg])
+      plaintext := read(cipher) | stop("decrypt failed: ", &errortext)
+      if plaintext == messages[msg] then
+         write("roundtrip ", messages[msg], ":ok")
+      else
+         write("roundtrip ", messages[msg], ":fail")
+      }
+   close(cipher)
+   close(ky)
+end

@@ -2256,7 +2256,7 @@ static stringint siKeywords[] = {
                fail;
                }
             else {
-               StrLen(s) = strlen(StrLoc(s));
+               SetStrLen(s, strlen(StrLoc(s)));
                return s;
                }
             }
@@ -2265,12 +2265,12 @@ static stringint siKeywords[] = {
             ipc_opnd = findoldipc(BlkD(d,Coexpr),i);
             ENTERPSTATE(p);
             StrLoc(s) = findfile(ipc_opnd);
-            StrLen(s) = strlen(StrLoc(s));
+            SetStrLen(s, strlen(StrLoc(s)));
             }
          else{
             ENTERPSTATE(p);
             StrLoc(s) = findfile(BlkD(d,Coexpr)->es_ipc.opnd);
-            StrLen(s) = strlen(StrLoc(s));
+            SetStrLen(s, strlen(StrLoc(s)));
             }
          ENTERPSTATE(savedp);
          if (!strcmp(StrLoc(s),"?")) fail;

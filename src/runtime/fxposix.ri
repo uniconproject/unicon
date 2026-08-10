@@ -33,7 +33,7 @@ extern int errno;
 #define String(d, s) do {                               \
       int len = strlen(s);                              \
       Protect(StrLoc(d) = alcstr((s), len), runerr(0)); \
-      StrLen(d) = len;                                  \
+      SetStrLen(d, len);                                  \
 } while (0)
 
 /*
@@ -70,7 +70,7 @@ char *alc_strerror(int n)
       if (rv != 0) {
          k_errornumber = errno; /* EINVAL, don't call recursively to get text */
          StrLoc(k_errortext) = "invalid error number";
-         StrLen(k_errortext) = strlen(StrLoc(k_errortext));
+         SetStrLen(k_errortext, strlen(StrLoc(k_errortext)));
          return NULL;
          }
       }
@@ -110,7 +110,7 @@ function{0,1} sys_errstr(e)
          runerr(101, e);
 
       if ((StrLoc(result) = alc_strerror(ern)) != 0)
-         StrLen(result) = strlen(StrLoc(result));
+         SetStrLen(result, strlen(StrLoc(result)));
       else {
          if (errno == EINVAL) fail;
          runerr(0);
@@ -257,7 +257,7 @@ function{0,1} readlink(s)
 
       /* Return the extra characters at the end */
       out = StrLoc(result) + len;
-      StrLen(result) = DiffPtrs(out,StrLoc(result));
+      SetStrLen(result, DiffPtrs(out,StrLoc(result)));
       n = DiffPtrs(out,strfree);             /* note the deallocation */
       EVStrAlc(n);
       strtotal += n;
@@ -925,7 +925,7 @@ function{0,1} fcntl(f, action, options)
          IntVal(rp->fields[1]) = fl.l_pid;
          buflen = strlen(buf);
          Protect(StrLoc(rp->fields[0]) = alcstr(buf, buflen), runerr(0));
-         StrLen(rp->fields[0]) = buflen;
+         SetStrLen(rp->fields[0], buflen);
 
          return result;
       } else {
@@ -964,7 +964,7 @@ function{0,1} fcntl(f, action, options)
             *p = 0;
             buflen = strlen(buf);
             Protect(StrLoc(result) = alcstr(buf, buflen), runerr(0));
-            StrLen(result) = buflen;
+            SetStrLen(result, buflen);
             return result;
 
          } else
@@ -1083,7 +1083,7 @@ function{0,1} filepair()
 
       /* Create the two file objects and put them into the list */
       StrLoc(fname) = "filepair";
-      StrLen(fname) = 8;
+      SetStrLen(fname, 8);
       for(i = 0; i < 2; i++) {
          Protect(fl = alcfile(0, Fs_Write|Fs_Read|Fs_Socket, &fname),
                  runerr(0));
@@ -1126,7 +1126,7 @@ function{0,1} pipe()
 
       /* Create the two file objects and put them into the list */
       StrLoc(fname) = "pipe";
-      StrLen(fname) = 4;
+      SetStrLen(fname, 4);
       for(i = 0; i < 2; i++) {
          fps[i] = fdopen(fds[i], i? "w":"r");
          Protect(fl = alcfile(fps[i], ((i? Fs_Write:Fs_Read))|Fs_BPipe, &fname),
@@ -1787,7 +1787,7 @@ function{0,1} name(t)
 #endif
       l = strlen(p) - 1;
       Protect(StrLoc(result) = alcstr(p, l), runerr(0));
-      StrLen(result) = l;
+      SetStrLen(result, l);
       return result;
    }
 end
@@ -1954,7 +1954,7 @@ function{0,1} stat(f, path)
             if ((StrLen(f)>1) && (StrLoc(f)[0] == '\"') &&
                 (StrLoc(f)[StrLen(f)-1] == '\"')) {
                StrLoc(f)++;
-               StrLen(f)-=2;
+               SetStrLen(f, StrLen(f) - (2));
                }
 
             cnv:C_string(f, fname); /* can't fail, type_case says so */
@@ -1998,7 +1998,7 @@ function{0,1} stat(f, path)
 
                /* Return the extra characters at the end */
                out = StrLoc(rp->fields[13]) + len;
-               StrLen(rp->fields[13]) = DiffPtrs(out,StrLoc(rp->fields[13]));
+               SetStrLen(rp->fields[13], DiffPtrs(out,StrLoc(rp->fields[13])));
                n = DiffPtrs(out,strfree);
                EVStrAlc(n);
                strtotal += n;
@@ -2259,7 +2259,7 @@ function{0,1} receive(f)
             default:               tag = "exit";   break;
             }
          StrLoc(rp->fields[0]) = tag;
-         StrLen(rp->fields[0]) = strlen(tag);
+         SetStrLen(rp->fields[0], strlen(tag));
          len = ck->len - ck->off;
          Protect(StrLoc(rp->fields[1]) = alcstr(ck->data + ck->off, len),
                  {
@@ -2268,7 +2268,7 @@ function{0,1} receive(f)
 #endif                                  /* Concurrent */
                   free(ck); runerr(0);
                   });
-         StrLen(rp->fields[1]) = len;
+         SetStrLen(rp->fields[1], len);
          free(ck);
 #ifdef Concurrent
          MUTEX_UNLOCKID(ssh_mtx);
@@ -2322,7 +2322,7 @@ function{0,1} fetch(d, k)
          if (content.dptr == NULL)
             fail;
          Protect(StrLoc(result)=alcstr(content.dptr, content.dsize),runerr(0));
-         StrLen(result) = content.dsize;
+         SetStrLen(result, content.dsize);
          return result;
          }
       else
@@ -3461,7 +3461,7 @@ function{0, 1} ready(f, i)
 #endif                                  /* NT */
             if (!status) fail;
             StrLoc(desc) = sbuf;
-            StrLen(desc) = tb;
+            SetStrLen(desc, tb);
             return desc;
          }
         else fail;

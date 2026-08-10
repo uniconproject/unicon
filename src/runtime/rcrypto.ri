@@ -51,7 +51,7 @@ void set_ssl_context_errortext(int err, char* errval)
      if ((StrLoc(k_errorvalue) = alcstr(NULL, buflen)) != NULL) {
        strcpy(StrLoc(k_errorvalue), errval);
        have_errval = 1;
-       StrLen(k_errorvalue) = buflen;
+       SetStrLen(k_errorvalue, buflen);
      }
    }
 
@@ -61,7 +61,7 @@ void set_ssl_context_errortext(int err, char* errval)
      buflen = strlen(sslerr);
      if ((StrLoc(k_errortext) = alcstr(NULL, buflen)) != NULL) {
        strcpy(StrLoc(k_errortext), sslerr);
-       StrLen(k_errortext) = buflen;
+       SetStrLen(k_errortext, buflen);
      }
    }
    else
@@ -119,7 +119,7 @@ int set_ssl_connection_errortext(SSL *ssl, int err)
    buflen = strlen(buf);
    if ((StrLoc(k_errortext) = alcstr(NULL, buflen)) != NULL) {
      strcpy(StrLoc(k_errortext), buf);
-     StrLen(k_errortext) = buflen;
+     SetStrLen(k_errortext, buflen);
    }
 
    return err;
@@ -974,7 +974,7 @@ static int crypto_load_key_path(struct CryptoFile *cf, char *path, word pathlen)
    memcpy(pathbuf, path, pathlen);
    pathbuf[pathlen] = '\0';
    StrLoc(td) = pathbuf;
-   StrLen(td) = pathlen;
+   SetStrLen(td, pathlen);
    m = crypto_open_material(&td, 0, NULL, 0, &rc);
    if (m == NULL) return rc ? rc : E_CryptoLoad;
 
@@ -1719,7 +1719,7 @@ static int crypto_peek_alcstr(char *s, dptr rv)
       return FILEPEEK_FAIL;
    n = (word)strlen(s);
    Protect(StrLoc(*rv) = alcstr(s, n), return FILEPEEK_ERR);
-   StrLen(*rv) = n;
+   SetStrLen(*rv, n);
    return FILEPEEK_OK;
 }
 
@@ -1728,7 +1728,7 @@ static int crypto_peek_bytes(unsigned char *p, int n, dptr rv)
    if (p == NULL || n <= 0)
       return FILEPEEK_FAIL;
    Protect(StrLoc(*rv) = alcstr((char *)p, n), return FILEPEEK_ERR);
-   StrLen(*rv) = n;
+   SetStrLen(*rv, n);
    return FILEPEEK_OK;
 }
 
@@ -1745,7 +1745,7 @@ static int crypto_peek_hex(unsigned char *p, int n, dptr rv)
       s[2 * i + 1] = hex[p[i] & 0xf];
       }
    StrLoc(*rv) = s;
-   StrLen(*rv) = n * 2;
+   SetStrLen(*rv, n * 2);
    return FILEPEEK_OK;
 }
 
@@ -1773,7 +1773,7 @@ static int crypto_peek_san_put(dptr lst, char *tag, const unsigned char *data, i
    memcpy(s, tag, ntag);
    memcpy(s + ntag, data, len);
    StrLoc(elem) = s;
-   StrLen(elem) = ntag + len;
+   SetStrLen(elem, ntag + len);
    c_put(lst, &elem);
    return FILEPEEK_OK;
 }
@@ -1896,7 +1896,7 @@ static int crypto_peek_asn1_time(void *vt, dptr rv)
          return FILEPEEK_FAIL;
          }
       Protect(StrLoc(*rv) = alcstr(p, n), { BIO_free(bio); return FILEPEEK_ERR; });
-      StrLen(*rv) = n;
+      SetStrLen(*rv, n);
       BIO_free(bio);
       return FILEPEEK_OK;
       }
@@ -2258,7 +2258,7 @@ static int tls_peek_pem_cert(X509 *cert, dptr rv)
       return FILEPEEK_FAIL;
       }
    Protect(StrLoc(*rv) = alcstr(p, n), { BIO_free(bio); return FILEPEEK_ERR; });
-   StrLen(*rv) = n;
+   SetStrLen(*rv, n);
    BIO_free(bio);
    return FILEPEEK_OK;
 }
@@ -2381,7 +2381,7 @@ static int tlsg_alpn(void *h, dptr rv)
       return FILEPEEK_FAIL;
    Protect(StrLoc(*rv) = alcstr((char *)alpn, (word)alpnlen),
            return FILEPEEK_ERR);
-   StrLen(*rv) = (word)alpnlen;
+   SetStrLen(*rv, (word)alpnlen);
    return FILEPEEK_OK;
 }
 

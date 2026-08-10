@@ -278,9 +278,28 @@
 #define Qual(d)         (!((d).dword & F_Nqual))
 
 /*
- * Length of string.
+ * Length of string (byte length; always masked so F_UniQual/cp_count
+ * bits are not part of the value). StrLen is no longer an lvalue --
+ * use SetStrLen. SetStrLen overwrites dword (does not preserve tag /
+ * cp_count): most call sites write into fresh descriptors whose prior
+ * dword is garbage. To retag: SetStrLen, then SetUniQual, then
+ * SetCpCount if needed.
  */
-#define StrLen(q)       ((q).dword)
+#define StrLen(q)       ((q).dword & ByteLenMask)
+#define SetStrLen(q,n)  ((q).dword = ((uword)(n) & ByteLenMask))
+
+/* UTF-8-tagged qualifier; no-ops when F_UniQual is 0. */
+#define IsUniQual(d)    ((d).dword & F_UniQual)
+#define SetUniQual(d)   ((d).dword |= F_UniQual)
+
+/*
+ * Cached codepoint count on a tagged qualifier. CpCountSentinel means
+ * uncached -- walk and count. Call after SetStrLen/SetUniQual.
+ */
+#define CpCount(q)      (((q).dword & CpCountMask) >> CpCountShift)
+#define SetCpCount(q,n) \
+   ((q).dword = ((q).dword & ~CpCountMask) | \
+                (((uword)(n) << CpCountShift) & CpCountMask))
 
 /*
  * Location of first character of string.
@@ -291,7 +310,7 @@
  * Assign a C string to a descriptor. Assume it is reasonable to use the
  *   descriptor expression more than once, but not the string expression.
  */
-#define AsgnCStr(d,s) (StrLoc(d) = (s), StrLen(d) = strlen(StrLoc(d)))
+#define AsgnCStr(d,s) (StrLoc(d) = (s), SetStrLen(d, strlen(StrLoc(d))))
 
 /*
  * Type of descriptor.
@@ -432,7 +451,7 @@
  */
 #define MakeStr(s,len,dp)      do { \
                          StrLoc(*dp) = (s); \
-                         StrLen(*dp) = (len); \
+                         SetStrLen(*dp, (len)); \
                          } while (0)
 
 /*

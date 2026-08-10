@@ -958,7 +958,7 @@ char *f(register char *s, register word slen)
 
 #if e_string
    if (!noMTevents){
-      StrLen(ts) = slen;
+      SetStrLen(ts, slen);
       StrLoc(ts) = s;
       EVVal(slen, e_string);
       s = StrLoc(ts);
@@ -969,7 +969,7 @@ char *f(register char *s, register word slen)
     * Make sure there is enough room in the string space.
     */
    if (DiffPtrs(strend,strfree) < slen) {
-      StrLen(ts) = slen;
+      SetStrLen(ts, slen);
       StrLoc(ts) = s;
       if (!reserve(Strings, slen)){
          return NULL;

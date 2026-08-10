@@ -359,7 +359,7 @@ int bigtos(dptr da, dptr dx)
 #endif                  /* VMS */
    if (a->sign)
       *--p = '-';
-   StrLen(*dx) = q - p;
+   SetStrLen(*dx, q - p);
    StrLoc(*dx) = p;
    return NoCvt;        /* The mnemonic is wrong, but the signal means */
                         /* that the string is allocated and not null- */

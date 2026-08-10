@@ -780,6 +780,11 @@ Deliberate Syntax Error
    #define DescriptorDouble 1
 #endif                                  /* DescriptorDouble */
 
+#if !defined(NoUniconUnicode) && (WordBits==64)
+   #undef  UniconUnicode
+   #define UniconUnicode
+#endif                                  /* UniconUnicode */
+
 
 #ifndef NoPattern
    #define PatternType 1

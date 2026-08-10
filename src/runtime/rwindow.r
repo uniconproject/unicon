@@ -585,10 +585,10 @@ void wputstr(wbp w, char *s, int len)
       while (StrLen(result) + len + j + 1 > 32700) {
          while((StrLen(result) > 0) && (StrLoc(result)[0] != '\n')) {
             StrLoc(result) ++;
-            StrLen(result) --;
+            SetStrLen(result, StrLen(result) - 1);
             }
          if (StrLen(result) > 0) {
-            StrLoc(result)++; StrLen(result)--;
+            StrLoc(result)++; SetStrLen(result, StrLen(result) - 1);
             }
          }
 
@@ -3355,7 +3355,7 @@ int parsegeometry(char *buf, SHORT *x, SHORT *y, SHORT *width, SHORT *height)
 
 
 /* return failure if operation returns either failure or error */
-#define AttemptAttr(operation) do { switch (operation) { case RunError: t_errornumber=145; StrLen(t_errorvalue)=strlen(val);StrLoc(t_errorvalue)=val;return RunError; case Succeeded: break; default: return Failed; } } while(0)
+#define AttemptAttr(operation) do { switch (operation) { case RunError: t_errornumber=145; SetStrLen(t_errorvalue, strlen(val));StrLoc(t_errorvalue)=val;return RunError; case Succeeded: break; default: return Failed; } } while(0)
 
 /* does string (already checked for "on" or "off") say "on"? */
 /* passthru so clang doesn't complain about extra parentheses*/
@@ -3404,13 +3404,13 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
       abuf[lenattr] = '\0';
 
       if (lenval > 255) {
-         StrLen(d) = lenval;
+         SetStrLen(d, lenval);
          StrLoc(d) = mid;
          }
       else {
          strncpy(val, mid, lenval);
          val[lenval] = '\0';
-         StrLen(d) = strlen(val);
+         SetStrLen(d, strlen(val));
          StrLoc(d) = val;
          }
 

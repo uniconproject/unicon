@@ -66,6 +66,30 @@ operator{1} * size(x)
       }
    type_case x of {
       string: inline {
+         /*
+          * Uniqual *s is codepoints. Use cached CpCount when present;
+          * otherwise walk. Untagged strings keep byte length.
+          */
+         if (IsUniQual(x)) {
+            word uq_cnt = CpCount(x);
+            if (uq_cnt != CpCountSentinel)
+               return C_integer uq_cnt;
+            {
+            unsigned char *uq_bytes = (unsigned char *)StrLoc(x);
+            word uq_blen = StrLen(x);
+            word uq_bpos = 0, uq_ncps = 0, uq_w;
+            while (uq_bpos < uq_blen) {
+               unsigned char uq_b = uq_bytes[uq_bpos];
+               if ((uq_b & 0x80) == 0) uq_w = 1;
+               else if ((uq_b & 0xE0) == 0xC0) uq_w = 2;
+               else if ((uq_b & 0xF0) == 0xE0) uq_w = 3;
+               else if ((uq_b & 0xF8) == 0xF0) uq_w = 4;
+               else uq_w = 1;
+               uq_bpos += uq_w; uq_ncps++;
+               }
+            return C_integer uq_ncps;
+            }
+            }
          return C_integer StrLen(x);
          }
       list: inline {

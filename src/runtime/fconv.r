@@ -133,14 +133,19 @@ function{0,1} string(x[n])
          if (!cnv:string(x[i], x[i])) fail;
 
          /*
+          * OR in x[i]'s uniqual tag; t keeps its own from t = x[0].
+          */
+         if (IsUniQual(x[i])) SetUniQual(t);
+
+         /*
           * concatenate t and x[i] and store result in t
           */
          if (StrLoc(t) + StrLen(t) == StrLoc(x[i])) {
-            StrLen(t) += StrLen(x[i]);
+            SetStrLen(t, StrLen(t) + StrLen(x[i]));
             }
          else if ((StrLoc(t) + StrLen(t) == strfree) && (DiffPtrs(strend,strfree) > StrLen(x[i]))) {
             Protect(alcstr(StrLoc(x[i]), StrLen(x[i])), runerr(0));
-            StrLen(t) += StrLen(x[i]);
+            SetStrLen(t, StrLen(t) + StrLen(x[i]));
             }
          else {
             Protect(tmp = alcstr(NULL, StrLen(t)+StrLen(x[i])), runerr(0));
@@ -154,7 +159,7 @@ function{0,1} string(x[n])
             for (j = 0; j < len; j++)
                *s++ = *s2++;
             StrLoc(t) = tmp;
-            StrLen(t) += len;
+            SetStrLen(t, StrLen(t) + len);
             }
          }
       return t;

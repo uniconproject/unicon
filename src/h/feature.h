@@ -180,7 +180,7 @@
 #endif                  /* HAVE_LIBSSL */
 
 #ifdef UniconUnicode
-   Feature(1, "_UNICODE", "Unicon Unicode")
+   Feature(1, "_UNICODE", "Unicode")
 #endif                  /* UniconUnicode */
 
 #ifdef HAVE_LIBSSH

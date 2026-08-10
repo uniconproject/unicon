@@ -174,7 +174,7 @@ operator{*} ! bang(underef x -> dx)
 #ifdef PosixFns
             if (status & Fs_Socket) {
               for (;;) {
-                StrLen(result) = 0;
+                SetStrLen(result, 0);
                 do {
                   DEC_NARTHREADS;
                   if ((slen = sock_getstrg(sbuf, MaxReadStr, &dx)) == -1) {
@@ -200,9 +200,9 @@ operator{*} ! bang(underef x -> dx)
                   Protect(sptr = alcstr(sbuf,rlen), runerr(0));
                   if (StrLen(result) == 0)
                     StrLoc(result) = sptr;
-                  StrLen(result) += rlen;
+                  SetStrLen(result, StrLen(result) + (rlen));
                   if (StrLoc(result) [ StrLen(result) - 1 ] == '\n') {
-                    StrLen(result)--; break;
+                    SetStrLen(result, StrLen(result) - 1); break;
                   }
                   else { /* no newline to trim; EOF? */
                   }
@@ -242,7 +242,7 @@ operator{*} ! bang(underef x -> dx)
                      tp_freeresp(mf->tp, mf->resp);
 
                      Protect(reserve(Strings, msglen), runerr(0));
-                     StrLen(result) = msglen;
+                     SetStrLen(result, msglen);
                      StrLoc(result) = alcstr(NULL, msglen);
 
                      req.type = RETR;
@@ -267,7 +267,7 @@ operator{*} ! bang(underef x -> dx)
                }
 #endif                                  /* Dbm */
             for (;;) {
-               StrLen(result) = 0;
+               SetStrLen(result, 0);
                do {
 
 #ifdef Graphics
@@ -356,7 +356,7 @@ operator{*} ! bang(underef x -> dx)
                   Protect(sptr = alcstr(sbuf,rlen), runerr(0));
                   if (StrLen(result) == 0)
                      StrLoc(result) = sptr;
-                  StrLen(result) += rlen;
+                  SetStrLen(result, StrLen(result) + (rlen));
                   } while (slen < 0);
                suspend result;
                }
@@ -948,7 +948,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
                       * if the user called close() so, just allocate a string and return it.
                       */
 
-                     StrLen(result) = msglen;
+                     SetStrLen(result, msglen);
                      StrLoc(result) = alcstr(mf->resp->msg, msglen);
                      return result;
                      }
@@ -974,7 +974,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
                   tp_freeresp(mf->tp, mf->resp);
 
                   Protect(reserve(Strings, msglen), runerr(0));
-                  StrLen(result) = msglen;
+                  SetStrLen(result, msglen);
                   StrLoc(result) = alcstr(NULL, msglen);
 
                   req.type = RETR;
@@ -1340,6 +1340,55 @@ operator{0,1} [] subsc(underef x -> dx,y)
          body {
             char ch;
             word i;
+
+            if (is:string(dx) && IsUniQual(dx)) {
+               /*
+                * Uniqual: y is a codepoint index. Walk from the start
+                * (no position cache yet). Result is an untagged slice.
+                */
+               unsigned char *bytes = (unsigned char *)StrLoc(dx);
+               word blen = StrLen(dx);
+               word ncps, bpos, cp, w;
+
+               ncps = 0; bpos = 0;
+               while (bpos < blen) {
+                  unsigned char b = bytes[bpos];
+                  if ((b & 0x80) == 0) w = 1;
+                  else if ((b & 0xE0) == 0xC0) w = 2;
+                  else if ((b & 0xF0) == 0xE0) w = 3;
+                  else if ((b & 0xF8) == 0xF0) w = 4;
+                  else w = 1;  /* malformed: treat as one byte */
+                  bpos += w; ncps++;
+                  }
+
+               i = cvpos(y, ncps);
+               if (i == CvtFail || i > ncps)
+                  fail;
+
+               cp = 0; bpos = 0;
+               while (cp < i - 1) {
+                  unsigned char b = bytes[bpos];
+                  if ((b & 0x80) == 0) w = 1;
+                  else if ((b & 0xE0) == 0xC0) w = 2;
+                  else if ((b & 0xF0) == 0xE0) w = 3;
+                  else if ((b & 0xF8) == 0xF0) w = 4;
+                  else w = 1;
+                  bpos += w; cp++;
+                  }
+               {
+               unsigned char b = bytes[bpos];
+               if ((b & 0x80) == 0) w = 1;
+               else if ((b & 0xE0) == 0xC0) w = 2;
+               else if ((b & 0xF0) == 0xE0) w = 3;
+               else if ((b & 0xF8) == 0xF0) w = 4;
+               else w = 1;
+               }
+
+               if (use_trap)
+                  return tvsubs(&x, bpos+1, w);
+               else
+                  return string(w, (char *)(bytes+bpos));
+               }
 
             /*
              * Convert y to a position in x and fail if the position

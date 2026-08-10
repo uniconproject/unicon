@@ -552,7 +552,7 @@ int interp_x(int fsig,dptr cargp)
       if (curpstate->signal > 0) {
          struct descrip val;
          StrLoc(val) = si_i2s(signalnames, curpstate->signal);
-         StrLen(val) = strlen(StrLoc(val));
+         SetStrLen(val, strlen(StrLoc(val)));
          InterpEVValD(&val,E_Signal);
          curpstate->signal = 0;
          }
@@ -822,6 +822,44 @@ L_areal:
             else
 #endif                                  /* MultiProgram */
           opnd = (word)strcons + GetWord;
+
+            /*
+             * Tag UTF-8 literals and cache codepoint count. Also patch
+             * the length word at ipc.opnd[-2]: Op_Str self-patches to
+             * Op_Astr, which re-reads that word on later executions.
+             * Avoid local name "sp" (collides with the stack macro).
+             */
+            {
+            word slen = *rsp;                     /* length already pushed */
+            unsigned char *uq_bytes = (unsigned char *)opnd;
+            word uq_i, uq_w, uq_ncps, uq_tagged;
+
+            uq_i = 0; uq_ncps = 0; uq_tagged = 0;
+            while (uq_i < slen) {
+               unsigned char uq_b = uq_bytes[uq_i];
+               if ((uq_b & 0x80) == 0) uq_w = 1;
+               else if ((uq_b & 0xE0) == 0xC0) uq_w = 2;
+               else if ((uq_b & 0xF0) == 0xE0) uq_w = 3;
+               else if ((uq_b & 0xF8) == 0xF0) uq_w = 4;
+               else uq_w = 1;  /* malformed: treat as one byte */
+               if (uq_w > 1) uq_tagged = 1;
+               uq_i += uq_w;
+               uq_ncps++;
+               }
+
+            if (uq_tagged) {
+               *rsp |= F_UniQual;
+               ipc.opnd[-2] |= F_UniQual;
+               if ((uword)uq_ncps <= CpCountMax) {
+                  /* dword halves only; pointer not pushed yet */
+                  *rsp = (*rsp & ~CpCountMask) |
+                         (((word)uq_ncps << CpCountShift) & CpCountMask);
+                  ipc.opnd[-2] = (ipc.opnd[-2] & ~CpCountMask) |
+                         (((word)uq_ncps << CpCountShift) & CpCountMask);
+                  }
+               /* else leave cp_count 0 (uncached / sentinel) */
+               }
+            }
 
 #ifdef Concurrent
             PutInstr(Op_Astr, opnd, 2);
@@ -2645,7 +2683,7 @@ void actparent(int event)
    struct progstate *parent = curpstate->parent;
 
    curpstate->eventcount.vword.integr++;
-   StrLen(parent->eventcode) = 1;
+   SetStrLen(parent->eventcode, 1);
    StrLoc(parent->eventcode) = (char *)&allchars[FromAscii(event)&0xFF];
    mt_activate(&(parent->eventcode), NULL,
                (struct b_coexpr *)curpstate->parent->Mainhead);

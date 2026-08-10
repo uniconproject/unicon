@@ -73,7 +73,19 @@ operator{1} || cater(x, y)
        */
       if (StrLoc(x) + StrLen(x) == StrLoc(y)) {
          StrLoc(result) = StrLoc(x);
-         StrLen(result) = StrLen(x) + StrLen(y);
+         SetStrLen(result, StrLen(x) + StrLen(y));
+         if (IsUniQual(x) || IsUniQual(y)) {
+            SetUniQual(result);
+            /* Propagate cp_count when both sides have a known count. */
+            {
+            word uq_xcnt = IsUniQual(x) ? CpCount(x) : StrLen(x);
+            word uq_ycnt = IsUniQual(y) ? CpCount(y) : StrLen(y);
+            int  uq_xok  = !IsUniQual(x) || (uq_xcnt != CpCountSentinel);
+            int  uq_yok  = !IsUniQual(y) || (uq_ycnt != CpCountSentinel);
+            if (uq_xok && uq_yok && (uword)(uq_xcnt + uq_ycnt) <= CpCountMax)
+               SetCpCount(result, uq_xcnt + uq_ycnt);
+            }
+            }
          return result;
          }
       else if ((StrLoc(x) + StrLen(x) == strfree) &&
@@ -90,9 +102,21 @@ operator{1} || cater(x, y)
           */
          Protect(alcstr(StrLoc(y),StrLen(y)), runerr(0));
          /*
-          *  Set the length of the result and return.
+          * SetStrLen clears tag/cp_count; re-apply if either side was
+          * uniqual.
           */
-         StrLen(result) = StrLen(x) + StrLen(y);
+         SetStrLen(result, StrLen(x) + StrLen(y));
+         if (IsUniQual(x) || IsUniQual(y)) {
+            SetUniQual(result);
+            {
+            word uq_xcnt = IsUniQual(x) ? CpCount(x) : StrLen(x);
+            word uq_ycnt = IsUniQual(y) ? CpCount(y) : StrLen(y);
+            int  uq_xok  = !IsUniQual(x) || (uq_xcnt != CpCountSentinel);
+            int  uq_yok  = !IsUniQual(y) || (uq_ycnt != CpCountSentinel);
+            if (uq_xok && uq_yok && (uword)(uq_xcnt + uq_ycnt) <= CpCountMax)
+               SetCpCount(result, uq_xcnt + uq_ycnt);
+            }
+            }
          return result;
          }
 
@@ -107,7 +131,18 @@ operator{1} || cater(x, y)
       /*
        *  Set the length of the result and return.
        */
-      StrLen(result) = StrLen(x) + StrLen(y);
+      SetStrLen(result, StrLen(x) + StrLen(y));
+      if (IsUniQual(x) || IsUniQual(y)) {
+         SetUniQual(result);
+         {
+         word uq_xcnt = IsUniQual(x) ? CpCount(x) : StrLen(x);
+         word uq_ycnt = IsUniQual(y) ? CpCount(y) : StrLen(y);
+         int  uq_xok  = !IsUniQual(x) || (uq_xcnt != CpCountSentinel);
+         int  uq_yok  = !IsUniQual(y) || (uq_ycnt != CpCountSentinel);
+         if (uq_xok && uq_yok && (uword)(uq_xcnt + uq_ycnt) <= CpCountMax)
+            SetCpCount(result, uq_xcnt + uq_ycnt);
+         }
+         }
       return result;
       }
 

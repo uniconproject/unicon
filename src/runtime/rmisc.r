@@ -114,7 +114,7 @@ int getvar(char *s, dptr vp)
       fatalerr(402,NULL);
 
    StrLoc(sdp) = s;
-   StrLen(sdp) = strlen(s);
+   SetStrLen(sdp, strlen(s));
 #else                                   /* COMPILER */
    fp = pfp;
 #endif                                  /* COMPILER */
@@ -791,7 +791,7 @@ uword hash(dptr dp)
          if (Qual(*dp)) {
             if (Blk(bp,Tvsubs)->sspos + Blk(bp,Tvsubs)->sslen - 1 >StrLen(*dp))
                return;
-            StrLen(q) = bp->Tvsubs.sslen;
+            SetStrLen(q, bp->Tvsubs.sslen);
             StrLoc(q) = StrLoc(*dp) + bp->Tvsubs.sspos - 1;
             fprintf(f, " = ");
             outimage(f, &q, noimage);
@@ -1159,7 +1159,8 @@ static void printimage(FILE *f, int c, int q)
    CURTSTATE();
 
    c = StrLoc(*dp);
-   slen = StrLen(*dp)++;
+   slen = StrLen(*dp);
+   SetStrLen(*dp, slen + 1);
    if (slen >= MaxCvtLen) {
       Protect(reserve(Strings, slen+1), return RunError);
       c = StrLoc(*dp);
@@ -2481,17 +2482,17 @@ int getimage(dptr dp1, dptr dp2)
          Protect (reserve(Strings, (len << 2) + 2), return RunError);
          Protect(t = alcstr("\"", (word)(1)), return RunError);
          StrLoc(*dp2) = t;
-         StrLen(*dp2) = 1;
+         SetStrLen(*dp2, 1);
 
          while (len-- > 0)
-            StrLen(*dp2) += doimage(*s++, '"');
+            SetStrLen(*dp2, StrLen(*dp2) + (doimage(*s++, '"')));
          Protect(alcstr("\"", (word)(1)), return RunError);
-         ++StrLen(*dp2);
+         SetStrLen(*dp2, StrLen(*dp2) + 1);
          }
 
       null: {
          StrLoc(*dp2) = "&null";
-         StrLen(*dp2) = 5;
+         SetStrLen(*dp2, 5);
          }
 
       integer: {
@@ -2511,7 +2512,7 @@ int getimage(dptr dp1, dptr dp2)
                Protect(StrLoc(*dp2) = alcstr(sbuf,len), return RunError);
 
 
-               StrLen(*dp2) = len;
+               SetStrLen(*dp2, len);
                }
             else bigtos(&source,dp2);
             }
@@ -2532,7 +2533,7 @@ int getimage(dptr dp1, dptr dp2)
           */
          if ((csn = csname(dp1)) != NULL) {
             StrLoc(*dp2) = csn;
-            StrLen(*dp2) = strlen(csn);
+            SetStrLen(*dp2, strlen(csn));
             return Succeeded;
             }
          /*
@@ -2548,12 +2549,12 @@ int getimage(dptr dp1, dptr dp2)
 
          Protect(t = alcstr("'", (word)(1)), return RunError);
          StrLoc(*dp2) = t;
-         StrLen(*dp2) = 1;
+         SetStrLen(*dp2, 1);
          for (i = 0; i < 256; ++i)
             if (Testb(i, source))
-               StrLen(*dp2) += doimage((char)i, '\'');
+               SetStrLen(*dp2, StrLen(*dp2) + (doimage((char)i, '\'')));
          Protect(alcstr("'", (word)(1)), return RunError);
-         ++StrLen(*dp2);
+         SetStrLen(*dp2, StrLen(*dp2) + 1);
          }
 
       file: {
@@ -2563,15 +2564,15 @@ int getimage(dptr dp1, dptr dp2)
           *  naming it and return.
           */
          if ((fd = BlkD(source,File)->fd.fp) == stdin) {
-            StrLen(*dp2) = 6;
+            SetStrLen(*dp2, 6);
             StrLoc(*dp2) = "&input";
             }
          else if (fd == stdout) {
-            StrLen(*dp2) = 7;
+            SetStrLen(*dp2, 7);
             StrLoc(*dp2) = "&output";
             }
          else if (fd == stderr) {
-            StrLen(*dp2) = 7;
+            SetStrLen(*dp2, 7);
             StrLoc(*dp2) = "&errout";
             }
          else {
@@ -2598,7 +2599,7 @@ int getimage(dptr dp1, dptr dp2)
                   }
                Protect(t = alcstr(sbuf, (word)(strlen(sbuf))), return RunError);
                StrLoc(*dp2) = t;
-               StrLen(*dp2) = strlen(sbuf);
+               SetStrLen(*dp2, strlen(sbuf));
                }
             else {
 #endif                                  /* Graphics */
@@ -2624,14 +2625,14 @@ int getimage(dptr dp1, dptr dp2)
                Protect (reserve(Strings, (len << 2) + 12), return RunError);
                Protect(t = alcstr("file(", (word)(5)), return RunError);
                StrLoc(*dp2) = t;
-               StrLen(*dp2) = 5;
+               SetStrLen(*dp2, 5);
 #ifdef Graphics
              }
 #endif                                  /* Graphics */
             while (len-- > 0)
-               StrLen(*dp2) += doimage(*s++, '\0');
+               SetStrLen(*dp2, StrLen(*dp2) + (doimage(*s++, '\0')));
             Protect(alcstr(")", (word)(1)), return RunError);
-            ++StrLen(*dp2);
+            SetStrLen(*dp2, StrLen(*dp2) + 1);
             }
          }
 
@@ -2658,7 +2659,7 @@ int getimage(dptr dp1, dptr dp2)
          Protect(t = alcstr(type, outlen), return RunError);
          StrLoc(*dp2) = t;
          Protect(alcstr(s, len), return RunError);
-         StrLen(*dp2) = len + outlen;
+         SetStrLen(*dp2, len + outlen);
          }
 
       list: {
@@ -2673,7 +2674,7 @@ int getimage(dptr dp1, dptr dp2)
          len = strlen(sbuf);
          Protect(t = alcstr(sbuf, len), return RunError);
          StrLoc(*dp2) = t;
-         StrLen(*dp2) = len;
+         SetStrLen(*dp2, len);
          }
 
       table: {
@@ -2688,7 +2689,7 @@ int getimage(dptr dp1, dptr dp2)
          len = strlen(sbuf);
          Protect(t = alcstr(sbuf, len), return RunError);
          StrLoc(*dp2) = t;
-         StrLen(*dp2) = len;
+         SetStrLen(*dp2, len);
          }
 
       set: {
@@ -2701,7 +2702,7 @@ int getimage(dptr dp1, dptr dp2)
          len = strlen(sbuf);
          Protect(t = alcstr(sbuf,len), return RunError);
          StrLoc(*dp2) = t;
-         StrLen(*dp2) = len;
+         SetStrLen(*dp2, len);
          }
 
       record: {
@@ -2736,12 +2737,12 @@ int getimage(dptr dp1, dptr dp2)
             Protect(t = alcstr("record ", (word)(7)), return RunError);
             }
          StrLoc(*dp2) = t;
-         StrLen(*dp2) = 7;
+         SetStrLen(*dp2, 7);
          Protect(alcstr(StrLoc(Blk(bp,Record)->recdesc->Proc.recname),rnlen),
                     return RunError);
-         StrLen(*dp2) += rnlen;
+         SetStrLen(*dp2, StrLen(*dp2) + (rnlen));
          Protect(alcstr(sbuf, len), return RunError);
-         StrLen(*dp2) += len;
+         SetStrLen(*dp2, StrLen(*dp2) + (len));
          }
 
       coexpr: {
@@ -2772,7 +2773,7 @@ int getimage(dptr dp1, dptr dp2)
 
          StrLoc(*dp2) = t;
          Protect(alcstr(sbuf, len), return RunError);
-         StrLen(*dp2) = numchar + len;
+         SetStrLen(*dp2, numchar + len);
          }
 
       tvmonitored:{
@@ -2781,7 +2782,7 @@ int getimage(dptr dp1, dptr dp2)
           */
          Protect(t = alcstr("Trapped_monitored", (word)(17)), return RunError);
          StrLoc(*dp2) = t;
-         StrLen(*dp2) = 17;
+         SetStrLen(*dp2, 17);
          }
 
 #ifdef PatternType
@@ -2807,7 +2808,7 @@ int getimage(dptr dp1, dptr dp2)
          }
          len += StrLen(pimage);
          StrLoc(*dp2) = t;
-         StrLen(*dp2) = len;
+         SetStrLen(*dp2, len);
          }
 #endif                                  /* PatternType */
 
@@ -2818,7 +2819,7 @@ int getimage(dptr dp1, dptr dp2)
             len = strlen(sbuf);
             Protect(t = alcstr(sbuf, len), return RunError);
             StrLoc(*dp2) = t;
-            StrLen(*dp2) = len;
+            SetStrLen(*dp2, len);
             }
          else
 #endif                                  /* Arrays */
@@ -2830,7 +2831,7 @@ int getimage(dptr dp1, dptr dp2)
            len = strlen(sbuf);
            Protect(t = alcstr(sbuf, len), return RunError);
            StrLoc(*dp2) = t;
-           StrLen(*dp2) = len;
+           SetStrLen(*dp2, len);
            }
          else {
             ReturnErrVal(123, source, RunError);
@@ -3101,7 +3102,7 @@ void cmd_line(int argc, char **argv, dptr rslt)
     * Copy the arguments into the list
     */
    for (i = 0; i < argc; ++i) {
-      StrLen(bp->lslots[i]) = strlen(argv[i]);
+      SetStrLen(bp->lslots[i], strlen(argv[i]));
       StrLoc(bp->lslots[i]) = argv[i];
       }
 

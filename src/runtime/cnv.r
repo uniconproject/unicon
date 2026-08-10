@@ -193,13 +193,13 @@ int cnv_c_str(dptr s, dptr d)
     */
    if ((StrLoc(*d) + StrLen(*d) == strfree) && (strfree != strend)) {
       Protect(alcstr("\0", 1), fatalerr(0,NULL));
-      ++StrLen(*d);
+      SetStrLen(*d, StrLen(*d)+1);
       }
    else {
       register word slen = StrLen(*d);
       register char *sptr, *dp;
       Protect(dp = alcstr(NULL,slen+1), fatalerr(0,NULL));
-      StrLen(*d) = StrLen(*d)+1;
+      SetStrLen(*d, StrLen(*d)+1);
       sptr = StrLoc(*d);
       StrLoc(*d) = dp;
       while (slen-- > 0)
@@ -676,7 +676,7 @@ void f(dptr s, dptr d)
           * Make a descriptor for the substring by getting the
           *  length and pointing into the string.
           */
-         StrLen(*d) = Blk(bp,Tvsubs)->sslen;
+         SetStrLen(*d, Blk(bp,Tvsubs)->sslen);
          StrLoc(*d) = StrLoc(v) + Blk(bp,Tvsubs)->sspos - 1;
         }
 
@@ -702,7 +702,7 @@ void f(dptr s, dptr d)
                else {
                   StrLoc(*d) = alcstr(content.dptr, content.dsize);
                   Protect(StrLoc(*d),fatalerr(103, s));
-                  StrLen(*d) = content.dsize;
+                  SetStrLen(*d, content.dsize);
                   }
                return;
                }
@@ -821,7 +821,7 @@ int
 dp_pnmcmp (struct pstrnm *pne, struct descrip *dp)
 {
    struct descrip d;
-   StrLen(d) = strlen(pne->pstrep);
+   SetStrLen(d, strlen(pne->pstrep));
    StrLoc(d) = pne->pstrep;
    return lexcmp(&d,dp);
 }
@@ -927,7 +927,7 @@ static void itos(C_integer num, dptr dp, char *s)
         }
       }
 
-   StrLen(*dp) = s + MaxCvtLen - 1 - p;
+   SetStrLen(*dp, s + MaxCvtLen - 1 - p);
    StrLoc(*dp) = p;
    }
 
@@ -1369,7 +1369,7 @@ void rtos(double n, dptr dp, char *s)
          strcat(s, ".0");               /* if no decimal point or exp. */
    if (s[strlen(s) - 1] == '.')         /* if decimal point is at end ... */
       strcat(s, "0");
-   StrLen(*dp) = strlen(s);
+   SetStrLen(*dp, strlen(s));
    StrLoc(*dp) = s;
    }
 
@@ -1393,7 +1393,7 @@ static void cstos(unsigned int *cs, dptr dp, char *s)
       }
    *p = '\0';
 
-   StrLen(*dp) = p - s;
+   SetStrLen(*dp, p - s);
    StrLoc(*dp) = s;
    }
 

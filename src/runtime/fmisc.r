@@ -2256,7 +2256,7 @@ static stringint siKeywords[] = {
                fail;
                }
             else {
-               StrLen(s) = strlen(StrLoc(s));
+               SetStrLen(s, strlen(StrLoc(s)));
                return s;
                }
             }
@@ -2265,12 +2265,12 @@ static stringint siKeywords[] = {
             ipc_opnd = findoldipc(BlkD(d,Coexpr),i);
             ENTERPSTATE(p);
             StrLoc(s) = findfile(ipc_opnd);
-            StrLen(s) = strlen(StrLoc(s));
+            SetStrLen(s, strlen(StrLoc(s)));
             }
          else{
             ENTERPSTATE(p);
             StrLoc(s) = findfile(BlkD(d,Coexpr)->es_ipc.opnd);
-            StrLen(s) = strlen(StrLoc(s));
+            SetStrLen(s, strlen(StrLoc(s)));
             }
          ENTERPSTATE(savedp);
          if (!strcmp(StrLoc(s),"?")) fail;
@@ -3122,14 +3122,14 @@ function{*} Attrib(argv[argc])
                      fail;
                      }
                   Protect(StrLoc(result) = alcstr(blob, bloblen), runerr(0));
-                  StrLen(result) = bloblen;
+                  SetStrLen(result, bloblen);
                   suspend result;
                   continue;
                   }
                if (StrLen(sbuf) == 4 && strncmp(StrLoc(sbuf), "type", 4) == 0) {
                   char *r = crypto_rolename(cryptof);
                   Protect(StrLoc(result) = alcstr(r, (word)strlen(r)), runerr(0));
-                  StrLen(result) = strlen(r);
+                  SetStrLen(result, strlen(r));
                   suspend result;
                   continue;
                   }

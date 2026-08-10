@@ -179,7 +179,7 @@ struct b_list *ResolveList(struct b_list *lp)
             if (strcspn(varname, "~") == 0) {
                /* resolve complement */
                StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
-               StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 1;
+               SetStrLen(elsrc->lslots[i], StrLen(elsrc->lslots[i]) - 1);
                cnv:C_string(elsrc->lslots[i], varname);
                complement = 1;
                }
@@ -187,13 +187,13 @@ struct b_list *ResolveList(struct b_list *lp)
             if (strcspn(varname, "\"") == 0) {
                /* drop the quotes, pass string contents */
                StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
-               StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
+               SetStrLen(elsrc->lslots[i], StrLen(elsrc->lslots[i]) - 2);
                cnv:string(elsrc->lslots[i], elsrc->lslots[i]);
                }
             else if (strcspn(varname, "\'") == 0) {
                /* drop the quotes, but pass string as a cset */
                StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
-               StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
+               SetStrLen(elsrc->lslots[i], StrLen(elsrc->lslots[i]) - 2);
                cnv:cset(elsrc->lslots[i], elsrc->lslots[i]);
                }
             else if (strcspn(varname, "&") == 0) {
@@ -1854,12 +1854,12 @@ dptr processMethodCallList(struct b_list *lp)
          if ((StrLen(ep->lslots[i])>0) && StrLoc(ep->lslots[i])[0]=='\"') {
             procargs[i - 1] = ep->lslots[i];
             StrLoc(procargs[i-1])++;
-            StrLen(procargs[i-1]) -= 2;
+            SetStrLen(procargs[i-1], StrLen(procargs[i-1]) - (2));
             }
          else if ((StrLen(ep->lslots[i])>0) && StrLoc(ep->lslots[i])[0]=='\''){
             procargs[i - 1] = ep->lslots[i];
             StrLoc(procargs[i-1])++;
-            StrLen(procargs[i-1]) -= 2;
+            SetStrLen(procargs[i-1], StrLen(procargs[i-1]) - (2));
             cnv:cset(procargs[i-1], procargs[i-1]);
             }
          else {
@@ -2065,7 +2065,7 @@ Match_Succeed:
    *Start = StackCursor(Stack_Init);
    *Stop = k_pos - 1;
 #if e_patmatch
-   StrLen(evalue) = *Stop - *Start;
+   SetStrLen(evalue, *Stop - *Start);
    StrLoc(evalue) = pat_sub + *Start;
    EVValD(&evalue, e_patmatch);
 #endif                                  /* e_patmatch */
@@ -2091,7 +2091,7 @@ Match_Succeed:
                   }
                else {
                   EVVar(&varref, e_assign);
-                  StrLen(*pvar) = Stop - Start;
+                  SetStrLen(*pvar, Stop - Start);
                   StrLoc(*pvar) = pat_sub + Start;
                   EVValD(pvar, e_value);
                   }
@@ -2379,7 +2379,7 @@ Node_Succeed:
          }
       else {
          EVVar(&varref, E_Assign);
-         StrLen(*pvar) = (k_pos - 1) - StackCursor(Stack_Base - 1);
+         SetStrLen(*pvar, (k_pos - 1) - StackCursor(Stack_Base - 1));
          StrLoc(*pvar) = pat_sub + StackCursor(Stack_Base - 1);
          EVValD(pvar, E_Value);
          }

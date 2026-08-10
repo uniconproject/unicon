@@ -89,7 +89,7 @@ function{0,1} close(f)
          BlkLoc(f)->File.status = 0;
          BlkLoc(f)->File.sock_gen = 0;
          StrLoc(BlkLoc(f)->File.fname) = "closed ssh";
-         StrLen(BlkLoc(f)->File.fname) = 10;
+         SetStrLen(BlkLoc(f)->File.fname, 10);
          return C_integer 0;
          }
 #endif                                  /* HAVE_LIBSSH */
@@ -107,7 +107,7 @@ function{0,1} close(f)
          BlkLoc(f)->File.status = 0;
          BlkLoc(f)->File.sock_gen = 0;
          StrLoc(BlkLoc(f)->File.fname) = "closed socket";
-         StrLen(BlkLoc(f)->File.fname) = 13;
+         SetStrLen(BlkLoc(f)->File.fname, 13);
          /* drop any listener-cache entries pointing at this fd */
          if (sock_purge(BlkLoc(f)->File.fd.fd))
             sock_close(BlkLoc(f)->File.fd.fd);
@@ -1090,7 +1090,7 @@ Deliberate Syntax Error
             else
                status |= Fs_Write;
 
-            StrLen(filename) = strlen(fnamestr);
+            SetStrLen(filename, strlen(fnamestr));
             StrLoc(filename) = fnamestr;
             Protect(fl = alcfile(NULL, status, &filename), runerr(0));
             fl->fd.cf = cf;
@@ -1193,7 +1193,7 @@ Deliberate Syntax Error
                }
             }
 
-         StrLen(filename) = strlen(fnamestr);
+         SetStrLen(filename, strlen(fnamestr));
          StrLoc(filename) = fnamestr;
          Protect(fl = alcfile(NULL, status, &filename), runerr(0));
          fl->fd.cf = cf;
@@ -1546,7 +1546,7 @@ Deliberate Syntax Error
                }
             else if (sshf->chan != NULL)
                status |= Fs_Socket | Fs_Read | Fs_Write;
-            StrLen(filename) = strlen(fnamestr);
+            SetStrLen(filename, strlen(fnamestr));
             StrLoc(filename) = fnamestr;
             Protect(fl = alcfile(0, status, &filename), runerr(0));
             fl->fd.sshf = sshf;
@@ -1737,7 +1737,7 @@ Deliberate Syntax Error
              * image, which in the case of a socket means sock_name, which
              * assumes it is a C string. Preserve its C string-ness.
              */
-            StrLen(filename) = strlen(fnamestr)+1;
+            SetStrLen(filename, strlen(fnamestr)+1);
             StrLoc(filename) = fnamestr;
             Protect(fl = alcfile(0, status, &filename), runerr(0));
 
@@ -1811,7 +1811,7 @@ Deliberate Syntax Error
                     * yet another special case: the tmpfile must be linked
                     * in to a list in order to be closed/deleted.
                     */
-                   StrLen(filename) = strlen(fnamestr);
+                   SetStrLen(filename, strlen(fnamestr));
                    StrLoc(filename) = fnamestr;
                    Protect(fl = alcfile(f, status, &filename), runerr(0));
                    Protect(flnk = alccons((union block *)fl), runerr(0));
@@ -1828,7 +1828,7 @@ Deliberate Syntax Error
                    set_syserrortext(errno);
                    fail;
                    }
-                StrLen(filename) = strlen(fnamestr);
+                SetStrLen(filename, strlen(fnamestr));
                 StrLoc(filename) = fnamestr;
                 Protect(fl = alcfile(f, status, &filename), runerr(0));
 #ifdef Graphics
@@ -1908,7 +1908,7 @@ Deliberate Syntax Error
       /*
        * Return the resulting file value.
        */
-      StrLen(filename) = strlen(fnamestr);
+      SetStrLen(filename, strlen(fnamestr));
       StrLoc(filename) = fnamestr;
 
       Protect(fl = alcfile(f, status, &filename), runerr(0));
@@ -1972,7 +1972,7 @@ function{0,1} read(f)
          if (rc != 0) { set_errortext(rc); fail; }
          if (len == 0) fail;
          Protect(StrLoc(s) = alcstr(buf, len), runerr(0));
-         StrLen(s) = len;
+         SetStrLen(s, len);
          return s;
          }
 #endif                                  /* HAVE_LIBSSL */
@@ -1992,7 +1992,7 @@ function{0,1} read(f)
 #ifdef Concurrent
           MUTEX_LOCKID_CONTROLLED(BlkD(f,File)->mutexid);
 #endif                                  /* Concurrent */
-          StrLen(s) = 0;
+          SetStrLen(s, 0);
           do {
              DEC_NARTHREADS;
              if ((slen = sock_getstrg(sbuf, MaxReadStr, &f)) == -1) {
@@ -2024,8 +2024,8 @@ function{0,1} read(f)
              Protect(sptr = alcstr(sbuf,rlen), runerr(0));
              if (StrLen(s) == 0)
                 StrLoc(s) = sptr;
-             StrLen(s) += rlen;
-             if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { StrLen(s)--; break; }
+             SetStrLen(s, StrLen(s) + (rlen));
+             if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { SetStrLen(s, StrLen(s) - 1); break; }
              }
           while (slen > 0);
 
@@ -2036,7 +2036,7 @@ function{0,1} read(f)
           }
 #endif                                  /* HAVE_LIBSSH */
        if (status & Fs_Socket) {
-          StrLen(s) = 0;
+          SetStrLen(s, 0);
           do {
              DEC_NARTHREADS;
              if ((slen = sock_getstrg(sbuf, MaxReadStr, &f)) == -1) {
@@ -2066,8 +2066,8 @@ function{0,1} read(f)
              Protect(sptr = alcstr(sbuf,rlen), runerr(0));
              if (StrLen(s) == 0)
                 StrLoc(s) = sptr;
-             StrLen(s) += rlen;
-             if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { StrLen(s)--; break; }
+             SetStrLen(s, StrLen(s) + (rlen));
+             if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { SetStrLen(s, StrLen(s) - 1); break; }
              else {
                 /* no newline to trim; EOF? */
                 }
@@ -2122,7 +2122,7 @@ function{0,1} read(f)
        * Use getstrg to read a line from the file, failing if getstrg
        *  encounters end of file. [[ What about -2?]]
        */
-      StrLen(s) = 0;
+      SetStrLen(s, 0);
       StrLoc(s) = "";
       do {
 
@@ -2262,7 +2262,7 @@ function{0,1} read(f)
 
          if (StrLen(s) == 0)
             StrLoc(s) = sptr;
-         StrLen(s) += rlen;
+         SetStrLen(s, StrLen(s) + (rlen));
          } while (slen < 0);
       return s;
       }
@@ -2332,14 +2332,14 @@ function{0,1} reads(f,i)
             if (rc != 0) { set_errortext(rc); fail; }
             if (len == 0) fail;
             Protect(StrLoc(s) = alcstr(buf, len), runerr(0));
-            StrLen(s) = len;
+            SetStrLen(s, len);
             return s;
             }
          rc = crypto_read(BlkD(f,File)->fd.cf, &buf, &len);
          if (rc != 0) { set_errortext(rc); fail; }
          if (len == 0) fail;
          Protect(StrLoc(s) = alcstr(buf, len), runerr(0));
-         StrLen(s) = len;
+         SetStrLen(s, len);
          return s;
          }
 #endif                                  /* HAVE_LIBSSL */
@@ -2352,7 +2352,7 @@ function{0,1} reads(f,i)
          Maxread = (unsigned)i <= MaxReadStr ? i : MaxReadStr;
 
          StrLoc(s) = NULL;
-         StrLen(s) = 0;
+         SetStrLen(s, 0);
          if (!MFIN(mf, READING)) {
             Mstartreading(mf);
             }
@@ -2389,7 +2389,7 @@ function{0,1} reads(f,i)
             Protect(sptr = alcstr(sbuf, rlen), runerr(0));
             if (StrLen(s) == 0)
                StrLoc(s) = sptr;
-            StrLen(s) += rlen;
+            SetStrLen(s, StrLen(s) + (rlen));
 
             } while ((i == -1) || (bytesread < i));
 
@@ -2431,7 +2431,7 @@ function{0,1} reads(f,i)
             /* Casting to unsigned lets us use reads(f, -1) */
             Maxread = (unsigned)i <= MaxReadStr ? i : MaxReadStr;
             StrLoc(s) = NULL;
-            StrLen(s) = 0;
+            SetStrLen(s, 0);
             do {
                if (bytesread > 0) {
                   if (i >= 0 && i - bytesread <= MaxReadStr)
@@ -2468,7 +2468,7 @@ function{0,1} reads(f,i)
                Protect(sptr = alcstr(sbuf, rlen), runerr(0));
                if (StrLen(s) == 0)
                   StrLoc(s) = sptr;
-               StrLen(s) += rlen;
+               SetStrLen(s, StrLen(s) + (rlen));
                } while ((i == -1) || (bytesread < i));
 #ifdef Concurrent
             MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
@@ -2492,7 +2492,7 @@ function{0,1} reads(f,i)
                if (i < 0) {
                   /* reads(f, -1): concatenate until EOF */
                   tended struct descrip chunk;
-                  StrLen(s) = 0;
+                  SetStrLen(s, 0);
                   StrLoc(s) = "";
                   for (;;) {
                      DEC_NARTHREADS;
@@ -2515,7 +2515,7 @@ function{0,1} reads(f,i)
                      else {
                         Protect(sptr = alcstr(StrLoc(chunk), StrLen(chunk)),
                                 runerr(0));
-                        StrLen(s) += StrLen(chunk);
+                        SetStrLen(s, StrLen(s) + (StrLen(chunk)));
                         }
                      }
                   }
@@ -2535,7 +2535,7 @@ function{0,1} reads(f,i)
             if (status & Fs_SSH)
                MUTEX_LOCKID_CONTROLLED(BlkD(f,File)->mutexid);
 #endif                                  /* HAVE_LIBSSH && Concurrent */
-            StrLen(s) = 0;
+            SetStrLen(s, 0);
             Maxread = (i <= MaxReadStr)? i : MaxReadStr;
             do {
                if (bytesread > 0) {
@@ -2585,7 +2585,7 @@ function{0,1} reads(f,i)
                 Protect(sptr = alcstr(sbuf, rlen), runerr(0));
                 if (StrLen(s) == 0)
                     StrLoc(s) = sptr;
-                StrLen(s) += rlen;
+                SetStrLen(s, StrLen(s) + (rlen));
             } while ((i == -1) || (bytesread < i));
 #if HAVE_LIBSSH && defined(Concurrent)
             if (status & Fs_SSH)
@@ -2702,7 +2702,7 @@ function{0,1} reads(f,i)
        * For now, assume we can read the full number of bytes.
        */
       Protect(StrLoc(s) = alcstr(NULL, i), runerr(0));
-      StrLen(s) = 0;
+      SetStrLen(s, 0);
 
 #if HAVE_LIBZ
       /*
@@ -2750,7 +2750,7 @@ function{0,1} reads(f,i)
 
       if (tally == 0) /* EOF */
          fail;
-      StrLen(s) = tally;
+      SetStrLen(s, tally);
       /*
        * We may not have used the entire amount of storage we reserved.
        */
@@ -3150,7 +3150,8 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
                      }
                   s++;
                   }
-               StrLen(d_stdout) = StrLen(d_stderr) = strlen(StrLoc(d_stdout));
+               SetStrLen(d_stderr, strlen(StrLoc(d_stdout)));
+               SetStrLen(d_stdout, StrLen(d_stderr));
                }
             else if ((s - cmdline > 0) && s[-1] == '2') { /* 2> */
                s[-1] = '\0';
@@ -3164,7 +3165,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
                      }
                   s++;
                   }
-               StrLen(d_stderr) = strlen(StrLoc(d_stderr));
+               SetStrLen(d_stderr, strlen(StrLoc(d_stderr)));
                if (!strcmp(StrLoc(d_stderr), "&1")) {
                   d_stderr = d_stdout;
                   }
@@ -3181,7 +3182,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
                      }
                   s++;
                   }
-               StrLen(d_stdout) = strlen(StrLoc(d_stdout));
+               SetStrLen(d_stdout, strlen(StrLoc(d_stdout)));
 
                d_stdout.dword = D_Integer;
                d_stdout.vword.integr =
@@ -3204,7 +3205,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
                      }
                   s++;
                   }
-               StrLen(d_stdout) = strlen(StrLoc(d_stdout));
+               SetStrLen(d_stdout, strlen(StrLoc(d_stdout)));
                }
             }
         }
@@ -4246,7 +4247,7 @@ function{0,1} chdir(s)
 
       len = strlen(path);
       Protect(StrLoc(result) = alcstr(path, len), runerr(0));
-      StrLen(result) = len;
+      SetStrLen(result, len);
       return result;
 
 #endif

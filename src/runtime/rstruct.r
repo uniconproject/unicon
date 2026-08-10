@@ -902,10 +902,10 @@ dynrecord(dptr s, dptr fields, int n)
    StrLoc(bp->recname) = malloc(StrLen(*s)+1);
    if (StrLoc(bp->recname) == NULL) return NULL;
    strncpy(StrLoc(bp->recname), StrLoc(*s), StrLen(*s));
-   StrLen(bp->recname) = StrLen(*s);
+   SetStrLen(bp->recname, StrLen(*s));
    StrLoc(bp->recname)[StrLen(*s)] = '\0';
    for (i=0;i<n;i++) {
-      StrLen(bp->lnames[i]) = StrLen(fields[i]);
+      SetStrLen(bp->lnames[i], StrLen(fields[i]));
       StrLoc(bp->lnames[i]) = malloc(StrLen(fields[i])+1);
       if (StrLoc(bp->lnames[i]) == NULL) return NULL;
       strncpy(StrLoc(bp->lnames[i]), StrLoc(fields[i]), StrLen(fields[i]));
@@ -970,11 +970,11 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
       StrLoc(bp->recname) = malloc(StrLen(*s)+1);
 
       if (StrLoc(bp->recname) == NULL) return NULL;
-      StrLen(bp->recname) = StrLen(*s);
+      SetStrLen(bp->recname, StrLen(*s));
       for(i=0;i<StrLen(*s); i++) StrLoc(bp->recname)[i]=StrLoc(*s)[i];
       StrLoc(bp->recname)[StrLen(*s)] = '\0';
       for(i=0;i<n;i++) {
-         StrLen(bp->lnames[i]) = StrLen(fields[i]);
+         SetStrLen(bp->lnames[i], StrLen(fields[i]));
          StrLoc(bp->lnames[i]) = malloc(StrLen(fields[i])+1);
          if (StrLoc(bp->lnames[i]) == NULL) return NULL;
          strncpy(StrLoc(bp->lnames[i]), StrLoc(fields[i]), StrLen(fields[i]));
@@ -1005,7 +1005,7 @@ int invaluemask(struct progstate *p, int evcode, struct descrip *val)
    unsigned char ec = (unsigned char)evcode;
    struct descrip d;
    StrLoc(d) = (char *)&ec;
-   StrLen(d) = 1;
+   SetStrLen(d, 1);
 
    if (! is:table(p->valuemask)) return RunError;
    hn = hash(&d);

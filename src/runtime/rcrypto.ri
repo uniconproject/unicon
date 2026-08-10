@@ -51,7 +51,7 @@ void set_ssl_context_errortext(int err, char* errval)
      if ((StrLoc(k_errorvalue) = alcstr(NULL, buflen)) != NULL) {
        strcpy(StrLoc(k_errorvalue), errval);
        have_errval = 1;
-       StrLen(k_errorvalue) = buflen;
+       SetStrLen(k_errorvalue, buflen);
      }
    }
 
@@ -61,7 +61,7 @@ void set_ssl_context_errortext(int err, char* errval)
      buflen = strlen(sslerr);
      if ((StrLoc(k_errortext) = alcstr(NULL, buflen)) != NULL) {
        strcpy(StrLoc(k_errortext), sslerr);
-       StrLen(k_errortext) = buflen;
+       SetStrLen(k_errortext, buflen);
      }
    }
    else
@@ -119,7 +119,7 @@ int set_ssl_connection_errortext(SSL *ssl, int err)
    buflen = strlen(buf);
    if ((StrLoc(k_errortext) = alcstr(NULL, buflen)) != NULL) {
      strcpy(StrLoc(k_errortext), buf);
-     StrLen(k_errortext) = buflen;
+     SetStrLen(k_errortext, buflen);
    }
 
    return err;
@@ -901,7 +901,7 @@ static int crypto_load_key_path(struct CryptoFile *cf, char *path, word pathlen)
    memcpy(pathbuf, path, pathlen);
    pathbuf[pathlen] = '\0';
    StrLoc(td) = pathbuf;
-   StrLen(td) = pathlen;
+   SetStrLen(td, pathlen);
    m = crypto_open_material(&td, 0, NULL, 0, &rc);
    if (m == NULL) return rc ? rc : E_CryptoLoad;
 

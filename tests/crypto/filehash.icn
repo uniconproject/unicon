@@ -1,0 +1,30 @@
+#
+# Hash a whole file via mode "re" (target is the file, not an alg name).
+#
+
+import crypto
+
+procedure main()
+   local f, hasher, digest, expect
+
+   # Same payload as the "eh" known-answer test.
+   f := open("data/abc.txt", "w") | stop("write abc.txt: ", &errortext)
+   writes(f, "abc")
+   close(f)
+
+   expect := "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+   hasher := open("data/abc.txt", "re", "op=hash", "alg=sha256") |
+      stop("open re hash failed: ", &errortext)
+   digest := read(hasher) | stop("read digest failed: ", &errortext)
+   if hexbytes(digest, 1) == expect then
+      write("filehash:ok")
+   else
+      write("filehash:fail")
+
+   # Second read fails: the digest was a one-shot result.
+   if read(hasher) then
+      write("idle:fail")
+   else
+      write("idle:ok")
+   close(hasher)
+end

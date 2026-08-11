@@ -1,0 +1,35 @@
+#
+# Encrypt to a file with "we", decrypt with "re" (auto-IV AEAD framing).
+#
+
+procedure main()
+   local ky, f, chunk, pending, plaintext
+
+   ky := open("data/aes.key", "e") | stop("open key failed: ", &errortext)
+
+   # writes() only: crypto write() does not append a newline.
+   f := open("data/secrets.dat", "we", "op=encrypt", "cipher=aes-256-gcm", ky) |
+      stop("open we failed: ", &errortext)
+   writes(f, "chunk-one")
+   writes(f, "chunk-two")
+   close(f) | stop("close we failed: ", &errortext)
+
+   # reads() yields provisional plaintext; auth is checked at EOF.
+   f := open("data/secrets.dat", "re", "op=decrypt", "cipher=aes-256-gcm", ky) |
+      stop("open re decrypt failed: ", &errortext)
+   pending := []
+   while chunk := reads(f, 4096) do
+      put(pending, chunk)
+   if \ &errornumber then
+      write("decrypt:auth-fail")
+   else {
+      plaintext := ""
+      every plaintext ||:= !pending
+      if plaintext == "chunk-onechunk-two" then
+         write("filecrypt:ok")
+      else
+         write("filecrypt:fail image=", image(plaintext))
+      }
+   close(f)
+   close(ky)
+end

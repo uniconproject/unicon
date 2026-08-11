@@ -215,11 +215,23 @@ struct CryptoFile {
 
    unsigned char *out;         /* result drained by read() */
    int outlen, outcap;
+   int out_off;                /* start of unread bytes in out[] */
 
    unsigned char *in;          /* decrypt: raw ciphertext until read() */
    int inlen, incap;
 
    struct b_file *parent;      /* material handle borrowed from, if any */
+
+   /*
+    * File-transform mode ("re" / "we"): crypto over an underlying FILE*.
+    * Pipe handles leave fp NULL.
+    */
+   FILE *fp;
+   int xform;                  /* 1 = re/we file transform */
+   int sealed;                 /* finalize done (hash/encrypt/decrypt) */
+   int iv_ready;               /* encrypt: IV written; decrypt: IV consumed */
+   unsigned char taghold[16];  /* decrypt AEAD: held-back tag bytes */
+   int taghold_len;
 };
 #endif                                  /* HAVE_LIBSSL */
 

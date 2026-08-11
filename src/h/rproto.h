@@ -1185,6 +1185,9 @@ struct CryptoFile *crypto_open_material(dptr target, int israw, dptr attr,
                                         int nattr, int *rc);
 int   crypto_write   (struct CryptoFile *cf, char *buf, word len);
 int   crypto_read    (struct CryptoFile *cf, char **bufp, word *lenp);
+int   crypto_reads   (struct CryptoFile *cf, word maxlen,
+                      char **bufp, word *lenp);
+int   crypto_close   (struct CryptoFile *cf);
 void  cryptofile_free    (struct CryptoFile *cf);
 int   crypto_setattr (struct CryptoFile *cf, char *name, char *val, word vlen);
 int   crypto_merge   (struct CryptoFile *cf, char *name, char *val);

@@ -53,11 +53,13 @@ function{0,1} close(f)
        */
 #if HAVE_LIBSSL
       if (status & Fs_Crypto) {
+         int rc = 0;
          if (BlkD(f,File)->fd.cf != NULL) {
-            cryptofile_free(BlkD(f,File)->fd.cf);
+            rc = crypto_close(BlkD(f,File)->fd.cf);
             BlkLoc(f)->File.fd.cf = NULL;
             }
          BlkLoc(f)->File.status = 0;
+         if (rc != 0) { set_errortext(rc); fail; }
          return f;
          }
 #endif                                  /* HAVE_LIBSSL */
@@ -608,6 +610,7 @@ Deliberate Syntax Error
 #if HAVE_LIBSSL
       int crypto_op = CRYPTO_OP_MATERIAL;
       int crypto_raw = 0;
+      int crypto_file_xform = 0;
 #endif                                  /* HAVE_LIBSSL */
 
 #if UNIX || VMS || NT
@@ -894,13 +897,20 @@ Deliberate Syntax Error
       /*
        * Pure crypto modes ("e" / "er" / "eh"): Fs_Encrypt without a
        * socket, SSH session, or ordinary file r/w intent.
+       * File transforms ("re" / "we"): Fs_Encrypt with r/w — crypto over
+       * the named file (UTR 27).
        */
       if ((status & Fs_Encrypt) && !(status & Fs_Socket)
 #if HAVE_LIBSSH
           && !(status & Fs_SSH)
 #endif                                  /* HAVE_LIBSSH */
-          && !(status & (Fs_Read|Fs_Write|Fs_Append|Fs_Create))) {
-         status |= Fs_Crypto;
+          ) {
+         if (status & (Fs_Read|Fs_Write|Fs_Append|Fs_Create)) {
+            status |= Fs_Crypto;
+            crypto_file_xform = 1;
+            }
+         else
+            status |= Fs_Crypto;
          }
 #endif                                  /* HAVE_LIBSSL */
 
@@ -978,6 +988,114 @@ Deliberate Syntax Error
          struct CryptoFile *cf = NULL;
          int rc = 0;
          word a;
+
+         if (crypto_file_xform) {
+            /*
+             * "re" / "we": target is the data file; key via key= or handle.
+             */
+            char *fmode;
+            int want_read = (status & (Fs_Read|Fs_Write|Fs_Append|Fs_Create))
+                            == Fs_Read;
+
+            cf = calloc(1, sizeof(struct CryptoFile));
+            if (cf == NULL) { set_errortext(1317); fail; }
+            cf->op = CRYPTO_OP_MATERIAL;
+            cf->xform = 1;
+
+            /* Pass 1: attributes except key= (op= must land first). */
+            for (a = 0; a < n; a++) {
+               tended struct descrip as;
+               char nbuf[64];
+               word eq, vlen;
+               char *v;
+               if (is:null(attr[a]) || is:file(attr[a])) continue;
+               if (!cnv:string(attr[a], as)) continue;
+               for (eq = 0; eq < StrLen(as); eq++)
+                  if (StrLoc(as)[eq] == '=') break;
+               if (eq >= StrLen(as) || eq >= (word)sizeof(nbuf)) continue;
+               memcpy(nbuf, StrLoc(as), eq);
+               nbuf[eq] = '\0';
+               if (strcmp(nbuf, "key") == 0) continue;
+               v = StrLoc(as) + eq + 1;
+               vlen = StrLen(as) - eq - 1;
+               if ((rc = crypto_setattr(cf, nbuf, v, vlen)) != 0) {
+                  cryptofile_free(cf); set_errortext(rc); fail;
+                  }
+               }
+            /* Pass 2: key= paths, then handle attributes. */
+            for (a = 0; a < n; a++) {
+               tended struct descrip as;
+               char nbuf[64];
+               word eq, vlen;
+               char *v;
+               if (is:null(attr[a]) || is:file(attr[a])) continue;
+               if (!cnv:string(attr[a], as)) continue;
+               for (eq = 0; eq < StrLen(as); eq++)
+                  if (StrLoc(as)[eq] == '=') break;
+               if (eq >= StrLen(as) || eq >= (word)sizeof(nbuf)) continue;
+               memcpy(nbuf, StrLoc(as), eq);
+               nbuf[eq] = '\0';
+               if (strcmp(nbuf, "key") != 0) continue;
+               v = StrLoc(as) + eq + 1;
+               vlen = StrLen(as) - eq - 1;
+               if ((rc = crypto_setattr(cf, nbuf, v, vlen)) != 0) {
+                  cryptofile_free(cf); set_errortext(rc); fail;
+                  }
+               }
+            for (a = 0; a < n; a++) {
+               if (is:null(attr[a]) || !is:file(attr[a])) continue;
+               if (!(BlkD(attr[a],File)->status & Fs_Crypto)) {
+                  cryptofile_free(cf); set_errortext(1312); fail;
+                  }
+               if ((rc = crypto_borrow(cf, BlkD(attr[a],File)->fd.cf)) != 0) {
+                  cryptofile_free(cf); set_errortext(rc); fail;
+                  }
+               }
+
+            if (cf->op == CRYPTO_OP_MATERIAL) {
+               cryptofile_free(cf); set_errortext(1316); fail;
+               }
+            if (cf->op == CRYPTO_OP_HASH) {
+               if (!want_read) {
+                  cryptofile_free(cf); set_errortext(1316); fail;
+                  }
+               }
+            else if (cf->op == CRYPTO_OP_ENCRYPT) {
+               if (want_read) {
+                  cryptofile_free(cf); set_errortext(1316); fail;
+                  }
+               }
+            else if (cf->op == CRYPTO_OP_DECRYPT) {
+               if (!want_read) {
+                  cryptofile_free(cf); set_errortext(1316); fail;
+                  }
+               }
+            else {
+               cryptofile_free(cf); set_errortext(1316); fail;
+               }
+
+            fmode = want_read ? "rb" : "wb";
+            cf->fp = fopen(fnamestr, fmode);
+            if (cf->fp == NULL) {
+               cryptofile_free(cf);
+               set_syserrortext(errno);
+               fail;
+               }
+
+            /* Preserve r/w intent; binary I/O. */
+            status |= Fs_Untrans;
+            status &= ~(Fs_Read|Fs_Write|Fs_Append|Fs_Create);
+            if (want_read)
+               status |= Fs_Read;
+            else
+               status |= Fs_Write;
+
+            StrLen(filename) = strlen(fnamestr);
+            StrLoc(filename) = fnamestr;
+            Protect(fl = alcfile(NULL, status, &filename), runerr(0));
+            fl->fd.cf = cf;
+            return file(fl);
+            }
 
          status |= Fs_Read | Fs_Write;
 
@@ -1815,6 +1933,7 @@ function{0,1} read(f)
          int rc;
          rc = crypto_read(BlkD(f,File)->fd.cf, &buf, &len);
          if (rc != 0) { set_errortext(rc); fail; }
+         if (len == 0) fail;
          Protect(StrLoc(s) = alcstr(buf, len), runerr(0));
          StrLen(s) = len;
          return s;
@@ -2161,6 +2280,32 @@ function{0,1} reads(f,i)
       status = BlkD(f,File)->status;
       if ((status & Fs_Read) == 0)
          runerr(212, f);
+
+#if HAVE_LIBSSL
+      if (status & Fs_Crypto) {
+         char *buf;
+         word len;
+         int rc;
+         /*
+          * File-transform decrypt/hash: bounded reads.  Pipe crypto
+          * ignores the bound and returns the full finalized result.
+          */
+         if (BlkD(f,File)->fd.cf != NULL && BlkD(f,File)->fd.cf->xform) {
+            rc = crypto_reads(BlkD(f,File)->fd.cf, i, &buf, &len);
+            if (rc != 0) { set_errortext(rc); fail; }
+            if (len == 0) fail;
+            Protect(StrLoc(s) = alcstr(buf, len), runerr(0));
+            StrLen(s) = len;
+            return s;
+            }
+         rc = crypto_read(BlkD(f,File)->fd.cf, &buf, &len);
+         if (rc != 0) { set_errortext(rc); fail; }
+         if (len == 0) fail;
+         Protect(StrLoc(s) = alcstr(buf, len), runerr(0));
+         StrLen(s) = len;
+         return s;
+         }
+#endif                                  /* HAVE_LIBSSL */
 
 #ifdef Messaging
       if (status & Fs_Messaging) {

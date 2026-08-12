@@ -1,0 +1,35 @@
+#
+# Mode "nue" must build a DTLS context (not TLS-on-UDP).
+# Full DTLS I/O still needs cookie/BIO work; this checks the
+# create_ssl_context(DTLS_*) selection wired in open().
+#
+
+procedure main()
+   local f
+
+   # Missing key: fail inside create_ssl_context for the DTLS client path.
+   f := open("127.0.0.1:1", "nue",
+             "cert=data/client.crt", "key=data/missing.key",
+             "verifyPeer=no")
+   if \f then {
+      write("ctx:unexpected-success")
+      close(f)
+      }
+   else if \ &errortext then
+      write("dtls-ctx:ok")
+   else
+      write("dtls-ctx:fail")
+
+   # Valid material, no peer: UDP connect succeeds, DTLS handshake fails.
+   f := open("127.0.0.1:1", "nue",
+             "cert=data/client.crt", "key=data/client.key",
+             "verifyPeer=no")
+   if \f then {
+      write("hs:unexpected-success")
+      close(f)
+      }
+   else if \ &errortext then
+      write("dtls-handshake:ok")
+   else
+      write("dtls-handshake:fail")
+end

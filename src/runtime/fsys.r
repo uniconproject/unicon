@@ -1576,7 +1576,9 @@ Deliberate Syntax Error
 #if HAVE_LIBSSL
                SSL_CTX *ctx;
                if(status & Fs_Encrypt) {
-                  ctx = create_ssl_context(attr, n, TLS_SERVER);
+                  int ssl_type = (sock_type == SOCK_T_DGRAM)
+                     ? DTLS_SERVER : TLS_SERVER;
+                  ctx = create_ssl_context(attr, n, ssl_type);
                   if (ctx == NULL) {
                     // errortext is already set
                     fail;
@@ -1624,7 +1626,9 @@ Deliberate Syntax Error
 #if HAVE_LIBSSL
                SSL_CTX *ctx;
                if(status & Fs_Encrypt) {
-                  ctx = create_ssl_context(attr, n, TLS_CLIENT);
+                  int ssl_type = (sock_type == SOCK_T_DGRAM)
+                     ? DTLS_CLIENT : TLS_CLIENT;
+                  ctx = create_ssl_context(attr, n, ssl_type);
                   if (ctx == NULL) {
                     // errortext is already set
                     fail;

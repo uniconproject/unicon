@@ -1,0 +1,37 @@
+#
+# Reuse parsed cert/key handles across TLS client opens (UTR 27 §8.6).
+#
+
+procedure main()
+   local certh, keyh, f
+
+   certh := open("data/client.crt", "e") | stop("open cert: ", &errortext)
+   keyh := open("data/client.key", "e") | stop("open key: ", &errortext)
+   write("cert type=", Attrib(certh, "type"))
+   write("key type=", Attrib(keyh, "type"))
+
+   # Handles accepted by create_ssl_context; handshake fails (no peer).
+   f := open("127.0.0.1:1", "ne", certh, keyh, "verifyPeer=no")
+   if \f then {
+      write("tls-handle:unexpected-success")
+      close(f)
+      }
+   else if \ &errortext then
+      write("tls-handle:ok")
+   else
+      write("tls-handle:fail")
+
+   # Same handles again — parse once, reuse across connections.
+   f := open("127.0.0.1:1", "ne", certh, keyh, "verifyPeer=no")
+   if \f then {
+      write("tls-reuse:unexpected-success")
+      close(f)
+      }
+   else if \ &errortext then
+      write("tls-reuse:ok")
+   else
+      write("tls-reuse:fail")
+
+   close(certh)
+   close(keyh)
+end

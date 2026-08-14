@@ -124,6 +124,10 @@ function{0,1} string(x[n])
       t = x[0];
 
       for (i = 1; i < n; i++) {
+         int uq_t_was_tagged;
+         word uq_prevcnt, uq_xcnt;
+         int uq_prevok, uq_xok;
+
          /*
           * if t is not at the end of the string region, make it so
           */
@@ -133,9 +137,21 @@ function{0,1} string(x[n])
          if (!cnv:string(x[i], x[i])) fail;
 
          /*
-          * OR in x[i]'s uniqual tag; t keeps its own from t = x[0].
+          * Capture t's tag state and effective codepoint contribution
+          * BEFORE any of the three branches below call SetStrLen --
+          * SetStrLen is a full overwrite of dword (rmacros.h, by
+          * design), so both would be silently lost if read afterward.
+          * This was the actual bug: an earlier version of this loop
+          * called SetUniQual(t) here, before SetStrLen, on the
+          * assumption that "subsequent updates never clear it" --
+          * false, SetStrLen always does, and the tag vanished on
+          * every concatenation. Fixed by capturing now, applying after.
           */
-         if (IsUniQual(x[i])) SetUniQual(t);
+         uq_t_was_tagged = IsUniQual(t) ? 1 : 0;
+         uq_prevcnt = uq_t_was_tagged ? CpCount(t) : StrLen(t);
+         uq_prevok  = !uq_t_was_tagged || (uq_prevcnt != CpCountSentinel);
+         uq_xcnt    = IsUniQual(x[i]) ? CpCount(x[i]) : StrLen(x[i]);
+         uq_xok     = !IsUniQual(x[i]) || (uq_xcnt != CpCountSentinel);
 
          /*
           * concatenate t and x[i] and store result in t
@@ -160,6 +176,16 @@ function{0,1} string(x[n])
                *s++ = *s2++;
             StrLoc(t) = tmp;
             SetStrLen(t, StrLen(t) + len);
+            }
+
+         /*
+          * NOW apply the tag and cp_count -- after SetStrLen, not
+          * before, the ordering that actually matters.
+          */
+         if (uq_t_was_tagged || IsUniQual(x[i])) {
+            SetUniQual(t);
+            if (uq_prevok && uq_xok && (uword)(uq_prevcnt + uq_xcnt) <= CpCountMax)
+               SetCpCount(t, uq_prevcnt + uq_xcnt);
             }
          }
       return t;

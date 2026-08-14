@@ -67,26 +67,27 @@ operator{1} * size(x)
    type_case x of {
       string: inline {
          /*
-          * Uniqual *s is codepoints. Use cached CpCount when present;
-          * otherwise walk. Untagged strings keep byte length.
+          * Uniconde Phase 0 (design doc, the *size fix): a tagged
+          * qualifier's size means codepoints, not bytes. The common
+          * case (string literal, cp_count cached by the Op_Str
+          * promotion trigger) is O(1). Concatenation results don't
+          * currently get cp_count propagated in every case (§5), so
+          * they can fall back to walking -- via the shared uq_scan
+          * helper (rmacros.h), not a fourth copy of the same loop.
+          * (Earlier version of this comment claimed RTT made sharing
+          * awkward -- that was never actually true for a plain C
+          * function in a universally-included header; the real RTT
+          * constraint, discovered later, was specifically about
+          * #ifdef evaluation inside .r body blocks, which doesn't
+          * apply to an ordinary function call like this one.)
           */
          if (IsUniQual(x)) {
             word uq_cnt = CpCount(x);
             if (uq_cnt != CpCountSentinel)
                return C_integer uq_cnt;
             {
-            unsigned char *uq_bytes = (unsigned char *)StrLoc(x);
-            word uq_blen = StrLen(x);
-            word uq_bpos = 0, uq_ncps = 0, uq_w;
-            while (uq_bpos < uq_blen) {
-               unsigned char uq_b = uq_bytes[uq_bpos];
-               if ((uq_b & 0x80) == 0) uq_w = 1;
-               else if ((uq_b & 0xE0) == 0xC0) uq_w = 2;
-               else if ((uq_b & 0xF0) == 0xE0) uq_w = 3;
-               else if ((uq_b & 0xF8) == 0xF0) uq_w = 4;
-               else uq_w = 1;
-               uq_bpos += uq_w; uq_ncps++;
-               }
+            word uq_ncps;
+            uq_scan((unsigned char *)StrLoc(x), StrLen(x), &uq_ncps);
             return C_integer uq_ncps;
             }
             }
@@ -170,6 +171,39 @@ operator{1} * size(x)
             return C_integer StrLen(x);
             }
          }
+      }
+end
+
+
+"unicode(s) - give s Unicode metadata (tag + cached codepoint count) on demand, without waiting for []/* to trigger it. No-op if s is pure ASCII."
+
+function{1} unicode(s)
+
+   if !cnv:string(s) then
+      runerr(103, s)
+
+   abstract {
+      return string
+      }
+
+   body {
+      if (IsUniQual(s)) {
+         if (CpCount(s) == CpCountSentinel) {
+            word uq_ncps;
+            uq_scan((unsigned char *)StrLoc(s), StrLen(s), &uq_ncps);
+            if ((uword)uq_ncps <= CpCountMax)
+               SetCpCount(s, uq_ncps);
+            }
+         }
+      else {
+         word uq_ncps;
+         if (uq_scan((unsigned char *)StrLoc(s), StrLen(s), &uq_ncps)) {
+            SetUniQual(s);
+            if ((uword)uq_ncps <= CpCountMax)
+               SetCpCount(s, uq_ncps);
+            }
+         }
+      return s;
       }
 end
 

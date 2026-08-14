@@ -76,7 +76,12 @@ operator{1} || cater(x, y)
          SetStrLen(result, StrLen(x) + StrLen(y));
          if (IsUniQual(x) || IsUniQual(y)) {
             SetUniQual(result);
-            /* Propagate cp_count when both sides have a known count. */
+            /*
+             * cp_count propagation: an untagged operand is pure ASCII,
+             * so its own StrLen IS its codepoint count -- no sentinel
+             * concern there. A tagged operand contributes its cached
+             * CpCount if known, else the sum can't be trusted either.
+             */
             {
             word uq_xcnt = IsUniQual(x) ? CpCount(x) : StrLen(x);
             word uq_ycnt = IsUniQual(y) ? CpCount(y) : StrLen(y);
@@ -102,8 +107,12 @@ operator{1} || cater(x, y)
           */
          Protect(alcstr(StrLoc(y),StrLen(y)), runerr(0));
          /*
-          * SetStrLen clears tag/cp_count; re-apply if either side was
-          * uniqual.
+          *  Set the length of the result and return. result already
+          *  carried x's tag via the whole-descriptor copy above, but
+          *  SetStrLen's full-dword overwrite (by design -- see
+          *  rmacros.h) clears it along with everything else, so it
+          *  has to be re-set here just like the other two paths, not
+          *  assumed to have survived the copy.
           */
          SetStrLen(result, StrLen(x) + StrLen(y));
          if (IsUniQual(x) || IsUniQual(y)) {

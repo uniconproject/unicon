@@ -824,43 +824,27 @@ L_areal:
           opnd = (word)strcons + GetWord;
 
             /*
-             * Tag UTF-8 literals and cache codepoint count. Also patch
-             * the length word at ipc.opnd[-2]: Op_Str self-patches to
-             * Op_Astr, which re-reads that word on later executions.
-             * Avoid local name "sp" (collides with the stack macro).
+             * Uniconde: literal tagging is a compile-time concern only.
+             * icont (uniquallen(), lcode.c) encodes F_UniQual directly
+             * into this literal's length word for every string literal
+             * it compiles, tagged or not -- *rsp already carries the
+             * correct bit straight from the bytecode file, so there is
+             * nothing to scan or classify here. A runtime scan-on-first-
+             * use was tried in an earlier iteration of this work and
+             * removed: since an untagged (pure-ASCII) literal is just
+             * as untagged as a tagged one is tagged, a scan keyed on
+             * "not yet tagged" would fire for every ASCII literal from
+             * even a fully Unicode-aware compiler, on its first
+             * execution -- exactly the per-literal cost compile-time
+             * tagging exists to eliminate, not a fallback that only
+             * matters for old icode. Icode compiled by a version of
+             * icont that predates this feature simply carries F_UniQual
+             * as 0 for every literal, which is indistinguishable from,
+             * and behaves identically to, this feature being absent --
+             * correct, unsurprising behavior requiring no special case
+             * here, with recompilation being the path to picking up
+             * Unicode-aware literals for such a program.
              */
-            {
-            word slen = *rsp;                     /* length already pushed */
-            unsigned char *uq_bytes = (unsigned char *)opnd;
-            word uq_i, uq_w, uq_ncps, uq_tagged;
-
-            uq_i = 0; uq_ncps = 0; uq_tagged = 0;
-            while (uq_i < slen) {
-               unsigned char uq_b = uq_bytes[uq_i];
-               if ((uq_b & 0x80) == 0) uq_w = 1;
-               else if ((uq_b & 0xE0) == 0xC0) uq_w = 2;
-               else if ((uq_b & 0xF0) == 0xE0) uq_w = 3;
-               else if ((uq_b & 0xF8) == 0xF0) uq_w = 4;
-               else uq_w = 1;  /* malformed: treat as one byte */
-               if (uq_w > 1) uq_tagged = 1;
-               uq_i += uq_w;
-               uq_ncps++;
-               }
-
-            if (uq_tagged) {
-               *rsp |= F_UniQual;
-               ipc.opnd[-2] |= F_UniQual;
-               if ((uword)uq_ncps <= CpCountMax) {
-                  /* dword halves only; pointer not pushed yet */
-                  *rsp = (*rsp & ~CpCountMask) |
-                         (((word)uq_ncps << CpCountShift) & CpCountMask);
-                  ipc.opnd[-2] = (ipc.opnd[-2] & ~CpCountMask) |
-                         (((word)uq_ncps << CpCountShift) & CpCountMask);
-                  }
-               /* else leave cp_count 0 (uncached / sentinel) */
-               }
-            }
-
 #ifdef Concurrent
             PutInstr(Op_Astr, opnd, 2);
 #else                                   /*Concurrent*/

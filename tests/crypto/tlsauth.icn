@@ -1,0 +1,35 @@
+#
+# Mutual TLS: server verifyPeer=yes requires a client cert.
+#
+
+link tlsutil
+
+procedure main()
+   local port, skey, scert, ca, ckey, ccert
+
+   if not (&features == "secure sockets layer encryption") then
+      stop("needs SSL")
+   if not (&features == "concurrent threads") then
+      stop("needs concurrent threads")
+
+   skey := "key=./data/unicon-server.key"
+   scert := "cert=./data/unicon-server.crt"
+   ca := "ca=./data/unicon-ca.crt"
+   ckey := "key=./data/unicon-client.key"
+   ccert := "cert=./data/unicon-client.crt"
+
+   port := tls_port()
+   tls_start([port, "nae", skey, scert, ca, "verifyPeer=yes"], 2)
+
+   # Client with CA but no cert must fail.
+   if tls_echo([port, "ne", 5000, ca]) then
+      write("nocert:fail")
+   else
+      write("nocert:ok")
+   delay(250)
+
+   if tls_echo([port, "ne", 5000, ckey, ccert, ca]) then
+      write("clientauth:ok")
+   else
+      write("clientauth:fail")
+end

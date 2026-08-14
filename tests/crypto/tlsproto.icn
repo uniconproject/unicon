@@ -1,0 +1,27 @@
+#
+# Protocol pin: client and server both speak TLS 1.2.
+#
+
+link tlsutil
+
+procedure main()
+   local port, key, cert, ca
+
+   if not (&features == "secure sockets layer encryption") then
+      stop("needs SSL")
+   if not (&features == "concurrent threads") then
+      stop("needs concurrent threads")
+
+   key := "key=./data/unicon-server.key"
+   cert := "cert=./data/unicon-server.crt"
+   ca := "ca=./data/unicon-ca.crt"
+
+   port := tls_port()
+   tls_start([port, "nae", key, cert, ca, "minProto=TLS1.2"], 1)
+
+   if tls_echo([port, "ne", 5000, ca,
+                "minProto=TLS1.2", "maxProto=TLS1.2"]) then
+      write("tls12:ok")
+   else
+      write("tls12:fail")
+end

@@ -1,0 +1,92 @@
+#
+# Shared TLS echo harness for tests/crypto (link tlsutil).
+# Not a standalone test — skipped by the suite Makefile.
+#
+
+global tls_server_ready
+
+procedure tls_port()
+   return "127.0.0.1:" || (30000 + ?10000)
+end
+
+procedure tls_wait()
+   local n
+   n := 0
+   repeat {
+      if \tls_server_ready then
+         return
+      delay(5)
+      n +:= 1
+      if n > 2000 then
+         stop("tlsutil: timed out waiting for server")
+      }
+end
+
+#
+# Echo one accepted connection until the client closes.
+#
+procedure tls_echo_session(sock)
+   local msg
+   repeat {
+      if *select(sock) > 0 then {
+         if (msg := ready(sock)) & msg ~=== "" then
+            writes(sock, msg)
+         else {
+            close(sock)
+            break
+            }
+         }
+      }
+end
+
+#
+# Accept `rounds` connections using open!opt (e.g. [port,"nae",...]).
+#
+procedure tls_serve(opt, rounds)
+   local sock, i
+   tls_server_ready := 1
+   every i := 1 to rounds do {
+      sock := open ! opt | {
+         delay(50)
+         next
+         }
+      tls_echo_session(sock)
+      delay(50)
+      }
+end
+
+procedure tls_start(opt, rounds)
+   tls_server_ready := &null
+   thread tls_serve(opt, rounds)
+   tls_wait()
+   delay(25)
+end
+
+#
+# Open with client opts, echo three short messages, succeed or fail.
+#
+procedure tls_echo(opt)
+   local sock, msg, reply, L
+   sock := open ! opt | fail
+   every msg := !["Unicon", "Is", "Awesome"] do {
+      writes(sock, msg) | {
+         close(sock)
+         fail
+         }
+      L := select(sock, 2000)
+      if *L = 0 then {
+         close(sock)
+         fail
+         }
+      reply := ready(sock) | {
+         close(sock)
+         fail
+         }
+      if reply ~== msg then {
+         close(sock)
+         fail
+         }
+      }
+   close(sock)
+   return
+end

@@ -1,5 +1,9 @@
 #SHELL=/bin/bash
 
+# Suites are invoked as `make -C $dir` with no target. Pin the default so a
+# helper rule listed first in a suite Makefile cannot steal the goal.
+.DEFAULT_GOAL := Test
+
 # Do the tests (Summary is a separate target; list as Test: DoTest Summary in each suite Makefile)
 DoTest: clean TestHdr $(TARGETS)
 

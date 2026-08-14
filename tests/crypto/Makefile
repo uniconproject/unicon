@@ -1,6 +1,6 @@
 #
 # Cryptographic facilities (UTR 27) — hash, HMAC, sign/verify, encrypt,
-# plus TLS/DTLS socket coverage (ssl.icn).
+# plus focused TLS socket coverage.
 #
 
 include ../Makedefs
@@ -8,6 +8,7 @@ include ../Makedefs
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 SKIP=
 IGNORE=
+TLS_TESTS = tlsplain tlsverify tlsauth tlsproto tlscipher
 
 # Skip the suite when the runtime was built without OpenSSL.
 UCFEAT := $(shell $(UC) -features 2>/dev/null)
@@ -15,13 +16,22 @@ ifneq ($(UCFEAT),)
 ifeq ($(findstring secure sockets layer encryption,$(UCFEAT)),)
 SKIP += $(TARGETS)
 else
-# ssl.icn needs concurrent threads for its client/server harness.
+# Link-only helper, not a standalone test.
+SKIP += tlsutil
+# TLS echo tests need concurrent threads for the server harness.
 ifeq ($(findstring concurrent threads,$(UCFEAT)),)
-SKIP += ssl
+SKIP += $(TLS_TESTS)
 endif
 endif
 endif
 
+# Test must be the first goal so `make -C crypto` runs the suite.
 Test: DoTest
 
 include ../Makefile.test
+
+# Ensure tlsutil.u exists before any test that links it.
+$(TLS_TESTS): tlsutil.u
+
+tlsutil.u: tlsutil.icn
+	@$(UC) -c -s tlsutil.icn

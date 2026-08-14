@@ -1,0 +1,19 @@
+#
+# Plain TCP echo (no TLS) — baseline for the TLS socket tests.
+#
+
+link tlsutil
+
+procedure main()
+   local port
+
+   if not (&features == "concurrent threads") then
+      stop("needs concurrent threads")
+
+   port := tls_port()
+   tls_start([port, "na"], 1)
+   if tls_echo([port, "n", 5000]) then
+      write("tlsplain:ok")
+   else
+      write("tlsplain:fail")
+end

@@ -758,6 +758,21 @@ Deliberate Syntax Error
                status &= ~Fs_Untrans;
                continue;
 
+            case 'i':
+            case 'I':
+               /*
+                * Uniconde Phase 0: explicit per-file/socket opt-in for
+                * Unicode-aware reads(), matching the same
+                * text/binary-mode-flag convention as 't'/'b' rather
+                * than automatic scanning at every read() call, which
+                * was benchmarked and rejected (readbench.c: a naive
+                * scan roughly 15-50x slower in relative terms than
+                * today's plain memcpy at realistic read sizes -- see
+                * design doc for the numbers this decision is based on).
+                */
+               status |= Fs_Unicode;
+               continue;
+
             case '6':
 #if defined(PosixFns) || defined(Messaging)
               is_ipv6 = 1;
@@ -1241,7 +1256,7 @@ Deliberate Syntax Error
                extern int Merror;
                if (do_verify != 0)
                   status |= Fs_Verify;
-               if (status & ~(Fs_Messaging|Fs_Read|Fs_Write|Fs_Untrans|Fs_Verify)) {
+               if (status & ~(Fs_Messaging|Fs_Read|Fs_Write|Fs_Untrans|Fs_Verify|Fs_Unicode)) {
                   runerr(209, spec);
                   }
                else {
@@ -1566,7 +1581,7 @@ Deliberate Syntax Error
                af_fam = AF_UNSPEC;
 
             /* The only allowed values for flags are "n" and "na" */
-            if (status & ~(Fs_Read|Fs_Write|Fs_Socket|Fs_Append|Fs_Unbuf|Fs_Listen
+            if (status & ~(Fs_Read|Fs_Write|Fs_Socket|Fs_Append|Fs_Unbuf|Fs_Listen|Fs_Unicode
 #if HAVE_LIBSSL
                           |Fs_Encrypt
 #endif                                  /* HAVE_LIBSSL */
@@ -2032,6 +2047,7 @@ function{0,1} read(f)
 #ifdef Concurrent
           MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
 #endif                                  /* Concurrent */
+         UqMaybeTagRead(s, status);
          return s;
           }
 #endif                                  /* HAVE_LIBSSH */
@@ -2074,6 +2090,7 @@ function{0,1} read(f)
              }
           while (slen > 0);
 
+         UqMaybeTagRead(s, status);
          return s;
           }
 
@@ -2264,6 +2281,7 @@ function{0,1} read(f)
             StrLoc(s) = sptr;
          SetStrLen(s, StrLen(s) + (rlen));
          } while (slen < 0);
+      UqMaybeTagRead(s, status);
       return s;
       }
 end
@@ -2375,7 +2393,10 @@ function{0,1} reads(f,i)
                   }
                if (bytesread == 0)
                   fail;
-               else return s;
+               else {
+                  UqMaybeTagRead(s, status);
+                  return s;
+                  }
                }
             bytesread += slen;
             rlen = slen < 0 ? (word)MaxReadStr : slen;
@@ -2393,6 +2414,7 @@ function{0,1} reads(f,i)
 
             } while ((i == -1) || (bytesread < i));
 
+         UqMaybeTagRead(s, status);
          return s;
          }
 
@@ -2410,7 +2432,16 @@ function{0,1} reads(f,i)
             fail;
             }
          INC_NARTHREADS_CONTROLLED;
-         return string(slen, s);
+         {
+         /* local s (char*) shadows the outer struct descrip s -- build
+            a separate temporary to tag rather than risk string(...)'s
+            expression-vs-return-position semantics */
+         tended struct descrip uq_result;
+         StrLoc(uq_result) = s;
+         SetStrLen(uq_result, slen);
+         UqMaybeTagRead(uq_result, status);
+         return uq_result;
+         }
          }
       else
 #endif                                  /* PseudoPty */
@@ -2455,8 +2486,10 @@ function{0,1} reads(f,i)
 #endif                                  /* Concurrent */
                   if (bytesread == 0)
                      fail;              /* EOF with nothing read */
-                  else
+                  else {
+                     UqMaybeTagRead(s, status);
                      return s;
+                     }
                   }
                bytesread += got;
                rlen = got;
@@ -2473,6 +2506,7 @@ function{0,1} reads(f,i)
 #ifdef Concurrent
             MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
 #endif                                  /* Concurrent */
+            UqMaybeTagRead(s, status);
             return s;
             }
 #endif                                  /* HAVE_LIBSSH */
@@ -2500,6 +2534,7 @@ function{0,1} reads(f,i)
                         INC_NARTHREADS_CONTROLLED;
                         if (StrLen(s) == 0)
                            fail;
+                        UqMaybeTagRead(s, status);
                         return s;
                         }
                      INC_NARTHREADS_CONTROLLED;
@@ -2528,6 +2563,7 @@ function{0,1} reads(f,i)
                /* reads(f, 0): nonblocking; fail if nothing available */
                if (i == 0 && StrLen(s) == 0)
                   fail;
+               UqMaybeTagRead(s, status);
                return s;
                }
 #endif                                  /* HAVE_LIBSSH */
@@ -2554,8 +2590,10 @@ function{0,1} reads(f,i)
 #endif                                  /* HAVE_LIBSSH && Concurrent */
                     if (bytesread == 0)
                         fail;
-                    else
+                    else {
+                        UqMaybeTagRead(s, status);
                         return s;
+                        }
                 }
                 INC_NARTHREADS_CONTROLLED;
                 if (slen == -3) {
@@ -2591,6 +2629,7 @@ function{0,1} reads(f,i)
             if (status & Fs_SSH)
                MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
 #endif                                  /* HAVE_LIBSSH && Concurrent */
+            UqMaybeTagRead(s, status);
             return s;
         }
 
@@ -2641,7 +2680,13 @@ function{0,1} reads(f,i)
             if (dlen > i)
                dlen = i;
             Protect(sptr = alcstr(dbuf, dlen), runerr(0));
-            return string(dlen, sptr);
+            {
+            tended struct descrip uq_result;
+            StrLoc(uq_result) = sptr;
+            SetStrLen(uq_result, dlen);
+            UqMaybeTagRead(uq_result, status);
+            return uq_result;
+            }
             }
 #endif                                  /* HAVE_LIBSSH */
          DEC_NARTHREADS;
@@ -2655,7 +2700,16 @@ function{0,1} reads(f,i)
          if (nbytes > i)
             nbytes = i;
          Protect(sptr = alcstr(de->d_name, nbytes), runerr(0));
-         return string(nbytes, sptr);
+         {
+         /* directory entry names are legitimately UTF-8 on most modern
+            filesystems -- worth tagging on request the same as any
+            other text content */
+         tended struct descrip uq_result;
+         StrLoc(uq_result) = sptr;
+         SetStrLen(uq_result, nbytes);
+         UqMaybeTagRead(uq_result, status);
+         return uq_result;
+         }
          }
 #endif                                  /* ReadDirectory */
 
@@ -2694,6 +2748,7 @@ function{0,1} reads(f,i)
             fail;
             }
          INC_NARTHREADS_CONTROLLED;
+         UqMaybeTagRead(s, status);
          return s;
       }
 #endif                                  /* PosixFns */
@@ -2723,7 +2778,9 @@ function{0,1} reads(f,i)
             }
          else if (slen < 0)
             runerr(214);
-         return string(slen, StrLoc(s));
+         SetStrLen(s, slen);
+         UqMaybeTagRead(s, status);
+         return s;
          }
 #endif                                  /* HAVE_LIBZ */
 
@@ -2751,6 +2808,15 @@ function{0,1} reads(f,i)
       if (tally == 0) /* EOF */
          fail;
       SetStrLen(s, tally);
+      /*
+       * Uniconde Phase 0: explicit per-file opt-in, set via open()'s
+       * "i" mode char (Fs_Unicode). Not automatic -- every read() call
+       * paying a scan, even ones that never touch non-ASCII content,
+       * was benchmarked and rejected (readbench.c, design doc). status
+       * was already fetched at the top of this function; no extra
+       * lookup needed here.
+       */
+      UqMaybeTagRead(s, status);
       /*
        * We may not have used the entire amount of storage we reserved.
        */

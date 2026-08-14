@@ -678,6 +678,27 @@ void f(dptr s, dptr d)
           */
          SetStrLen(*d, Blk(bp,Tvsubs)->sslen);
          StrLoc(*d) = StrLoc(v) + Blk(bp,Tvsubs)->sspos - 1;
+         /*
+          * Uniconde Phase 0: this is the far more common path for a
+          * Unicode-aware sect/subsc result than oref.r's own tagging
+          * logic ever reaches -- sspos/sslen are already byte-based
+          * (matching what tvsubs() is always called with), so this is
+          * the same "scan the actual extracted range" approach already
+          * used in oasgn.r's subs_asgn and oref.r's sect, applied at
+          * the point a trapped substring variable actually gets
+          * dereferenced into a real value, which turns out to be where
+          * slicing a named variable -- the common case -- really ends
+          * up, not oref.r's own body block (see design doc §8/§5 for
+          * why that surprised the first version of this fix).
+          */
+         if (IsUniQual(v)) {
+            word uq_ncps;
+            if (uq_scan((unsigned char *)StrLoc(*d), StrLen(*d), &uq_ncps)) {
+               SetUniQual(*d);
+               if ((uword)uq_ncps <= CpCountMax)
+                  SetCpCount(*d, uq_ncps);
+               }
+            }
         }
 
       tvtbl: {

@@ -33,7 +33,8 @@ static void     flushcode       (void);
 static void     intout          (int oint);
 static void     lemit           (int op,char *name);
 static void     lemitcon        (int k);
-static void     lemitin         (int op,word offset,int n,char *name);
+static void     lemitin         (int op,word offset,word n,char *name);
+static word     uniquallen      (struct centry *cp);
 static void     lemitint        (int op,word i,char *name);
 static void     lemitl          (int op,int lab,char *name);
 static void     lemitn          (int op,word n,char *name);
@@ -233,7 +234,7 @@ void gencode()
              */
             if (cp->c_flag & F_StrLit) {
                lemit(Op_Pnull,"pnull");
-               lemitin(Op_Str, cp->c_val.sval, cp->c_length, "str");
+               lemitin(Op_Str, cp->c_val.sval, uniquallen(cp), "str");
                lemit(Op_Number,"number");
                break;
                }
@@ -351,7 +352,7 @@ void gencode()
             k = getdec();
             newline();
             cp = &lctable[k];
-            lemitin(op, cp->c_val.sval, cp->c_length, name);
+            lemitin(op, cp->c_val.sval, uniquallen(cp), name);
             break;
 
          case Op_Tally:
@@ -582,13 +583,32 @@ static void lemitr(int op, word loc, char *name)
    outword(loc);
    }
 
-static void lemitin(int op, word offset, int n, char *name)
+/*
+ * uniquallen - Uniconde Phase 0: compute the length operand for a string
+ *  literal's Op_Str, with F_UniQual baked in if the literal was found to
+ *  contain non-ASCII bytes at translate time (tsym.c putlit). With the
+ *  feature off (ICONT_F_UniQual undefined), this is exactly cp->c_length,
+ *  unchanged -- the #ifdef here is fine unlike the ones in the runtime's
+ *  .r files, since lcode.c is plain C compiled normally, not passed
+ *  through RTT's separate preprocessing pass.
+ */
+static word uniquallen(struct centry *cp)
+   {
+   word len = (word)cp->c_length;
+#ifdef ICONT_F_UniQual
+   if (cp->c_flag & F_UniQualLit)
+      len |= ICONT_F_UniQual;
+#endif                                  /* ICONT_F_UniQual */
+   return len;
+   }
+
+static void lemitin(int op, word offset, word n, char *name)
    {
    misalign();
 
 #ifdef DeBugLinker
    if (Dflag)
-      fprintf(dbgfile, "%ld:\t%d\t%d,S+%ld\t\t\t# %s\n", (long)pc, op, n,
+      fprintf(dbgfile, "%ld:\t%d\t%ld,S+%ld\t\t\t# %s\n", (long)pc, op, (long)n,
          (long)offset, name);
 #endif                                  /* DeBugLinker */
 

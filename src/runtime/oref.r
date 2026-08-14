@@ -871,11 +871,33 @@ operator{0,1} [:] sect(underef x -> dx, i, j)
 
       body {
          C_integer t;
+         word uq_total;
 
-         i = cvpos((long)i, (long)StrLen(dx));
+         /*
+          * Uniconde Phase 0: same uq_total substitution as move/tab/pos
+          * (fscan.r) -- cvpos() is already unit-agnostic. sect goes
+          * further than those: a multi-character slice can itself
+          * contain non-ASCII content or not, independent of whether
+          * the source does (e.g. slicing out the pure-ASCII "caf" from
+          * "café" shouldn't tag the result) -- so rather than assume
+          * the slice inherits the source's tag, it's scanned directly,
+          * the same precise approach already validated in oasgn.r's
+          * subs_asgn fix rather than the coarser "inherit the source's
+          * tag" shortcut.
+          */
+         if (IsUniQual(dx)) {
+            if (CpCount(dx) != CpCountSentinel)
+               uq_total = CpCount(dx);
+            else
+               uq_scan((unsigned char *)StrLoc(dx), StrLen(dx), &uq_total);
+            }
+         else
+            uq_total = StrLen(dx);
+
+         i = cvpos((long)i, (long)uq_total);
          if (i == CvtFail)
             fail;
-         j = cvpos((long)j, (long)StrLen(dx));
+         j = cvpos((long)j, (long)uq_total);
          if (j == CvtFail)
             fail;
          if (i > j) {                   /* convert section to substring */
@@ -886,11 +908,36 @@ operator{0,1} [:] sect(underef x -> dx, i, j)
          else
             j = j - i;
 
-         if (use_trap) {
-            return tvsubs(&x, i, j);
+         if (IsUniQual(dx)) {
+            unsigned char *uq_bytes = (unsigned char *)StrLoc(dx);
+            word uq_bstart = uq_seek_cp(uq_bytes, i - 1);
+            word uq_bend = uq_seek_cp(uq_bytes, i - 1 + j);
+            word uq_blen = uq_bend - uq_bstart;
+
+            if (use_trap) {
+               return tvsubs(&x, uq_bstart+1, uq_blen);
+               }
+            else {
+               tended struct descrip uq_result;
+               word uq_ncps;
+               int uq_tagged = uq_scan(uq_bytes+uq_bstart, uq_blen, &uq_ncps);
+               StrLoc(uq_result) = (char *)(uq_bytes+uq_bstart);
+               SetStrLen(uq_result, uq_blen);
+               if (uq_tagged) {
+                  SetUniQual(uq_result);
+                  if ((uword)uq_ncps <= CpCountMax)
+                     SetCpCount(uq_result, uq_ncps);
+                  }
+               return uq_result;
+               }
             }
-         else
-            return string(j, StrLoc(dx)+i-1);
+         else {
+            if (use_trap) {
+               return tvsubs(&x, i, j);
+               }
+            else
+               return string(j, StrLoc(dx)+i-1);
+            }
          }
       }
 end
@@ -1343,51 +1390,40 @@ operator{0,1} [] subsc(underef x -> dx,y)
 
             if (is:string(dx) && IsUniQual(dx)) {
                /*
-                * Uniqual: y is a codepoint index. Walk from the start
-                * (no position cache yet). Result is an untagged slice.
+                * Uniconde Phase 0 (design doc §7.2): dx is a tagged
+                * Unicode string. y means codepoint index, not byte
+                * index. No cache/index yet -- Phase 0's whole point is
+                * demonstrating correctness before optimization -- so
+                * this walks from the start every time (the "baseline"
+                * scheme from the design doc's benchmarks), via the
+                * shared uq_scan/uq_seek_cp helpers (rmacros.h) rather
+                * than a fourth copy of the same inline loop. Unconditional
+                * -- no #ifdef here on purpose, see rmacros.h: IsUniQual
+                * is always defined (always false when the feature is
+                * off), so this branch is simply never taken rather than
+                * needing RTT to strip an #ifdef from inside a body
+                * block, which it doesn't do reliably (confirmed
+                * directly against generated intermediate C).
                 */
                unsigned char *bytes = (unsigned char *)StrLoc(dx);
                word blen = StrLen(dx);
-               word ncps, bpos, cp, w;
+               word ncps, bpos;
 
-               ncps = 0; bpos = 0;
-               while (bpos < blen) {
-                  unsigned char b = bytes[bpos];
-                  if ((b & 0x80) == 0) w = 1;
-                  else if ((b & 0xE0) == 0xC0) w = 2;
-                  else if ((b & 0xF0) == 0xE0) w = 3;
-                  else if ((b & 0xF8) == 0xF0) w = 4;
-                  else w = 1;  /* malformed: treat as one byte */
-                  bpos += w; ncps++;
-                  }
+               uq_scan(bytes, blen, &ncps);
 
                i = cvpos(y, ncps);
                if (i == CvtFail || i > ncps)
                   fail;
 
-               cp = 0; bpos = 0;
-               while (cp < i - 1) {
-                  unsigned char b = bytes[bpos];
-                  if ((b & 0x80) == 0) w = 1;
-                  else if ((b & 0xE0) == 0xC0) w = 2;
-                  else if ((b & 0xF0) == 0xE0) w = 3;
-                  else if ((b & 0xF8) == 0xF0) w = 4;
-                  else w = 1;
-                  bpos += w; cp++;
-                  }
-               {
-               unsigned char b = bytes[bpos];
-               if ((b & 0x80) == 0) w = 1;
-               else if ((b & 0xE0) == 0xC0) w = 2;
-               else if ((b & 0xF0) == 0xE0) w = 3;
-               else if ((b & 0xF8) == 0xF0) w = 4;
-               else w = 1;
-               }
+               bpos = uq_seek_cp(bytes, i - 1);
 
+               /* a single extracted character is small enough to stay
+                  a plain, untagged qualifier either way -- design doc
+                  §4.2 */
                if (use_trap)
-                  return tvsubs(&x, bpos+1, w);
+                  return tvsubs(&x, bpos+1, uq_lead_width(bytes[bpos]));
                else
-                  return string(w, (char *)(bytes+bpos));
+                  return string(uq_lead_width(bytes[bpos]), (char *)(bytes+bpos));
                }
 
             /*

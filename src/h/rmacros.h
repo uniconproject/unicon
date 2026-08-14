@@ -42,7 +42,7 @@
 #define Fs_Pipe         020     /* reading or writing on a pipe */
                                 /* see also: BPipe down below */
 
-/*                      040        this bit is now available */
+#define Fs_Unicode      040     /* tagged UTF-8 reads via open() "i" mode */
 
 #define Fs_Reading     0100     /* last file operation was read */
 #define Fs_Writing     0200     /* last file operation was write */
@@ -300,6 +300,62 @@
 #define SetCpCount(q,n) \
    ((q).dword = ((q).dword & ~CpCountMask) | \
                 (((uword)(n) << CpCountShift) & CpCountMask))
+
+/* Width of the UTF-8 character starting at this lead byte. */
+static inline int uq_lead_width(unsigned char b)
+   {
+   if ((b & 0x80) == 0) return 1;
+   if ((b & 0xE0) == 0xC0) return 2;
+   if ((b & 0xF0) == 0xE0) return 3;
+   if ((b & 0xF8) == 0xF0) return 4;
+   return 1;  /* malformed: lenient 1-byte fallback */
+   }
+
+/*
+ * Walk the buffer. Returns 1 if any multi-byte character was found.
+ * If out_ncps is non-NULL, *out_ncps gets the codepoint count.
+ */
+static inline int uq_scan(const unsigned char *bytes, word blen, word *out_ncps)
+   {
+   word bpos = 0, ncps = 0;
+   int tagged = 0;
+   while (bpos < blen) {
+      int w = uq_lead_width(bytes[bpos]);
+      if (w > 1) tagged = 1;
+      bpos += w;
+      ncps++;
+      }
+   if (out_ncps) *out_ncps = ncps;
+   return tagged;
+   }
+
+/*
+ * Byte offset where 0-based codepoint index target_cp begins.
+ */
+static inline word uq_seek_cp(const unsigned char *bytes, word target_cp)
+   {
+   word bpos = 0, cp = 0;
+   while (cp < target_cp) {
+      bpos += uq_lead_width(bytes[bpos]);
+      cp++;
+      }
+   return bpos;
+   }
+
+/*
+ * Opt-in tagging for a just-read string, gated on Fs_Unicode (open "i").
+ * s is a struct descrip; status is the file status word.
+ */
+#define UqMaybeTagRead(s, status) \
+   do { \
+      if ((status) & Fs_Unicode) { \
+         word uq_ncps; \
+         if (uq_scan((unsigned char *)StrLoc(s), StrLen(s), &uq_ncps)) { \
+            SetUniQual(s); \
+            if ((uword)uq_ncps <= CpCountMax) SetCpCount(s, uq_ncps); \
+            } \
+         } \
+      } while (0)
 
 /*
  * Location of first character of string.

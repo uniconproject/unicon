@@ -147,12 +147,65 @@ function{*} find(s1,s2,i,j)
       C_integer s1_len, l, term;
       CURTSTATVAR();
 
+      s1_len = StrLen(s1);
+
+      /*
+       * Uniconde: same reasoning as match() above -- i/j mean
+       * codepoints for a tagged s2, the byte comparison itself doesn't
+       * need to change (UTF-8 self-synchronization), only the position
+       * bookkeeping does. Unlike match(), find() is a generator, so
+       * this walks one codepoint at a time across the window, testing
+       * s1 at each byte offset a codepoint boundary lands on, and
+       * suspending the codepoint index rather than the byte offset.
+       */
+      if (IsUniQual(s2)) {
+         word uq_ncps, uq_ii, uq_jj, uq_bpos, uq_bend;
+         unsigned char *uq_bytes = (unsigned char *)StrLoc(s2);
+
+         uq_scan(uq_bytes, StrLen(s2), &uq_ncps);
+
+         if (is:null(i)) uq_ii = 1;
+         else {
+            C_integer uq_praw;
+            if (!cnv_c_int(&i, &uq_praw)) fail;
+            uq_ii = cvpos(uq_praw, uq_ncps);
+            if (uq_ii == CvtFail) fail;
+            }
+         if (is:null(j)) uq_jj = uq_ncps + 1;
+         else {
+            C_integer uq_praw;
+            if (!cnv_c_int(&j, &uq_praw)) fail;
+            uq_jj = cvpos(uq_praw, uq_ncps);
+            if (uq_jj == CvtFail) fail;
+            }
+         if (uq_ii > uq_jj) { word uq_t = uq_ii; uq_ii = uq_jj; uq_jj = uq_t; }
+
+         uq_bpos = uq_seek_cp(uq_bytes, uq_ii - 1);
+         uq_bend = uq_seek_cp(uq_bytes, uq_jj - 1);
+
+         while (uq_ii < uq_jj) {
+            if (uq_bpos + s1_len <= uq_bend) {
+               str1 = StrLoc(s1);
+               str2 = (char *)(uq_bytes + uq_bpos);
+               l = s1_len;
+               do {
+                  if (l-- <= 0) {
+                     suspend C_integer uq_ii;
+                     break;
+                     }
+                  } while (*str1++ == *str2++);
+               }
+            uq_bpos += uq_lead_width(uq_bytes[uq_bpos]);
+            uq_ii++;
+            }
+         fail;
+         }
+
       /*
        * Loop through s2[i:j] trying to find s1 at each point, stopping
        * when the remaining portion s2[i:j] is too short to contain s1.
        * Optimize me!
        */
-      s1_len = StrLen(s1);
       term = cnv_j - s1_len;
       while (cnv_i <= term) {
          str1 = StrLoc(s1);
@@ -186,6 +239,58 @@ function{0,1} many(c,s,i,j)
       runerr(104,c)
    body {
       C_integer start_i = cnv_i;
+
+      /*
+       * Uniconde Phase 0: str_anal (above) computed cnv_i/cnv_j using
+       * StrLen(s) -- byte semantics. str_anal is an RTT-native
+       * construct (not something in this file to edit directly), so
+       * rather than touch it, a tagged s recomputes its own
+       * codepoint-based bounds here from the original i/j parameters,
+       * discarding str_anal's byte-based cnv_i/cnv_j, then walks
+       * codepoint-by-codepoint via the shared uq_scan/uq_seek_cp/
+       * uq_lead_width helpers (rmacros.h) instead of raw byte
+       * indexing. A multi-byte codepoint can never test true against
+       * a plain cset (only represents codepoints 0-255), so it always
+       * correctly ends the run rather than needing its own cset logic
+       * -- a b_unicset counterpart (design doc §8) would be needed to
+       * do anything more than that.
+       */
+      if (IsUniQual(s)) {
+         unsigned char *uq_bytes = (unsigned char *)StrLoc(s);
+         word uq_blen = StrLen(s);
+         word uq_ncps, uq_ii, uq_jj, uq_bpos;
+
+         uq_scan(uq_bytes, uq_blen, &uq_ncps);
+         if (is:null(i)) uq_ii = 1;
+         else {
+            C_integer uq_praw;
+            if (!cnv_c_int(&i, &uq_praw)) fail;
+            uq_ii = cvpos(uq_praw, uq_ncps);
+            if (uq_ii == CvtFail) fail;
+            }
+         if (is:null(j)) uq_jj = uq_ncps+1;
+         else {
+            C_integer uq_praw;
+            if (!cnv_c_int(&j, &uq_praw)) fail;
+            uq_jj = cvpos(uq_praw, uq_ncps);
+            if (uq_jj == CvtFail) fail;
+            }
+         if (uq_ii > uq_jj) { word uq_t = uq_ii; uq_ii = uq_jj; uq_jj = uq_t; }
+
+         start_i = uq_ii;
+         uq_bpos = uq_seek_cp(uq_bytes, uq_ii - 1);
+         while (uq_ii < uq_jj) {
+            int uq_w = uq_lead_width(uq_bytes[uq_bpos]);
+            if (uq_w > 1 || !Testb(ToAscii(uq_bytes[uq_bpos]), c))
+               break;
+            uq_bpos += uq_w;
+            uq_ii++;
+            }
+         if (uq_ii == start_i)
+            fail;
+         return C_integer uq_ii;
+         }
+
       /*
        * Move i along s[i:j] until a character that is not in c is found
        *  or the end of the string is reached.
@@ -214,6 +319,68 @@ function{0,1} match(s1,s2,i,j)
       runerr(103,s1)
    body {
       char *str1, *str2;
+
+      /*
+       * Uniconde: i/j mean codepoints, not bytes, for a tagged s2.
+       * str_anal (above) already computed cnv_i/cnv_j using byte-based
+       * StrLen(s2) -- discarded here in favor of recomputing from the
+       * original i/j the same way many()/sect() do. The byte-level
+       * comparison itself is unchanged and doesn't need to become
+       * codepoint-aware: UTF-8 is self-synchronizing, so an exact byte
+       * match beginning and ending at codepoint boundaries is already
+       * a correct codepoint-level match. Only the bounds fed into the
+       * comparison, and the position returned, need to mean codepoints.
+       */
+      if (IsUniQual(s2)) {
+         word uq_ncps, uq_ii, uq_jj, uq_bstart, uq_bend, uq_s1cp;
+         unsigned char *uq_bytes = (unsigned char *)StrLoc(s2);
+
+         uq_scan(uq_bytes, StrLen(s2), &uq_ncps);
+
+         if (is:null(i)) uq_ii = 1;
+         else {
+            C_integer uq_praw;
+            if (!cnv_c_int(&i, &uq_praw)) fail;
+            uq_ii = cvpos(uq_praw, uq_ncps);
+            if (uq_ii == CvtFail) fail;
+            }
+         if (is:null(j)) uq_jj = uq_ncps + 1;
+         else {
+            C_integer uq_praw;
+            if (!cnv_c_int(&j, &uq_praw)) fail;
+            uq_jj = cvpos(uq_praw, uq_ncps);
+            if (uq_jj == CvtFail) fail;
+            }
+         if (uq_ii > uq_jj) { word uq_t = uq_ii; uq_ii = uq_jj; uq_jj = uq_t; }
+
+         uq_bstart = uq_seek_cp(uq_bytes, uq_ii - 1);
+         uq_bend = uq_seek_cp(uq_bytes, uq_jj - 1);
+
+         if (uq_bend - uq_bstart < StrLen(s1))
+            fail;
+
+         str1 = StrLoc(s1);
+         str2 = (char *)(uq_bytes + uq_bstart);
+         {
+         word uq_k = StrLen(s1);
+         while (uq_k-- > 0)
+            if (*str1++ != *str2++)
+               fail;
+         }
+
+         /* s1's own codepoint count is exactly how many codepoints of
+            s2 the match consumed, since the bytes are identical */
+         if (IsUniQual(s1)) {
+            if (CpCount(s1) != CpCountSentinel)
+               uq_s1cp = CpCount(s1);
+            else
+               uq_scan((unsigned char *)StrLoc(s1), StrLen(s1), &uq_s1cp);
+            }
+         else
+            uq_s1cp = StrLen(s1);
+
+         return C_integer uq_ii + uq_s1cp;
+         }
 
       /*
        * Cannot match unless s2[i:j] is as long as s1.

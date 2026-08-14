@@ -4,7 +4,8 @@
 
 include ../Makedefs
 
-UNICODTST = cafe_subsc cafe_subsc_loop cafe_size cafe_concat ascii_smoke ascii_ops languages
+UNICODTST = size subsc subsc_loop concat convert scan section many match find \
+	reverse file_i socket_i ascii_basic ascii_ops languages
 
 UCFEAT := $(shell $(UC) -features 2>/dev/null)
 
@@ -21,6 +22,11 @@ endif
 
 SKIP=
 IGNORE=
+WINSKIP=
+ifeq ($(TOS),Windows)
+# socket_i uses fork() like tests/posix/tcp.
+WINSKIP=socket_i
+endif
 
 Test: DoTest
 

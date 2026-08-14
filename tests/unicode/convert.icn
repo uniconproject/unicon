@@ -1,0 +1,21 @@
+# unicode(), uchar(), and uord(); char()/ord() stay byte-oriented.
+
+procedure main()
+   write(*unicode("hello"))
+   write(*unicode("café"))
+   write(unicode("café")[4])
+
+   every cp := !([65, 233, 8364, 128512]) do
+      write(uord(uchar(cp)) = cp)
+   write(*uchar(233))
+   write(*uchar(65))
+
+   write(char(65))
+   write(ord("A"))
+
+   every badinput := !["AB", "", uchar(233) || "x"] do {
+      &error := 1
+      if x := uord(badinput) then write("FAIL: uord accepted ", image(badinput))
+      else write(&errornumber = 205)
+      }
+end

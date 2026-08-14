@@ -27,18 +27,36 @@
 # of this program are intentionally LTR (logical index order), even in
 # a BiDi-aware viewer.
 #
-# Not yet uniqual-aware: s[i:j] (section) still uses byte indices.
+# Not yet uniqual-aware: grapheme clusters (ZWJ emoji, combining marks).
 #
 
-# Byte length of a uniqual (or plain) string: sum UTF-8 widths of each
-# codepoint. s[i] returns an untagged slice, so *c is bytes for that
-# character — *s alone is codepoints on a tagged string.
+# UTF-8 byte length of a uniqual string. Extracted characters stay tagged
+# (one codepoint), so *c is 1; derive width from uord().
+procedure utf8_width(cp)
+   if cp <= 127 then return 1
+   if cp <= 2047 then return 2
+   if cp <= 65535 then return 3
+   return 4
+end
+
 procedure nbytes(s)
    local n, c
    n := 0
    every c := s[1 to *s] do
-      n +:= *c
+      n +:= utf8_width(uord(c))
    return n
+end
+
+procedure utf8_ords(c)
+   local cp
+   cp := uord(c)
+   if cp <= 127 then return [cp]
+   if cp <= 2047 then
+      return [16rC0 + cp / 64, 16r80 + cp % 64]
+   if cp <= 65535 then
+      return [16rE0 + cp / 4096, 16r80 + (cp / 64) % 64, 16r80 + cp % 64]
+   return [16rF0 + cp / 262144, 16r80 + (cp / 4096) % 64,
+           16r80 + (cp / 64) % 64, 16r80 + cp % 64]
 end
 
 # Print a labeled string, codepoint/byte sizes, and a spaced dump.
@@ -71,8 +89,8 @@ procedure main()
    every i := 1 to *s do {
       c := s[i]
       writes("  [", i, "] ", c, "  utf8:")
-      every j := 1 to *c do
-         writes(" ", right(string(ord(c[j])), 3))
+      every j := !utf8_ords(c) do
+         writes(" ", right(string(j), 3))
       write()
       }
 

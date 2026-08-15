@@ -943,6 +943,17 @@ static int sock_track (int);
 struct addrinfo **saddrs;
 static int saddrs_n;
 
+/*
+ * UDP open() stores the destination in saddrs[] and does not connect(2).
+ * DTLS needs a connected datagram socket; connect using that saved peer.
+ */
+int sock_udp_connect_saved(int fd)
+{
+   if (saddrs == NULL || fd < 0 || fd >= saddrs_n || saddrs[fd] == NULL)
+      return -1;
+   return connect(fd, saddrs[fd]->ai_addr, saddrs[fd]->ai_addrlen);
+}
+
 #define SOCK_RECV_SMALL 2048
 #define SOCK_RECV_LARGE 65535
 

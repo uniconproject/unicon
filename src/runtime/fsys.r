@@ -1603,6 +1603,17 @@ Deliberate Syntax Error
                     SSL_CTX_free(ctx);
                     fail;
                   }
+                  if (sock_type == SOCK_T_DGRAM) {
+                     if (!ssl_dtls_accept(ssl, fd)) {
+                        set_ssl_connection_errortext(ssl, -1);
+                        if (sock_purge(fd))
+                           sock_close(fd);
+                        SSL_free(ssl);
+                        SSL_CTX_free(ctx);
+                        fail;
+                        }
+                     }
+                  else {
                   SSL_set_fd(ssl, fd);
                   DEC_NARTHREADS;
                   err = SSL_accept(ssl);
@@ -1616,6 +1627,7 @@ Deliberate Syntax Error
                     SSL_free(ssl);
                     SSL_CTX_free(ctx);
                     fail;
+                  }
                   }
 
                }
@@ -1661,6 +1673,16 @@ Deliberate Syntax Error
                     SSL_CTX_free(ctx);
                     fail;
                   }
+                  if (sock_type == SOCK_T_DGRAM) {
+                     if (!ssl_dtls_connect(ssl, fd)) {
+                        set_ssl_connection_errortext(ssl, -1);
+                        sock_close(fd);
+                        SSL_free(ssl);
+                        SSL_CTX_free(ctx);
+                        fail;
+                        }
+                     }
+                  else {
                   SSL_set_fd(ssl, fd);
                   err = SSL_connect(ssl);
 
@@ -1671,6 +1693,7 @@ Deliberate Syntax Error
                     SSL_free(ssl);
                     SSL_CTX_free(ctx);
                     fail;
+                  }
                   }
                }
 #endif                                  /* HAVE_LIBSSL */
@@ -1683,8 +1706,18 @@ Deliberate Syntax Error
              */
             if (status & Fs_Listen)
                status |= Fs_Socket | Fs_Listen;
-            else if (sock_type == SOCK_T_DGRAM)
-               status |= Fs_Socket | Fs_Write;
+            else if (sock_type == SOCK_T_DGRAM) {
+               /*
+                * Plain UDP is write-oriented (use receive).  Encrypted
+                * UDP (DTLS) speaks through SSL_read/SSL_write like TLS.
+                */
+#if HAVE_LIBSSL
+               if (status & Fs_Encrypt)
+                  status |= Fs_Socket | Fs_Read | Fs_Write;
+               else
+#endif                                  /* HAVE_LIBSSL */
+                  status |= Fs_Socket | Fs_Write;
+               }
             else
                status |= Fs_Socket | Fs_Read | Fs_Write;
 

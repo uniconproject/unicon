@@ -1180,6 +1180,9 @@ SSL_CTX* create_ssl_context(dptr attr, int n, int type);
 int is_ssl_attr(char *name);
 int set_ssl_connection_errortext(SSL *ssl, int err);
 void set_ssl_context_errortext(int err, char* errtext);
+int ssl_dtls_accept(SSL *ssl, int fd);
+int ssl_dtls_connect(SSL *ssl, int fd);
+int sock_udp_connect_saved(int fd);
 
 struct CryptoFile *crypto_open_material(dptr target, int israw, dptr attr,
                                         int nattr, int *rc);

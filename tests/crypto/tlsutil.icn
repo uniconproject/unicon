@@ -59,7 +59,8 @@ procedure tls_start(opt, rounds)
    tls_server_ready := &null
    thread tls_serve(opt, rounds)
    tls_wait()
-   delay(25)
+   # UDP/DTLS: ready is signaled before bind finishes; wait for listen.
+   delay(300)
 end
 
 #

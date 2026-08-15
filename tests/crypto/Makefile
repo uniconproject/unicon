@@ -8,7 +8,7 @@ include ../Makedefs
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 SKIP=
 IGNORE=
-TLS_TESTS = tlsplain tlsverify tlsauth tlsproto tlscipher
+TLS_TESTS = tlsplain tlsverify tlsauth tlsproto tlscipher dtlsecho
 
 # Skip the suite when the runtime was built without OpenSSL.
 UCFEAT := $(shell $(UC) -features 2>/dev/null)

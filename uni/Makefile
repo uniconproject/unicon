@@ -26,6 +26,7 @@ nographics: xml
 	cd unidep; $(MAKE)
 	cd util; $(MAKE)
 	cd unidoc; $(MAKE)
+	cd uscribe; $(MAKE)
 	cd uflex; $(MAKE)
 	cd ulsp; $(MAKE)
 
@@ -56,6 +57,7 @@ clean Clean Pure:
 	cd unidoc && $(MAKE) clean
 	cd unidoc/parlett && $(MAKE) clean
 	cd unidoc/parlett/docs && $(MAKE) clean
+	cd uscribe && $(MAKE) clean
 	cd ide && $(MAKE) clean
 	cd 3d && $(MAKE) clean
 	cd ulsp && $(MAKE) clean

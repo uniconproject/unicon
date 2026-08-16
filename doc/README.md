@@ -12,6 +12,7 @@ This page indexes manuals, technical reports, and HTML shipped under `doc/` in t
   - [Unicode reference data (for UTF-8 / UTR work)](#unicode-reference-data-for-utf-8-utr-work)
 - [Other documentation](#other-documentation)
   - [General Unicon pages](#general-unicon-pages)
+  - [uscribe user guide](#uscribe-user-guide)
   - [Icon 9.3 legacy](#icon-93-legacy)
   - [UDB — Unicon debugger](#udb-unicon-debugger)
 - [Building PDFs from LaTeX](#building-pdfs-from-latex)
@@ -87,6 +88,26 @@ Pages that are not a single numbered UTR (guides, indexes, examples).
 | [simple.html](unicon/simple.html), [simp.html](unicon/simp.html) | *A Simple Example — Using the CGI Icon Library* |
 
 *Location in tree: `doc/unicon/`.*
+
+### uscribe user guide
+
+HTML user guide for *uscribe* (Unicon’s book documentation generator).
+On GitHub Pages the built guide is at
+[doc/uscribe/out/](uscribe/out/index.html)
+(e.g. `https://…/unicon/doc/uscribe/out/`). Sources are RST; build
+locally with:
+
+```sh
+make -C doc/uscribe
+# open doc/uscribe/out/index.html
+```
+
+- [Built HTML (Pages)](uscribe/out/index.html) — generated user guide
+- [PDF](uscribe/out/uscribe-userguide.pdf) — same guide as a single PDF
+- [README](uscribe/README.md) — build notes
+- [`*.rst` sources](uscribe/) — manual chapters
+
+*Location in tree: `doc/uscribe/`. Tool sources: `uni/uscribe/`.*
 
 ### Icon 9.3 legacy
 

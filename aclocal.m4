@@ -316,10 +316,25 @@ AC_DEFUN([CHECK_OPENSSL],
 [
 do_arg_with([ssl])
 if test "x$with_ssl" != "xno"; then
-  do_lib_check([crypto], [${ssl_HOME}], [openssl/bio.h], [BIO_read], [HAVE_LIBCRYPTO], [C])
-  do_lib_check([ssl], [${ssl_HOME}], [openssl/ssl.h], [SSL_library_init], [HAVE_LIBSSL], [C])
+  # Homebrew keeps OpenSSL under a keg-only prefix (not on default -I/-L).
+  if test "x$ssl_HOME" = "x"; then
+    if test -f /opt/homebrew/opt/openssl/include/openssl/ssl.h; then
+      ssl_HOME=/opt/homebrew/opt/openssl
+    elif test -f /usr/local/opt/openssl/include/openssl/ssl.h; then
+      ssl_HOME=/usr/local/opt/openssl
+    elif test -f /usr/local/include/openssl/ssl.h; then
+      ssl_HOME=/usr/local
+    fi
+  fi
+  # MinGW --static builds need Windows system libs that OpenSSL references.
+  ssl_extralibs=
+  if test "x$unicon_os" = "xwindows"; then
+    ssl_extralibs="-lcrypt32 -lws2_32 -lgdi32 -ladvapi32 -luser32"
+  fi
+  do_lib_check([crypto], [${ssl_HOME}], [openssl/bio.h], [BIO_read], [HAVE_LIBCRYPTO], [C], [${ssl_extralibs}])
+  do_lib_check([ssl], [${ssl_HOME}], [openssl/ssl.h], [SSL_library_init], [HAVE_LIBSSL], [C], [-lcrypto ${ssl_extralibs}])
   if test "x$cv_libssl" != "xyes" ; then
-    do_lib_check([ssl], [${ssl_HOME}], [openssl/ssl.h], [OPENSSL_init_ssl], [HAVE_LIBSSL], [C])
+    do_lib_check([ssl], [${ssl_HOME}], [openssl/ssl.h], [OPENSSL_init_ssl], [HAVE_LIBSSL], [C], [-lcrypto ${ssl_extralibs}])
   fi
 fi
 #        AC_CHECK_HEADER(openssl/bio.h, [openssl_cv_bio_h=yes], [openssl_cv_bio_h=no])
@@ -339,7 +354,12 @@ if test "x$with_libssh" != "xno"; then
       libssh_HOME=/opt/homebrew
     fi
   fi
-  do_lib_check([ssh], [${libssh_HOME}], [libssh/libssh.h], [ssh_new], [HAVE_LIBSSH], [C])
+  # libssh depends on OpenSSL; MinGW --static also needs Windows system libs.
+  ssh_extralibs=
+  if test "x$unicon_os" = "xwindows"; then
+    ssh_extralibs="-lssl -lcrypto -lcrypt32 -lws2_32 -lgdi32"
+  fi
+  do_lib_check([ssh], [${libssh_HOME}], [libssh/libssh.h], [ssh_new], [HAVE_LIBSSH], [C], [${ssh_extralibs}])
 fi
 ])
 

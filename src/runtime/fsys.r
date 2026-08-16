@@ -301,9 +301,10 @@ function{0,1} open(fname, spec)
 
 #if HAVE_LIBSSH
    /*
-    * open(s, attrs...) where s is an SSH session or channel file: open
-    * a new channel on the same underlying session, reusing the
-    * transport and authentication (no new handshake).
+    * open(s, "hc"/"hs", attrs...) where s is an SSH session or channel
+    * file: open a new channel or SFTP handle on the same session
+    * (no new handshake).  The second argument is a mode string, as
+    * for every other open(); 'c' is cmd/channel and 's' is SFTP.
     */
    if is:file(fname) then {
       body {
@@ -311,9 +312,9 @@ function{0,1} open(fname, spec)
          struct SSHfile *chansshf;
          struct b_file *cfl;
          int chanstatus;
-         int want_sftp = 0;
+         int want_sftp = 0, want_cmd = 0;
          int isdir = 0;
-         word ai;
+         word ai, k;
 
          if (!(BlkD(fname,File)->status & Fs_SSH))
             runerr(103, fname);
@@ -321,26 +322,45 @@ function{0,1} open(fname, spec)
             runerr(103, fname);
 
          /*
-          * An "sftp" selector (in spec or any trailing attribute)
-          * routes to the SFTP subsystem instead of a shell/exec
-          * channel.  Read/write intent comes from spec's mode chars.
+          * spec is the mode string ("hc", "hs", "hsw", ...).  Trailing
+          * name=value arguments are attributes.  A trailing mode-only
+          * token (no '=') may still carry r/w/a/b, e.g. open(s,"hs",
+          * "path=...", "w").
           */
-         /*
-          * Mode intent and the "sftp" selector may appear in spec or in
-          * any trailing attribute (open(s,"sftp","path=..","w")).  Scan
-          * every mode-only token (no '='); leave key=value attributes to
-          * create_sftp_file / create_ssh_channel.
-          */
+         if (!cnv:tmp_string(spec, filename))
+            runerr(103, spec);
          chanstatus = Fs_SSH;
-         for (ai = -1; ai < n; ai++) {
-            word k;
-            dptr dp = (ai < 0) ? &spec : &attr[ai];
-            if (is:null(*dp) || !cnv:tmp_string(*dp, filename))
-               continue;
-            if (StrLen(filename) == 4 && strncmp(StrLoc(filename), "sftp", 4) == 0) {
-               want_sftp = 1;
-               continue;
+         for (k = 0; k < StrLen(filename); k++) {
+            switch (StrLoc(filename)[k]) {
+               case 'h': case 'H':
+                  break;                /* already an SSH file */
+               case 'c': case 'C':
+                  want_cmd = 1;
+                  break;
+               case 's': case 'S':
+                  want_sftp = 1;
+                  break;
+               case 'r': case 'R':
+                  chanstatus |= Fs_Read;
+                  break;
+               case 'w': case 'W':
+                  chanstatus |= Fs_Write;
+                  break;
+               case 'a': case 'A':
+                  chanstatus |= Fs_Write | Fs_Append;
+                  break;
+               case 'b': case 'B':
+                  chanstatus |= Fs_Read | Fs_Write;
+                  break;
+               case '-':
+                  break;                /* verify flag is session-open only */
+               default:
+                  runerr(209, spec);
                }
+            }
+         for (ai = 0; ai < n; ai++) {
+            if (is:null(attr[ai]) || !cnv:tmp_string(attr[ai], filename))
+               continue;
             for (k = 0; k < StrLen(filename); k++)
                if (StrLoc(filename)[k] == '=')
                   break;
@@ -355,6 +375,14 @@ function{0,1} open(fname, spec)
                   }
                }
             }
+         if (want_cmd && want_sftp) {
+            set_errortext_with_val(1321, "c");
+            fail;
+            }
+         if (!want_cmd && !want_sftp) {
+            set_errortext(1321);
+            fail;
+            }
          if (!(chanstatus & (Fs_Read|Fs_Write)))
             chanstatus |= Fs_Read;      /* default to reading */
 
@@ -363,7 +391,7 @@ function{0,1} open(fname, spec)
             MUTEX_LOCKID_CONTROLLED(BlkD(fname,File)->mutexid);
 #endif                                  /* Concurrent */
             chansshf = create_sftp_file(BlkD(fname,File)->fd.sshf,
-                                        attr, n, chanstatus, &isdir);
+                                        attr, n, chanstatus, &isdir, 0);
 #ifdef Concurrent
             MUTEX_UNLOCKID(BlkD(fname,File)->mutexid);
 #endif                                  /* Concurrent */
@@ -374,9 +402,8 @@ function{0,1} open(fname, spec)
             else {
                /*
                 * SFTP regular files are plain streams, not sockets:
-                * reads()/writes() transfer raw bytes (design §9.1).
+                * reads()/writes() transfer raw bytes.
                 */
-               /* chanstatus already has Fs_SSH | Fs_Read/Write */
                }
             }
          else {
@@ -384,7 +411,7 @@ function{0,1} open(fname, spec)
             MUTEX_LOCKID_CONTROLLED(BlkD(fname,File)->mutexid);
 #endif                                  /* Concurrent */
             chansshf = create_ssh_channel(BlkD(fname,File)->fd.sshf,
-                                          &spec, attr, n);
+                                          attr, n);
 #ifdef Concurrent
             MUTEX_UNLOCKID(BlkD(fname,File)->mutexid);
 #endif                                  /* Concurrent */
@@ -449,6 +476,9 @@ function{0,1} open(fname, spec)
       int is_shortreq = 0;
       int do_verify = 1;
 #endif                                  /* Messaging */
+#if HAVE_LIBSSH
+      int ssh_cmd = 0, ssh_sftp = 0;
+#endif                                  /* HAVE_LIBSSH */
 
 /*
  * The following code is operating-system dependent [@fsys.02].  Make
@@ -543,6 +573,17 @@ Deliberate Syntax Error
                continue;
             case 'c':
             case 'C':
+#if HAVE_LIBSSH
+               /*
+                * After 'h', 'c' is SSH cmd/channel (like 'u' after 'n'
+                * for UDP).  Without a preceding 'h' it remains
+                * create+write.
+                */
+               if (status & Fs_SSH) {
+                  ssh_cmd = 1;
+                  continue;
+                  }
+#endif                                  /* HAVE_LIBSSH */
                status |= Fs_Create|Fs_Write;
                continue;
             case 'r':
@@ -568,6 +609,16 @@ Deliberate Syntax Error
                   continue;
             case 's':
             case 'S':
+#if HAVE_LIBSSH
+               /*
+                * After 'h', 's' is SFTP.  After 'm' it remains
+                * Messaging short-request.  Otherwise ignored.
+                */
+               if (status & Fs_SSH) {
+                  ssh_sftp = 1;
+                  continue;
+                  }
+#endif                                  /* HAVE_LIBSSH */
 #ifdef Messaging
                if (status & Fs_Messaging) {
                   is_shortreq = 1;
@@ -1075,16 +1126,61 @@ Deliberate Syntax Error
 #if HAVE_LIBSSH
          if (status & Fs_SSH) {
             struct SSHfile *sshf;
+            int isdir = 0;
             /*
              * With a channel, Fs_Socket routes stream I/O through the
              * existing socket dispatch points.  channel=no leaves a
              * transport-only session (Fs_SSH alone) for later
-             * open(s, ...) / SFTP.
+             * open(s, "hc"/"hs", ...).  Mode "hs" opens SFTP on the
+             * new session in one step (the returned handle owns it).
              */
-            sshf = create_ssh_session(fnamestr, attr, n, do_verify);
+            if (ssh_cmd && ssh_sftp) {
+               set_errortext_with_val(1321, "c");
+               fail;
+               }
+            sshf = create_ssh_session(fnamestr, attr, n, do_verify,
+                                      ssh_cmd, ssh_sftp);
             if (sshf == NULL)
                fail;                    /* &errortext already set */
-            if (sshf->chan != NULL)
+            if (ssh_sftp) {
+               struct SSHfile *sftpf;
+               word ai, k;
+               /*
+                * Access can live in spec ("hsw") or in a trailing
+                * mode-only token: open(host, "hs", "path=...", "w").
+                */
+               for (ai = 0; ai < n; ai++) {
+                  if (is:null(attr[ai]) || !cnv:tmp_string(attr[ai], filename))
+                     continue;
+                  for (k = 0; k < StrLen(filename); k++)
+                     if (StrLoc(filename)[k] == '=')
+                        break;
+                  if (k < StrLen(filename))
+                     continue;
+                  for (k = 0; k < StrLen(filename); k++) {
+                     switch (StrLoc(filename)[k]) {
+                        case 'r': case 'R': status |= Fs_Read; break;
+                        case 'w': case 'W': status |= Fs_Write; break;
+                        case 'a': case 'A': status |= Fs_Write|Fs_Append; break;
+                        case 'b': case 'B': status |= Fs_Read|Fs_Write; break;
+                        }
+                     }
+                  }
+               sftpf = create_sftp_file(sshf, attr, n, status, &isdir, 1);
+               if (sftpf == NULL) {
+                  ssh_close_file(sshf);
+                  fail;
+                  }
+               sshf = sftpf;
+               if (isdir)
+                  status = Fs_SSH | Fs_Read | Fs_Directory;
+               else {
+                  status = Fs_SSH | (status & (Fs_Read|Fs_Write|Fs_Append));
+                  if (!(status & (Fs_Read|Fs_Write)))
+                     status |= Fs_Read;
+                  }
+               }
+            else if (sshf->chan != NULL)
                status |= Fs_Socket | Fs_Read | Fs_Write;
             StrLen(filename) = strlen(fnamestr);
             StrLoc(filename) = fnamestr;

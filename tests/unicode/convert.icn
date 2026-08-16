@@ -1,6 +1,9 @@
 # unicode(), uchar(), and uord(); char()/ord() stay byte-oriented.
+# string() is a conversion, not a view switch: it keeps the tag.
 
 procedure main()
+   local s
+
    write(*unicode("hello"))
    write(*unicode("café"))
    write(unicode("café")[4])
@@ -18,4 +21,8 @@ procedure main()
       if x := uord(badinput) then write("FAIL: uord accepted ", image(badinput))
       else write(&errornumber = 205)
       }
+
+   s := "café"
+   write(*string(s) = *s)
+   write(*string(s, s) = *(s || s))
 end

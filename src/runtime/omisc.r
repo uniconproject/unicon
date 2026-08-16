@@ -67,7 +67,7 @@ operator{1} * size(x)
    type_case x of {
       string: inline {
          /*
-          * Uniconde Phase 0 (design doc, the *size fix): a tagged
+          * Unicon Phase 0 (design doc, the *size fix): a tagged
           * qualifier's size means codepoints, not bytes. The common
           * case (string literal, cp_count cached by the Op_Str
           * promotion trigger) is O(1). Concatenation results don't
@@ -175,7 +175,9 @@ operator{1} * size(x)
 end
 
 
-"unicode(s) - give s Unicode metadata (tag + cached codepoint count) on demand, without waiting for []/* to trigger it. No-op if s is pure ASCII."
+"unicode(s) - treat s as Unicode text: tag the descriptor and cache a"
+" codepoint count if the UTF-8 bytes are non-ASCII. Same bytes, new view."
+" Pure ASCII is left untagged. Already tagged: fill in a missing count."
 
 function{1} unicode(s)
 

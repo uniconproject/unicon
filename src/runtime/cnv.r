@@ -679,7 +679,7 @@ void f(dptr s, dptr d)
          SetStrLen(*d, Blk(bp,Tvsubs)->sslen);
          StrLoc(*d) = StrLoc(v) + Blk(bp,Tvsubs)->sspos - 1;
          /*
-          * Uniconde Phase 0: this is the far more common path for a
+          * Unicon Phase 0: this is the far more common path for a
           * Unicode-aware sect/subsc result than oref.r's own tagging
           * logic ever reaches -- sspos/sslen are already byte-based
           * (matching what tvsubs() is always called with), so this is

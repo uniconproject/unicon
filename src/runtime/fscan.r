@@ -24,7 +24,7 @@ function{0,1+} move(i)
       /*
        * Save old &pos.  Local variable j holds &pos before the move.
        *
-       * Uniconde Phase 0: if &subject is tagged, i/j/&pos mean
+       * Unicon Phase 0: if &subject is tagged, i/j/&pos mean
        * codepoints, not bytes -- the position arithmetic itself
        * (bounds checks, +=) is already unit-agnostic (same principle
        * as cvpos(), design doc §4), so it needs no changes at all.
@@ -107,7 +107,7 @@ function{0,1} pos(i)
       CURTSTATE();
 
       /*
-       * Uniconde Phase 0: pos() never touches actual bytes -- it's
+       * Unicon Phase 0: pos() never touches actual bytes -- it's
        * purely a position comparison, and cvpos() is already
        * unit-agnostic (design doc §4). Only the bound passed to it
        * needs to mean codepoints instead of bytes for a tagged subject.
@@ -149,7 +149,7 @@ function{0,1+} tab(i)
       CURTSTATE();
 
       /*
-       * Uniconde Phase 0: same shape as move() -- uq_total replaces
+       * Unicon Phase 0: same shape as move() -- uq_total replaces
        * StrLen(k_subject) as the bound everywhere (cvpos() is already
        * unit-agnostic), and only the final substring extraction needs
        * a tagged-aware branch to turn positions into byte pointers.

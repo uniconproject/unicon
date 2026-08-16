@@ -150,7 +150,7 @@ function{*} find(s1,s2,i,j)
       s1_len = StrLen(s1);
 
       /*
-       * Uniconde: same reasoning as match() above -- i/j mean
+       * Unicon: same reasoning as match() above -- i/j mean
        * codepoints for a tagged s2, the byte comparison itself doesn't
        * need to change (UTF-8 self-synchronization), only the position
        * bookkeeping does. Unlike match(), find() is a generator, so
@@ -241,7 +241,7 @@ function{0,1} many(c,s,i,j)
       C_integer start_i = cnv_i;
 
       /*
-       * Uniconde Phase 0: str_anal (above) computed cnv_i/cnv_j using
+       * Unicon Phase 0: str_anal (above) computed cnv_i/cnv_j using
        * StrLen(s) -- byte semantics. str_anal is an RTT-native
        * construct (not something in this file to edit directly), so
        * rather than touch it, a tagged s recomputes its own
@@ -321,7 +321,7 @@ function{0,1} match(s1,s2,i,j)
       char *str1, *str2;
 
       /*
-       * Uniconde: i/j mean codepoints, not bytes, for a tagged s2.
+       * Unicon: i/j mean codepoints, not bytes, for a tagged s2.
        * str_anal (above) already computed cnv_i/cnv_j using byte-based
        * StrLen(s2) -- discarded here in favor of recomputing from the
        * original i/j the same way many()/sect() do. The byte-level

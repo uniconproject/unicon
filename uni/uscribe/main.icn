@@ -1,0 +1,1176 @@
+#<p>
+# <tt>uscribe</tt> CLI driver: two-pass book build from a manifest.
+# Pass 1 parses every chapter and collects labels; pass 2 resolves
+# xrefs and renders via <tt>HtmlOutputter</tt> or <tt>LatexOutputter</tt>.
+# Usage: <tt>uscribe</tt> (defaults to <tt>book.manifest</tt> /
+# <tt>book.conf</tt> in the current directory) with optional
+# <tt>--format=html|latex|pdf</tt> and <tt>--targetDir=…</tt>.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
+link io
+link basename
+
+import util
+import json
+import uscribe
+
+global targetDir, bookTitle, bookOutputName, themeName, copyrightNotice, logoHref
+global bookConfig, logoSrc
+
+#<p>
+# Parse CLI options, load the manifest, run the two-pass build, and
+# dispatch to <tt>renderHtml</tt> or <tt>renderLatex</tt>.
+# <[param args command-line argument list]>
+#</p>
+procedure main(args)
+    local manifestPath, mf, parser, registry, labels, cites, chapterPath, doc
+    local docs, format, cliDocClass
+
+    Args(args, set("manifest","title","targetDir","theme","themePath","format",
+                   "copyright","logo","docclass","name","config"),
+         helpMesg)
+
+    manifestPath := Args().getOpt("manifest") | "book.manifest"
+    bookConfig := loadBookConfig(manifestPath)
+    bookTitle    := Args().getOpt("title") | (\bookConfig).get("title") |
+          "Untitled Book"
+    bookOutputName := parseBookOutputName()
+    copyrightNotice := Args().getOpt("copyright") | (\bookConfig).get("copyright")
+    logoSrc := Args().getOpt("logo") | (\bookConfig).getPath("logo")
+    logoHref := &null
+    format       := map(Args().getOptDef("format", "html"), &ucase, &lcase)
+    if not member(set(["html","latex","pdf"]), format) then
+        stop("uscribe: --format must be html, latex, or pdf (got '",
+             format, "')")
+    cliDocClass := Args().getOpt("docclass") | (\bookConfig).get("docclass")
+    if \cliDocClass then {
+        cliDocClass := map(cliDocClass, &ucase, &lcase)
+        if not member(set(["book","report"]), cliDocClass) then
+            stop("uscribe: --docclass must be book or report (got '",
+                 cliDocClass, "')")
+        }
+
+    if format == "html" then
+        targetDir := Args().getOptDef("targetDir", "./htmlBook")
+    else
+        targetDir := Args().getOptDef("targetDir", "./latexBook")
+
+    themeName := Args().getOpt("theme") | (\bookConfig).get("theme") | "basic"
+    if themeName ~== safeThemeName(themeName) then
+        stop("uscribe: invalid --theme '", themeName,
+             "'; use only letters, digits, '_' or '-'")
+    themeName := safeThemeName(themeName)
+
+    registry := DirectiveRegistry()
+    parser   := Parser()
+    parser.setRegistry(registry)
+
+    mf := Manifest()
+    mf.setTitle(bookTitle)
+    mf.loadFromFile(manifestPath) | {
+        if /Args().getOpt("manifest") then {
+            write(&errout, "uscribe: no book.manifest in the current directory")
+            helpMesg()
+            }
+        stop("uscribe: could not read manifest '", manifestPath, "'")
+        }
+
+    # --- Pass 1: parse every chapter, then collect labels ---
+    labels := LabelTable()
+    every chapterPath := !mf.getChapterPaths() do {
+        doc := parser.parseFile(chapterPath) |
+            stop("uscribe: could not read chapter '", chapterPath, "'")
+        if \cliDocClass then
+            doc.setDocClass(cliDocClass)
+        # Preserve report :title: from the field list; book mode still
+        # stamps the CLI --title onto each chapter Document.
+        if not doc.isReport() then
+            doc.setTitle(bookTitle)
+        else if /doc.getTitle() then
+            doc.setTitle(bookTitle)
+        mf.setDocument(chapterPath, doc)
+        labels.collect(doc)
+        }
+
+    docs := mf.getOrderedDocuments()
+
+    cites := CitationTable()
+    every doc := !docs do
+        cites.collect(doc)
+    cites.loadAll()
+
+    ensureDir(targetDir)
+    copyDocumentImages(docs)
+
+    if format == "html" then
+        renderHtml(docs, labels, cites)
+    else if format == "pdf" then
+        renderLatex(docs, labels, 1, cites)
+    else
+        renderLatex(docs, labels, &null, cites)
+end
+
+#<p>
+# HTML builder: install themes, write search/index pages, then one
+# <tt>.html</tt> per chapter with resolved xrefs.
+# <[param docs ordered list of Document nodes]>
+# <[param labels LabelTable after collect()]>
+# <[param cites CitationTable after collect/loadAll]>
+#</p>
+procedure renderHtml(docs, labels, cites)
+    local themePath, themeDir, nav, indexDocs, doc, outp, outPath, f, i
+    local logoBase, bookPdf
+
+    themePath := Args().getOpt("themePath") | (\bookConfig).getPath("themepath")
+    themeDir := resolveThemeDir(themeName, themePath) |
+        stop("uscribe: theme '", themeName, "' not found",
+             " (tried --themePath, ./themes/, and built-in themes/)")
+
+    ensureDir(targetDir || "/_static")
+    installThemeAssets(dirname(themeDir), themeName, targetDir || "/_static")
+    write("theme: ", themeName, " (default; all themes available in UI)")
+
+    if \logoSrc then {
+        logoBase := basename(logoSrc)
+        copyFile(logoSrc, targetDir || "/_static/" || logoBase) |
+            stop("uscribe: could not copy logo '", logoSrc, "'")
+        logoHref := "_static/" || logoBase
+        write("logo: ", logoHref)
+        }
+
+    nav := buildNavEntries(docs)
+    indexDocs := []
+    every doc := !docs do
+        put(indexDocs, [
+            chapterOutputName(doc.getSrcName()),
+            chapterNavTitle(doc),
+            collectSearchText(doc)
+            ])
+    bookPdf := &null
+    if not allDocsAreReports(docs) then
+        bookPdf := bookOutputName || ".pdf"
+
+    writeSearchIndex(targetDir, indexDocs)
+    writeSearchPage(targetDir, bookTitle, nav, bookPdf)
+    writeIndexPage(targetDir, bookTitle, nav, docs)
+    ensureDir(targetDir || "/_sources")
+
+    every i := 1 to *docs do {
+        doc := docs[i]
+        labels.resolve(doc)
+        outPath := targetDir || "/" || chapterOutputName(doc.getSrcName())
+        f := open(outPath, "w") | stop("uscribe: could not write '", outPath, "'")
+        outp := HtmlOutputter()
+        outp.setOutFile(f)
+        outp.setLabelTable(labels)
+        outp.setCitationTable(cites)
+        outp.setNav(bookTitle, nav, i, themeName)
+        outp.setCopyright(copyrightNotice)
+        outp.setLogo(logoHref)
+        outp.setOutDir(targetDir)
+        outp.setBookPdf(bookPdf)
+        doc.accept(outp)
+        close(f)
+        write("wrote ", outPath)
+        copyFile(doc.getSrcName(),
+                 targetDir || "/_sources/" || basename(doc.getSrcName()) ||
+                 ".txt") |
+            write(&errout, "warning: could not copy page source '",
+                  doc.getSrcName(), "'")
+        }
+    return
+end
+
+#<p>
+# LaTeX / PDF builder. Book manifests write one
+# <tt>--name</tt>.tex (default <tt>book.tex</tt>) and optional PDF.
+# When every chapter is a report,
+# emit one <tt>.tex</tt> / <tt>.pdf</tt> per report (UTR-style).
+# <[param docs ordered list of Document nodes]>
+# <[param labels LabelTable after collect()]>
+# <[param wantPdf non-null to run pdflatex/xelatex/lualatex]>
+# <[param cites CitationTable after collect/loadAll]>
+#</p>
+procedure renderLatex(docs, labels, wantPdf, cites)
+    if allDocsAreReports(docs) then {
+        renderReportLatex(docs, labels, wantPdf, cites)
+        return
+        }
+    renderBookLatex(docs, labels, wantPdf, cites)
+    return
+end
+
+#<p>
+# Succeed when every document is report-mode.
+# <[param docs list of Document nodes]>
+# <[fails if empty or any non-report]>
+#</p>
+procedure allDocsAreReports(docs)
+    local doc
+    if *docs = 0 then fail
+    every doc := !docs do
+        if not doc.isReport() then
+            fail
+    return
+end
+
+#<p>
+# Combined book LaTeX / PDF (non-report manifests).
+# <[param docs ordered Documents]>
+# <[param labels LabelTable]>
+# <[param wantPdf non-null to run a TeX engine]>
+# <[param cites CitationTable]>
+#</p>
+procedure renderBookLatex(docs, labels, wantPdf, cites)
+    local outPath, f, outp, doc, engine, rc, logoFile
+
+    outPath := targetDir || "/" || bookOutputName || ".tex"
+    f := open(outPath, "w") | stop("uscribe: could not write '", outPath, "'")
+    outp := LatexOutputter()
+    outp.setOutFile(f)
+    outp.setLabelTable(labels)
+    outp.setCitationTable(cites)
+    outp.setBookTitle(bookTitle)
+    outp.setDocClass("book")
+    if logoFile := copyLogoForLatex() then
+        outp.setLogo(logoFile)
+    outp.writePreamble()
+    every doc := !docs do {
+        labels.resolve(doc)
+        doc.accept(outp)
+        }
+    outp.writeEpilogue()
+    close(f)
+    write("wrote ", outPath)
+
+    if /wantPdf then
+        return
+
+    engine := findPdfEngine() |
+        stop("uscribe: --format=pdf needs pdflatex, xelatex, or lualatex",
+             " in PATH (wrote ", outPath, " only)")
+    write("running ", engine, " (pass 1)…")
+    rc := runLatex(engine, targetDir, bookOutputName)
+    write("running ", engine, " (pass 2, for TOC/xrefs)…")
+    rc := runLatex(engine, targetDir, bookOutputName)
+    if rc ~= 0 then
+        stop("uscribe: ", engine, " failed (exit ", rc,
+             "); see ", targetDir, "/", bookOutputName, ".log")
+    write("wrote ", targetDir, "/", bookOutputName, ".pdf")
+    return
+end
+
+#<p>
+# One LaTeX / PDF file per report document. Basename matches the
+# HTML stem (<tt>ex-report.tex</tt> alongside <tt>ex-report.html</tt>).
+# <[param docs ordered report Documents]>
+# <[param labels LabelTable]>
+# <[param wantPdf non-null to run a TeX engine]>
+# <[param cites CitationTable]>
+#</p>
+procedure renderReportLatex(docs, labels, wantPdf, cites)
+    local doc, base, outPath, f, outp, engine, rc, logoFile
+
+    logoFile := copyLogoForLatex()
+    every doc := !docs do {
+        labels.resolve(doc)
+        base := chapterTexBase(doc.getSrcName())
+        outPath := targetDir || "/" || base || ".tex"
+        f := open(outPath, "w") |
+            stop("uscribe: could not write '", outPath, "'")
+        outp := LatexOutputter()
+        outp.setOutFile(f)
+        outp.setLabelTable(labels)
+        outp.setCitationTable(cites)
+        outp.setBookTitle(\doc.getTitle() | bookTitle)
+        outp.setDocClass("report")
+        outp.setReportDoc(doc)
+        if \logoFile then
+            outp.setLogo(logoFile)
+        outp.writePreamble()
+        doc.accept(outp)
+        outp.writeEpilogue()
+        close(f)
+        write("wrote ", outPath)
+
+        if \wantPdf then {
+            /engine := findPdfEngine() |
+                stop("uscribe: --format=pdf needs pdflatex, xelatex, or lualatex",
+                     " in PATH")
+            write("running ", engine, " on ", base, " (pass 1)…")
+            rc := runLatex(engine, targetDir, base)
+            write("running ", engine, " on ", base, " (pass 2)…")
+            rc := runLatex(engine, targetDir, base)
+            if rc ~= 0 then
+                write(&errout, "warning: ", engine, " failed for ", base,
+                      " (exit ", rc, "); see ", targetDir, "/", base,
+                      ".log — continuing")
+            else
+                write("wrote ", targetDir, "/", base, ".pdf")
+            }
+        }
+    return
+end
+
+#<p>
+# TeX basename for a chapter source (HTML stem without <tt>.html</tt>).
+# <[param srcPath chapter source path]>
+# <[returns basename without extension]>
+#</p>
+procedure chapterTexBase(srcPath)
+    local base
+    base := chapterOutputName(srcPath)
+    if *base >= 5 & base[*base-4:0] == ".html" then
+        base := base[1:*base-4]
+    return base
+end
+
+#<p>
+# Find the first available TeX engine on <tt>PATH</tt> via IPL
+# <tt>pathfind()</tt>.
+# <[returns "pdflatex", "xelatex", or "lualatex"]>
+# <[fails if none are found]>
+#</p>
+procedure findPdfEngine()
+    local cmd
+    every cmd := !["pdflatex", "xelatex", "lualatex"] do
+        if pathfind(cmd) then
+            return cmd
+    fail
+end
+
+#<p>
+# Run <tt>engine</tt> on <tt>basename.tex</tt> inside <tt>dir</tt>
+# with nonstopmode / halt-on-error. Uses <tt>chdir()</tt> and the
+# argv form of <tt>system()</tt> (no shell).
+# <[param engine TeX binary name]>
+# <[param dir working directory]>
+# <[param basename tex file basename without .tex]>
+# <[returns system() exit status]>
+#</p>
+procedure runLatex(engine, dir, basename)
+    local cwd, rc, nullf
+    cwd := chdir()
+    chdir(dir) | stop("uscribe: chdir(", dir, ") failed")
+    nullf := open("/dev/null", "w") | open("NUL", "w")
+    rc := system([engine, "-interaction=nonstopmode", "-halt-on-error",
+                  basename || ".tex"], , nullf, nullf)
+    close(\nullf)
+    chdir(cwd) | stop("uscribe: chdir back to ", cwd, " failed")
+    return rc
+end
+
+#<p>
+# Locate <tt>themes/NAME</tt>. Order: explicit <tt>--themePath</tt>,
+# <tt>./themes/NAME</tt>, then <tt>themes/</tt> next to this source
+# tree (<tt>../themes</tt> or <tt>./themes</tt>).
+# <[param name theme subdirectory name]>
+# <[param themePath optional root from --themePath]>
+# <[returns path to a valid theme directory]>
+# <[fails if no candidate looks valid]>
+#</p>
+procedure resolveThemeDir(name, themePath)
+    local cand, root
+    if \themePath then {
+        cand := themePath || "/" || name
+        if themeLooksValid(cand) then return cand
+        }
+    every root := !["./themes", "../themes", "themes"] do {
+        cand := root || "/" || name
+        if themeLooksValid(cand) then return cand
+        }
+    fail
+end
+
+#<p>
+# Succeed if <tt>dir/static/book.css</tt> is readable.
+# <[param dir candidate theme directory]>
+# <[fails if book.css cannot be opened]>
+#</p>
+procedure themeLooksValid(dir)
+    local f
+    f := open(dir || "/static/book.css", "r") | fail
+    close(f)
+    return
+end
+
+#<p>
+# Install shared JS/CSS plus every built-in theme as
+# <tt>theme-NAME.css</tt> so the browser switcher can change skins live.
+# <tt>defaultTheme</tt> is still used as the initial/fallback choice
+# (also copied to <tt>book.css</tt>).
+# <[param themesRoot parent of _shared and theme dirs]>
+# <[param defaultTheme name used for book.css alias]>
+# <[param destStatic destination _static directory]>
+#</p>
+procedure installThemeAssets(themesRoot, defaultTheme, destStatic)
+    local shared, name, src, f
+    ensureDir(destStatic)
+    shared := themesRoot || "/_shared"
+    f := open(shared || "/search.js", "r")
+    if \f then {
+        close(f)
+        copyDirFiles(shared, destStatic)
+        }
+    every name := !["basic", "classic", "dark"] do {
+        src := themesRoot || "/" || name || "/static/book.css"
+        f := open(src, "r")
+        if \f then {
+            close(f)
+            copyFile(src, destStatic || "/theme-" || name || ".css") |
+                write(&errout, "uscribe: could not copy theme ", name)
+            }
+        }
+    # Convenience alias for tools that still look for book.css
+    copyFile(destStatic || "/theme-" || defaultTheme || ".css",
+             destStatic || "/book.css") |
+        write(&errout, "uscribe: could not install book.css alias")
+    return
+end
+
+#<p>
+# Copy every <tt>.. image::</tt> asset referenced by <tt>docs</tt> into
+# <tt>targetDir</tt>, preserving the URI's relative path. Looks next to
+# each chapter source, then under the process cwd. Skips
+# <tt>http:</tt>/<tt>https:</tt>/<tt>data:</tt> URIs.
+# <[param docs ordered list of Document nodes]>
+#</p>
+procedure copyDocumentImages(docs)
+    local doc
+    every doc := !docs do
+        walkCopyImages(doc.getChildren(), dirname(doc.getSrcName()))
+    return
+end
+
+#<p>
+# Recursively find <tt>Image</tt> nodes and copy their local files.
+# <[param nodeList a list of Node]>
+# <[param srcDir directory of the containing chapter source]>
+#</p>
+procedure walkCopyImages(nodeList, srcDir)
+    local n, kids
+    every n := !nodeList do {
+        if n.nodeType() == "Image" then
+            copyImageAsset(n, srcDir)
+        else if kids := tryGetChildren(n) then
+            walkCopyImages(kids, srcDir)
+        }
+    return
+end
+
+#<p>
+# Copy one image node into <tt>targetDir</tt> when its URI names a
+# local file. Relative URIs are resolved next to the chapter, then
+# under cwd, and written under <tt>targetDir</tt> with the same
+# relative path. Absolute paths are copied to
+# <tt>targetDir/&lt;basename&gt;</tt> and the node's URI is rewritten
+# to that basename so HTML/LaTeX hrefs stay in-tree.
+# <[param img an ImageNode]>
+# <[param srcDir chapter source directory for relative lookup]>
+#</p>
+procedure copyImageAsset(img, srcDir)
+    local uri, src, dst, parent, cand, fin, absolute
+    uri := trim(\img.getURI() | "", ' ', 0)
+    if *uri = 0 then return
+    # Remote / embedded: leave the URI as written in the output.
+    if uri ? (match("http:") | match("https:") | match("data:")) then
+        return
+
+    # Absolute POSIX path, or Windows drive path (C:...).
+    if uri[1] == "/" then
+        absolute := 1
+    else if *uri >= 3 & any(&letters, uri[1]) & uri[2] == ":" then
+        absolute := 1
+
+    if \absolute then
+        src := uri
+    else {
+        if srcDir ~== "." then {
+            cand := srcDir || "/" || uri
+            if fin := open(cand) then {
+                close(fin)
+                src := cand
+                }
+            }
+        if /src then {
+            if fin := open(uri) then {
+                close(fin)
+                src := uri
+                }
+            }
+        }
+    if /src | not (fin := open(src)) then {
+        write(&errout, "warning: image not found: ", uri)
+        return
+        }
+    close(fin)
+
+    if \absolute then {
+        dst := targetDir || "/" || basename(uri)
+        img.setURI(basename(uri))
+        uri := basename(uri)
+        }
+    else
+        dst := targetDir || "/" || uri
+    parent := dirname(dst)
+    if parent ~== "." then
+        ensureDir(parent)
+
+    # pdflatex cannot include GIF; convert to PNG when convert(1) exists.
+    if *uri >= 4 & map(uri[*uri-3:0], &ucase, &lcase) == ".gif" then {
+        if convertGifToPng(src, dst, img, uri) then
+            return
+        }
+
+    copyFile(src, dst) |
+        write(&errout, "warning: could not copy image '", src, "' to '",
+              dst, "'")
+    return
+end
+
+#<p>
+# Convert a GIF source to PNG under <tt>targetDir</tt> and rewrite the
+# image URI. Uses ImageMagick <tt>convert</tt> when available.
+# <[param src resolved GIF filesystem path]>
+# <[param dstGif intended GIF destination path (used to derive PNG)]>
+# <[param img ImageNode to update]>
+# <[param uri relative or basename URI currently on the node]>
+# <[fails if convert is missing or the conversion fails]>
+#</p>
+procedure convertGifToPng(src, dstGif, img, uri)
+    local dstPng, uriPng, rc, nullf
+    if not pathfind("convert") then fail
+    if *uri >= 4 then
+        uriPng := uri[1:*uri-3] || ".png"
+    else
+        fail
+    dstPng := dstGif[1:*dstGif-3] || ".png"
+    nullf := open("/dev/null", "w") | open("NUL", "w")
+    rc := system(["convert", src, dstPng], , nullf, nullf)
+    close(\nullf)
+    if rc ~= 0 then {
+        write(&errout, "warning: convert failed for GIF '", src, "'")
+        fail
+        }
+    img.setURI(uriPng)
+    write("converted GIF → PNG: ", uriPng)
+    return
+end
+
+#<p>
+# Copy one file with <tt>reads</tt>/<tt>writes</tt> (no shell).
+# <[param src source path]>
+# <[param dst destination path]>
+# <[fails if open/read/write fails]>
+#</p>
+procedure copyFile(src, dst)
+    local fin, fout, chunk
+    fin := open(src) | fail
+    fout := open(dst, "w") | {
+        close(fin)
+        fail
+        }
+    while chunk := reads(fin, 8192) do
+        writes(fout, chunk)
+    close(fin)
+    close(fout)
+    return
+end
+
+#<p>
+# Copy every non-<tt>.</tt>/<tt>..</tt> entry from <tt>srcDir</tt> into
+# <tt>destDir</tt> (flat; subdirectories are skipped on copy failure).
+# <[param srcDir source directory]>
+# <[param destDir destination directory]>
+#</p>
+procedure copyDirFiles(srcDir, destDir)
+    local d, name
+    d := open(srcDir) | fail
+    while name := read(d) do {
+        if name == "." | name == ".." then next
+        copyFile(srcDir || "/" || name, destDir || "/" || name) | &null
+        }
+    close(d)
+    return
+end
+
+#<p>
+# Parent directory of a path (POSIX <tt>/</tt> separators), via IPL
+# <tt>tail()</tt>. Bare names yield <tt>"."</tt>.
+# <[param path file or directory path]>
+# <[returns parent path, or "." if none]>
+#</p>
+procedure dirname(path)
+    local parts
+    parts := tail(path)
+    if /parts[1] | (*parts[1] = 0) then
+        return "."
+    return parts[1]
+end
+
+#<p>
+# Build sidebar/nav entries from ordered documents.
+# Reports use <tt>UTR N</tt> (plus short title) when a TR number is set.
+# <[param docs list of Document nodes]>
+# <[returns list of [htmlFile, displayTitle] pairs]>
+#</p>
+procedure buildNavEntries(docs)
+    local nav, doc
+    nav := []
+    every doc := !docs do
+        put(nav, [chapterOutputName(doc.getSrcName()), chapterNavTitle(doc)])
+    return nav
+end
+
+#<p>
+# Sidebar label for a chapter.
+# <[param doc a Document node]>
+# <[returns title string]>
+#</p>
+procedure chapterNavTitle(doc)
+    local tr, title
+    if doc.isReport() then {
+        tr := \doc.getTrNumber()
+        title := \doc.getTitle() | chapterDisplayTitle(doc)
+        if \tr then {
+            if \doc.getTitle() then
+                return "UTR " || tr || ": " || title
+            return "UTR " || tr
+            }
+        if \doc.getTitle() then
+            return title
+        }
+    return chapterDisplayTitle(doc)
+end
+
+#<p>
+# Display title for a chapter: report <tt>:title:</tt>, else first
+# <tt>Section</tt> title, else the HTML basename.
+# <[param doc a Document node]>
+# <[returns title string]>
+#</p>
+procedure chapterDisplayTitle(doc)
+    local n
+    if doc.isReport() & \doc.getTitle() then
+        return doc.getTitle()
+    every n := !doc.getChildren() do
+        if n.nodeType() == "Section" then
+            return n.getTitle()
+    return chapterOutputName(doc.getSrcName())
+end
+
+#<p>
+# Join report authors with <tt>", "</tt>.
+# <[param doc a Document node]>
+# <[returns author string (may be empty)]>
+#</p>
+procedure reportAuthorsText(doc)
+    local parts, a, s, first
+    parts := doc.getAuthors()
+    if *parts = 0 then
+        return ""
+    s := ""
+    first := 1
+    every a := !parts do {
+        if \first then
+            first := &null
+        else
+            s ||:= ", "
+        s ||:= a
+        }
+    return s
+end
+
+#<p>
+# Flatten visible text from a <tt>Document</tt> for the client-side
+# search index.
+# <[param doc a Document node]>
+# <[returns space-joined searchable text]>
+#</p>
+procedure collectSearchText(doc)
+    local buf
+    buf := []
+    collectSearchWalk(doc.getChildren(), buf)
+    return joinSearch(buf)
+end
+
+#<p>
+# Recursively append searchable strings from a node list into
+# <tt>buf</tt>.
+# <[param nodeList list of Node]>
+# <[param buf accumulator list mutated in place]>
+#</p>
+procedure collectSearchWalk(nodeList, buf)
+    local n, kids
+    every n := !nodeList do {
+        case n.nodeType() of {
+            "Section": {
+                put(buf, n.getTitle())
+                collectSearchWalk(n.getChildren(), buf)
+                }
+            "Paragraph" | "ListItem" | "Admonition" | "Emphasis" | "Strong" |
+            "TableCell" | "DefinitionItem": {
+                if n.nodeType() == "DefinitionItem" then
+                    put(buf, n.getTerm())
+                collectSearchWalk(n.getChildren(), buf)
+                }
+            "BulletList" | "EnumList" | "Document" | "Table" | "TableRow" |
+            "DefinitionList": {
+                if n.nodeType() == "Table" & \n.getHeaderRow() then
+                    collectSearchWalk(n.getHeaderRow().getChildren(), buf)
+                collectSearchWalk(n.getChildren(), buf)
+                }
+            "Text" | "Literal" | "ScriptText": {
+                put(buf, n.getText())
+                }
+            "Hyperlink": {
+                put(buf, n.getText())
+                }
+            "CodeBlock": {
+                every put(buf, !n.getLines())
+                }
+            default: {
+                }
+            }
+        }
+    return
+end
+
+#<p>
+# Join non-empty pieces with spaces.
+# <[param buf list of strings]>
+# <[returns joined string]>
+#</p>
+procedure joinSearch(buf)
+    local s, piece
+    s := ""
+    every piece := !buf do
+        if *piece > 0 then
+            s ||:= piece || " "
+    return s
+end
+
+#<p>
+# Emit <tt>searchindex.js</tt>:
+# <tt>window.USCRIBE_SEARCH = [{title,file,body}, ...]</tt>
+# via <tt>json.tojson()</tt>.
+# <[param dir output directory]>
+# <[param indexDocs list of [file, title, body] triples]>
+#</p>
+procedure writeSearchIndex(dir, indexDocs)
+    local f, e, rows, row
+    rows := []
+    every e := !indexDocs do {
+        row := table()
+        row["title"] := \e[2] | ""
+        row["file"]  := \e[1] | ""
+        row["body"]  := \e[3] | ""
+        put(rows, row)
+        }
+    f := open(dir || "/searchindex.js", "w") |
+        stop("uscribe: could not write searchindex.js")
+    write(f, "window.USCRIBE_SEARCH = ",
+          tojson(rows) | stop("uscribe: tojson failed for search index"),
+          ";")
+    close(f)
+    write("wrote ", dir, "/searchindex.js")
+    return
+end
+
+#<p>
+# Write the shared HTML head and opening <tt>layout</tt> div for
+# index/search shell pages.
+# <[param f open output file]>
+# <[param title page &lt;title&gt; text]>
+#</p>
+procedure writeShellHead(f, title)
+    write(f, "<!DOCTYPE html>")
+    write(f, "<html lang=\"en\" data-theme=\"",
+          escapeHtml(safeThemeName(\themeName | "basic")),
+          "\"><head>")
+    write(f, "<meta charset=\"utf-8\">")
+    write(f, "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
+    write(f, "<title>", escapeHtml(title), "</title>")
+    writeThemeBootStatic(f, \themeName | "basic")
+    write(f, "<link rel=\"stylesheet\" href=\"_static/highlight.css\">")
+    write(f, "<script defer src=\"_static/search.js\"></script>")
+    write(f, "<script defer src=\"_static/highlight-unicon.js\"></script>")
+    write(f, "<script defer src=\"_static/theme-switcher.js\"></script>")
+    write(f, "</head><body><div class=\"layout\">")
+    return
+end
+
+#<p>
+# Emit theme-boot script/noscript links into an open file (same logic
+# as <tt>HtmlOutputter.writeThemeBoot</tt>).
+# <[param f open output file]>
+# <[param fallback theme name]>
+#</p>
+procedure writeThemeBootStatic(f, fallback)
+    fallback := safeThemeName(fallback)
+    write(f, "<script>")
+    write(f, "(function(){try{var t=localStorage.getItem('uscribe-theme');")
+    write(f, "if(t==='basic'||t==='classic'||t==='dark')")
+    write(f, "document.documentElement.setAttribute('data-theme',t);")
+    write(f, "else t='", fallback, "';")
+    write(f, "document.write('<link id=\"theme-css\" rel=\"stylesheet\" href=\"_static/theme-'+t+'.css\">');")
+    write(f, "}catch(e){document.write('<link id=\"theme-css\" rel=\"stylesheet\" href=\"_static/theme-",
+          fallback, ".css\">');}})();")
+    write(f, "</script>")
+    write(f, "<noscript><link id=\"theme-css\" rel=\"stylesheet\" href=\"_static/theme-",
+          escapeHtml(fallback), ".css\"></noscript>")
+    return
+end
+
+#<p>
+# Emit a sidebar TOC for shell pages, marking <tt>currentFile</tt> as
+# the current entry when it matches.
+# <[param f open output file]>
+# <[param title book title]>
+# <[param nav list of [htmlFile, chapterTitle] pairs]>
+# <[param currentFile basename of the current page, or null]>
+#</p>
+procedure writeSidebarStatic(f, title, nav, currentFile)
+    local e
+    write(f, "<nav class=\"sidebar\" aria-label=\"Book contents\">")
+    if \logoHref & *logoHref > 0 then
+        write(f, "<a class=\"sidebar-logo\" href=\"index.html\">",
+              "<img src=\"", escapeHtml(logoHref),
+              "\" alt=\"", escapeHtml(title), "\"></a>")
+    write(f, "<div class=\"book-title\"><a href=\"index.html\">",
+          escapeHtml(title), "</a></div>")
+    write(f, "<label class=\"search-hint\" for=\"theme-select\">Theme</label>")
+    write(f, "<select class=\"search-box\" id=\"theme-select\" aria-label=\"Color theme\">")
+    write(f, "<option value=\"basic\">basic</option>")
+    write(f, "<option value=\"classic\">classic</option>")
+    write(f, "<option value=\"dark\">dark</option>")
+    write(f, "</select>")
+    write(f, "<p class=\"search-hint\">Filter chapters; Enter for full search</p>")
+    write(f, "<input class=\"search-box\" id=\"nav-search\" type=\"search\" ")
+    write(f, "placeholder=\"Search…\" aria-label=\"Filter chapter list\">")
+    write(f, "<ol id=\"nav-toc\">")
+    every e := !nav do {
+        if \currentFile == e[1] then
+            write(f, "<li class=\"current\">", escapeHtml(e[2]), "</li>")
+        else
+            write(f, "<li><a href=\"", escapeHtml(e[1]), "\">",
+                  escapeHtml(e[2]), "</a></li>")
+        }
+    write(f, "</ol>")
+    write(f, "<p class=\"search-hint\"><a href=\"search.html\">Search page</a></p>")
+    write(f, "</nav>")
+    return
+end
+
+#<p>
+# Write <tt>index.html</tt>. Book manifests get an ordered chapter
+# list; report manifests get a UTR table (number, title, author, date).
+# <[param dir output directory]>
+# <[param title book / collection title]>
+# <[param nav list of [htmlFile, chapterTitle] pairs]>
+# <[param docs ordered Document nodes (for report metadata)]>
+#</p>
+procedure writeIndexPage(dir, title, nav, docs)
+    local f, e
+    f := open(dir || "/index.html", "w") |
+        stop("uscribe: could not write '", dir, "/index.html'")
+    writeShellHead(f, title)
+    writeSidebarStatic(f, title, nav, "index.html")
+    write(f, "<div class=\"main\">")
+    write(f, "<h1>", escapeHtml(title), "</h1>")
+    if allDocsAreReports(docs) then
+        writeReportIndex(f, docs)
+    else {
+        write(f, "<p>Contents</p>")
+        write(f, "<ol>")
+        every e := !nav do
+            write(f, "<li><a href=\"", escapeHtml(e[1]), "\">",
+                  escapeHtml(e[2]), "</a></li>")
+        write(f, "</ol>")
+        }
+    if allDocsAreReports(docs) then
+        writeFooterStatic(f)
+    else
+        writeFooterStatic(f, &null, bookOutputName || ".pdf")
+    write(f, "</div></div></body></html>")
+    close(f)
+    write("wrote ", dir, "/index.html")
+    return
+end
+
+#<p>
+# Emit a report-collection index table into an open HTML file.
+# Includes a Formats column with <tt>pdf</tt> (when the sibling
+# <tt>.pdf</tt> exists) and <tt>txt</tt> (viewable page source under
+# <tt>_sources/</tt>).
+# <[param f open HTML file]>
+# <[param docs ordered report Documents]>
+#</p>
+procedure writeReportIndex(f, docs)
+    local doc, href, pdfHref, srcTxt, tr, title, authors, date
+    write(f, "<p>Unicon Technical Reports</p>")
+    write(f, "<table class=\"report-index\">")
+    write(f, "<thead><tr>")
+    write(f, "<th>UTR</th><th>Title</th><th>Author</th>")
+    write(f, "<th class=\"report-index-date\">Date</th>")
+    write(f, "<th class=\"report-index-fmt\">Formats</th>")
+    write(f, "</tr></thead>")
+    write(f, "<tbody>")
+    every doc := !docs do {
+        href := chapterOutputName(doc.getSrcName())
+        pdfHref := chapterTexBase(doc.getSrcName()) || ".pdf"
+        srcTxt := basename(doc.getSrcName()) || ".txt"
+        tr := \doc.getTrNumber() | ""
+        title := \doc.getTitle() | chapterDisplayTitle(doc)
+        authors := reportAuthorsText(doc)
+        date := \doc.getDate() | ""
+        write(f, "<tr>")
+        write(f, "<td class=\"report-index-tr\">")
+        if *tr > 0 then
+            write(f, "<a href=\"", escapeHtml(href), "\">",
+                  escapeHtml(tr), "</a>")
+        else
+            write(f, "<a href=\"", escapeHtml(href), "\">Notes</a>")
+        write(f, "</td>")
+        write(f, "<td><a href=\"", escapeHtml(href), "\">",
+              escapeHtml(title), "</a></td>")
+        write(f, "<td>", escapeHtml(authors), "</td>")
+        write(f, "<td class=\"report-index-date\">",
+              escapeHtml(date), "</td>")
+        write(f, "<td class=\"report-index-fmt\">")
+        if reportPdfExists(pdfHref) then
+            writes(f, "<a href=\"", escapeHtml(pdfHref), "\">pdf</a> · ")
+        else
+            writes(f, "<span class=\"report-pdf-missing\">pdf</span> · ")
+        write(f, "<a href=\"_sources/", escapeHtml(srcTxt),
+              "\">txt</a>")
+        write(f, "</td>")
+        write(f, "</tr>")
+        }
+    write(f, "</tbody></table>")
+    return
+end
+
+#<p>
+# Succeed when <tt>name</tt> exists as a readable file under
+# <tt>targetDir</tt> (relative PDF names from the report index).
+# <[param name basename such as <tt>utr15.pdf</tt>]>
+#</p>
+procedure reportPdfExists(name)
+    local path, f
+    path := targetDir || "/" || name
+    f := open(path)
+    if /f then fail
+    close(f)
+    return
+end
+
+#<p>
+# Write <tt>search.html</tt> with client-side search UI over
+# <tt>searchindex.js</tt>.
+# <[param dir output directory]>
+# <[param title book title]>
+# <[param nav list of [htmlFile, chapterTitle] pairs]>
+# <[param pdfHref optional book PDF href (omit for report collections)]>
+#</p>
+procedure writeSearchPage(dir, title, nav, pdfHref)
+    local f
+    f := open(dir || "/search.html", "w") |
+        stop("uscribe: could not write search.html")
+    writeShellHead(f, title || " — Search")
+    write(f, "<script src=\"searchindex.js\"></script>")
+    writeSidebarStatic(f, title, nav, "search.html")
+    write(f, "<div class=\"main\">")
+    write(f, "<h1>Search</h1>")
+    write(f, "<input class=\"search-box\" id=\"full-search\" type=\"search\" ")
+    write(f, "placeholder=\"Search the book…\" style=\"max-width:28rem\">")
+    write(f, "<div id=\"search-results\"></div>")
+    write(f, "<script>")
+    write(f, "(function(){")
+    write(f, "function qparam(){var m=location.search.match(/[?&]q=([^&]*)/);")
+    write(f, "return m?decodeURIComponent(m[1].replace(/\\+/g,' ')):''}")
+    write(f, "function run(q){q=(q||'').toLowerCase().trim();")
+    write(f, "var box=document.getElementById('search-results');")
+    write(f, "var data=window.USCRIBE_SEARCH||[];")
+    write(f, "if(!q){box.innerHTML='<p>Type a query.</p>';return}")
+    write(f, "var hits=[];")
+    write(f, "for(var i=0;i<data.length;i++){var e=data[i];")
+    write(f, "var hay=((e.title||'')+' '+(e.body||'')).toLowerCase();")
+    write(f, "if(hay.indexOf(q)!==-1)hits.push(e)}")
+    write(f, "if(!hits.length){box.innerHTML='<p>No matches.</p>';return}")
+    write(f, "var ol=document.createElement('ol');")
+    write(f, "for(var j=0;j<hits.length;j++){")
+    write(f, "var li=document.createElement('li');")
+    write(f, "var a=document.createElement('a');")
+    write(f, "a.href=hits[j].file;a.textContent=hits[j].title;")
+    write(f, "li.appendChild(a);ol.appendChild(li)}")
+    write(f, "box.textContent='';box.appendChild(ol)}")
+    write(f, "var input=document.getElementById('full-search');")
+    write(f, "var initial=qparam();input.value=initial;run(initial);")
+    write(f, "input.addEventListener('input',function(){run(input.value)});")
+    write(f, "})();")
+    write(f, "</script>")
+    writeFooterStatic(f, &null, pdfHref)
+    write(f, "</div></div></body></html>")
+    close(f)
+    write("wrote ", dir, "/search.html")
+    return
+end
+
+#<p>
+# Page footer for shell pages (index/search): optional copyright,
+# <tt>Powered by uscribe</tt>, optional <tt>pdf</tt> / <tt>source</tt>.
+# <[param f open output file]>
+# <[param sourceHref optional href for source txt]>
+# <[param pdfHref optional href for a PDF (e.g. uscribe-userguide.pdf)]>
+#</p>
+procedure writeFooterStatic(f, sourceHref, pdfHref)
+    local needSep
+    needSep := &null
+    write(f, "<footer class=\"footer\" role=\"contentinfo\">")
+    if \copyrightNotice & *copyrightNotice > 0 then {
+        writes(f, "&copy; ", escapeHtml(copyrightNotice), ".")
+        needSep := 1
+        }
+    if \needSep then writes(f, " | ")
+    writes(f, "Powered by uscribe")
+    if \pdfHref & *pdfHref > 0 then
+        writes(f, " | <a href=\"", escapeHtml(pdfHref), "\">pdf</a>")
+    if \sourceHref & *sourceHref > 0 then
+        writes(f, " | <a href=\"", escapeHtml(sourceHref),
+              "\" rel=\"nofollow\">source</a>")
+    write(f)
+    write(f, "</footer>")
+    return
+end
+
+#<p>
+# Create directory <tt>d</tt> and any missing parents using the
+# built-in <tt>mkdir()</tt> (portable <tt>mkdir -p</tt>).
+# <[param d directory path]>
+#</p>
+procedure ensureDir(d)
+    local f, parent
+    if d == "" | d == "." | d == "/" then return
+    if mkdir(d) then return          # created
+    if f := open(d) then {           # already exists
+        close(f)
+        return
+        }
+    parent := dirname(d)
+    if parent == d then
+        stop("uscribe: cannot create directory '", d, "'")
+    ensureDir(parent)
+    mkdir(d) | {
+        if f := open(d) then {
+            close(f)
+            return
+            }
+        stop("uscribe: cannot create directory '", d, "'")
+        }
+    return
+end
+
+#<p>
+# Load <tt>book.conf</tt>: explicit <tt>--config=FILE</tt>, else
+# <tt>book.conf</tt> next to the manifest (if that file exists).
+# <[param manifestPath path to the chapter manifest]>
+# <[returns a BookConfig]>
+# <[fails if no config file is used]>
+#</p>
+procedure loadBookConfig(manifestPath)
+    local path, cfg, explicit
+    explicit := Args().getOpt("config")
+    if \explicit then {
+        cfg := BookConfig()
+        cfg.loadFromFile(explicit) |
+            stop("uscribe: could not read --config '", explicit, "'")
+        write("config: ", explicit)
+        return cfg
+        }
+    path := dirname(manifestPath) || "/book.conf"
+    cfg := BookConfig()
+    if cfg.loadFromFile(path) then {
+        write("config: ", path)
+        return cfg
+        }
+    fail
+end
+
+#<p>
+# Copy <tt>--logo</tt> into <tt>targetDir</tt> for
+# <tt>\\includegraphics</tt> on the title page.
+# <[returns image basename]>
+# <[fails if --logo was omitted]>
+#</p>
+procedure copyLogoForLatex()
+    local src, base
+    src := logoSrc
+    if /src then fail
+    base := basename(src)
+    copyFile(src, targetDir || "/" || base) |
+        stop("uscribe: could not copy logo '", src, "'")
+    write("logo: ", base)
+    return base
+end
+
+#<p>
+# Book output stem from <tt>--name</tt> (default <tt>book</tt>).
+# A trailing <tt>.pdf</tt> / <tt>.tex</tt> is stripped. Only letters,
+# digits, <tt>_</tt>, and <tt>-</tt> are allowed.
+# <[returns sanitized stem]>
+#</p>
+procedure parseBookOutputName()
+    local raw, stem
+    raw := Args().getOpt("name") | (\bookConfig).get("name") | "book"
+    stem := raw
+    if *stem >= 4 & (map(stem[-4:0], &ucase, &lcase) == ".pdf" |
+          map(stem[-4:0], &ucase, &lcase) == ".tex") then
+        stem := stem[1:-4]
+    if stem ~== safeOutputName(stem) then
+        stop("uscribe: invalid --name '", raw,
+             "'; use only letters, digits, '_' or '-'")
+    return safeOutputName(stem)
+end
+
+#<p>
+# Print usage and exit via <tt>stop()</tt>.
+#</p>
+procedure helpMesg()
+    write("Usage: uscribe [options]")
+    write()
+    write("  --manifest=FILE     Chapter list (default: book.manifest).")
+    write("                      One source path per line (# comments and")
+    write("                      blank lines allowed).")
+    write("  --config=FILE       Book settings (default: book.conf next")
+    write("                      to the manifest, if present). CLI wins.")
+    write("  --title=TITLE       Book title (default: from config, else")
+    write("                      \"Untitled Book\")")
+    write("  --name=STEM         Book .tex/.pdf basename (default: book).")
+    write("                      HTML footers link to STEM.pdf. Ignored for")
+    write("                      report collections (one PDF per report).")
+    write("  --copyright=TEXT    Footer © line (e.g. \"2026, Jafar Al-Gharaibeh\")")
+    write("  --logo=FILE         Logo: HTML sidebar and PDF/LaTeX title page")
+    write("  --format=FMT        html (default), latex, or pdf")
+    write("  --targetDir=DIR     Output directory (default: ./htmlBook or")
+    write("                      ./latexBook for latex/pdf)")
+    write("  --theme=NAME        HTML theme: basic, classic, dark (default: basic)")
+    write("  --themePath=DIR     Directory containing theme subdirs (optional)")
+    write("  --docclass=CLASS    book (default) or report (UTR/article cover)")
+    write()
+    write("  Report mode is also selected by a leading RST field list with")
+    write("  :docclass: report and/or :trnumber: (plus :title:, :author:,")
+    write("  :date:, :copyright:, :abstract:). Book chapters may use")
+    write("  :author: / :date: / :copyright: for a byline under the title.")
+    write()
+    write("  HTML footers always include \"Powered by uscribe\".")
+    write("  latex writes STEM.tex (default book.tex); pdf also runs")
+    write("  pdflatex/xelatex/lualatex.")
+    stop()
+end

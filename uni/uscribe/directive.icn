@@ -1,0 +1,690 @@
+#<p>
+# <tt>DirectiveRegistry</tt> maps a directive name (the word after
+# <tt>".. "</tt> in <tt>".. note::"</tt>, <tt>".. code-block:: icon"</tt>,
+# <tt>".. api:: net.icn"</tt>, etc.) to a handler procedure. The core
+# <tt>Parser</tt> (<tt>parser.icn</tt>) does not know the names of any
+# directives -- it just recognizes the <tt>".. name:: arg"</tt> syntax,
+# builds a <tt>RawDirective</tt> node (<tt>node.icn</tt>), and asks the
+# registry to expand it. This is the concrete mechanism for a future
+# <tt>".. api::"</tt> bridge into classic UniDoc: register a handler
+# here that shells out to (or in-process calls) UniAll/UniHTML and
+# splices the result in, and neither the parser nor the doctree needs
+# to know UniDoc exists.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
+package uscribe
+
+import lang
+
+#<p>
+# Registry of directive-name to handler procedures. Handlers have the
+# signature: <tt>handler(rawDirective, parser)</tt> returns a
+# <tt>Node</tt> (or a list of Nodes) to substitute in the doctree at
+# that point, or fails to leave the <tt>RawDirective</tt> node as-is
+# (which <tt>HtmlOutputter</tt> renders as an HTML comment marker --
+# see <tt>visitRawDirective()</tt> in <tt>outputter.icn</tt>).
+# The second argument is the owning <tt>Parser</tt> (source path and
+# include stack); simple handlers may ignore it.
+#</p>
+class DirectiveRegistry : Object (handlers)
+
+    #<p>
+    # Register a handler for a directive name.
+    # <[param name directive name string]>
+    # <[param handlerProc procedure to expand matching directives]>
+    #</p>
+    method register(name, handlerProc)
+        handlers[name] := handlerProc
+        return
+    end
+
+    #<p>
+    # Look up and invoke the handler for <tt>rawDirective</tt>.
+    # <[param rawDirective a <tt>RawDirective</tt> node]>
+    # <[param parser the owning <tt>Parser</tt>]>
+    # <[returns the <tt>Node</tt> (or list of Nodes) produced by the handler]>
+    # <[fails if no handler is registered for the directive name]>
+    #</p>
+    method expand(rawDirective, parser)
+        local h
+        h := \handlers[rawDirective.getName()] | fail
+        return h(rawDirective, parser)
+    end
+
+    #<p>
+    # Test whether a directive name has a registered handler.
+    # <[param name directive name string]>
+    # <[returns non-null if known]>
+    # <[fails if the name is not registered]>
+    #</p>
+    method isKnown(name)
+        return member(handlers, name)
+    end
+
+    initially
+        handlers := table()
+        registerBuiltins(self)
+end
+
+#<p>
+# The handful of directives the book format needs out of the box:
+# <tt>code-block</tt>, admonitions (<tt>note</tt>/<tt>warning</tt>/
+# <tt>tip</tt> plus common aliases), <tt>image</tt>/<tt>figure</tt>,
+# and <tt>include</tt>/<tt>literalinclude</tt>.
+# <tt>toctree</tt> is deliberately <i>not</i> here -- chapter order is
+# <tt>Manifest</tt>'s job (<tt>manifest.icn</tt>), read once up front,
+# not a per-file directive, to keep the two-pass build simple.
+# The name <tt>api</tt> is reserved for a future UniDoc bridge and is
+# not registered yet.
+# <[param reg a <tt>DirectiveRegistry</tt> to populate]>
+#</p>
+procedure registerBuiltins(reg)
+    local name
+    reg.register("code-block", handleCodeBlock)
+    every name := !["note", "warning", "tip", "important", "caution",
+                    "attention", "danger", "error", "hint"] do
+        reg.register(name, handleAdmonition)
+    reg.register("image", handleImage)
+    reg.register("figure", handleFigure)
+    reg.register("include", handleInclude)
+    reg.register("literalinclude", handleLiteralInclude)
+    reg.register("list-table", handleListTable)
+    reg.register("raw", handleRaw)
+    reg.register("bibliography", handleBibliography)
+    reg.register("math", handleMath)
+end
+
+#<p>
+# Expand <tt>.. math::</tt> into a display <tt>Math</tt> node.
+# Body lines are joined; a single-line argument is also accepted.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param ctx unused]>
+# <[returns a <tt>Math</tt>]>
+#</p>
+procedure handleMath(raw, ctx)
+    local latex, ln
+    latex := trim(\raw.getArg() | "", ' ', 0)
+    every ln := !raw.getBodyLines() do {
+        ln := trim(ln, ' ', 0)
+        if *ln = 0 then next
+        if *latex > 0 then latex ||:= " "
+        latex ||:= ln
+        }
+    return mkMath(latex, 1)
+end
+
+#<p>
+# Expand <tt>.. raw:: html</tt> / <tt>.. raw:: latex</tt> into a
+# <tt>RawBlock</tt>. The argument selects which outputter emits the body.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param ctx unused parser context]>
+# <[returns a <tt>RawBlock</tt> instance]>
+#</p>
+procedure handleRaw(raw, ctx)
+    local n, fmt
+    n := RawBlock()
+    fmt := map(trim(\raw.getArg() | "", ' ', 0), &ucase, &lcase)
+    n.setFormat(fmt)
+    n.setLines(copy(raw.getBodyLines()))
+    return n
+end
+
+#<p>
+# Expand <tt>.. bibliography:: path.bib</tt> into a
+# <tt>Bibliography</tt> node (path resolved like includes).
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param parser the owning <tt>Parser</tt>]>
+# <[returns a <tt>Bibliography</tt>]>
+#</p>
+procedure handleBibliography(raw, parser)
+    local n, path
+    n := Bibliography()
+    path := resolveIncludePath(raw.getArg(), parser) | {
+        write(&errout, "warning: bibliography not found: ",
+              \raw.getArg() | "")
+        n.setPath(\raw.getArg() | "")
+        return n
+        }
+    n.setPath(path)
+    return n
+end
+
+#<p>
+# Expand <tt>.. code-block::</tt> into a <tt>CodeBlock</tt> node.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param ctx unused parser context]>
+# <[returns a <tt>CodeBlock</tt> instance]>
+#</p>
+procedure handleCodeBlock(raw, ctx)
+    local cb, ln
+    cb := CodeBlock()
+    cb.setLanguage(\raw.getArg())
+    every ln := !raw.getBodyLines() do
+        cb.addLine(ln)
+    # RST puts a blank after ``.. code-block::``; it is not source.
+    cb.trimBlankEdges()
+    return cb
+end
+
+#<p>
+# Expand an admonition directive into an <tt>Admonition</tt> whose
+# kind is the directive name (<tt>note</tt>, <tt>warning</tt>, …).
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param ctx unused parser context]>
+# <[returns an <tt>Admonition</tt> instance]>
+#</p>
+procedure handleAdmonition(raw, parser)
+    local adm, kids, para, ln
+    adm := Admonition()
+    adm.setKind(raw.getName())
+    # Nested blocks (lists, code, nested directives) via parseBlocks.
+    kids := parser.parseBodyLines(raw.getBodyLines())
+    if *kids > 0 then
+        every adm.addChild(!kids)
+    else {
+        # Empty body: keep a single empty paragraph for structure.
+        para := Paragraph()
+        every ln := !raw.getBodyLines() do
+            every put(para.getChildren(), !parseInline(ln))
+        adm.addChild(para)
+        }
+    return adm
+end
+
+#<p>
+# Expand <tt>.. image::</tt> into an <tt>ImageNode</tt>. Body options
+# <tt>:alt:</tt> / <tt>:name:</tt>, or the first non-option line as alt.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param parser owning Parser (pending labels)]>
+# <[returns an <tt>ImageNode</tt> instance]>
+#</p>
+procedure handleImage(raw, parser)
+    local img, opts, alt, ln, l
+    img := ImageNode()
+    img.setURI(raw.getArg())
+    opts := parseFieldOptions(raw.getBodyLines())
+    if alt := \opts["alt"] then
+        img.setAlt(alt)
+    else {
+        every ln := !raw.getBodyLines() do {
+            ln := trim(ln, ' ', 0)
+            if *ln = 0 | ln[1] == ":" then next
+            img.setAlt(ln)
+            break
+            }
+        }
+    if l := \opts["name"] | parser.takePendingLabel() then
+        img.setLabel(l)
+    return img
+end
+
+#<p>
+# Expand <tt>.. figure::</tt>: like image, but captionable / numbered.
+# Non-option body lines form the caption; <tt>:alt:</tt> and
+# <tt>:name:</tt> are recognized.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param parser owning Parser]>
+# <[returns an <tt>ImageNode</tt> marked as a figure]>
+#</p>
+procedure handleFigure(raw, parser)
+    local img, opts, cap, ln, l
+    img := handleImage(raw, parser)
+    img.setFigure()
+    opts := parseFieldOptions(raw.getBodyLines())
+    cap := ""
+    every ln := !raw.getBodyLines() do {
+        ln := trim(ln, ' ', 0)
+        if *ln = 0 | ln[1] == ":" then next
+        # First non-option line was used as alt when :alt: absent;
+        # for figures, prefer it as caption when :alt: was given, else
+        # keep alt and also use it as caption.
+        if *cap > 0 then
+            cap ||:= " " || ln
+        else
+            cap := ln
+        }
+    if *cap > 0 then {
+        img.setCaption(cap)
+        if /img.getAlt() then
+            img.setAlt(cap)
+        }
+    # handleImage already consumed pending label; :name: re-check.
+    if l := \opts["name"] then
+        img.setLabel(l)
+    return img
+end
+
+#<p>
+# Expand <tt>.. list-table::</tt> with bullet rows of <tt>-</tt> cells.
+# Option <tt>:header-rows:</tt> (default 0) promotes the first N rows.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param parser owning Parser]>
+# <[returns a <tt>TableNode</tt>]>
+#</p>
+procedure handleListTable(raw, parser)
+    local opts, rows, row, ln, tbl, i, headerN, l, cells, cellText
+    opts := parseFieldOptions(raw.getBodyLines())
+    headerN := integer(\opts["header-rows"] | "0") | 0
+    rows := []
+    row := &null
+    every ln := !raw.getBodyLines() do {
+        ln := trim(ln, ' ', 0)
+        if *ln = 0 then next
+        if ln[1] == ":" then next
+        cellText := &null
+        ln ? {
+            if ="*" then {
+                tab(many(' '))
+                if ="-" then {
+                    tab(many(' '))
+                    cellText := trim(tab(0), ' ', 0)
+                    if \row then put(rows, row)
+                    row := [cellText]
+                    }
+                }
+            else if ="-" then {
+                tab(many(' '))
+                cellText := trim(tab(0), ' ', 0)
+                /row := []
+                put(row, cellText)
+                }
+            }
+        }
+    if \row then put(rows, row)
+
+    tbl := TableNode()
+    if l := parser.takePendingLabel() then
+        tbl.setLabel(l)
+    i := 1
+    every cells := !rows do {
+        if headerN > 0 & i = 1 then
+            tbl.setHeaderRow(listTableRow(cells, 1))
+        else
+            tbl.addChild(listTableRow(cells, &null))
+        i +:= 1
+        }
+    return tbl
+end
+
+#<p>
+# Build a <tt>TableRow</tt> from cell strings for <tt>list-table</tt>.
+# <[param cellStrs list of cell text strings]>
+# <[param asHeader non-null to mark as header]>
+# <[returns a <tt>TableRow</tt>]>
+#</p>
+procedure listTableRow(cellStrs, asHeader)
+    local row, cell, text
+    row := TableRow()
+    if \asHeader then
+        row.setHeader()
+    every text := !cellStrs do {
+        cell := TableCell()
+        every put(cell.getChildren(), !parseInline(text))
+        row.addChild(cell)
+        }
+    return row
+end
+
+#<p>
+# Expand <tt>.. include:: path</tt>: read another RST file (resolved
+# next to the including source, then cwd), optionally slice it with
+# the same markers / line ranges as <tt>literalinclude</tt>, parse the
+# result, and splice its top-level blocks into the doctree.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param parser the owning <tt>Parser</tt>]>
+# <[returns a list of block nodes]>
+# <[fails if the include file cannot be resolved or read]>
+#</p>
+procedure handleInclude(raw, parser)
+    local path, opts, lines, kids
+    path := resolveIncludePath(raw.getArg(), parser) | {
+        write(&errout, "warning: include not found: ",
+              \raw.getArg() | "")
+        fail
+        }
+    opts := parseFieldOptions(raw.getBodyLines())
+    lines := readTextLines(path) | {
+        write(&errout, "warning: include unreadable: ", path)
+        fail
+        }
+    lines := applyIncludeFilters(lines, opts)
+    # Re-parse through the Parser so nested includes / directives work.
+    kids := parser.parseIncludeLines(path, lines) | []
+    return kids
+end
+
+#<p>
+# Expand <tt>.. literalinclude:: path</tt> into a <tt>CodeBlock</tt>.
+# Supported body options: <tt>:language:</tt>, <tt>:lines:</tt>,
+# <tt>:start-after:</tt>, <tt>:end-before:</tt>, <tt>:start-at:</tt>,
+# <tt>:end-at:</tt>, <tt>:dedent:</tt>.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param parser the owning <tt>Parser</tt>]>
+# <[returns a <tt>CodeBlock</tt>]>
+# <[fails if the file cannot be resolved or read]>
+#</p>
+procedure handleLiteralInclude(raw, parser)
+    local path, opts, lines, cb, ln, lang
+    path := resolveIncludePath(raw.getArg(), parser) | {
+        write(&errout, "warning: literalinclude not found: ",
+              \raw.getArg() | "")
+        fail
+        }
+    opts := parseFieldOptions(raw.getBodyLines())
+    lines := readTextLines(path) | {
+        write(&errout, "warning: literalinclude unreadable: ", path)
+        fail
+        }
+    lines := applyIncludeFilters(lines, opts)
+    cb := CodeBlock()
+    lang := \opts["language"] | guessLanguage(path)
+    if \lang then
+        cb.setLanguage(lang)
+    every ln := !lines do
+        cb.addLine(ln)
+    return cb
+end
+
+#<p>
+# Resolve an include path relative to the file currently being parsed,
+# then the process cwd. Absolute paths are used as-is.
+# <[param rel path from the directive argument]>
+# <[param parser <tt>Parser</tt> supplying <tt>getSrcPath()</tt>]>
+# <[returns a readable filesystem path]>
+# <[fails if no candidate can be opened]>
+#</p>
+procedure resolveIncludePath(rel, parser)
+    local base, cand, fin, src
+    rel := trim(\rel | "", ' ', 0)
+    if *rel = 0 then fail
+    if rel[1] == "/" then {
+        fin := open(rel) | fail
+        close(fin)
+        return rel
+        }
+    src := \parser.getSrcPath()
+    if \src then {
+        base := includeDirname(src)
+        if base ~== "." then
+            cand := base || "/" || rel
+        else
+            cand := rel
+        if fin := open(cand) then {
+            close(fin)
+            return cand
+            }
+        }
+    fin := open(rel) | fail
+    close(fin)
+    return rel
+end
+
+#<p>
+# Parent directory of <tt>path</tt>, or <tt>"."</tt>.
+# <[param path filesystem path]>
+# <[returns directory string]>
+#</p>
+procedure includeDirname(path)
+    local i, last
+    path ? {
+        every i := upto('/') do
+            last := i
+        if /last then
+            return "."
+        if last = 1 then
+            return "/"
+        return path[1:last]
+        }
+end
+
+#<p>
+# Read every line of a text file into a list.
+# <[param path filesystem path]>
+# <[returns list of line strings]>
+# <[fails if <tt>path</tt> cannot be opened]>
+#</p>
+procedure readTextLines(path)
+    local f, lines, ln
+    f := open(path, "r") | fail
+    lines := []
+    while ln := read(f) do
+        put(lines, ln)
+    close(f)
+    return lines
+end
+
+#<p>
+# Parse indented field-list option lines
+# (<tt>":language: unicon"</tt>, <tt>":linenos:"</tt>) into a table
+# keyed by option name. Non-matching lines are ignored.
+# <[param bodyLines list of directive body lines]>
+# <[returns table of option-name → value string (empty if flag-only)]>
+#</p>
+procedure parseFieldOptions(bodyLines)
+    local opts, ln, name, val
+    opts := table()
+    every ln := !bodyLines do {
+        ln := trim(ln, ' ', 0)
+        ln ? {
+            if =":" then {
+                name := tab(find(":")) | {
+                    move(0)
+                    next
+                    }
+                move(1)
+                tab(many(' '))
+                val := trim(tab(0), ' ', 0)
+                opts[name] := val
+                }
+            }
+        }
+    return opts
+end
+
+#<p>
+# Apply Sphinx-style include filters in order: start/end markers,
+# then <tt>:lines:</tt>, then <tt>:dedent:</tt>.
+# <[param lines list of source lines]>
+# <[param opts option table from <tt>parseFieldOptions()</tt>]>
+# <[returns filtered line list]>
+#</p>
+procedure applyIncludeFilters(lines, opts)
+    lines := sliceByMarkers(lines, opts)
+    if member(opts, "lines") then
+        lines := selectLineRanges(lines, opts["lines"])
+    if member(opts, "dedent") then
+        lines := dedentLines(lines, integer(opts["dedent"]) | 0)
+    return lines
+end
+
+#<p>
+# Slice <tt>lines</tt> using <tt>:start-after:</tt> /
+# <tt>:start-at:</tt> / <tt>:end-before:</tt> / <tt>:end-at:</tt>.
+# Marker match is substring containment on the raw line.
+# <[param lines list of source lines]>
+# <[param opts option table]>
+# <[returns sliced line list]>
+#</p>
+procedure sliceByMarkers(lines, opts)
+    local i, startI, endI, out, marker
+    startI := 1
+    endI := *lines
+    if marker := \opts["start-after"] then {
+        i := 1
+        while i <= *lines do {
+            if find(marker, lines[i]) then {
+                startI := i + 1
+                break
+                }
+            i +:= 1
+            }
+        }
+    else if marker := \opts["start-at"] then {
+        i := 1
+        while i <= *lines do {
+            if find(marker, lines[i]) then {
+                startI := i
+                break
+                }
+            i +:= 1
+            }
+        }
+    if marker := \opts["end-before"] then {
+        i := startI
+        while i <= *lines do {
+            if find(marker, lines[i]) then {
+                endI := i - 1
+                break
+                }
+            i +:= 1
+            }
+        }
+    else if marker := \opts["end-at"] then {
+        i := startI
+        while i <= *lines do {
+            if find(marker, lines[i]) then {
+                endI := i
+                break
+                }
+            i +:= 1
+            }
+        }
+    out := []
+    every i := startI to endI do
+        put(out, lines[i])
+    return out
+end
+
+#<p>
+# Keep lines whose 1-based indices appear in a Sphinx-style
+# <tt>:lines:</tt> spec (<tt>"1-3,5,8-10"</tt>).
+# <[param lines list of source lines]>
+# <[param spec range string]>
+# <[returns selected lines]>
+#</p>
+procedure selectLineRanges(lines, spec)
+    local wanted, part, a, b, i, out, lo, hi
+    wanted := set()
+    every part := !splitLinesSpec(spec) do {
+        part := trim(part, ' ', 0)
+        if *part = 0 then next
+        if find("-", part) then {
+            part ? {
+                a := integer(tab(find("-"))) | next
+                move(1)
+                b := integer(tab(0)) | next
+                }
+            lo := a
+            hi := b
+            if lo > hi then {
+                lo := b
+                hi := a
+                }
+            every i := lo to hi do
+                insert(wanted, i)
+            }
+        else if i := integer(part) then
+            insert(wanted, i)
+        }
+    out := []
+    every i := 1 to *lines do
+        if member(wanted, i) then
+            put(out, lines[i])
+    return out
+end
+
+#<p>
+# Split a <tt>:lines:</tt> spec on commas.
+# <[param spec range string]>
+# <[returns list of pieces]>
+#</p>
+procedure splitLinesSpec(spec)
+    local parts, i, start
+    parts := []
+    start := 1
+    every i := upto(',', spec) do {
+        put(parts, spec[start:i])
+        start := i + 1
+        }
+    put(parts, spec[start:0] | "")
+    return parts
+end
+
+#<p>
+# Remove up to <tt>n</tt> leading spaces from every line.
+# <[param lines list of source lines]>
+# <[param n spaces to strip]>
+# <[returns new line list]>
+#</p>
+procedure dedentLines(lines, n)
+    local out, ln, i
+    if n <= 0 then return lines
+    out := []
+    every ln := !lines do {
+        i := 1
+        while i <= n & i <= *ln & ln[i] == " " do
+            i +:= 1
+        if i > *ln then
+            put(out, "")
+        else
+            put(out, ln[i:0])
+        }
+    return out
+end
+
+#<p>
+# Guess a <tt>code-block</tt> language from a file extension.
+# <[param path filesystem path]>
+# <[returns language string, or fails]>
+#</p>
+procedure guessLanguage(path)
+    local base, ext, i, last
+    base := path
+    last := &null
+    every i := upto('/', path) do
+        last := i
+    if \last then
+        base := path[last+1:0]
+    last := &null
+    every i := upto('.', base) do
+        last := i
+    if /last then fail
+    ext := map(base[last+1:0], &ucase, &lcase)
+    if ext == "icn" | ext == "icon" then return "unicon"
+    if ext == "sh" | ext == "bash" then return "sh"
+    if ext == "py" then return "python"
+    if ext == "rst" | ext == "txt" then return "text"
+    if ext == "c" | ext == "h" then return "c"
+    if ext == "js" then return "javascript"
+    if ext == "css" then return "css"
+    if ext == "html" | ext == "htm" then return "html"
+    if ext == "md" then return "markdown"
+    if ext == "json" then return "json"
+    fail
+end
+
+# ---------------------------------------------------------------------
+# Sketch of the UniDoc bridge. Left unregistered by default (real
+# wiring needs a decision on in-process vs. subprocess invocation --
+# see the "Refactor #4" discussion: UniAll.processFile()+
+# UniHTML.buildPages() should be exposed as a callable library
+# procedure so this can link directly to generated pages instead of
+# shelling out to the unidoc binary and re-parsing its HTML output).
+# ---------------------------------------------------------------------
+
+# procedure handleApiBridge(raw, ctx)
+#     local manifestEntry
+#     # raw.getArg() is the source file/package to document, e.g. "net.icn"
+#     # manifestEntry := UniDoc_generatePages(raw.getArg())  # see refactor #4
+#     # return a Reference-bearing node pointing at manifestEntry's index page
+#     fail
+# end
+#
+# reg.register("api", handleApiBridge)
+

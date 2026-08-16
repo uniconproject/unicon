@@ -1,0 +1,198 @@
+#<p>
+# Reusable balanced-delimiter scanning, generalized from the pattern in
+# classic UniDoc's <tt>UniHTML.icn</tt>: <tt>checkSpecial()</tt> +
+# <tt>parseClause()</tt> used Icon's <tt>sbal()</tt> to find
+# <tt>"&lt;[ ... ]&gt;"</tt> clauses embedded in running text while
+# correctly skipping past <tt>&lt;pre&gt;</tt>/<tt>&lt;code&gt;</tt>
+# blocks. That logic was hard-wired to HTML output and to UniDoc's own
+# field names (<tt>throws</tt>, <tt>param</tt>, <tt>returns</tt>...).
+# Here it is factored into a generic utility. <tt>inline.icn</tt> uses
+# <tt>parseRolePayload()</tt> (built on <tt>sbalClause()</tt>) for
+# nested forms such as <tt>:ref:`Title &lt;label&gt;`</tt>.
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
+package uscribe
+
+import util
+
+# <p>
+# Scan string <tt>s</tt> left to right. Whenever the literal
+# <tt>openTok</tt> is found (outside of any span already excluded via
+# <tt>skipSpans</tt>), extract the balanced substring up to the
+# matching <tt>closeTok</tt> using <tt>sbalClause()</tt>, and call
+# <tt>handler(matchedInnerText)</tt> -- handler's return value is spliced
+# into the output in place of the whole
+# <tt>"openTok ... closeTok"</tt> run. If handler fails, the original
+# text (<tt>openTok</tt> included) is passed through unchanged.
+# <[param s the text to scan]>
+# <[param openTok opening delimiter, e.g. <tt>"&lt;["</tt>]>
+# <[param closeTok closing delimiter, e.g. <tt>"]&gt;"</tt>]>
+# <[param handler procedure(<tt>matchedInnerText</tt>) -> replacement
+#         string]>
+# <[param skipSpans a table mapping <tt>"startTok"</tt> ->
+#         <tt>"endTok"</tt> for regions to pass through verbatim,
+#         or <tt>&null</tt> / empty to scan everything]>
+# <[returns the fully scanned/replaced string]>
+# </p>
+procedure scanBalancedDirectives(s, openTok, closeTok, handler, skipSpans)
+    local out, cMap, skipDepth, tok, matched, replacement, rest
+
+    cMap := table()
+    cMap[openTok] := closeTok
+    /skipSpans := table()
+    skipDepth := table()
+    every skipDepth[key(skipSpans)] := 0
+
+    out := ""
+    s ? {
+        while not pos(0) do {
+            rest := "" || &subject[&pos:0]
+            tok := findAnySkipToken(rest, skipSpans)
+            if \tok then {
+                out ||:= move(*tok)
+                if member(skipSpans, tok) then
+                    skipDepth[tok] +:= 1
+                else
+                    every (k := key(skipSpans)) do
+                        if skipSpans[k] == tok then
+                            skipDepth[k] := decrFloor(skipDepth[k])
+                next
+                }
+
+            if anySkipActive(skipDepth) then {
+                out ||:= move(1)
+                next
+                }
+
+            # sbal() must see the opener at &pos (do not consume it first).
+            if rest[1:1+*openTok] == openTok then {
+                if matched := sbalClause(cMap) then {
+                    matched := stripBalancedDelims(matched, openTok, closeTok)
+                    if replacement := handler(matched) then
+                        out ||:= replacement
+                    else
+                        out ||:= openTok || matched || closeTok
+                    }
+                else
+                    out ||:= move(*openTok)
+                next
+                }
+
+            out ||:= tab(find(openTok) | 0)
+            if pos(0) then break
+            }
+        out ||:= tab(0)
+        }
+    return out
+end
+
+# <p>
+# Extract a balanced clause with <tt>sbal()</tt>. Subject must be
+# positioned at <tt>openTok</tt> (not past it).
+# <[param cMap table with <tt>cMap[openTok] = closeTok</tt>]>
+# <[returns the matched clause including delimiters]>
+# <[fails if not a valid balanced clause]>
+# </p>
+procedure sbalClause(cMap)
+    local inner
+    if inner := sbal(cMap) then
+        return inner
+    fail
+end
+
+# <p>
+# Strip <tt>openTok</tt>/<tt>closeTok</tt> from a full <tt>sbal()</tt>
+# match when present.
+# <[param matched clause from <tt>sbal()</tt>]>
+# <[param openTok opening delimiter]>
+# <[param closeTok closing delimiter]>
+# <[returns inner text]>
+# </p>
+procedure stripBalancedDelims(matched, openTok, closeTok)
+    local s
+    s := matched
+    if *s >= *openTok + *closeTok &
+       s[1:*openTok+1] == openTok &
+       s[*s-*closeTok+1:0] == closeTok then
+        return s[*openTok+1:*s-*closeTok+1]
+    return s
+end
+
+# <p>
+# Parse a Sphinx-style role payload <tt>"label"</tt> or
+# <tt>"Display Text &lt;label&gt;"</tt> using <tt>sbalClause()</tt>
+# so nested angle brackets in the display text stay balanced.
+# <[param payload text inside the role backticks]>
+# <[returns a two-element list <tt>[label, displayOrNull]</tt>]>
+# </p>
+procedure parseRolePayload(payload)
+    local s, label, display, i, last, depth
+    s := trim(payload, ' ', 0)
+    if not find("<", s) then
+        return [s, &null]
+    # Trailing "display <label>" — walk back to the last top-level '<…>'.
+    if s[*s] ~== ">" then
+        return [s, &null]
+    depth := 0
+    last := &null
+    every i := *s to 1 by -1 do {
+        if s[i] == ">" then
+            depth +:= 1
+        else if s[i] == "<" then {
+            depth -:= 1
+            if depth = 0 then {
+                last := i
+                break
+                }
+            }
+        }
+    if /last then
+        return [s, &null]
+    label := trim(s[last+1:*s], ' ', 0)
+    display := trim(s[1:last], ' ', 0)
+    if *display = 0 then
+        display := &null
+    return [label, display]
+end
+
+# <p>
+# Internal: does any string in the skip-span table (as open or close
+# token) appear at the very start of the remaining subject?
+# <[param rest the unscanned remainder of the subject]>
+# <[param skipSpans table of open-token -> close-token pairs]>
+# <[returns the matched open or close token string]>
+# <[fails if no skip token is at the start of <tt>rest</tt>]>
+# </p>
+procedure findAnySkipToken(rest, skipSpans)
+    local k
+    every k := key(skipSpans) do {
+        if rest[1:1+*k] == k then return k
+        if rest[1:1+*skipSpans[k]] == skipSpans[k] then return skipSpans[k]
+        }
+    fail
+end
+
+# <p>
+# Internal: succeed if we are currently inside any registered skip
+# span (any entry in <tt>skipDepth</tt> is positive).
+# <[param skipDepth table of open-token -> nesting depth]>
+# <[fails if no skip span is active]>
+# </p>
+procedure anySkipActive(skipDepth)
+    local k
+    every k := key(skipDepth) do
+        if skipDepth[k] > 0 then return
+    fail
+end
+
+# <p>
+# Decrement <tt>n</tt> by one, flooring at zero.
+# <[param n a non-negative integer depth]>
+# <[returns <tt>n - 1</tt>, or 0 if <tt>n</tt> was already 0]>
+# </p>
+procedure decrFloor(n)
+    return (n > 0, n - 1) | 0
+end

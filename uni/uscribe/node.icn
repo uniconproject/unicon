@@ -1,0 +1,1776 @@
+#<p>
+# Doctree node hierarchy for <tt>uscribe</tt>. Parsing and rendering are
+# separate steps connected by this <tt>Node</tt> hierarchy, so a new
+# <tt>Outputter</tt> (HTML, groff, man, plain text, ...) never has to
+# touch the parser.
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
+package uscribe
+
+import lang
+
+#<p>
+# Abstract base for every doctree node. Every node knows how to accept
+# an <tt>Outputter</tt> (visitor pattern) -- see <tt>outputter.icn</tt>.
+#</p>
+class Node : Object (parent, srcFile, srcLine)
+
+    #<p>
+    # Attach this node under a parent block. Most <tt>Block</tt>
+    # subclasses keep a <tt>children</tt> field; this just records
+    # back-pointers so error messages and cross-ref resolution can
+    # report a location.
+    # <[param p the parent <tt>Node</tt>]>
+    #</p>
+    method setParent(p)
+        parent := p
+        return
+    end
+
+    #<p>
+    # Return the parent node.
+    # <[returns the parent <tt>Node</tt>]>
+    # <[fails if no parent has been set]>
+    #</p>
+    method getParent()
+        return \parent
+    end
+
+    #<p>
+    # Record the source file and line for diagnostics.
+    # <[param fName source file path]>
+    # <[param lineNo 1-based line number]>
+    #</p>
+    method setPos(fName, lineNo)
+        srcFile := fName
+        srcLine := lineNo
+        return
+    end
+
+    #<p>
+    # Return the recorded source position.
+    # <[returns a two-element list <tt>[srcFile, srcLine]</tt>]>
+    #</p>
+    method getPos()
+        return [srcFile, srcLine]
+    end
+
+    #<p>
+    # Concrete-class discriminator, e.g. <tt>"Section"</tt>,
+    # <tt>"Paragraph"</tt>. Every concrete subclass overrides this with
+    # a literal string matching its own name. Exists so code walking a
+    # mixed list of <tt>Node</tt> types (<tt>LabelTable</tt>, mainly)
+    # can branch on type without referencing a method the object might
+    # not have -- doing that directly (e.g. calling <tt>n.getLevel()</tt>
+    # on a <tt>Paragraph</tt>) is a hard runtime error in Unicon, not a
+    # graceful failure.
+    # <[returns a string naming the concrete node type]>
+    #</p>
+    abstract method nodeType()
+
+    #<p>
+    # Double-dispatch entry point. Every concrete node overrides this
+    # to call the matching <tt>visitXxx()</tt> method on the
+    # <tt>Outputter</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    abstract method accept(outp)
+end
+
+#<p>
+# Base class for anything that stacks vertically on the page and can
+# contain other block or inline children.
+#</p>
+class Block : Node (children)
+
+    #<p>
+    # Return the list of child nodes.
+    # <[returns the children list]>
+    #</p>
+    method getChildren()
+        return children
+    end
+
+    #<p>
+    # Append a child and set its parent back-pointer.
+    # <[param n the child <tt>Node</tt> to add]>
+    # <[returns <tt>n</tt>]>
+    #</p>
+    method addChild(n)
+        n.setParent(self)
+        put(children, n)
+        return n
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# The root of one parsed source file. A <tt>Document</tt> does not itself
+# know about other Documents -- chapter ordering and merging is
+# <tt>Manifest</tt>'s job (<tt>manifest.icn</tt>), not the doctree's.
+# Optional bibliographic metadata (<tt>authors</tt>, <tt>trNumber</tt>,
+# <tt>dateStr</tt>, <tt>copyrightStr</tt>, <tt>abstractText</tt>,
+# <tt>docClass</tt>) comes from a leading RST field list.
+# <tt>docClass</tt> of <tt>"report"</tt> (or a set <tt>trNumber</tt>)
+# selects article/UTR rendering. Book chapters may still carry
+# <tt>authors</tt> / <tt>date</tt> / <tt>copyright</tt> for a byline.
+#</p>
+class Document : Block (children, title, srcName, authors, trNumber,
+                        dateStr, copyrightStr, abstractText, docClass)
+
+    #<p>
+    # Set the source file path for this document.
+    # <[param s filesystem path or basename]>
+    #</p>
+    method setSrcName(s)
+        srcName := s
+        return
+    end
+
+    #<p>
+    # Return the source file path.
+    # <[returns the source name string]>
+    # <[fails if unset]>
+    #</p>
+    method getSrcName()
+        return \srcName
+    end
+
+    #<p>
+    # Set the document title.
+    # <[param t title string]>
+    #</p>
+    method setTitle(t)
+        title := t
+        return
+    end
+
+    #<p>
+    # Return the document title.
+    # <[returns the title string]>
+    # <[fails if unset]>
+    #</p>
+    method getTitle()
+        return \title
+    end
+
+    #<p>
+    # Set author list (list of strings).
+    # <[param a list of author name strings]>
+    #</p>
+    method setAuthors(a)
+        authors := a
+        return
+    end
+
+    #<p>
+    # Return author list.
+    # <[returns list of author strings]>
+    #</p>
+    method getAuthors()
+        /authors := []
+        return authors
+    end
+
+    #<p>
+    # Set Unicon Technical Report number (e.g. <tt>"15"</tt>, <tt>"18c"</tt>).
+    # <[param n number string]>
+    #</p>
+    method setTrNumber(n)
+        trNumber := n
+        return
+    end
+
+    #<p>
+    # Return the TR number, if any.
+    # <[returns the number string]>
+    # <[fails if unset]>
+    #</p>
+    method getTrNumber()
+        return \trNumber
+    end
+
+    #<p>
+    # Set the report date string.
+    # <[param d date string]>
+    #</p>
+    method setDate(d)
+        dateStr := d
+        return
+    end
+
+    #<p>
+    # Return the report date, if any.
+    # <[returns the date string]>
+    # <[fails if unset]>
+    #</p>
+    method getDate()
+        return \dateStr
+    end
+
+    #<p>
+    # Set the chapter / report copyright (text after ©).
+    # <[param s copyright string]>
+    #</p>
+    method setCopyright(s)
+        copyrightStr := s
+        return
+    end
+
+    #<p>
+    # Return the copyright string, if any.
+    # <[returns the copyright string]>
+    # <[fails if unset]>
+    #</p>
+    method getCopyright()
+        return \copyrightStr
+    end
+
+    #<p>
+    # Set the abstract body text.
+    # <[param a abstract string]>
+    #</p>
+    method setAbstract(a)
+        abstractText := a
+        return
+    end
+
+    #<p>
+    # Return the abstract text, if any.
+    # <[returns the abstract string]>
+    # <[fails if unset]>
+    #</p>
+    method getAbstract()
+        return \abstractText
+    end
+
+    #<p>
+    # Set document class: <tt>"book"</tt> (default) or <tt>"report"</tt>.
+    # <[param c class name string]>
+    #</p>
+    method setDocClass(c)
+        docClass := c
+        return
+    end
+
+    #<p>
+    # Return document class (<tt>"book"</tt> or <tt>"report"</tt>).
+    # <[returns the class string]>
+    #</p>
+    method getDocClass()
+        return \docClass | "book"
+    end
+
+    #<p>
+    # True when this document should use UTR/report rendering
+    # (explicit <tt>report</tt> class or a TR number is set).
+    # <[fails if book mode]>
+    #</p>
+    method isReport()
+        if getDocClass() == "report" then return
+        return \trNumber
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitDocument()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitDocument(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"Document"</tt>]>
+    #</p>
+    method nodeType()
+        return "Document"
+    end
+
+    initially
+        children := []
+        authors := []
+end
+
+#<p>
+# A heading plus everything nested under it until the next heading of
+# equal or lesser level. Level is 1-based (1 == top-level chapter title).
+#</p>
+class Section : Block (children, title, level, label)
+
+    #<p>
+    # Set the section heading text.
+    # <[param t title string]>
+    #</p>
+    method setTitle(t)
+        title := t
+        return
+    end
+
+    #<p>
+    # Return the section heading text.
+    # <[returns the title string]>
+    #</p>
+    method getTitle()
+        return title
+    end
+
+    #<p>
+    # Set the 1-based nesting level.
+    # <[param n integer level]>
+    #</p>
+    method setLevel(n)
+        level := n
+        return
+    end
+
+    #<p>
+    # Return the 1-based nesting level.
+    # <[returns the level integer]>
+    #</p>
+    method getLevel()
+        return level
+    end
+
+    #<p>
+    # Optional explicit cross-reference label (from a <tt>.. _label:</tt>
+    # style marker). If none was given, <tt>LabelTable</tt> can synthesize
+    # one from the title -- see <tt>labeltable.icn</tt>.
+    # <[param l label string]>
+    #</p>
+    method setLabel(l)
+        label := l
+        return
+    end
+
+    #<p>
+    # Return the explicit cross-reference label, if any.
+    # <[returns the label string]>
+    # <[fails if no label was set]>
+    #</p>
+    method getLabel()
+        return \label
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitSection()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitSection(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"Section"</tt>]>
+    #</p>
+    method nodeType()
+        return "Section"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# A block of prose that may contain inline children.
+#</p>
+class Paragraph : Block (children)
+
+    #<p>
+    # Dispatch to <tt>outp.visitParagraph()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitParagraph(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"Paragraph"</tt>]>
+    #</p>
+    method nodeType()
+        return "Paragraph"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# <tt>BulletList</tt> and <tt>EnumList</tt> share <tt>ListItem</tt>
+# children; "ordered" on the <tt>Outputter</tt> side is just which one
+# it is, so we keep them as distinct node types rather than one class
+# with a flag -- cleaner dispatch.
+#</p>
+class BulletList : Block (children)
+
+    #<p>
+    # Dispatch to <tt>outp.visitBulletList()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitBulletList(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"BulletList"</tt>]>
+    #</p>
+    method nodeType()
+        return "BulletList"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# An ordered (numbered) list of <tt>ListItem</tt> children.
+#</p>
+class EnumList : Block (children, startAt)
+
+    #<p>
+    # Set the starting number for the list.
+    # <[param n integer start value]>
+    #</p>
+    method setStartAt(n)
+        startAt := n
+        return
+    end
+
+    #<p>
+    # Return the starting number (defaults to 1).
+    # <[returns the start integer]>
+    #</p>
+    method getStartAt()
+        return \startAt | 1
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitEnumList()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitEnumList(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"EnumList"</tt>]>
+    #</p>
+    method nodeType()
+        return "EnumList"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# One item inside a <tt>BulletList</tt> or <tt>EnumList</tt>.
+#</p>
+class ListItem : Block (children)
+
+    #<p>
+    # Dispatch to <tt>outp.visitListItem()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitListItem(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"ListItem"</tt>]>
+    #</p>
+    method nodeType()
+        return "ListItem"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# A literal block of source/code text. Kept as raw lines, not parsed
+# as prose -- deliberately opaque to the inline-markup parser so code
+# samples are never accidentally reinterpreted as <tt>*emphasis*</tt> etc.
+#</p>
+class CodeBlock : Node (lines, language)
+
+    #<p>
+    # Set the optional language hint for highlighting.
+    # <[param l language name string]>
+    #</p>
+    method setLanguage(l)
+        language := l
+        return
+    end
+
+    #<p>
+    # Return the language hint, if any.
+    # <[returns the language string]>
+    # <[fails if unset]>
+    #</p>
+    method getLanguage()
+        return \language
+    end
+
+    #<p>
+    # Append one source line to the block.
+    # <[param l a line of code text]>
+    #</p>
+    method addLine(l)
+        put(lines, l)
+        return
+    end
+
+    #<p>
+    # Drop empty lines at the start and end of the block. RST
+    # separators after <tt>::</tt> / <tt>code-block</tt> are not
+    # source. <tt>pop</tt> is the front; <tt>pull</tt> is the back.
+    #</p>
+    method trimBlankEdges()
+        while *lines > 0 & lines[1] == "" do
+            pop(lines)
+        while *lines > 0 & lines[-1] == "" do
+            pull(lines)
+        return
+    end
+
+    #<p>
+    # Return the list of raw code lines.
+    # <[returns the lines list]>
+    #</p>
+    method getLines()
+        return lines
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitCodeBlock()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitCodeBlock(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"CodeBlock"</tt>]>
+    #</p>
+    method nodeType()
+        return "CodeBlock"
+    end
+
+    initially
+        lines := []
+end
+
+#<p>
+# note / warning / tip -- one node type, <tt>kind</tt> distinguishes them
+# so Outputters can style each differently without a class per kind.
+#</p>
+class Admonition : Block (children, kind)
+
+    #<p>
+    # Set the admonition kind (<tt>"note"</tt>, <tt>"warning"</tt>, or
+    # <tt>"tip"</tt>).
+    # <[param k kind string]>
+    #</p>
+    method setKind(k)
+        kind := k
+        return
+    end
+
+    #<p>
+    # Return the admonition kind.
+    # <[returns the kind string]>
+    #</p>
+    method getKind()
+        return kind
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitAdmonition()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitAdmonition(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"Admonition"</tt>]>
+    #</p>
+    method nodeType()
+        return "Admonition"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# A simple table: optional <tt>headerRow</tt> (<tt>TableRow</tt>) and
+# body rows as <tt>TableRow</tt> children. Optional <tt>label</tt> from
+# a preceding <tt>.. _label:</tt> target.
+#</p>
+class TableNode : Block (children, headerRow, label)
+
+    #<p>
+    # Set the header row.
+    # <[param row a <tt>TableRow</tt>]>
+    #</p>
+    method setHeaderRow(row)
+        headerRow := row
+        return
+    end
+
+    #<p>
+    # Return the header row, if any.
+    # <[returns a <tt>TableRow</tt>]>
+    # <[fails if unset]>
+    #</p>
+    method getHeaderRow()
+        return \headerRow
+    end
+
+    #<p>
+    # Set an explicit cross-reference label.
+    # <[param l label string]>
+    #</p>
+    method setLabel(l)
+        label := l
+        return
+    end
+
+    #<p>
+    # Return the explicit label, if any.
+    # <[returns the label string]>
+    # <[fails if unset]>
+    #</p>
+    method getLabel()
+        return \label
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitTable()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitTable(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"Table"</tt>]>
+    #</p>
+    method nodeType()
+        return "Table"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# One row of a <tt>TableNode</tt>; children are <tt>TableCell</tt>s.
+# <tt>header</tt> is non-null when this row is the table header.
+#</p>
+class TableRow : Block (children, header)
+
+    #<p>
+    # Mark this row as a header row.
+    #</p>
+    method setHeader()
+        header := 1
+        return
+    end
+
+    #<p>
+    # True when this is the header row.
+    # <[fails if not a header row]>
+    #</p>
+    method isHeaderRow()
+        return \header
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitTableRow()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitTableRow(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"TableRow"</tt>]>
+    #</p>
+    method nodeType()
+        return "TableRow"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# One cell; children are inline nodes. Optional <tt>colspan</tt> /
+# <tt>rowspan</tt> (default 1) from grid-table spans.
+#</p>
+class TableCell : Block (children, colspan, rowspan)
+
+    #<p>
+    # Set how many columns this cell spans (at least 1).
+    # <[param n column span count]>
+    #</p>
+    method setColSpan(n)
+        colspan := n
+        return
+    end
+
+    #<p>
+    # Return the column span (default 1).
+    # <[returns an integer &gt;= 1]>
+    #</p>
+    method getColSpan()
+        return \colspan | 1
+    end
+
+    #<p>
+    # Set how many rows this cell spans (at least 1).
+    # <[param n row span count]>
+    #</p>
+    method setRowSpan(n)
+        rowspan := n
+        return
+    end
+
+    #<p>
+    # Return the row span (default 1).
+    # <[returns an integer &gt;= 1]>
+    #</p>
+    method getRowSpan()
+        return \rowspan | 1
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitTableCell()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitTableCell(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"TableCell"</tt>]>
+    #</p>
+    method nodeType()
+        return "TableCell"
+    end
+
+    initially
+        children := []
+        colspan := 1
+        rowspan := 1
+end
+
+#<p>
+# A definition list of <tt>DefinitionItem</tt> children.
+#</p>
+class DefinitionList : Block (children)
+
+    #<p>
+    # Dispatch to <tt>outp.visitDefinitionList()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitDefinitionList(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"DefinitionList"</tt>]>
+    #</p>
+    method nodeType()
+        return "DefinitionList"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# One definition-list entry: a term string plus indented body children
+# (usually a <tt>Paragraph</tt>).
+#</p>
+class DefinitionItem : Block (children, term)
+
+    #<p>
+    # Set the term text.
+    # <[param t term string]>
+    #</p>
+    method setTerm(t)
+        term := t
+        return
+    end
+
+    #<p>
+    # Return the term text.
+    # <[returns the term string]>
+    #</p>
+    method getTerm()
+        return \term | ""
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitDefinitionItem()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitDefinitionItem(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"DefinitionItem"</tt>]>
+    #</p>
+    method nodeType()
+        return "DefinitionItem"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# An embedded image or figure: URI, optional alt text, optional
+# caption (figures), optional explicit label, and a flag distinguishing
+# <tt>.. figure::</tt> from bare <tt>.. image::</tt>.
+#</p>
+class ImageNode : Node (uri, altText, caption, label, isFigure)
+
+    #<p>
+    # Set the image URI or path.
+    # <[param u URI string]>
+    #</p>
+    method setURI(u)
+        uri := u
+        return
+    end
+
+    #<p>
+    # Return the image URI.
+    # <[returns the URI string]>
+    #</p>
+    method getURI()
+        return uri
+    end
+
+    #<p>
+    # Set the alternative text.
+    # <[param a alt-text string]>
+    #</p>
+    method setAlt(a)
+        altText := a
+        return
+    end
+
+    #<p>
+    # Return the alternative text, if any.
+    # <[returns the alt-text string]>
+    # <[fails if unset]>
+    #</p>
+    method getAlt()
+        return \altText
+    end
+
+    #<p>
+    # Set the figure caption (plain text).
+    # <[param c caption string]>
+    #</p>
+    method setCaption(c)
+        caption := c
+        return
+    end
+
+    #<p>
+    # Return the caption, if any.
+    # <[returns the caption string]>
+    # <[fails if unset]>
+    #</p>
+    method getCaption()
+        return \caption
+    end
+
+    #<p>
+    # Set an explicit cross-reference label.
+    # <[param l label string]>
+    #</p>
+    method setLabel(l)
+        label := l
+        return
+    end
+
+    #<p>
+    # Return the explicit label, if any.
+    # <[returns the label string]>
+    # <[fails if unset]>
+    #</p>
+    method getLabel()
+        return \label
+    end
+
+    #<p>
+    # Mark this node as coming from <tt>.. figure::</tt>.
+    #</p>
+    method setFigure()
+        isFigure := 1
+        return
+    end
+
+    #<p>
+    # True when this is a figure (captionable / numbered).
+    # <[fails if it is a bare image]>
+    #</p>
+    method isFigureNode()
+        return \isFigure
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitImage()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitImage(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"Image"</tt>]>
+    #</p>
+    method nodeType()
+        return "Image"
+    end
+end
+
+#<p>
+# Generic escape hatch: any directive the core parser doesn't know
+# about is captured here (name + raw argument + raw body lines) and
+# handed to whatever the <tt>DirectiveRegistry</tt> has registered for
+# that name (see <tt>directive.icn</tt>).
+#</p>
+class RawDirective : Node (dname, arg, bodyLines)
+
+    #<p>
+    # Set the directive name (word after <tt>".. "</tt>).
+    # <[param n directive name string]>
+    #</p>
+    method setName(n)
+        dname := n
+        return
+    end
+
+    #<p>
+    # Return the directive name.
+    # <[returns the name string]>
+    #</p>
+    method getName()
+        return dname
+    end
+
+    #<p>
+    # Set the optional argument after <tt>::</tt>.
+    # <[param a argument string]>
+    #</p>
+    method setArg(a)
+        arg := a
+        return
+    end
+
+    #<p>
+    # Return the directive argument, if any.
+    # <[returns the argument string]>
+    # <[fails if unset]>
+    #</p>
+    method getArg()
+        return \arg
+    end
+
+    #<p>
+    # Replace the indented body lines.
+    # <[param b list of body line strings]>
+    #</p>
+    method setBodyLines(b)
+        bodyLines := b
+        return
+    end
+
+    #<p>
+    # Return the indented body lines.
+    # <[returns the body-lines list]>
+    #</p>
+    method getBodyLines()
+        return bodyLines
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitRawDirective()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitRawDirective(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"RawDirective"</tt>]>
+    #</p>
+    method nodeType()
+        return "RawDirective"
+    end
+
+    initially
+        bodyLines := []
+end
+
+#<p>
+# Inline-level nodes live inside <tt>Paragraph</tt> /
+# <tt>ListItem</tt> / <tt>Section</tt> title text.
+#</p>
+class Inline : Node ()
+
+    #<p>
+    # Double-dispatch entry point for inline nodes.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    abstract method accept(outp)
+end
+
+#<p>
+# Plain text with no markup.
+#</p>
+class Text : Inline (str)
+
+    #<p>
+    # Set the text content.
+    # <[param s text string]>
+    #</p>
+    method setText(s)
+        str := s
+        return
+    end
+
+    #<p>
+    # Return the text content.
+    # <[returns the text string]>
+    #</p>
+    method getText()
+        return str
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitText()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitText(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"Text"</tt>]>
+    #</p>
+    method nodeType()
+        return "Text"
+    end
+end
+
+#<p>
+# Emphasized inline run (<tt>*emphasis*</tt>).
+#</p>
+class Emphasis : Inline (children)
+
+    #<p>
+    # Replace the inline children of this emphasis span.
+    # <[param c list of inline child nodes]>
+    #</p>
+    method setChildren(c)
+        children := c
+        return
+    end
+
+    #<p>
+    # Return the inline children.
+    # <[returns the children list]>
+    #</p>
+    method getChildren()
+        return children
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitEmphasis()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitEmphasis(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"Emphasis"</tt>]>
+    #</p>
+    method nodeType()
+        return "Emphasis"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# Strong (bold) inline run (<tt>**strong**</tt>).
+#</p>
+class Strong : Inline (children)
+
+    #<p>
+    # Replace the inline children of this strong span.
+    # <[param c list of inline child nodes]>
+    #</p>
+    method setChildren(c)
+        children := c
+        return
+    end
+
+    #<p>
+    # Return the inline children.
+    # <[returns the children list]>
+    #</p>
+    method getChildren()
+        return children
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitStrong()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitStrong(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"Strong"</tt>]>
+    #</p>
+    method nodeType()
+        return "Strong"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
+# Literal (code) inline run (<tt>``literal``</tt> or <tt>`literal`</tt>).
+#</p>
+class Literal : Inline (str)
+
+    #<p>
+    # Set the literal text.
+    # <[param s literal string]>
+    #</p>
+    method setText(s)
+        str := s
+        return
+    end
+
+    #<p>
+    # Return the literal text.
+    # <[returns the literal string]>
+    #</p>
+    method getText()
+        return str
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitLiteral()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitLiteral(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"Literal"</tt>]>
+    #</p>
+    method nodeType()
+        return "Literal"
+    end
+end
+
+#<p>
+# External hyperlink (<tt>`text &lt;url&gt;`_</tt>).
+#</p>
+class Hyperlink : Inline (uri, text)
+
+    method setURI(u)
+        uri := u
+        return
+    end
+
+    method getURI()
+        return uri
+    end
+
+    method setText(t)
+        text := t
+        return
+    end
+
+    method getText()
+        return \text | uri
+    end
+
+    method accept(outp)
+        outp.visitHyperlink(self)
+        return
+    end
+
+    method nodeType()
+        return "Hyperlink"
+    end
+end
+
+#<p>
+# Subscript (<tt>:sub:`text`</tt>) or superscript (<tt>:sup:`text`</tt>).
+# <tt>kind</tt> is <tt>"sub"</tt> or <tt>"sup"</tt>.
+#</p>
+class ScriptText : Inline (str, kind)
+
+    method setText(s)
+        str := s
+        return
+    end
+
+    method getText()
+        return str
+    end
+
+    method setKind(k)
+        kind := k
+        return
+    end
+
+    method getKind()
+        return \kind | "sub"
+    end
+
+    method accept(outp)
+        outp.visitScriptText(self)
+        return
+    end
+
+    method nodeType()
+        return "ScriptText"
+    end
+end
+
+#<p>
+# One or more bibliography citations (<tt>:cite:`key`</tt> or
+# <tt>:cite:`k1,k2`</tt>). Numbers are assigned by
+# <tt>CitationTable</tt> in first-seen order.
+#</p>
+class Cite : Inline (keys)
+
+    method setKeys(L)
+        keys := L
+        return
+    end
+
+    method getKeys()
+        /keys := []
+        return keys
+    end
+
+    method accept(outp)
+        outp.visitCite(self)
+        return
+    end
+
+    method nodeType()
+        return "Cite"
+    end
+
+    initially
+        keys := []
+end
+
+#<p>
+# Auto-numbered footnote from <tt>:footnote:`body`</tt>.
+# <tt>number</tt> is filled by the outputter on first visit.
+#</p>
+class Footnote : Inline (body, number)
+
+    method setBody(s)
+        body := s
+        return
+    end
+
+    method getBody()
+        return \body | ""
+    end
+
+    method setNumber(n)
+        number := n
+        return
+    end
+
+    method getNumber()
+        return \number
+    end
+
+    method accept(outp)
+        outp.visitFootnote(self)
+        return
+    end
+
+    method nodeType()
+        return "Footnote"
+    end
+end
+
+#<p>
+# Inline math (<tt>:math:`...`</tt>) or display math block
+# (<tt>.. math::</tt>). <tt>display</tt> non-null selects block form.
+#</p>
+class Math : Node (latex, display)
+
+    method setLatex(s)
+        latex := s
+        return
+    end
+
+    method getLatex()
+        return \latex | ""
+    end
+
+    method setDisplay(d)
+        display := d
+        return
+    end
+
+    method isDisplay()
+        return \display
+    end
+
+    method accept(outp)
+        outp.visitMath(self)
+        return
+    end
+
+    method nodeType()
+        return "Math"
+    end
+end
+
+#<p>
+# Bibliography block from <tt>.. bibliography:: file.bib</tt>.
+#</p>
+class Bibliography : Node (path)
+
+    method setPath(p)
+        path := p
+        return
+    end
+
+    method getPath()
+        return \path | ""
+    end
+
+    method accept(outp)
+        outp.visitBibliography(self)
+        return
+    end
+
+    method nodeType()
+        return "Bibliography"
+    end
+end
+
+#<p>
+# Passthrough block for <tt>.. raw:: html</tt> / <tt>.. raw:: latex</tt>.
+#</p>
+class RawBlock : Node (format, lines)
+
+    method setFormat(f)
+        format := f
+        return
+    end
+
+    method getFormat()
+        return \format | ""
+    end
+
+    method setLines(L)
+        lines := L
+        return
+    end
+
+    method getLines()
+        /lines := []
+        return lines
+    end
+
+    method accept(outp)
+        outp.visitRawBlock(self)
+        return
+    end
+
+    method nodeType()
+        return "RawBlock"
+    end
+
+    initially
+        lines := []
+end
+
+#<p>
+# A resolved cross-reference (we know the target). Produced from a
+# <tt>PendingXref</tt> by <tt>LabelTable</tt> during pass 2 -- see
+# <tt>labeltable.icn</tt>.
+#</p>
+class Reference : Inline (text, targetFile, targetAnchor)
+
+    #<p>
+    # Set the display text for the link.
+    # <[param t display text string]>
+    #</p>
+    method setText(t)
+        text := t
+        return
+    end
+
+    #<p>
+    # Return the display text.
+    # <[returns the display text string]>
+    #</p>
+    method getText()
+        return text
+    end
+
+    #<p>
+    # Set the resolved target file and anchor.
+    # <[param fName HTML output basename]>
+    # <[param anchor fragment id within that page]>
+    #</p>
+    method setTarget(fName, anchor)
+        targetFile := fName
+        targetAnchor := anchor
+        return
+    end
+
+    #<p>
+    # Return the resolved target file basename.
+    # <[returns the target file string]>
+    # <[fails if unset]>
+    #</p>
+    method getTargetFile()
+        return \targetFile
+    end
+
+    #<p>
+    # Return the resolved target anchor.
+    # <[returns the anchor string]>
+    # <[fails if unset]>
+    #</p>
+    method getTargetAnchor()
+        return \targetAnchor
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitReference()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitReference(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"Reference"</tt>]>
+    #</p>
+    method nodeType()
+        return "Reference"
+    end
+end
+
+#<p>
+# An unresolved <tt>:ref:`label`</tt> or <tt>:doc:`file`</tt> found during
+# pass 1 parsing. The parser emits these optimistically; <tt>LabelTable</tt>'s
+# <tt>resolve()</tt> pass walks every <tt>Document</tt> afterward, swapping
+# each <tt>PendingXref</tt> for a <tt>Reference</tt> (or flagging it as
+# broken). See <tt>LabelTable.resolve()</tt> in <tt>labeltable.icn</tt>.
+#</p>
+class PendingXref : Inline (label, displayText, kind)
+
+    #<p>
+    # Set the unresolved label or doc target.
+    # <[param l label or file string]>
+    #</p>
+    method setLabel(l)
+        label := l
+        return
+    end
+
+    #<p>
+    # Return the unresolved label or doc target.
+    # <[returns the label string]>
+    #</p>
+    method getLabel()
+        return label
+    end
+
+    #<p>
+    # Set optional display text distinct from the label.
+    # <[param d display text string]>
+    #</p>
+    method setDisplayText(d)
+        displayText := d
+        return
+    end
+
+    #<p>
+    # Return optional display text, if any.
+    # <[returns the display text string]>
+    # <[fails if unset]>
+    #</p>
+    method getDisplayText()
+        return \displayText
+    end
+
+    #<p>
+    # Set the xref kind (<tt>"ref"</tt> or <tt>"doc"</tt>).
+    # <[param k kind string]>
+    #</p>
+    method setKind(k)
+        kind := k
+        return
+    end
+
+    #<p>
+    # Return the xref kind (<tt>"ref"</tt> or <tt>"doc"</tt>).
+    # <[returns the kind string]>
+    #</p>
+    method getKind()
+        return kind
+    end
+
+    #<p>
+    # Should never survive to rendering -- <tt>LabelTable.resolve()</tt>
+    # replaces every <tt>PendingXref</tt> before the <tt>Outputter</tt>
+    # walk begins. If we get here, treat it as a broken reference.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitBrokenXref(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"PendingXref"</tt>]>
+    #</p>
+    method nodeType()
+        return "PendingXref"
+    end
+end
+
+#<p>
+# Factory procedures. Prefer these over direct <tt>ClassName(...)</tt>
+# calls for node types with several inherited
+# (<tt>parent</tt>/<tt>srcFile</tt>/<tt>srcLine</tt>) fields -- they
+# read/setName-and-return, so callers never have to count positional
+# inherited-field slots by hand.
+#</p>
+
+#<p>
+# Build a <tt>Text</tt> node.
+# <[param s text string]>
+# <[returns a <tt>Text</tt> instance]>
+#</p>
+procedure mkText(s)
+    local n
+    n := Text()
+    n.setText(s)
+    return n
+end
+
+#<p>
+# Build a <tt>Literal</tt> node.
+# <[param s literal string]>
+# <[returns a <tt>Literal</tt> instance]>
+#</p>
+procedure mkLiteral(s)
+    local n
+    n := Literal()
+    n.setText(s)
+    return n
+end
+
+#<p>
+# Build an <tt>Emphasis</tt> node with the given children.
+# <[param kids list of inline child nodes]>
+# <[returns an <tt>Emphasis</tt> instance]>
+#</p>
+procedure mkEmphasis(kids)
+    local n
+    n := Emphasis()
+    n.setChildren(kids)
+    return n
+end
+
+#<p>
+# Build a <tt>Strong</tt> node with the given children.
+# <[param kids list of inline child nodes]>
+# <[returns a <tt>Strong</tt> instance]>
+#</p>
+procedure mkStrong(kids)
+    local n
+    n := Strong()
+    n.setChildren(kids)
+    return n
+end
+
+#<p>
+# Build a <tt>PendingXref</tt> for later resolution.
+# <[param label unresolved label or file string]>
+# <[param kind <tt>"ref"</tt> or <tt>"doc"</tt>]>
+# <[returns a <tt>PendingXref</tt> instance]>
+#</p>
+procedure mkPendingXref(label, kind)
+    local n
+    n := PendingXref()
+    n.setLabel(label)
+    n.setKind(kind)
+    return n
+end
+
+#<p>
+# Build an external <tt>Hyperlink</tt>.
+# <[param uri destination URL]>
+# <[param text link text (defaults to <tt>uri</tt>)]>
+# <[returns a <tt>Hyperlink</tt> instance]>
+#</p>
+procedure mkHyperlink(uri, text)
+    local n
+    n := Hyperlink()
+    n.setURI(uri)
+    n.setText(\text | uri)
+    return n
+end
+
+#<p>
+# Build a <tt>ScriptText</tt> subscript or superscript.
+# <[param s text content]>
+# <[param kind <tt>"sub"</tt> or <tt>"sup"</tt>]>
+# <[returns a <tt>ScriptText</tt> instance]>
+#</p>
+procedure mkScriptText(s, kind)
+    local n
+    n := ScriptText()
+    n.setText(s)
+    n.setKind(\kind | "sub")
+    return n
+end
+
+#<p>
+# Build a <tt>Cite</tt> from a comma-separated key list payload.
+# <[param payload text inside <tt>:cite:`...`</tt>]>
+# <[returns a <tt>Cite</tt> instance]>
+#</p>
+procedure mkCite(payload)
+    local n, keys, piece
+    n := Cite()
+    keys := []
+    every piece := splitCiteKeys(payload) do
+        put(keys, piece)
+    n.setKeys(keys)
+    return n
+end
+
+#<p>
+# Build a <tt>Footnote</tt> from role payload text.
+# <[param body footnote body string]>
+# <[returns a <tt>Footnote</tt>]>
+#</p>
+procedure mkFootnote(body)
+    local n
+    n := Footnote()
+    n.setBody(body)
+    return n
+end
+
+#<p>
+# Build a <tt>Math</tt> node.
+# <[param latex TeX math source]>
+# <[param display non-null for display math]>
+# <[returns a <tt>Math</tt>]>
+#</p>
+procedure mkMath(latex, display)
+    local n
+    n := Math()
+    n.setLatex(latex)
+    if \display then n.setDisplay(1)
+    return n
+end
+
+#<p>
+# Split <tt>"a, b, c"</tt> into trimmed non-empty keys.
+# <[param payload cite role payload]>
+# <[generates each key string]>
+#</p>
+procedure splitCiteKeys(payload)
+    local s, i, start, c, piece
+    s := trim(payload, ' ', 0)
+    start := 1
+    every i := 1 to *s + 1 do {
+        c := if i <= *s then s[i] else ","
+        if c == "," then {
+            piece := trim(s[start:i], ' ', 0)
+            if *piece > 0 then suspend piece
+            start := i + 1
+            }
+        }
+end
+
+#<p>
+# Turn a title/label into a filesystem/anchor-safe slug. Shared by
+# <tt>outputter.icn</tt> (fallback anchors) and <tt>labeltable.icn</tt>
+# (title-based lookup key) -- kept here as the single definition since
+# Unicon procedure names are global across a linked program, not scoped
+# per file, and both callers need the exact same slugging rule anyway.
+# <[param s title or label string]>
+# <[returns a lowercase hyphen-separated slug]>
+#</p>
+procedure slugify(s)
+    local out, piece, needSep
+    out := ""
+    needSep := &null
+    s ? {
+        while tab(upto(&letters ++ &digits)) do {
+            piece := tab(many(&letters ++ &digits)) | break
+            if \needSep then out ||:= "-"
+            out ||:= piece
+            needSep := 1
+            }
+        }
+    return map(out, &ucase, &lcase)
+end

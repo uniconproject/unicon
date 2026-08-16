@@ -1,0 +1,123 @@
+#<p>
+# Ordered chapter list for a book. Holds source paths in reading order
+# and the parsed <tt>Document</tt> for each after pass 1. Loaded from a
+# plain file (one path per line, <tt>"#"</tt> comments allowed) or via
+# <tt>addChapter()</tt>.
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
+package uscribe
+
+import lang
+
+# <p>
+# Book-level chapter order and the parsed documents keyed by source
+# path. Declaring order (<tt>addChapter</tt> /
+# <tt>loadFromFile</tt>) is separate from attaching parse results
+# (<tt>setDocument</tt>) so the driver can list chapters before
+# parsing runs.
+# </p>
+class Manifest : Object (bookTitle, entries, docs)
+
+    # <p>
+    # Set the book title used by outputters.
+    # <[param t the title string]>
+    # </p>
+    method setTitle(t)
+        bookTitle := t
+        return
+    end
+
+    # <p>
+    # Produce the book title, if one was set.
+    # <[returns the title string]>
+    # <[fails if no title has been set]>
+    # </p>
+    method getTitle()
+        return \bookTitle
+    end
+
+    # <p>
+    # Register a chapter by source path, in reading order.
+    # <[param srcPath filesystem path to the chapter source]>
+    # </p>
+    method addChapter(srcPath)
+        put(entries, srcPath)
+        return
+    end
+
+    # <p>
+    # Produce the ordered list of chapter source paths.
+    # <[returns the <tt>entries</tt> list]>
+    # </p>
+    method getChapterPaths()
+        return entries
+    end
+
+    # <p>
+    # Load chapter order from a manifest file (one path per line;
+    # blank lines and <tt>"#"</tt> comments ignored).
+    # <[param path filesystem path to the manifest file]>
+    # <[fails if <tt>path</tt> cannot be opened for reading]>
+    # </p>
+    method loadFromFile(path)
+        local f, line
+        f := open(path, "r") | fail
+        while line := read(f) do {
+            line ? {
+                tab(many(' \t'))
+                if pos(0) then next
+                if ="#" then next
+                addChapter(tab(0))
+                }
+            }
+        close(f)
+        return
+    end
+
+    # <p>
+    # Record the parsed <tt>Document</tt> for a chapter (keyed by its
+    # source path) once <tt>Parser</tt> has produced it. Kept separate
+    # from <tt>addChapter()</tt> so ordering can be declared before
+    # parsing runs.
+    # <[param srcPath chapter source path (must match an entry)]>
+    # <[param doc the parsed <tt>Document</tt>]>
+    # </p>
+    method setDocument(srcPath, doc)
+        docs[srcPath] := doc
+        return
+    end
+
+    # <p>
+    # Look up the parsed <tt>Document</tt> for a chapter source path.
+    # <[param srcPath chapter source path]>
+    # <[returns the stored <tt>Document</tt>]>
+    # <[fails if no document was recorded for <tt>srcPath</tt>]>
+    # </p>
+    method getDocument(srcPath)
+        return \docs[srcPath]
+    end
+
+    # <p>
+    # Produce the Documents in manifest order, for handing to
+    # <tt>LabelTable.resolve()</tt> and then to an <tt>Outputter</tt>.
+    # Chapters listed but never parsed emit a warning on
+    # <tt>&errout</tt> and are omitted from the result.
+    # <[returns a list of <tt>Document</tt> instances, in chapter
+    #         order]>
+    # </p>
+    method getOrderedDocuments()
+        local out, p
+        out := []
+        every p := !entries do
+            put(out, \docs[p]) | write(&errout, "warning: chapter '", p,
+                                        "' listed but never parsed")
+        return out
+    end
+
+    initially
+        entries := []
+        docs := table()
+end

@@ -2,8 +2,9 @@
 # <tt>uscribe</tt> CLI driver: two-pass book build from a manifest.
 # Pass 1 parses every chapter and collects labels; pass 2 resolves
 # xrefs and renders via <tt>HtmlOutputter</tt> or <tt>LatexOutputter</tt>.
-# Usage: <tt>uscribe --manifest=book.idx --title=… --targetDir=…</tt>
-# and optionally <tt>--format=html|latex|pdf</tt>.
+# Usage: <tt>uscribe</tt> (defaults to <tt>book.manifest</tt> /
+# <tt>book.conf</tt> in the current directory) with optional
+# <tt>--format=html|latex|pdf</tt> and <tt>--targetDir=…</tt>.
 #</p>
 #<p>
 # <b>Author:</b> Jafar Al-Gharaibeh
@@ -20,6 +21,7 @@ import json
 import uscribe
 
 global targetDir, bookTitle, bookOutputName, themeName, copyrightNotice, logoHref
+global bookConfig, logoSrc
 
 #<p>
 # Parse CLI options, load the manifest, run the two-pass build, and
@@ -30,21 +32,23 @@ procedure main(args)
     local manifestPath, mf, parser, registry, labels, cites, chapterPath, doc
     local docs, format, cliDocClass
 
-    if *args = 0 then helpMesg()
     Args(args, set("manifest","title","targetDir","theme","themePath","format",
-                   "copyright","logo","docclass","name"),
+                   "copyright","logo","docclass","name","config"),
          helpMesg)
 
-    manifestPath := Args().getOpt("manifest") | helpMesg()
-    bookTitle    := Args().getOptDef("title", "Untitled Book")
+    manifestPath := Args().getOpt("manifest") | "book.manifest"
+    bookConfig := loadBookConfig(manifestPath)
+    bookTitle    := Args().getOpt("title") | (\bookConfig).get("title") |
+          "Untitled Book"
     bookOutputName := parseBookOutputName()
-    copyrightNotice := Args().getOpt("copyright")
+    copyrightNotice := Args().getOpt("copyright") | (\bookConfig).get("copyright")
+    logoSrc := Args().getOpt("logo") | (\bookConfig).getPath("logo")
     logoHref := &null
     format       := map(Args().getOptDef("format", "html"), &ucase, &lcase)
     if not member(set(["html","latex","pdf"]), format) then
         stop("uscribe: --format must be html, latex, or pdf (got '",
              format, "')")
-    cliDocClass := Args().getOpt("docclass")
+    cliDocClass := Args().getOpt("docclass") | (\bookConfig).get("docclass")
     if \cliDocClass then {
         cliDocClass := map(cliDocClass, &ucase, &lcase)
         if not member(set(["book","report"]), cliDocClass) then
@@ -57,7 +61,7 @@ procedure main(args)
     else
         targetDir := Args().getOptDef("targetDir", "./latexBook")
 
-    themeName := Args().getOptDef("theme", "basic")
+    themeName := Args().getOpt("theme") | (\bookConfig).get("theme") | "basic"
     if themeName ~== safeThemeName(themeName) then
         stop("uscribe: invalid --theme '", themeName,
              "'; use only letters, digits, '_' or '-'")
@@ -69,8 +73,13 @@ procedure main(args)
 
     mf := Manifest()
     mf.setTitle(bookTitle)
-    mf.loadFromFile(manifestPath) |
+    mf.loadFromFile(manifestPath) | {
+        if /Args().getOpt("manifest") then {
+            write(&errout, "uscribe: no book.manifest in the current directory")
+            helpMesg()
+            }
         stop("uscribe: could not read manifest '", manifestPath, "'")
+        }
 
     # --- Pass 1: parse every chapter, then collect labels ---
     labels := LabelTable()
@@ -116,9 +125,9 @@ end
 #</p>
 procedure renderHtml(docs, labels, cites)
     local themePath, themeDir, nav, indexDocs, doc, outp, outPath, f, i
-    local logoSrc, logoBase, bookPdf
+    local logoBase, bookPdf
 
-    themePath := Args().getOpt("themePath")
+    themePath := Args().getOpt("themePath") | (\bookConfig).getPath("themepath")
     themeDir := resolveThemeDir(themeName, themePath) |
         stop("uscribe: theme '", themeName, "' not found",
              " (tried --themePath, ./themes/, and built-in themes/)")
@@ -127,7 +136,6 @@ procedure renderHtml(docs, labels, cites)
     installThemeAssets(dirname(themeDir), themeName, targetDir || "/_static")
     write("theme: ", themeName, " (default; all themes available in UI)")
 
-    logoSrc := Args().getOpt("logo")
     if \logoSrc then {
         logoBase := basename(logoSrc)
         copyFile(logoSrc, targetDir || "/_static/" || logoBase) |
@@ -1070,6 +1078,32 @@ procedure ensureDir(d)
 end
 
 #<p>
+# Load <tt>book.conf</tt>: explicit <tt>--config=FILE</tt>, else
+# <tt>book.conf</tt> next to the manifest (if that file exists).
+# <[param manifestPath path to the chapter manifest]>
+# <[returns a BookConfig]>
+# <[fails if no config file is used]>
+#</p>
+procedure loadBookConfig(manifestPath)
+    local path, cfg, explicit
+    explicit := Args().getOpt("config")
+    if \explicit then {
+        cfg := BookConfig()
+        cfg.loadFromFile(explicit) |
+            stop("uscribe: could not read --config '", explicit, "'")
+        write("config: ", explicit)
+        return cfg
+        }
+    path := dirname(manifestPath) || "/book.conf"
+    cfg := BookConfig()
+    if cfg.loadFromFile(path) then {
+        write("config: ", path)
+        return cfg
+        }
+    fail
+end
+
+#<p>
 # Copy <tt>--logo</tt> into <tt>targetDir</tt> for
 # <tt>\\includegraphics</tt> on the title page.
 # <[returns image basename]>
@@ -1077,7 +1111,7 @@ end
 #</p>
 procedure copyLogoForLatex()
     local src, base
-    src := Args().getOpt("logo")
+    src := logoSrc
     if /src then fail
     base := basename(src)
     copyFile(src, targetDir || "/" || base) |
@@ -1094,7 +1128,7 @@ end
 #</p>
 procedure parseBookOutputName()
     local raw, stem
-    raw := Args().getOptDef("name", "book")
+    raw := Args().getOpt("name") | (\bookConfig).get("name") | "book"
     stem := raw
     if *stem >= 4 & (map(stem[-4:0], &ucase, &lcase) == ".pdf" |
           map(stem[-4:0], &ucase, &lcase) == ".tex") then
@@ -1109,11 +1143,15 @@ end
 # Print usage and exit via <tt>stop()</tt>.
 #</p>
 procedure helpMesg()
-    write("Usage: uscribe --manifest=FILE [options]")
+    write("Usage: uscribe [options]")
     write()
-    write("  --manifest=FILE     Plain-text chapter list, one source path per")
-    write("                      line (# comments and blank lines allowed).")
-    write("  --title=TITLE       Book title (default: \"Untitled Book\")")
+    write("  --manifest=FILE     Chapter list (default: book.manifest).")
+    write("                      One source path per line (# comments and")
+    write("                      blank lines allowed).")
+    write("  --config=FILE       Book settings (default: book.conf next")
+    write("                      to the manifest, if present). CLI wins.")
+    write("  --title=TITLE       Book title (default: from config, else")
+    write("                      \"Untitled Book\")")
     write("  --name=STEM         Book .tex/.pdf basename (default: book).")
     write("                      HTML footers link to STEM.pdf. Ignored for")
     write("                      report collections (one PDF per report).")
@@ -1128,7 +1166,8 @@ procedure helpMesg()
     write()
     write("  Report mode is also selected by a leading RST field list with")
     write("  :docclass: report and/or :trnumber: (plus :title:, :author:,")
-    write("  :date:, :abstract:).")
+    write("  :date:, :copyright:, :abstract:). Book chapters may use")
+    write("  :author: / :date: / :copyright: for a byline under the title.")
     write()
     write("  HTML footers always include \"Powered by uscribe\".")
     write("  latex writes STEM.tex (default book.tex); pdf also runs")

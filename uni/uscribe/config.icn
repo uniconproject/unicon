@@ -1,0 +1,136 @@
+#<p>
+# Book-level settings file (<tt>book.conf</tt>): title, copyright,
+# logo, name, theme, and related keys. The manifest stays a chapter
+# list; the CLI overrides any key from this file.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
+package uscribe
+
+import lang
+
+#<p>
+# Key/value book settings loaded from <tt>book.conf</tt>.
+# Path-valued keys (<tt>logo</tt>, <tt>themepath</tt>) are resolved
+# relative to the directory that contains the config file.
+#</p>
+class BookConfig : Object (values, confDir)
+
+    #<p>
+    # Directory that contains the config file (for relative paths).
+    # <[returns directory path, or <tt>"."</tt>]>
+    #</p>
+    method getDir()
+        return \confDir | "."
+    end
+
+    #<p>
+    # Look up a raw setting.
+    # <[param key name (case-insensitive)]>
+    # <[returns the value string]>
+    # <[fails if the key is unset]>
+    #</p>
+    method get(key)
+        return \values[map(key, &ucase, &lcase)]
+    end
+
+    #<p>
+    # Look up a path setting and resolve it against <tt>confDir</tt>
+    # unless it is already absolute.
+    # <[param key name (case-insensitive)]>
+    # <[returns filesystem path]>
+    # <[fails if the key is unset]>
+    #</p>
+    method getPath(key)
+        local p
+        p := get(key) | fail
+        if p[1] == "/" then
+            return p
+        return getDir() || "/" || p
+    end
+
+    #<p>
+    # Load <tt>key: value</tt> lines from <tt>path</tt>.
+    # Blank lines and <tt>#</tt> comments are ignored. A leading
+    # colon on the key is allowed (<tt>:title:</tt> form).
+    # <[param path filesystem path]>
+    # <[fails if <tt>path</tt> cannot be opened]>
+    #</p>
+    method loadFromFile(path)
+        local f, line, name, val
+        f := open(path, "r") | fail
+        confDir := configDirname(path)
+        while line := read(f) do {
+            line ? {
+                tab(many(' \t'))
+                if pos(0) then next
+                if ="#" then next
+                if =":" then
+                    tab(many(' \t'))
+                name := tab(find(":"))
+                if /name then {
+                    write(&errout, "warning: book.conf: ignored line: ",
+                          line)
+                    next
+                    }
+                move(1)
+                tab(many(' \t'))
+                val := trim(tab(0), ' \t', 0)
+                name := map(trim(name, ' \t', 0), &ucase, &lcase)
+                name := aliasConfigKey(name)
+                if not knownConfigKey(name) then
+                    write(&errout, "warning: book.conf: unknown key '",
+                          name, "'")
+                else if *name > 0 then
+                    values[name] := val
+                }
+            }
+        close(f)
+        return
+    end
+
+    initially
+        values := table()
+        confDir := "."
+end
+
+#<p>
+# Map alternate spellings onto the canonical key.
+# <[param name already-lowercased key]>
+# <[returns canonical key]>
+#</p>
+procedure aliasConfigKey(name)
+    return case name of {
+        "theme_path" | "themepath": "themepath"
+        "doc_class" | "doc-class": "docclass"
+        default: name
+        }
+end
+
+#<p>
+# Succeed when <tt>name</tt> is a supported book-config key.
+# <[param name canonical key]>
+# <[fails if unknown]>
+#</p>
+procedure knownConfigKey(name)
+    return member(set(["title","copyright","logo","name","theme",
+                       "themepath","docclass"]), name)
+end
+
+#<p>
+# Parent directory of the config path. Bare names yield <tt>"."</tt>.
+# <[param path filesystem path]>
+# <[returns parent directory]>
+#</p>
+procedure configDirname(path)
+    local parts
+    parts := tail(path)
+    if /parts[1] | (*parts[1] = 0) then
+        return "."
+    return parts[1]
+end

@@ -777,7 +777,7 @@ Deliberate Syntax Error
             case 'i':
             case 'I':
                /*
-                * Uniconde Phase 0: explicit per-file/socket opt-in for
+                * Unicon Phase 0: explicit per-file/socket opt-in for
                 * Unicode-aware reads(), matching the same
                 * text/binary-mode-flag convention as 't'/'b' rather
                 * than automatic scanning at every read() call, which
@@ -2826,7 +2826,7 @@ function{0,1} reads(f,i)
          fail;
       SetStrLen(s, tally);
       /*
-       * Uniconde Phase 0: explicit per-file opt-in, set via open()'s
+       * Unicon Phase 0: explicit per-file opt-in, set via open()'s
        * "i" mode char (Fs_Unicode). Not automatic -- every read() call
        * paying a scan, even ones that never touch non-ASCII content,
        * was benchmarked and rejected (readbench.c, design doc). status

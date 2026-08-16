@@ -4,7 +4,7 @@
 
 include ../Makedefs
 
-UNICODTST = size subsc subsc_loop concat convert scan section many match find \
+UNICODTST = size subsc subsc_loop concat convert scan section bang many match find \
 	reverse file_i socket_i ascii_basic ascii_ops languages
 
 UCFEAT := $(shell $(UC) -features 2>/dev/null)

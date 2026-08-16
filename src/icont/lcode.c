@@ -584,7 +584,7 @@ static void lemitr(int op, word loc, char *name)
    }
 
 /*
- * uniquallen - Uniconde Phase 0: compute the length operand for a string
+ * uniquallen - Unicon Phase 0: compute the length operand for a string
  *  literal's Op_Str, with F_UniQual baked in if the literal was found to
  *  contain non-ASCII bytes at translate time (tsym.c putlit). With the
  *  feature off (ICONT_F_UniQual undefined), this is exactly cp->c_length,

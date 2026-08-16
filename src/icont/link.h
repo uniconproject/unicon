@@ -100,7 +100,7 @@ struct rentry {                 /* field table record list entry */
 #define F_RealLit        04000  /* literal is a real */
 #define F_StrLit        010000  /* literal is a string */
 #define F_CsetLit       020000  /* literal is a cset */
-#define F_UniQualLit    040000  /* Uniconde Phase 0: string literal contains
+#define F_UniQualLit    040000  /* Unicon Phase 0: string literal contains
                                     non-ASCII bytes -- set once at translate
                                     time (tsym.c putlit), round-trips through
                                     the .u1 intermediate file via the existing
@@ -110,7 +110,7 @@ struct rentry {                 /* field table record list entry */
                                     leaving it to interp.r's runtime scan. */
 
 /*
- * Uniconde Phase 0: mirrors the runtime's F_UniQual bit (src/h/cpuconf.h),
+ * Unicon Phase 0: mirrors the runtime's F_UniQual bit (src/h/cpuconf.h),
  * bit 62 of a 64-bit qualifier's dword. Deliberately a self-contained
  * constant rather than #include "../h/cpuconf.h" -- confirmed empirically
  * (gcc -E) that cpuconf.h itself is NOT transitively reachable from this

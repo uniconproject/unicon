@@ -44,7 +44,7 @@ struct tcentry {                        /* constant table entry */
 #define F_RealLit        04000  /* literal is a real */
 #define F_StrLit        010000  /* literal is a string */
 #define F_CsetLit       020000  /* literal is a cset */
-#define F_UniQualLit    040000  /* Uniconde Phase 0: string literal contains
+#define F_UniQualLit    040000  /* Unicon Phase 0: string literal contains
                                     non-ASCII bytes -- see link.h for the
                                     full explanation; same bit position,
                                     duplicated here to match the existing

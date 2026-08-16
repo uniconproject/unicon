@@ -20,11 +20,32 @@ operator{*} ! bang(underef x -> dx)
       inline {
          /*
           * A nonconverted string from a variable is being banged.
-          *  Loop through the string suspending one-character substring
-          *  trapped variables.
+          * On a tagged Unicon string each trap is one codepoint (full
+          * UTF-8 width), matching s[i]. Untagged strings stay one byte
+          * per trap. Re-check the tag after each assignment: replacing
+          * a character can tag or untag the result.
           */
-         for (i = 1; i <= StrLen(dx); i++) {
-            suspend tvsubs(&x, i, (word)1);
+         for (i = 1; ; i++) {
+            word n, bpos, w;
+            unsigned char *bytes;
+
+            if (IsUniQual(dx)) {
+               if (CpCount(dx) != CpCountSentinel)
+                  n = CpCount(dx);
+               else
+                  uq_scan((unsigned char *)StrLoc(dx), StrLen(dx), &n);
+               if (i > n)
+                  break;
+               bytes = (unsigned char *)StrLoc(dx);
+               bpos = uq_seek_cp(bytes, i - 1);
+               w = uq_lead_width(bytes[bpos]);
+               suspend tvsubs(&x, bpos + 1, w);
+               }
+            else {
+               if (i > StrLen(dx))
+                  break;
+               suspend tvsubs(&x, i, (word)1);
+               }
             deref(&x, &dx);
             if (!is:string(dx))
                runerr(103, dx);
@@ -433,12 +454,34 @@ operator{*} ! bang(underef x -> dx)
             inline {
                /*
                 * A (converted or non-variable) string is being banged.
-                * Loop through the string suspending simple one character
-                *  substrings.
+                * Tagged Unicon strings yield one codepoint at a time,
+                * the same values as s[i]. Untagged strings stay one
+                * byte each.
                 */
-               for (i = 1; i <= StrLen(dx); i++) {
-                  ch = *(StrLoc(dx) + i - 1);
-                  suspend string(1, (char *)&allchars[FromAscii(ch) & 0xFF]);
+               if (IsUniQual(dx)) {
+                  unsigned char *bytes = (unsigned char *)StrLoc(dx);
+                  word ncps, cp, bpos, w;
+
+                  if (CpCount(dx) != CpCountSentinel)
+                     ncps = CpCount(dx);
+                  else
+                     uq_scan(bytes, StrLen(dx), &ncps);
+                  for (cp = 0; cp < ncps; cp++) {
+                     bpos = uq_seek_cp(bytes, cp);
+                     w = uq_lead_width(bytes[bpos]);
+                     if (w == 1) {
+                        ch = bytes[bpos];
+                        suspend string(1, (char *)&allchars[FromAscii(ch) & 0xFF]);
+                        }
+                     else
+                        suspend string(w, (char *)(bytes + bpos));
+                     }
+                  }
+               else {
+                  for (i = 1; i <= StrLen(dx); i++) {
+                     ch = *(StrLoc(dx) + i - 1);
+                     suspend string(1, (char *)&allchars[FromAscii(ch) & 0xFF]);
+                     }
                   }
                }
             }
@@ -476,9 +519,27 @@ operator{0,1} ? random(underef x -> dx)
 #endif                                  /* ConcurrentCOMPILER */
 
          /*
-          * A string from a variable is being banged. Produce a one
-          *  character substring trapped variable.
+          * A string from a variable. Produce a one-character substring
+          * trapped variable. On a tagged Unicon string the range is
+          * codepoints and the trap spans the full UTF-8 character.
           */
+         if (IsUniQual(dx)) {
+            word ncps, bpos, w;
+            unsigned char *bytes;
+
+            if (CpCount(dx) != CpCountSentinel)
+               ncps = CpCount(dx);
+            else
+               uq_scan((unsigned char *)StrLoc(dx), StrLen(dx), &ncps);
+            if (ncps <= 0)
+               fail;
+            rval = RandVal;
+            rval *= ncps;
+            bytes = (unsigned char *)StrLoc(dx);
+            bpos = uq_seek_cp(bytes, (word)rval);
+            w = uq_lead_width(bytes[bpos]);
+            return tvsubs(&x, bpos + 1, w);
+            }
          if ((val = StrLen(dx)) <= 0)
             fail;
          rval = RandVal;        /* This form is used to get around */
@@ -503,6 +564,23 @@ operator{0,1} ? random(underef x -> dx)
             CURTSTATE();
 #endif                                  /* ConcurrentCOMPILER */
 
+            if (IsUniQual(dx)) {
+               word ncps, bpos, w;
+               unsigned char *bytes;
+
+               if (CpCount(dx) != CpCountSentinel)
+                  ncps = CpCount(dx);
+               else
+                  uq_scan((unsigned char *)StrLoc(dx), StrLen(dx), &ncps);
+               if (ncps <= 0)
+                  fail;
+               rval = RandVal;
+               rval *= ncps;
+               bytes = (unsigned char *)StrLoc(dx);
+               bpos = uq_seek_cp(bytes, (word)rval);
+               w = uq_lead_width(bytes[bpos]);
+               return string(w, StrLoc(dx) + bpos);
+               }
             if ((val = StrLen(dx)) <= 0)
                fail;
             rval = RandVal;
@@ -874,7 +952,7 @@ operator{0,1} [:] sect(underef x -> dx, i, j)
          word uq_total;
 
          /*
-          * Uniconde Phase 0: same uq_total substitution as move/tab/pos
+          * Unicon Phase 0: same uq_total substitution as move/tab/pos
           * (fscan.r) -- cvpos() is already unit-agnostic. sect goes
           * further than those: a multi-character slice can itself
           * contain non-ASCII content or not, independent of whether
@@ -1390,7 +1468,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 
             if (is:string(dx) && IsUniQual(dx)) {
                /*
-                * Uniconde Phase 0 (design doc §7.2): dx is a tagged
+                * Unicon Phase 0 (design doc §7.2): dx is a tagged
                 * Unicode string. y means codepoint index, not byte
                 * index. No cache/index yet -- Phase 0's whole point is
                 * demonstrating correctness before optimization -- so

@@ -691,7 +691,7 @@ function{1} reverse(x)
       register word slen;
 
       /*
-       * Uniconde: a naive byte-reversal breaks a multi-byte codepoint's
+       * Unicon: a naive byte-reversal breaks a multi-byte codepoint's
        * lead-byte/continuation-byte structure -- reversing "café"
        * (bytes c,a,f,0xC3,0xA9) byte-for-byte produces 0xA9,0xC3,f,a,c,
        * which is not valid UTF-8 (0xA9 is a continuation byte and

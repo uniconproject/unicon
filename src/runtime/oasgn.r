@@ -526,45 +526,24 @@ int subs_asgn(dptr dest, const dptr src)
    memcpy(StrLoc(rsltstr)+prelen+StrLen(srcstr), StrLoc(deststr)+poststrt, postlen);
 
    /*
-    * Uniconde Phase 0: propagate the tag if either deststr or srcstr
+    * Unicon Phase 0: propagate the tag if either deststr or srcstr
     * is tagged -- this was the confirmed gap (design doc §8 item 2):
     * subs_asgn never called SetUniQual at all, so a substring
     * assignment into a tagged string silently untagged the result.
     *
-    * cp_count is harder here than a plain concatenation: rsltstr is a
-    * three-way splice (deststr's prefix + srcstr + deststr's suffix),
-    * and there's no cached "codepoint count of just this byte slice
-    * of deststr" to reuse -- only deststr's *whole* cp_count, which
-    * doesn't help for an arbitrary prefix/suffix cut. Scanning the
-    * prefix and suffix slices directly (only when deststr is actually
-    * tagged -- an untagged deststr's byte lengths already equal their
-    * codepoint counts) is no more expensive than the memcpy work this
-    * function already does over the same bytes, so it's not worth
-    * leaving cp_count uncached here the way it's left uncached
-    * elsewhere for genuinely harder cases (§4.2's icont asymmetry).
+    * Count the assembled result, not prefix+src+suffix slices.
+    * A trap can still cut inside a multibyte character (a constructed
+    * tvsubs, or an untagged source). Scanning those slices separately
+    * (a lead byte with no continuation, or a continuation with no
+    * lead) caches a count that does not match a walk of rsltstr.
     */
-   {
-   word uq_prefix_cnt, uq_suffix_cnt, uq_src_cnt;
-   int uq_src_ok;
-
-   if (IsUniQual(deststr)) {
-      uq_scan((unsigned char *)StrLoc(deststr), prelen, &uq_prefix_cnt);
-      uq_scan((unsigned char *)(StrLoc(deststr)+poststrt), postlen, &uq_suffix_cnt);
-      }
-   else {
-      uq_prefix_cnt = prelen;
-      uq_suffix_cnt = postlen;
-      }
-   uq_src_cnt = IsUniQual(srcstr) ? CpCount(srcstr) : StrLen(srcstr);
-   uq_src_ok  = !IsUniQual(srcstr) || (uq_src_cnt != CpCountSentinel);
-
    if (IsUniQual(deststr) || IsUniQual(srcstr)) {
+      word uq_ncps;
       SetUniQual(rsltstr);
-      if (uq_src_ok &&
-          (uword)(uq_prefix_cnt + uq_src_cnt + uq_suffix_cnt) <= CpCountMax)
-         SetCpCount(rsltstr, uq_prefix_cnt + uq_src_cnt + uq_suffix_cnt);
+      uq_scan((unsigned char *)StrLoc(rsltstr), StrLen(rsltstr), &uq_ncps);
+      if ((uword)uq_ncps <= CpCountMax)
+         SetCpCount(rsltstr, uq_ncps);
       }
-   }
 
    /*
     * Perform the assignment and update the trapped variable.

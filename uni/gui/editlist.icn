@@ -84,7 +84,7 @@ class EditList : DropDown(
    end
 
    method resize()
-      local bw
+      local bw, border
 
       if /self.selection_list then
          fatal("no selection list specified")
@@ -100,20 +100,21 @@ class EditList : DropDown(
       /self.h_spec := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
       self.Component.compute_absolutes()
 
-      bw := self.h - 2 * BORDER_WIDTH
+      border := if GuiThemeIsFlat() then 1 else BORDER_WIDTH
+      bw := self.h - 2 * border
 
       #
       # Set button position and size
       #
-      b.set_pos(self.w - BORDER_WIDTH - bw, BORDER_WIDTH)
+      b.set_pos(self.w - border - bw, border)
       b.set_size(bw, bw)
       b.resize()
 
       #
       # Set TextField position and size
       #
-      tf.set_pos(BORDER_WIDTH, BORDER_WIDTH)
-      tf.set_size(self.w - bw - 2 * BORDER_WIDTH,  self.h - 2 * BORDER_WIDTH)
+      tf.set_pos(border, border)
+      tf.set_size(self.w - bw - 2 * border,  self.h - 2 * border)
       tf.resize()
 
       return
@@ -124,7 +125,7 @@ class EditList : DropDown(
       # Draw text element 
       #
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      ThemeSunkenPanel(self.cbwin, self.x, self.y, self.w, self.h)
       #
       # Draw button and list
       #

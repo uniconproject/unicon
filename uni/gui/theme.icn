@@ -1,0 +1,478 @@
+#
+# This file is in the public domain.
+#
+# Author: Jafar Al-Gharaibeh (to.jafar@gmail.com)
+#
+# Pluggable look-and-feel for package {gui}.
+#
+# Flat (the default) uses 1px borders, solid fills for pressed state,
+# and an accent-colored focus ring.  Classic keeps the historical
+# bevelled Motif/Win95 drawing.
+#
+# @example
+# @ SetGuiTheme("flat")                    # default; optional
+# @ SetGuiTheme("classic")                 # old bevelled look
+# @ SetGuiThemeFont("default")             # opt-in: Unicon sans,12
+# @ SetGuiThemeFont("arial")               # opt-in: Arial/13 when available
+# @ SetGuiTheme("flat", ThemePalette(...)) # optional palette override
+#
+# By default the flat theme does not change the window font; Unicon's
+# usual runtime default (``fixed'') remains.  Call {SetGuiThemeFont} or
+# set UGUI_THEME_FONT to opt in to a theme typeface.
+#
+# Environment (applied once on first theme query, before defaults):
+# @ UGUI_THEME=classic|flat|...            # same names as SetGuiTheme
+# @ UGUI_THEME_FONT=default|arial|...      # same names as SetGuiThemeFont
+# Explicit SetGuiTheme / SetGuiThemeFont in the program still win if
+# they set the corresponding value before any theme query.  Prefer not
+# to hard-code SetGuiTheme("flat") in apps: flat is already the default,
+# and a hard-coded call blocks UGUI_THEME.
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+global gui_theme_name
+global gui_theme_palette
+global gui_theme_font_style
+global gui_theme_env_done
+
+#
+# Named colors used by the flat theme.  Override via {SetGuiTheme}.
+#
+# Fields are Unicon color strings (typically from {Rgb8}).
+# @param bg             Dialog / panel background
+# @param fg             Primary text
+# @param surface        Button / control face
+# @param surface_press  Button face while pressed (darker than surface)
+# @param surface_check  Toggled / checked face (tint; keep dark text)
+# @param border         Raised control border (buttons)
+# @param border_input   Sunken / input border (fields)
+# @param border_focus   Focus ring / accent
+# @param input_bg       Text fields, lists
+# @param muted          Secondary labels / disabled hint
+# @param font           Default UI typeface,size
+#
+record ThemePalette(
+   bg,
+   fg,
+   surface,
+   surface_press,
+   surface_check,
+   border,
+   border_input,
+   border_focus,
+   input_bg,
+   muted,
+   font
+   )
+
+#
+# Convert 8-bit RGB components to a Unicon 16-bit color string
+# (0..65535 per channel).
+# @param r   Red 0..255
+# @param g   Green 0..255
+# @param b   Blue 0..255
+# @return    Color string "R,G,B"
+#
+procedure Rgb8(r, g, b)
+   return (r * 257) || "," || (g * 257) || "," || (b * 257)
+end
+
+#
+# Opt in to a flat-theme typeface for new dialogs.
+# Until this is called (or UGUI_THEME_FONT is set), flat keeps the
+# runtime default font unchanged.
+# ``default'' is Unicon's portable ``sans,12''.
+# ``arial'' prefers Arial (or helvetica/lucida) at size 13 when available.
+# @param style   ``default'', ``arial'', or a synonym (``sans'', ``unicon'', ...)
+# @return        The normalized style name (``default'' or ``arial'')
+#
+procedure SetGuiThemeFont(style)
+   /style := "default"
+   case map(style) of {
+      "arial" : gui_theme_font_style := "arial"
+      "default" | "unicon" | "sans" : gui_theme_font_style := "default"
+      default:
+         stop("SetGuiThemeFont: unknown style ", image(style))
+      }
+   #
+   # Drop any cached palette so the next dialog picks up the new font.
+   #
+   if GuiThemeIsFlat() then
+      gui_theme_palette := DefaultFlatPalette()
+   return gui_theme_font_style
+end
+
+#
+# Return the opted-in flat-theme font style.
+# @return   ``default'' or ``arial''; fails if no theme font was requested
+#
+procedure GetGuiThemeFont()
+   GuiThemeApplyEnv()
+   return \gui_theme_font_style
+end
+
+#
+# Resolve a concrete ``font='' attribute for the opted-in font style.
+# Caches the result until {SetGuiThemeFont} changes the style.
+# @return   A font attribute value such as ``sans,12'' or ``arial,13'';
+#           fails if {SetGuiThemeFont} was never called
+#
+procedure GuiThemePickFont()
+   local w, f, pick, style
+   static resolved_style, resolved_font
+   initial {
+      resolved_style := &null
+      resolved_font := &null
+      }
+
+   if not (style := GetGuiThemeFont()) then
+      fail
+
+   if \resolved_font & resolved_style === style then
+      return resolved_font
+
+   if style == "default" then {
+      resolved_style := "default"
+      return resolved_font := "sans,12"
+      }
+
+   #
+   # Prefer Arial over generic ``sans''.
+   #
+   pick := "sans,13"
+   w := open("gui-theme-font", "g", "size=8,8", "canvas=hidden")
+   if \w then {
+      every f := !["arial,13", "helvetica,13", "lucida,13", "sans,13"] do {
+         if WAttrib(w, "font=" || f) then {
+            pick := f
+            break
+            }
+         }
+      close(w)
+      }
+   resolved_style := "arial"
+   return resolved_font := pick
+end
+
+#
+# Build the default {ThemePalette} for the flat look-and-feel.
+# {font} is set only when a theme font style has been opted in.
+# @return   A {ThemePalette} record
+#
+procedure DefaultFlatPalette()
+   return ThemePalette(
+      Rgb8(236, 240, 244),   # cool light dialog bg
+      Rgb8(28, 32, 36),      # near-black text
+      Rgb8(255, 255, 255),   # white button face
+      Rgb8(100, 116, 139),   # pressed — clearly darker than white face
+      Rgb8(96, 165, 250),    # checked — strong blue tint, dark text ok
+      Rgb8(148, 163, 184),   # button border — clear on cool bg
+      Rgb8(100, 116, 139),   # input border — darker inset cue
+      Rgb8(37, 99, 235),     # accent blue focus / menu select
+      Rgb8(255, 255, 255),   # white input fill
+      Rgb8(100, 116, 139),   # muted (= input border)
+      GuiThemePickFont() | &null
+      )
+end
+
+#
+# Apply UGUI_THEME / UGUI_THEME_FONT once, only for values not already
+# set by an explicit SetGuiTheme / SetGuiThemeFont call.
+#
+procedure GuiThemeApplyEnv()
+   local t, f
+   if \gui_theme_env_done then
+      return
+   gui_theme_env_done := 1
+   if /gui_theme_name & (t := getenv("UGUI_THEME")) then
+      SetGuiTheme(t)
+   if /gui_theme_font_style & (f := getenv("UGUI_THEME_FONT")) then
+      SetGuiThemeFont(f)
+end
+
+#
+# Select the active look-and-feel.
+# @param name      ``flat'' (default) or ``classic'' (synonyms: bevel/motif)
+# @param palette   Optional {ThemePalette}; used only for flat
+# @return          The normalized theme name
+#
+procedure SetGuiTheme(name, palette)
+   /name := "flat"
+   case map(name) of {
+      "classic" | "bevel" | "motif" : {
+         gui_theme_name := "classic"
+         gui_theme_palette := &null
+         }
+      "flat" : {
+         gui_theme_name := "flat"
+         gui_theme_palette := \palette | DefaultFlatPalette()
+         }
+      default:
+         stop("SetGuiTheme: unknown theme ", image(name))
+      }
+   return gui_theme_name
+end
+
+#
+# Return the name of the active look-and-feel.
+# @return   ``flat'' or ``classic''
+#
+procedure GetGuiTheme()
+   GuiThemeApplyEnv()
+   /gui_theme_name := "flat"
+   return gui_theme_name
+end
+
+#
+# Succeed if the flat look-and-feel is active.
+# @return   non-null when flat; fails when classic
+#
+procedure GuiThemeIsFlat()
+   return GetGuiTheme() == "flat"
+end
+
+#
+# Return the active {ThemePalette}, creating the default flat palette if needed.
+# @return   A {ThemePalette} record
+#
+procedure GuiThemePalette()
+   /gui_theme_palette := DefaultFlatPalette()
+   return gui_theme_palette
+end
+
+#
+# Default window attributes suggested by the active theme.
+# {Dialog}.open_win merges these ahead of any user attribs so explicit
+# app settings still win.  Font is included only after {SetGuiThemeFont}
+# (or UGUI_THEME_FONT) opts in; otherwise the runtime default remains.
+# @return   A list of ``bg='', ``fg='', and optional ``font='' strings;
+#           fails if classic
+#
+procedure GuiThemeDialogAttribs()
+   local p, attrs, f
+   if not GuiThemeIsFlat() then
+      fail
+   p := GuiThemePalette()
+   attrs := [
+      "bg=" || p.bg,
+      "fg=" || p.fg
+      ]
+   if \p.font then
+      put(attrs, "font=" || p.font)
+   else if f := GuiThemePickFont() then
+      put(attrs, "font=" || f)
+   return attrs
+end
+
+#
+# Return the last ``name='' value from a component attribs list, if any.
+# @param attribs   Component attribute list (may be null)
+# @param name      Attribute name without ``='' (e.g. ``bg'', ``fg'')
+# @return          Attribute value string; fails if absent
+#
+procedure ThemeComponentAttrib(attribs, name)
+   local a, v, prefix
+   prefix := name || "="
+   every a := !\attribs do
+      a ? {
+         if =prefix then
+            v := tab(0)
+         }
+   return \v
+end
+
+#
+# Return the last ``bg='' value from a component attribs list, if any.
+# @param attribs   Component attribute list (may be null)
+# @return          Color string; fails if no bg= entry
+#
+procedure ThemeComponentBg(attribs)
+   return ThemeComponentAttrib(attribs, "bg")
+end
+
+#
+# Return the last ``fg='' value from a component attribs list, if any.
+# @param attribs   Component attribute list (may be null)
+# @return          Color string; fails if no fg= entry
+#
+procedure ThemeComponentFg(attribs)
+   return ThemeComponentAttrib(attribs, "fg")
+end
+
+#
+# Resolve a fill color that respects widget settings.
+# Prefer an explicit override (e.g. from {ThemeComponentBg}); otherwise
+# use {fallback}.  Do not compare against {WAttrib} ``bg'': Unicon often
+# returns a different spelling than the palette string for the same color,
+# which made every control look like the dialog chrome and hid press/check.
+# @param W          Window (unused; kept for call-site compatibility)
+# @param override   Optional explicit color (e.g. from {ThemeComponentBg})
+# @param fallback   Palette color when the widget did not customize bg
+# @return           Color string to paint with
+#
+procedure ThemeResolveFill(W, override, fallback)
+   if \override then
+      return override
+   return fallback
+end
+
+#
+# Draw a flat 1px rectangle border in the given color.
+# @param W       Window
+# @param x,y,w,h Rectangle
+# @param color   Unicon color string
+# @return        W
+#
+procedure FlatBorder(W, x, y, w, h, color)
+   local cw
+   cw := Clone(W, "fg=" || color, "linewidth=1", "linestyle=solid")
+   DrawRectangle(cw, x, y, w - 1, h - 1)
+   Uncouple(cw)
+   return W
+end
+
+#
+# Draw the flat-theme focus ring (accent border).
+# @param W       Window
+# @param x,y,w,h Rectangle
+# @return        W
+#
+procedure FlatFocusRing(W, x, y, w, h)
+   FlatBorder(W, x, y, w, h, GuiThemePalette().border_focus)
+   return W
+end
+
+#
+# Fill an inset control (text field, list) with the theme input background,
+# or with an explicit/widget bg when the control customized it.
+# @param W       Window
+# @param x,y,w,h Rectangle
+# @param fill    Optional Unicon color string (e.g. from {ThemeComponentBg})
+# @return        W when flat; fails when classic
+#
+procedure ThemeFillInput(W, x, y, w, h, fill)
+   local cw, color
+   if not GuiThemeIsFlat() then
+      fail
+   color := ThemeResolveFill(W, fill, GuiThemePalette().input_bg)
+   cw := Clone(W, "fg=" || color, "fillstyle=solid", "drawop=copy")
+   FillRectangle(cw, x, y, w, h)
+   Uncouple(cw)
+   return W
+end
+
+#
+# Fill a control face for the given visual state.
+# Honours an optional {face} override, or the window's own bg when that
+# bg is not the flat dialog chrome color (so bg=green is not painted over).
+# Pressed/checked borders still convey state when a custom face is used.
+# @param W       Window
+# @param x,y,w,h Rectangle
+# @param state   ``up'', ``down'', or ``checked''
+# @param face    Optional Unicon color string (e.g. from {ThemeComponentBg})
+# @return        W when flat; fails when classic
+#
+procedure ThemeFillFace(W, x, y, w, h, state, face)
+   local p, color, cw, fallback
+   if not GuiThemeIsFlat() then
+      fail
+   p := GuiThemePalette()
+   #
+   # Pressed and selected always use palette fills so feedback stays
+   # visible even when the window or widget has a custom bg (e.g. ui
+   # dialogs with bg=light gray — otherwise hover painted that bg and
+   # light label text vanished).
+   #
+   if state === "down" then
+      color := p.surface_press
+   else if state === "checked" then
+      color := p.surface_check
+   else {
+      fallback := p.surface
+      color := ThemeResolveFill(W, face, fallback)
+      }
+   cw := Clone(W, "fg=" || color, "fillstyle=solid", "drawop=copy")
+   FillRectangle(cw, x, y, w, h)
+   Uncouple(cw)
+   return W
+end
+
+#
+# Fill with the accent (focus) color; used for progress bars and highlights.
+# @param W       Window
+# @param x,y,w,h Rectangle
+# @return        W when flat; fails when classic
+#
+procedure ThemeFillAccent(W, x, y, w, h)
+   local cw
+   if not GuiThemeIsFlat() then
+      fail
+   if w <= 0 | h <= 0 then
+      return W
+   cw := Clone(W, "fg=" || GuiThemePalette().border_focus,
+      "fillstyle=solid", "drawop=copy")
+   FillRectangle(cw, x, y, w, h)
+   Uncouple(cw)
+   return W
+end
+
+#
+# Draw a horizontal hairline (for example menu separators).
+# @param W     Window
+# @param x,y   Start point
+# @param w     Width in pixels
+# @return      W when flat; fails when classic
+#
+procedure ThemeHairline(W, x, y, w)
+   local cw
+   if not GuiThemeIsFlat() then
+      fail
+   cw := Clone(W, "fg=" || GuiThemePalette().border, "linewidth=1")
+   DrawLine(cw, x, y, x + w - 1, y)
+   Uncouple(cw)
+   return W
+end
+
+#
+# Draw a sunken panel: input fill plus border when flat, else a bevel.
+# Uses {FlatBorder}/{BevelRectangle} directly so this file does not
+# depend on {guiprocs}.
+# @param W       Window
+# @param x,y,w,h Rectangle
+# @param fill    Optional fill color passed to {ThemeFillInput}
+# @return        W
+#
+procedure ThemeSunkenPanel(W, x, y, w, h, fill)
+   if GuiThemeIsFlat() then {
+      ThemeFillInput(W, x, y, w, h, fill)
+      FlatBorder(W, x, y, w, h, GuiThemePalette().border_input)
+      }
+   else
+      BevelRectangle(W, x, y, w, h, -BORDER_WIDTH)
+   return W
+end
+
+#
+# Draw a raised control face: optional surface fill plus border when flat,
+# else a bevel.  Uses {FlatBorder}/{BevelRectangle} directly so this file
+# does not depend on {guiprocs}.
+# @param W       Window
+# @param x,y,w,h Rectangle
+# @param state   Face state for flat fill (``up'', ``down'', or ``checked'')
+# @param face    Optional face color passed to {ThemeFillFace}
+# @return        W
+#
+procedure ThemeRaisedFace(W, x, y, w, h, state, face)
+   /state := "up"
+   if GuiThemeIsFlat() then {
+      ThemeFillFace(W, x, y, w, h, state, face)
+      FlatBorder(W, x, y, w, h, GuiThemePalette().border)
+      }
+   else
+      BevelRectangle(W, x, y, w, h, BORDER_WIDTH)
+   return W
+end

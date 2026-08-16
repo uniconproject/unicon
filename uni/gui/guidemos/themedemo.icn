@@ -1,0 +1,352 @@
+#
+# This file is in the public domain.
+#
+# Author: Jafar Al-Gharaibeh (to.jafar@gmail.com)
+#
+# Classic vs flat theme smoke demo for package {gui}.
+# Includes a dense ``config'' layout in absolute pixels so a larger
+# face or Scale setting shows collisions the way fixed-pixel GUI
+# apps do.
+#
+# See {theme.icn} and the Unicon book chapter
+# ``Object-oriented User Interfaces'' (Themes and Look-and-Feel).
+#
+# Build and run from uni/gui/guidemos (after building package gui):
+# @example
+# @ unicon themedemo
+# @ ./themedemo              # flat (default) + runtime font
+# @ ./themedemo classic      # classic theme
+# @ ./themedemo flat arial    # flat + Arial when available
+# @ UGUI_THEME=classic ./themedemo   # same via environment
+# @ UGUI_THEME_FONT=default ./themedemo
+#
+
+import gui
+$include "guih.icn"
+
+global theme_demo_again, theme_demo_font, theme_demo_scale, theme_demo_vmax
+
+#
+# Compact theme / font controls plus a dense config panel
+# laid out in absolute pixels for a small default font.
+#
+class ThemeDemo : Dialog(
+   classic_btn, flat_btn, arial_font_btn, default_font_btn,
+   sample_btn, toggle_btn, status_label, quit_btn,
+   title_label, help_btn, update_label, update_val,
+   mode_group, mode_master, mode_client, mode_alone,
+   up_label, down_label, up_list, down_list,
+   opt_autocheck, opt_history, opt_notify, opt_verbose,
+   last_check_l, next_check_l, last_check_v, next_check_v,
+   vmax_l, scale_l, font_l, vmax_el, scale_el, font_el,
+   note_label, save_btn, cancel_btn, hit_label
+   )
+
+   method scale_factor()
+      local s, n
+      /theme_demo_scale := "100%"
+      s := theme_demo_scale
+      s ? {
+         n := real(tab(many(&digits ++ '.'))) | 1.0
+         ="%"
+         }
+      /n := 1.0
+      return n / 100.0
+   end
+
+   method status_text()
+      local face
+      #
+      # Bare &null succeeds in |, so use \theme_demo_font (fails when
+      # unset) before falling through to theme / runtime defaults.
+      #
+      face := \theme_demo_font | GetGuiThemeFont() | "runtime-default"
+      return "Theme: " || GetGuiTheme() ||
+         "   Font: " || face ||
+         "   Scale: " || (\theme_demo_scale | "100%") ||
+         "   Vmax: " || (\theme_demo_vmax | "1.0")
+   end
+
+   method handle_classic(ev)
+      SetGuiTheme("classic")
+      theme_demo_again := 1
+      dispose()
+   end
+
+   method handle_flat(ev)
+      SetGuiTheme("flat")
+      theme_demo_again := 1
+      dispose()
+   end
+
+   method handle_arial_font(ev)
+      SetGuiTheme("flat")
+      SetGuiThemeFont("arial")
+      theme_demo_font := GuiThemePickFont() | "arial"
+      theme_demo_again := 1
+      dispose()
+   end
+
+   method handle_default_font(ev)
+      SetGuiTheme("flat")
+      SetGuiThemeFont("default")
+      theme_demo_font := GuiThemePickFont() | "sans,12"
+      theme_demo_again := 1
+      dispose()
+   end
+
+   method handle_sample(ev)
+      hit_label.set_label("Action at " || &clock)
+      hit_label.invalidate()
+   end
+
+   method handle_toggle(ev)
+      hit_label.set_label("Toggle checked=" ||
+         if toggle_btn.is_checked() then "yes" else "no")
+      hit_label.invalidate()
+   end
+
+   method handle_help(ev)
+      hit_label.set_label("Help clicked")
+      hit_label.invalidate()
+   end
+
+   #
+   # Read Vmax / Scale / Font and rebuild so metric changes are visible.
+   #
+   method apply_config(ev)
+      theme_demo_vmax := vmax_el.get_contents()
+      theme_demo_scale := scale_el.get_contents()
+      theme_demo_font := font_el.get_contents()
+      if /theme_demo_font | *theme_demo_font = 0 then
+         theme_demo_font := &null
+      hit_label.set_label("Applied Vmax=" || (\theme_demo_vmax | "?") ||
+         " Scale=" || (\theme_demo_scale | "?") ||
+         " Font=" || (\theme_demo_font | "(runtime-default)"))
+      theme_demo_again := 1
+      dispose()
+   end
+
+   method handle_save(ev)
+      apply_config(ev)
+   end
+
+   method handle_quit(ev)
+      theme_demo_again := &null
+      dispose()
+   end
+
+   method component_setup()
+      local files, attrs, sc, bw, bh
+
+      #
+      # Window sized like a tight config dialog.  Positions below assume
+      # a small default-font cell; Scale enlarges the window, Font
+      # changes the dialog face — a larger face can still collide / clip.
+      #
+      sc := scale_factor()
+      bw := integer(640 * sc)
+      bh := integer(560 * sc)
+      attrs := ["size=" || bw || "," || bh, "resize=on",
+         "label=Unicon UI Theme Demo (dense config)"]
+      if \theme_demo_font then
+         put(attrs, "font=" || theme_demo_font)
+      self.set_attribs ! attrs
+
+      #
+      # --- Theme / font toolbar (rebuilds dialog) ---
+      #
+      classic_btn := TextButton("pos=8,8", "label=Classic")
+      classic_btn.connect(self, "handle_classic", ACTION_EVENT)
+      self.add(classic_btn)
+
+      flat_btn := TextButton("pos=88,8", "label=Flat")
+      flat_btn.connect(self, "handle_flat", ACTION_EVENT)
+      self.add(flat_btn)
+
+      arial_font_btn := TextButton("pos=158,8", "label=Arial Font")
+      arial_font_btn.connect(self, "handle_arial_font", ACTION_EVENT)
+      self.add(arial_font_btn)
+
+      default_font_btn := TextButton("pos=268,8", "label=Sans Font")
+      default_font_btn.connect(self, "handle_default_font", ACTION_EVENT)
+      self.add(default_font_btn)
+
+      sample_btn := TextButton("pos=378,8", "label=Action")
+      sample_btn.connect(self, "handle_sample", ACTION_EVENT)
+      self.add(sample_btn)
+
+      toggle_btn := TextButton("pos=458,8", "label=Toggle", "toggles=t")
+      toggle_btn.connect(self, "handle_toggle", ACTION_EVENT)
+      self.add(toggle_btn)
+
+      quit_btn := TextButton("pos=548,8", "label=Quit")
+      quit_btn.connect(self, "handle_quit", ACTION_EVENT)
+      self.add(quit_btn)
+
+      status_label := Label("pos=8,40", "label=" || status_text())
+      self.add(status_label)
+
+      hit_label := Label("pos=8,58",
+         "label=Change Vmax/Scale/Font then Save Changes (or pick from the lists)")
+      self.add(hit_label)
+
+      #
+      # --- Dense config panel (absolute layout sized for a small font) ---
+      #
+      mode_group := CheckBoxGroup()
+      mode_master := CheckBox("pos=12,88", "label=Master")
+      mode_client := CheckBox("pos=12,110", "label=Client")
+      mode_alone := CheckBox("pos=12,132", "label=Stand Alone")
+      mode_group.add(mode_master)
+      mode_group.add(mode_client)
+      mode_group.add(mode_alone)
+      self.add(mode_master)
+      self.add(mode_client)
+      self.add(mode_alone)
+      mode_group.set_which_one(mode_alone)
+
+      title_label := Label("pos=160,92",
+         "label=Demo Configuration", "fg=red")
+      self.add(title_label)
+
+      help_btn := TextButton("pos=360,88", "label=Help")
+      help_btn.connect(self, "handle_help", ACTION_EVENT)
+      self.add(help_btn)
+
+      update_label := Label("pos=440,88", "label=Last Update")
+      self.add(update_label)
+      update_val := Label("pos=440,108", "label=4 Aug 2026 13:40")
+      self.add(update_val)
+
+      #
+      # Two file lists sized for known max name lengths under a small font.
+      #
+      up_label := Label("pos=12,168", "label=Uploaded files")
+      self.add(up_label)
+      down_label := Label("pos=220,168", "label=Downloaded files")
+      self.add(down_label)
+
+      files := [
+         "appconfig.cfg",
+         "playlist_summer.dat",
+         "venue_map_north.txt",
+         "schedule_2026.csv"
+         ]
+      up_list := TextList("pos=12,188", "size=190,110", "draw_border=t")
+      up_list.set_contents(files)
+      self.add(up_list)
+
+      down_list := TextList("pos=220,188", "size=190,110", "draw_border=t")
+      down_list.set_contents(files)
+      self.add(down_list)
+
+      #
+      # Options column — sits tight against the right list.
+      #
+      opt_autocheck := CheckBox("pos=430,188", "label=Autocheck version")
+      opt_history := CheckBox("pos=430,210", "label=Keep history")
+      opt_notify := CheckBox("pos=430,232", "label=Notify on update")
+      opt_verbose := CheckBox("pos=430,254", "label=Verbose log")
+      self.add(opt_autocheck)
+      self.add(opt_history)
+      self.add(opt_notify)
+      self.add(opt_verbose)
+      opt_autocheck.set_is_checked()
+
+      last_check_l := Label("pos=430,286", "label=Last check")
+      next_check_l := Label("pos=530,286", "label=Next check")
+      last_check_v := Label("pos=430,304", "label=01-Aug-26")
+      next_check_v := Label("pos=530,304", "label=08-Aug-26")
+      self.add(last_check_l)
+      self.add(next_check_l)
+      self.add(last_check_v)
+      self.add(next_check_v)
+
+      #
+      # Bottom row: dropdowns + note that clips if the face grows.
+      # Save Changes (or a list pick) rebuilds with the new settings.
+      #
+      vmax_l := Label("pos=12,318", "label=Vmax")
+      scale_l := Label("pos=140,318", "label=Scale")
+      font_l := Label("pos=268,318", "label=Font")
+      self.add(vmax_l)
+      self.add(scale_l)
+      self.add(font_l)
+
+      vmax_el := EditList("pos=12,338", "size=110,24")
+      vmax_el.set_selection_list(["1.0", "1.5", "2.0", "2.5", "3.0", "4.0"])
+      vmax_el.set_contents(theme_demo_vmax | "1.0")
+      vmax_el.connect(self, "apply_config", SELECTION_CHANGED_EVENT)
+      self.add(vmax_el)
+
+      scale_el := EditList("pos=140,338", "size=110,24")
+      scale_el.set_selection_list(["75%", "100%", "125%", "150%", "175%", "200%"])
+      scale_el.set_contents(theme_demo_scale | "100%")
+      scale_el.connect(self, "apply_config", SELECTION_CHANGED_EVENT)
+      self.add(scale_el)
+
+      font_el := EditList("pos=268,338", "size=140,24")
+      font_el.set_selection_list([
+         "",
+         "fixed",
+         "sans",
+         "sans,10",
+         "sans,12",
+         "sans,14",
+         "sans,18",
+         "serif",
+         "serif,12",
+         "serif,14",
+         "serif,18",
+         "mono",
+         "mono,12",
+         "mono,14",
+         "typewriter",
+         "helvetica",
+         "helvetica,12",
+         "helvetica,14",
+         "times",
+         "times,12",
+         "courier",
+         "courier,12",
+         "arial",
+         "arial,12",
+         "arial,14",
+         "arial,18"
+         ])
+      font_el.set_contents(theme_demo_font | "")
+      font_el.connect(self, "apply_config", SELECTION_CHANGED_EVENT)
+      self.add(font_el)
+
+      note_label := Label("pos=12,520",
+         "label=Scale grows the window; Font sets the dialog face (blank = runtime default).")
+      self.add(note_label)
+
+      save_btn := TextButton("pos=430,338", "label=Save Changes")
+      save_btn.connect(self, "handle_save", ACTION_EVENT)
+      self.add(save_btn)
+
+      cancel_btn := TextButton("pos=545,338", "label=Cancel")
+      cancel_btn.connect(self, "handle_quit", ACTION_EVENT)
+      self.add(cancel_btn)
+   end
+end
+
+procedure main(argv)
+   #
+   # Flat is package default; argv still overrides for A/B testing.
+   #
+   if \argv[1] then
+      SetGuiTheme(argv[1])
+   if \argv[2] then
+      SetGuiThemeFont(argv[2])
+      theme_demo_font := GuiThemePickFont() | argv[2]
+   /theme_demo_scale := "100%"
+   /theme_demo_vmax := "1.0"
+   theme_demo_again := 1
+   while \theme_demo_again do {
+      theme_demo_again := &null
+      ThemeDemo().show_modal()
+   }
+end

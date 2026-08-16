@@ -201,7 +201,7 @@ end
 # Shared CSS/JS come from <tt>--theme</tt>
 # (see <tt>uni/uscribe/themes/</tt>).
 #</p>
-class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo, citationTable, footnoteList, outDir, bookPdfHref)
+class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo, citationTable, footnoteList, outDir, bookPdfHref, currentDoc, wroteByline)
 
     #<p>
     # Set the open file to which HTML is written.
@@ -311,6 +311,8 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
         writeSidebar()
         write(outFile, "<div class=\"main\">")
         footnoteList := []
+        currentDoc := n
+        wroteByline := &null
         writePrevNext()
         if n.isReport() then
             writeReportMasthead(n)
@@ -551,7 +553,40 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
         write(outFile, "<", h, " id=\"", escapeHtml(anchorFor(n)), "\">")
         writeInlineTitle(n.getTitle())
         write(outFile, "</", h, ">")
+        if n.getLevel() = 1 then
+            writeChapterByline()
         every (!n.getChildren()).accept(self)
+        return
+    end
+
+    #<p>
+    # Book-chapter byline from a leading field list
+    # (<tt>:author:</tt>, <tt>:date:</tt>, <tt>:copyright:</tt>).
+    # Omitted for reports (the masthead already shows this) and when
+    # no fields are set. Written once, under the first level-1 heading.
+    #</p>
+    method writeChapterByline()
+        local bits, s, first, item
+        if \wroteByline then return
+        wroteByline := 1
+        if /currentDoc then return
+        if currentDoc.isReport() then return
+        if not docHasChapterByline(currentDoc) then return
+        bits := []
+        s := formatDocAuthors(currentDoc)
+        if *s > 0 then put(bits, s)
+        if \currentDoc.getDate() then
+            put(bits, currentDoc.getDate())
+        if \currentDoc.getCopyright() then
+            put(bits, "© " || currentDoc.getCopyright())
+        writes(outFile, "<p class=\"chapter-byline\">")
+        first := 1
+        every item := !bits do {
+            if /first then writes(outFile, " <span class=\"sep\">·</span> ")
+            writes(outFile, escapeHtml(item))
+            first := &null
+            }
+        write(outFile, "</p>")
         return
     end
 
@@ -1003,6 +1038,38 @@ procedure escapeHtml(s)
                 "\"": "&quot;"
             }
         out ||:= tab(0)
+        }
+    return out
+end
+
+#<p>
+# Succeed when a book chapter should show a byline (authors, date,
+# or copyright from the leading field list).
+# <[param doc a Document]>
+# <[fails if nothing to show]>
+#</p>
+procedure docHasChapterByline(doc)
+    if /doc then fail
+    if *doc.getAuthors() > 0 then return
+    if \doc.getDate() then return
+    if \doc.getCopyright() then return
+    fail
+end
+
+#<p>
+# Join <tt>:author:</tt> values with <tt>", "</tt>.
+# <[param doc a Document]>
+# <[returns author string (may be empty)]>
+#</p>
+procedure formatDocAuthors(doc)
+    local parts, a, out, first
+    parts := doc.getAuthors()
+    out := ""
+    first := 1
+    every a := !parts do {
+        if /first then out ||:= ", "
+        out ||:= a
+        first := &null
         }
     return out
 end

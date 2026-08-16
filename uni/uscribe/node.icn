@@ -113,13 +113,15 @@ end
 # The root of one parsed source file. A <tt>Document</tt> does not itself
 # know about other Documents -- chapter ordering and merging is
 # <tt>Manifest</tt>'s job (<tt>manifest.icn</tt>), not the doctree's.
-# Optional report metadata (<tt>authors</tt>, <tt>trNumber</tt>,
-# <tt>dateStr</tt>, <tt>abstractText</tt>, <tt>docClass</tt>) comes from
-# a leading RST field list; <tt>docClass</tt> of <tt>"report"</tt> (or a
-# set <tt>trNumber</tt>) selects article/UTR rendering.
+# Optional bibliographic metadata (<tt>authors</tt>, <tt>trNumber</tt>,
+# <tt>dateStr</tt>, <tt>copyrightStr</tt>, <tt>abstractText</tt>,
+# <tt>docClass</tt>) comes from a leading RST field list.
+# <tt>docClass</tt> of <tt>"report"</tt> (or a set <tt>trNumber</tt>)
+# selects article/UTR rendering. Book chapters may still carry
+# <tt>authors</tt> / <tt>date</tt> / <tt>copyright</tt> for a byline.
 #</p>
 class Document : Block (children, title, srcName, authors, trNumber,
-                        dateStr, abstractText, docClass)
+                        dateStr, copyrightStr, abstractText, docClass)
 
     #<p>
     # Set the source file path for this document.
@@ -209,6 +211,24 @@ class Document : Block (children, title, srcName, authors, trNumber,
     #</p>
     method getDate()
         return \dateStr
+    end
+
+    #<p>
+    # Set the chapter / report copyright (text after ©).
+    # <[param s copyright string]>
+    #</p>
+    method setCopyright(s)
+        copyrightStr := s
+        return
+    end
+
+    #<p>
+    # Return the copyright string, if any.
+    # <[returns the copyright string]>
+    # <[fails if unset]>
+    #</p>
+    method getCopyright()
+        return \copyrightStr
     end
 
     #<p>

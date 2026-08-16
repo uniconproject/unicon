@@ -137,10 +137,12 @@ class Parser : Object (registry, srcPath, includeStack, pendingLabel)
 end
 
 # <p>
-# Consume a leading RST field list into report metadata on
+# Consume a leading RST field list into document metadata on
 # <tt>doc</tt>: <tt>:title:</tt>, <tt>:author:</tt> (repeatable),
-# <tt>:trnumber:</tt>, <tt>:date:</tt>, <tt>:abstract:</tt>,
-# <tt>:docclass:</tt>. Continuation lines are indented.
+# <tt>:trnumber:</tt>, <tt>:date:</tt>, <tt>:copyright:</tt>,
+# <tt>:abstract:</tt>, <tt>:docclass:</tt>. Continuation lines are
+# indented. Book chapters use author/date/copyright as a byline;
+# report fields also drive the UTR cover.
 # <[param doc Document being filled]>
 # <[param lines full source line list]>
 # <[returns 1-based index of the first non-field line]>
@@ -191,6 +193,8 @@ procedure parseDocFields(doc, lines)
                 doc.setTrNumber(val)
             "date":
                 doc.setDate(val)
+            "copyright":
+                doc.setCopyright(val)
             "abstract":
                 doc.setAbstract(val)
             "docclass" | "doc-class":

@@ -27,7 +27,8 @@ import lang
 class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
                                   chapterBase, chapterIndex, figureNo,
                                   docClass, reportDoc, citationTable,
-                                  footnoteList, logoFile)
+                                  footnoteList, logoFile, currentDoc,
+                                  wroteByline)
 
     #<p>
     # Set the open file to which LaTeX is written.
@@ -247,6 +248,8 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         if *base >= 5 & base[*base-4:0] == ".html" then
             base := base[1:*base-4]
         chapterBase := base
+        currentDoc := n
+        wroteByline := &null
         if chapterIndex > 1 then
             write(outFile, "\\clearpage")
         every (!n.getChildren()).accept(self)
@@ -280,7 +283,40 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         write(outFile, "}")
         id := latexLabelId(chapterBase, anchorFor(n))
         write(outFile, "\\label{", id, "}")
+        if level = 1 then
+            writeChapterByline()
         every (!n.getChildren()).accept(self)
+        return
+    end
+
+    #<p>
+    # Book-chapter byline under the first <tt>\\chapter</tt> when
+    # <tt>:author:</tt> / <tt>:date:</tt> / <tt>:copyright:</tt> are
+    # set. Reports already show this on the cover.
+    #</p>
+    method writeChapterByline()
+        local bits, s, first, item
+        if \wroteByline then return
+        wroteByline := 1
+        if /currentDoc then return
+        if currentDoc.isReport() then return
+        if not docHasChapterByline(currentDoc) then return
+        bits := []
+        s := formatDocAuthors(currentDoc)
+        if *s > 0 then put(bits, s)
+        if \currentDoc.getDate() then
+            put(bits, currentDoc.getDate())
+        if \currentDoc.getCopyright() then
+            put(bits, "Copyright " || currentDoc.getCopyright())
+        writes(outFile, "\\noindent\\textit{")
+        first := 1
+        every item := !bits do {
+            if /first then writes(outFile, " · ")
+            writes(outFile, escapeLatex(item))
+            first := &null
+            }
+        write(outFile, "}\\par")
+        write(outFile, "\\vspace{0.6em}")
         return
     end
 

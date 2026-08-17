@@ -3803,10 +3803,10 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
  * Channel event queue.  Data and exit-status callbacks append tagged
  * chunks as messages are parsed off the wire, preserving the exact
  * stdout/stderr arrival order (ssh_channel_read()'s own buffers keep
- * the two streams apart and lose it).  Everything here is malloc'd:
- * callbacks can fire inside blocking libssh calls made while the
- * thread is unregistered (DEC_NARTHREADS), where Icon allocation is
- * not allowed.
+ * the two streams apart and lose it).  Everything here is heap
+ * allocated: callbacks can fire inside blocking libssh calls made
+ * while the thread is unregistered (DEC_NARTHREADS), where Unicon
+ * allocation is not allowed.
  */
 static void ssh_enqueue(struct SSHfile *sshf, int tag, char *data, int len)
 {
@@ -4021,7 +4021,7 @@ int ssh_chan_read(struct SSHfile *sshf, char *buf, int n, int block)
 
 /*
  * ssh_drain_stderr() - remove every queued stderr chunk, producing
- * their concatenation (possibly empty) as an Icon string in *d.
+ * their concatenation (possibly empty) as a Unicon string in *d.
  * This is a live, incremental accessor: each call returns only the
  * bytes accumulated since the previous one.
  *
@@ -4329,7 +4329,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
    memset(sshf, 0, sizeof(struct SSHfile));
 
    /*
-    * The network phase: no Icon allocation may happen between
+    * The network phase: no Unicon allocation may happen between
     * DEC_NARTHREADS and INC_NARTHREADS_CONTROLLED, so error text is
     * only produced at the ssh_fail label after re-registering.
     */
@@ -4464,7 +4464,7 @@ void ssh_close_file(struct SSHfile *sshf)
       }
    else if (sshf->sess != NULL) {
       /*
-       * Session owner: invalidate every remaining channel.  Icon-level
+       * Session owner: invalidate every remaining channel.  Unicon-level
        * b_file handles stay alive until their own close(), but the
        * closed flag and cleared queue make them unusable immediately
        * (no dangling libssh objects, no readable leftovers).

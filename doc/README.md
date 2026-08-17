@@ -61,6 +61,7 @@ Standard Markdown tables use equal column widths, so a narrow “#” column sti
 - **UTR #13** — [OpenDocument](utr/utr13.odt) — *The Unicon Messaging Facilities*
 - **UTR #14** — [Word](utr/utr14.docx) — *Unicon Threads User's Guide and Reference Manual*
 - **UTR #21** — [HTML](utr/utr21.html) — *Configuring and Building Version 13 of Unicon*
+- **UTR #26** — [RST](utr/utr26.rst), [HTML](utr/html/utr26.html) — *Native SSH and SFTP Support in Unicon* (libssh-backed client; build with `make -C doc/utr html`)
 
 ### Unicode reference data (for UTF-8 / UTR work)
 

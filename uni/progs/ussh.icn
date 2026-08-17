@@ -1,5 +1,5 @@
 #
-# ussh.icn - native SSH client demo (libssh / open() mode "h")
+# ussh.icn - native SSH client demo (libssh / open() mode "h" / "hc")
 #
 # Build:  unicon ussh
 # Run:    ./ussh user@host                 # interactive shell
@@ -17,7 +17,7 @@ link options
 
 procedure usage()
    stop("Usage: ", &progname, " [-n] [-i key] [-p password] user@host [command...]\n",
-        "  -n            skip host-key verification (open mode \"h-\")\n",
+        "  -n            skip host-key verification (open mode \"h-\" / \"hc-\")\n",
         "  -i key        private key path (default: agent / ~/.ssh identities)\n",
         "  -p password   login password (prefer keys; visible in process list)\n",
         "  -h            show this help\n",
@@ -59,6 +59,8 @@ procedure main(argv)
       stop("this Unicon build has no SSH support (need libssh at configure time)")
 
    mode := if /opts["n"] then "h" else "h-"
+   if \cmd then
+      mode := if /opts["n"] then "hc" else "hc-"
    attrs := [host, mode]
    if key := \opts["i"] then
       put(attrs, "key=" || (expand_path(key) | stop("bad -i path")))

@@ -3803,10 +3803,10 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
  * Channel event queue.  Data and exit-status callbacks append tagged
  * chunks as messages are parsed off the wire, preserving the exact
  * stdout/stderr arrival order (ssh_channel_read()'s own buffers keep
- * the two streams apart and lose it).  Everything here is malloc'd:
- * callbacks can fire inside blocking libssh calls made while the
- * thread is unregistered (DEC_NARTHREADS), where Icon allocation is
- * not allowed.
+ * the two streams apart and lose it).  Everything here is heap
+ * allocated: callbacks can fire inside blocking libssh calls made
+ * while the thread is unregistered (DEC_NARTHREADS), where Unicon
+ * allocation is not allowed.
  */
 static void ssh_enqueue(struct SSHfile *sshf, int tag, char *data, int len)
 {
@@ -4021,7 +4021,7 @@ int ssh_chan_read(struct SSHfile *sshf, char *buf, int n, int block)
 
 /*
  * ssh_drain_stderr() - remove every queued stderr chunk, producing
- * their concatenation (possibly empty) as an Icon string in *d.
+ * their concatenation (possibly empty) as a Unicon string in *d.
  * This is a live, incremental accessor: each call returns only the
  * bytes accumulated since the previous one.
  *
@@ -4113,17 +4113,23 @@ static int ssh_request_interactive_pty(ssh_channel chan, const char *term,
  *
  * The first open() argument is "host", "user@host", or either with
  * ":port" (same host:port shape as socket open(); IPv6 uses
- * "[addr]:port").  With a cmd= attribute the channel is a one-shot
- * exec channel with clean command boundaries; otherwise an interactive
- * shell on a pty is requested.  channel=no opens a transport-only
- * session (no channel); use a later open(s, ...) for exec/shell/SFTP.
- * channel=yes is the default.  Passing do_verify = 0 (the '-' mode
- * char) skips host-key verification.
+ * "[addr]:port").  Mode "hc" (ssh_cmd) opens a channel: with a cmd=
+ * attribute it is a one-shot exec channel with clean command
+ * boundaries; otherwise an interactive shell on a pty is requested.
+ * Mode "h" without 'c' is a session plus a default shell unless
+ * channel=no.  channel=no opens a transport-only session (no
+ * channel); use a later open(s, "hc"/"hs", ...) for exec/shell/SFTP.
+ * Mode "hs" (ssh_sftp) is a transport-only session intended for an
+ * immediate SFTP open on the same handle.  channel=yes is the
+ * default.  Passing do_verify = 0 (the '-' mode char) skips host-key
+ * verification.  cmd= without mode 'c', and channel=no with 'c' or
+ * cmd=, are bad attributes.
  *
  * On failure sets &errortext and returns NULL, so open() can fail
  * rather than raise a runtime error, matching the SSL connect path.
  */
-struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n, int do_verify)
+struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
+                                   int do_verify, int ssh_cmd, int ssh_sftp)
 {
    tended char *tmps, *val;
    tended char *key=NULL, *password=NULL, *keypass=NULL;
@@ -4275,8 +4281,20 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n, int do_veri
    if (user == NULL && userattr != NULL)
       user = userattr;
 
-   /* channel=no with cmd= is contradictory */
-   if (!want_channel && cmd != NULL) {
+   if (ssh_cmd && ssh_sftp) {
+      set_errortext_with_val(1321, "c");
+      return NULL;
+      }
+   /* cmd= is selected by mode 'c', not by the attribute alone */
+   if (cmd != NULL && !ssh_cmd) {
+      set_errortext_with_val(1321, "cmd");
+      return NULL;
+      }
+   /* mode "hs": SFTP, not a shell/exec channel */
+   if (ssh_sftp)
+      want_channel = 0;
+   /* channel=no with 'c' or cmd= is contradictory */
+   if (!want_channel && (ssh_cmd || cmd != NULL)) {
       set_errortext_with_val(1321, "channel");
       return NULL;
       }
@@ -4311,7 +4329,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n, int do_veri
    memset(sshf, 0, sizeof(struct SSHfile));
 
    /*
-    * The network phase: no Icon allocation may happen between
+    * The network phase: no Unicon allocation may happen between
     * DEC_NARTHREADS and INC_NARTHREADS_CONTROLLED, so error text is
     * only produced at the ssh_fail label after re-registering.
     */
@@ -4359,10 +4377,11 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n, int do_veri
       }
 
    /*
-    * Open a channel unless channel=no (transport-only session for
-    * later open(s, ...) / SFTP).  With a channel: exec when cmd= was
-    * given, otherwise an interactive shell on a pty.  Callbacks are
-    * set before the open so no early data bypasses the event queue.
+    * Open a channel unless channel=no or mode "hs" (transport-only
+    * session for later open(s, "hc"/"hs", ...) / an immediate SFTP
+    * attach).  With a channel: exec when cmd= was given, otherwise
+    * an interactive shell on a pty.  Callbacks are set before the
+    * open so no early data bypasses the event queue.
     */
    if (want_channel) {
       err = 1324;
@@ -4445,7 +4464,7 @@ void ssh_close_file(struct SSHfile *sshf)
       }
    else if (sshf->sess != NULL) {
       /*
-       * Session owner: invalidate every remaining channel.  Icon-level
+       * Session owner: invalidate every remaining channel.  Unicon-level
        * b_file handles stay alive until their own close(), but the
        * closed flag and cleared queue make them unusable immediately
        * (no dangling libssh objects, no readable leftovers).
@@ -4590,21 +4609,20 @@ int ssh_getstrg(char *buf, int maxi, struct SSHfile *sshf)
 
 /*
  * create_ssh_channel() - open another channel on an existing session,
- * reusing the transport and authentication.  spec is open()'s second
- * argument, treated as the first attribute when given: with cmd= the
- * channel is a one-shot exec channel, otherwise an interactive shell
- * on a pty.  The new SSHfile is linked into the session owner's
- * children list so that closing the session closes it too.
+ * reusing the transport and authentication.  Trailing open() arguments
+ * are name=value attributes: with cmd= the channel is a one-shot exec
+ * channel, otherwise an interactive shell on a pty.  The new SSHfile
+ * is linked into the session owner's children list so that closing
+ * the session closes it too.
  * On failure sets &errortext and returns NULL.
  */
-struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr spec, dptr attr, int n)
+struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
 {
    tended char *tmps, *val;
    tended char *cmd = NULL;
    tended char *term = NULL;
    struct SSHfile *owner, *sshf;
    ssh_channel chan = NULL;
-   dptr dp;
    int a;
    C_integer pty_cols = 0, pty_rows = 0;
 
@@ -4615,26 +4633,27 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr spec, dptr attr, int
       return NULL;
       }
 
-   for (a = -1; a < n; a++) {
-      dp = (a < 0) ? spec : &attr[a];
-      if (is:null(*dp)) {
-         *dp = emptystr;
+   for (a = 0; a < n; a++) {
+      if (is:null(attr[a])) {
+         attr[a] = emptystr;
          continue;
          }
-      if (!cnv:C_string(*dp, tmps)) {
+      if (!cnv:C_string(attr[a], tmps)) {
          set_errortext(1321);
          return NULL;
          }
+      /*
+       * Mode-only tokens ("hc", "w", ...) carry no '=' and are
+       * handled by the caller's mode scan.
+       */
+      if (strchr(tmps, '=') == NULL)
+         continue;
       if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
          set_errortext_with_val(1321, tmps);
          return NULL;
          }
       Protect(tmps = alcstr(tmps, (word)strlen(tmps)+1), fatalerr(0,NULL));
       val = strchr(tmps, '=');
-      if (val == NULL) {
-         set_errortext_with_val(1321, tmps);
-         return NULL;
-         }
       *val = '\0';
       val++;
       if (strlen(val) == 0) {
@@ -4727,11 +4746,13 @@ static sftp_session ssh_owner_sftp(struct SSHfile *owner)
  * create_sftp_file() - open a remote path over SFTP on an existing
  * session.  Recognizes attributes path= (required), and the same r/w/a
  * intent already parsed into status.  If the path is a directory, opens
- * it for listing and sets *isdir; otherwise opens a regular file.  On
- * failure sets &errortext and returns NULL.
+ * it for listing and sets *isdir; otherwise opens a regular file.
+ * as_owner != 0 attaches the SFTP handle to sf itself (open(host,"hs"))
+ * rather than allocating a child.  On failure sets &errortext and
+ * returns NULL; as_owner failures leave sf for the caller to close.
  */
 struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
-                                 int status, int *isdir)
+                                 int status, int *isdir, int as_owner)
 {
    tended char *tmps, *val, *path = NULL;
    struct SSHfile *owner, *sshf;
@@ -4755,11 +4776,9 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
          set_errortext(1321);
          return NULL;
          }
-      if (strcmp(tmps, "sftp") == 0)   /* the mode selector itself */
-         continue;
       /*
-       * Mode-only tokens ("w", "r", "a", "b", ...) carry no '=' and are
-       * handled by the caller's mode scan; skip them here.
+       * Mode-only tokens ("hs", "w", "r", "a", "b", ...) carry no '='
+       * and are handled by the caller's mode scan.
        */
       if (strchr(tmps, '=') == NULL)
          continue;
@@ -4791,15 +4810,19 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
    if (sftp == NULL)
       return NULL;                      /* &errortext already set */
 
-   sshf = malloc(sizeof(struct SSHfile));
-   if (sshf == NULL) {
-      set_errortext(1325);
-      return NULL;
+   if (as_owner)
+      sshf = owner;
+   else {
+      sshf = malloc(sizeof(struct SSHfile));
+      if (sshf == NULL) {
+         set_errortext(1325);
+         return NULL;
+         }
+      memset(sshf, 0, sizeof(struct SSHfile));
+      sshf->sess = owner->sess;
+      sshf->sftp = sftp;
+      sshf->parent = owner;
       }
-   memset(sshf, 0, sizeof(struct SSHfile));
-   sshf->sess = owner->sess;
-   sshf->sftp = sftp;
-   sshf->parent = owner;
 
    DEC_NARTHREADS;
    at = sftp_stat(sftp, path);
@@ -4809,7 +4832,8 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
       INC_NARTHREADS_CONTROLLED;
       if (sshf->sdir == NULL) {
          set_ssh_errortext(owner->sess, 1325);
-         free(sshf);
+         if (!as_owner)
+            free(sshf);
          return NULL;
          }
       *isdir = 1;
@@ -4829,13 +4853,16 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
       INC_NARTHREADS_CONTROLLED;
       if (sshf->sfile == NULL) {
          set_ssh_errortext(owner->sess, 1325);
-         free(sshf);
+         if (!as_owner)
+            free(sshf);
          return NULL;
          }
       }
 
-   sshf->next = owner->children;
-   owner->children = sshf;
+   if (!as_owner) {
+      sshf->next = owner->children;
+      owner->children = sshf;
+      }
    return sshf;
 }
 

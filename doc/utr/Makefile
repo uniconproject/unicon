@@ -6,14 +6,51 @@
 # Compile/generate PDF and/or HTML version of Unicon TR's.
 # HTML versions may be special-purpose, for Unicon IDE's online help.
 #
+# Preferred path for new/converted reports: RST via uscribe
+# (``make html`` / ``make latex``). Legacy ``%.pdf: %.tex`` remains
+# for older LaTeX-only sources.
+#
 # Under Fedora (e.g. 27 or 28), you may need to install texlive-tabulary,
 # texlive-wrapfig, and texlive-changepage in order to build utr16.pdf
 # and/or utr18.pdf.
 #
 
+TOPDIR=../..
+USCRIBE_DIR = $(TOPDIR)/uni/uscribe
+USCRIBE ?= $(USCRIBE_DIR)/uscribe
+THEMES = $(USCRIBE_DIR)/themes
+HTMLDIR = html
+TEXDIR = latex
+MANIFEST = utr.manifest
+TITLE = Unicon Technical Reports
+
 FILES=utr3.pdf utr15.pdf utr16.pdf utr18.pdf utr19.pdf utr22.pdf utr20.pdf utr23.pdf
 
+.PHONY: html latex pdf-rst
+
 all: $(FILES)
+
+# RST reports listed in utr.manifest (currently UTR #26).
+html: $(USCRIBE)
+	mkdir -p $(HTMLDIR)
+	-cp -f *.pdf $(HTMLDIR)/ 2>/dev/null || true
+	$(USCRIBE) --manifest=$(MANIFEST) --title="$(TITLE)" \
+		--themePath=$(THEMES) --targetDir=$(HTMLDIR) --format=html
+
+latex: $(USCRIBE)
+	mkdir -p $(TEXDIR)
+	$(USCRIBE) --manifest=$(MANIFEST) --title="$(TITLE)" \
+		--targetDir=$(TEXDIR) --format=latex
+
+pdf-rst: $(USCRIBE)
+	mkdir -p $(HTMLDIR)
+	-cp -f *.pdf $(HTMLDIR)/ 2>/dev/null || true
+	$(USCRIBE) --manifest=$(MANIFEST) --title="$(TITLE)" \
+		--targetDir=$(HTMLDIR) --format=pdf
+
+$(USCRIBE):
+	$(MAKE) -C $(USCRIBE_DIR)
+
 
 htmlean: htmlean.icn
 	unicon htmlean.icn
@@ -32,3 +69,5 @@ utr9c.pdf: utr9.tex
 
 Clean clean:
 	rm -f  utr*.png utr*.jpg *.log *.out htmlean $(FILES)
+	rm -rf $(HTMLDIR) $(TEXDIR)
+

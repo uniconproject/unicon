@@ -1183,8 +1183,9 @@ void set_ssl_context_errortext(int err, char* errtext);
 
 #if HAVE_LIBSSH
 void set_ssh_errortext(ssh_session sess, int err);
-struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n, int do_verify);
-struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr spec, dptr attr, int n);
+struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n, int do_verify,
+                                   int ssh_cmd, int ssh_sftp);
+struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n);
 void ssh_close_file(struct SSHfile *sshf);
 int ssh_file_write(struct SSHfile *sshf, char *s, word n);
 int ssh_getstrg(char *buf, int maxi, struct SSHfile *sshf);
@@ -1193,7 +1194,7 @@ int ssh_chan_read(struct SSHfile *sshf, char *buf, int n, int block);
 int ssh_file_pending(struct b_file *fp);
 void ssh_drain_stderr(struct SSHfile *sshf, dptr d);
 struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
-                                 int status, int *isdir);
+                                 int status, int *isdir, int as_owner);
 int ssh_sftp_readdir(struct SSHfile *sshf, char *buf, int maxi);
 int ssh_sftp_stat_rec(struct SSHfile *sf, char *path, int use_fstat,
                       struct descrip *dp, struct b_record **rp);

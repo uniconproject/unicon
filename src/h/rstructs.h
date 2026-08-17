@@ -166,7 +166,7 @@ struct SSHfile {
    int exit_seen;               /* exit_status below is valid */
    int exit_status;
    int closed;                  /* set when cascade-invalidated by close()
-                                 * of the owning session; Icon file still
+                                 * of the owning session; Unicon file still
                                  * holds this SSHfile until its own close */
    };
 #endif                                  /* HAVE_LIBSSH */

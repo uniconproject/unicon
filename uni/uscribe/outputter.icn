@@ -338,7 +338,7 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
             write(outFile, "<li id=\"fn-", string(num), "\" value=\"",
                   string(num), "\">", escapeHtml(fn.getBody()),
                   " <a class=\"footnote-back\" href=\"#fnref-",
-                  string(num), "\">↩</a></li>")
+                  string(num), "\">&larr;</a></li>")
             }
         write(outFile, "</ol></section>")
         return
@@ -388,7 +388,7 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
             }
         if \n.getSrcName() then {
             if \bits then
-                writes(outFile, " · ")
+                writes(outFile, " | ")
             else
                 writes(outFile, "<p class=\"report-pdf\">")
             writes(outFile, "<a href=\"_sources/",
@@ -447,7 +447,7 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
         writeThemePicker(\defaultTheme | "basic")
         write(outFile, "<p class=\"search-hint\">Filter chapters; Enter for full search</p>")
         write(outFile, "<input class=\"search-box\" id=\"nav-search\" type=\"search\" ")
-        write(outFile, "placeholder=\"Search…\" aria-label=\"Filter chapter list\">")
+        write(outFile, "placeholder=\"Search...\" aria-label=\"Filter chapter list\">")
         write(outFile, "<ol id=\"nav-toc\">")
         every i := 1 to *navEntries do {
             e := navEntries[i]
@@ -578,11 +578,11 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
         if \currentDoc.getDate() then
             put(bits, currentDoc.getDate())
         if \currentDoc.getCopyright() then
-            put(bits, "© " || currentDoc.getCopyright())
+            put(bits, "(c) " || currentDoc.getCopyright())
         writes(outFile, "<p class=\"chapter-byline\">")
         first := 1
         every item := !bits do {
-            if /first then writes(outFile, " <span class=\"sep\">·</span> ")
+            if /first then writes(outFile, " <span class=\"sep\">|</span> ")
             writes(outFile, escapeHtml(item))
             first := &null
             }

@@ -1,4 +1,4 @@
-# Native SSH client support (open() mode "h", libssh-backed).
+# Native SSH client support (open() mode "h" / "hc" / "hs", libssh-backed).
 #
 # This test is deterministic and needs no SSH server for its default run:
 # it checks the _SSH feature is present and that the error paths fail
@@ -17,12 +17,16 @@ procedure main()
    f := open("nobody@127.0.0.1", "h", "channel=maybe")
    write("bad-channel open fails: ", failed_with_text(f))
 
-   # channel=no with cmd= is contradictory.
-   f := open("nobody@127.0.0.1", "h", "channel=no", "cmd=true")
+   # channel=no with cmd= is contradictory (mode "hc" selects a channel).
+   f := open("nobody@127.0.0.1", "hc", "channel=no", "cmd=true")
    write("channel=no+cmd open fails: ", failed_with_text(f))
 
+   # cmd= requires mode "hc", not plain "h".
+   f := open("nobody@127.0.0.1", "h", "cmd=true")
+   write("cmd-without-c open fails: ", failed_with_text(f))
+
    # Connecting to a closed local port must fail with &errortext set.
-   f := open("nobody@127.0.0.1:1", "h", "cmd=true")
+   f := open("nobody@127.0.0.1:1", "hc", "cmd=true")
    write("connect-refused open fails: ", failed_with_text(f))
 
    live_test()
@@ -37,14 +41,14 @@ procedure failed_with_text(f)
 end
 
 # Build open() argv for addr (host or user@host[:port]).
-# Mode is "h-" when no known_hosts file is provided.
-procedure ssh_opts(addr, attrs[])
+# Mode is "h-" / "hc-" when no known_hosts file is provided.
+procedure ssh_opts(addr, mode, attrs[])
    local opts, key, kh, a
-   opts := [addr, "h"]
+   opts := [addr, mode]
    every a := !attrs do put(opts, a)
    if key := getenv("UNICON_SSH_TESTKEY") then put(opts, "key=" || key)
    if kh := getenv("UNICON_SSH_KNOWNHOSTS") then put(opts, "hostkeyfile=" || kh)
-   else opts[2] := "h-"
+   else if not find("-", mode) then opts[2] := mode || "-"
    return opts
 end
 
@@ -73,7 +77,7 @@ procedure live_test()
       }
    addr := ssh_addr(host)
 
-   opts := ssh_opts(addr, "cmd=echo unicon_ssh_ok")
+   opts := ssh_opts(addr, "hc", "cmd=echo unicon_ssh_ok")
    s := open ! opts | {
       write("live round-trip: open failed: ", &errortext)
       return
@@ -85,7 +89,7 @@ procedure live_test()
    close(s)
 
    # Second connection: receive() ordering + stderr/exit events
-   opts := ssh_opts(addr, "cmd=echo out1; echo err1 1>&2; echo out2; exit 3")
+   opts := ssh_opts(addr, "hc", "cmd=echo out1; echo err1 1>&2; echo out2; exit 3")
    s := open ! opts | {
       write("live receive: open failed: ", &errortext)
       return
@@ -102,7 +106,7 @@ procedure live_test()
    # newline.  reads() on an SSH channel must return those bytes without
    # blocking for '\\n' (the old sock_getstrg path hung here).
    #
-   opts := ssh_opts(addr, "cmd=printf 'partial_ssh_line'")
+   opts := ssh_opts(addr, "hc", "cmd=printf 'partial_ssh_line'")
    s := open ! opts | {
       write("live partial-reads: open failed: ", &errortext)
       return
@@ -126,16 +130,16 @@ procedure live_test()
       write("live sftp: skipped (set UNICON_SSH_SFTPPATH)")
       return
       }
-   opts := ssh_opts(addr, "channel=no")
+   opts := ssh_opts(addr, "h", "channel=no")
    s := open ! opts | {
       write("live sftp: open failed: ", &errortext)
       return
       }
-   c := open(s, "sftp", "path=" || remote || "/unicon_ssh_bin.bin", "w") |
+   c := open(s, "hs", "path=" || remote || "/unicon_ssh_bin.bin", "w") |
         stop("live sftp write-open failed: ", &errortext)
    writes(c, "\x00\x01\x02\n\xff") | stop("live sftp writes failed: ", &errortext)
    close(c)
-   c := open(s, "sftp", "path=" || remote || "/unicon_ssh_bin.bin") |
+   c := open(s, "hs", "path=" || remote || "/unicon_ssh_bin.bin") |
         stop("live sftp read-open failed: ", &errortext)
    got := reads(c, 5) | stop("live sftp reads failed: ", &errortext)
    close(c)

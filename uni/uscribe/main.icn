@@ -255,9 +255,9 @@ procedure renderBookLatex(docs, labels, wantPdf, cites)
     engine := findPdfEngine() |
         stop("uscribe: --format=pdf needs pdflatex, xelatex, or lualatex",
              " in PATH (wrote ", outPath, " only)")
-    write("running ", engine, " (pass 1)…")
+    write("running ", engine, " (pass 1)...")
     rc := runLatex(engine, targetDir, bookOutputName)
-    write("running ", engine, " (pass 2, for TOC/xrefs)…")
+    write("running ", engine, " (pass 2, for TOC/xrefs)...")
     rc := runLatex(engine, targetDir, bookOutputName)
     if rc ~= 0 then
         stop("uscribe: ", engine, " failed (exit ", rc,
@@ -303,14 +303,14 @@ procedure renderReportLatex(docs, labels, wantPdf, cites)
             /engine := findPdfEngine() |
                 stop("uscribe: --format=pdf needs pdflatex, xelatex, or lualatex",
                      " in PATH")
-            write("running ", engine, " on ", base, " (pass 1)…")
+            write("running ", engine, " on ", base, " (pass 1)...")
             rc := runLatex(engine, targetDir, base)
-            write("running ", engine, " on ", base, " (pass 2)…")
+            write("running ", engine, " on ", base, " (pass 2)...")
             rc := runLatex(engine, targetDir, base)
             if rc ~= 0 then
                 write(&errout, "warning: ", engine, " failed for ", base,
                       " (exit ", rc, "); see ", targetDir, "/", base,
-                      ".log — continuing")
+                      ".log - continuing")
             else
                 write("wrote ", targetDir, "/", base, ".pdf")
             }
@@ -559,7 +559,7 @@ procedure convertGifToPng(src, dstGif, img, uri)
         fail
         }
     img.setURI(uriPng)
-    write("converted GIF → PNG: ", uriPng)
+    write("converted GIF -> PNG: ", uriPng)
     return
 end
 
@@ -853,7 +853,7 @@ procedure writeSidebarStatic(f, title, nav, currentFile)
     write(f, "</select>")
     write(f, "<p class=\"search-hint\">Filter chapters; Enter for full search</p>")
     write(f, "<input class=\"search-box\" id=\"nav-search\" type=\"search\" ")
-    write(f, "placeholder=\"Search…\" aria-label=\"Filter chapter list\">")
+    write(f, "placeholder=\"Search...\" aria-label=\"Filter chapter list\">")
     write(f, "<ol id=\"nav-toc\">")
     every e := !nav do {
         if \currentFile == e[1] then
@@ -945,9 +945,9 @@ procedure writeReportIndex(f, docs)
               escapeHtml(date), "</td>")
         write(f, "<td class=\"report-index-fmt\">")
         if reportPdfExists(pdfHref) then
-            writes(f, "<a href=\"", escapeHtml(pdfHref), "\">pdf</a> · ")
+            writes(f, "<a href=\"", escapeHtml(pdfHref), "\">pdf</a> | ")
         else
-            writes(f, "<span class=\"report-pdf-missing\">pdf</span> · ")
+            writes(f, "<span class=\"report-pdf-missing\">pdf</span> | ")
         write(f, "<a href=\"_sources/", escapeHtml(srcTxt),
               "\">txt</a>")
         write(f, "</td>")
@@ -983,13 +983,13 @@ procedure writeSearchPage(dir, title, nav, pdfHref)
     local f
     f := open(dir || "/search.html", "w") |
         stop("uscribe: could not write search.html")
-    writeShellHead(f, title || " — Search")
+    writeShellHead(f, title || " - Search")
     write(f, "<script src=\"searchindex.js\"></script>")
     writeSidebarStatic(f, title, nav, "search.html")
     write(f, "<div class=\"main\">")
     write(f, "<h1>Search</h1>")
     write(f, "<input class=\"search-box\" id=\"full-search\" type=\"search\" ")
-    write(f, "placeholder=\"Search the book…\" style=\"max-width:28rem\">")
+    write(f, "placeholder=\"Search the book...\" style=\"max-width:28rem\">")
     write(f, "<div id=\"search-results\"></div>")
     write(f, "<script>")
     write(f, "(function(){")

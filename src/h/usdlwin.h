@@ -83,7 +83,11 @@ void usdl_restore(struct usdlwin *win);
 int  usdl_state(struct usdlwin *win);
 void usdl_sync(struct usdlwin *win);
 
+void usdl_lock(void);
+void usdl_unlock(void);
 void usdl_present(struct usdlwin *win, struct ucanvas *c, int force);
+/* caller already holds usdl_lock(); present reads the canvas pixels */
+void usdl_present_locked(struct usdlwin *win, struct ucanvas *c, int force);
 void usdl_set_cursor(struct usdlwin *win, int shape);
 void usdl_warp_pointer(struct usdlwin *win, int x, int y);
 int  usdl_pointer(struct usdlwin *win, int *x, int *y);

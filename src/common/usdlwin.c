@@ -26,6 +26,36 @@
 
 #define OWNER_PROP "unicon.usdlwin"
 
+/* the lock the entry points take (see the end of the file) */
+static SDL_Mutex *biglock;
+static SDL_SpinLock biglock_init;
+
+static void LOCK(void)
+{
+   if (biglock == NULL) {
+      SDL_LockSpinlock(&biglock_init);
+      if (biglock == NULL)
+         biglock = SDL_CreateMutex();
+      SDL_UnlockSpinlock(&biglock_init);
+      }
+   SDL_LockMutex(biglock);
+}
+
+static void UNLOCK(void)
+{
+   SDL_UnlockMutex(biglock);
+}
+
+void usdl_lock(void)
+{
+   LOCK();
+}
+
+void usdl_unlock(void)
+{
+   UNLOCK();
+}
+
 struct usdlwin {
    SDL_Window *win;
    SDL_Renderer *ren;
@@ -122,7 +152,7 @@ static int display_scale(void)
    return scale;
 }
 
-int usdl_init(void)
+static int init_l(void)
 {
    if (sdl_ready) return 1;
    /*
@@ -142,7 +172,7 @@ int usdl_init(void)
    return 1;
 }
 
-void usdl_display_size(int *w, int *h)
+static void display_size_l(int *w, int *h)
 {
    SDL_Rect r;
    *w = 1024; *h = 768;
@@ -161,7 +191,7 @@ static struct usdlwin *lookup(SDL_WindowID id)
                                  NULL);
 }
 
-struct usdlwin *usdl_open(char *title, int x, int y, int w, int h,
+static struct usdlwin *open_l(char *title, int x, int y, int w, int h,
                           int flags, void *owner)
 {
    struct usdlwin *uw;
@@ -226,7 +256,7 @@ struct usdlwin *usdl_open(char *title, int x, int y, int w, int h,
    return uw;
 }
 
-void usdl_close(struct usdlwin *uw)
+static void close_l(struct usdlwin *uw)
 {
    int i;
    if (uw == NULL) return;
@@ -246,7 +276,7 @@ void usdl_close(struct usdlwin *uw)
    free(uw);
 }
 
-void usdl_set_title(struct usdlwin *uw, char *title)
+static void set_title_l(struct usdlwin *uw, char *title)
 {
    /* window labels are Latin-1 strings; SDL wants UTF-8 */
    char buf[1024];
@@ -267,7 +297,7 @@ void usdl_set_title(struct usdlwin *uw, char *title)
  * Use the pixels of a canvas as the window's icon (on macOS, the
  * application's Dock icon).
  */
-void usdl_set_icon(struct usdlwin *uw, struct ucanvas *c)
+static void set_icon_l(struct usdlwin *uw, struct ucanvas *c)
 {
    SDL_Surface *s;
    if (uw == NULL || c == NULL || offmain()) return;
@@ -278,46 +308,46 @@ void usdl_set_icon(struct usdlwin *uw, struct ucanvas *c)
    SDL_DestroySurface(s);
 }
 
-void usdl_set_position(struct usdlwin *uw, int x, int y)
+static void set_position_l(struct usdlwin *uw, int x, int y)
 {
    SDL_SetWindowPosition(uw->win, x, y);
 }
 
-void usdl_get_position(struct usdlwin *uw, int *x, int *y)
+static void get_position_l(struct usdlwin *uw, int *x, int *y)
 {
    SDL_GetWindowPosition(uw->win, x, y);
 }
 
-void usdl_set_size(struct usdlwin *uw, int w, int h)
+static void set_size_l(struct usdlwin *uw, int w, int h)
 {
    SDL_SetWindowSize(uw->win, w < 1 ? 1 : w, h < 1 ? 1 : h);
    uw->redraw = 1;
 }
 
-void usdl_get_size(struct usdlwin *uw, int *w, int *h)
+static void get_size_l(struct usdlwin *uw, int *w, int *h)
 {
    SDL_GetWindowSize(uw->win, w, h);
 }
 
-void usdl_set_resizable(struct usdlwin *uw, int on)
+static void set_resizable_l(struct usdlwin *uw, int on)
 {
    SDL_SetWindowResizable(uw->win, on ? true : false);
 }
 
-void usdl_set_min_size(struct usdlwin *uw, int w, int h)
+static void set_min_size_l(struct usdlwin *uw, int w, int h)
 {
    SDL_SetWindowMinimumSize(uw->win, w, h);
 }
 
-void usdl_show(struct usdlwin *uw)     { SDL_ShowWindow(uw->win); uw->redraw = 1; }
-void usdl_hide(struct usdlwin *uw)     { SDL_HideWindow(uw->win); }
-void usdl_raise(struct usdlwin *uw)    { SDL_RaiseWindow(uw->win); }
-void usdl_minimize(struct usdlwin *uw) { SDL_MinimizeWindow(uw->win); }
-void usdl_maximize(struct usdlwin *uw) { SDL_MaximizeWindow(uw->win); }
-void usdl_restore(struct usdlwin *uw)  { SDL_RestoreWindow(uw->win); }
-void usdl_sync(struct usdlwin *uw)     { if (uw) SDL_SyncWindow(uw->win); }
+static void show_l(struct usdlwin *uw)     { SDL_ShowWindow(uw->win); uw->redraw = 1; }
+static void hide_l(struct usdlwin *uw)     { SDL_HideWindow(uw->win); }
+static void raise_l(struct usdlwin *uw)    { SDL_RaiseWindow(uw->win); }
+static void minimize_l(struct usdlwin *uw) { SDL_MinimizeWindow(uw->win); }
+static void maximize_l(struct usdlwin *uw) { SDL_MaximizeWindow(uw->win); }
+static void restore_l(struct usdlwin *uw)  { SDL_RestoreWindow(uw->win); }
+static void sync_l(struct usdlwin *uw)     { if (uw) SDL_SyncWindow(uw->win); }
 
-int usdl_state(struct usdlwin *uw)
+static int state_l(struct usdlwin *uw)
 {
    SDL_WindowFlags f = SDL_GetWindowFlags(uw->win);
    if (f & SDL_WINDOW_HIDDEN)    return USDL_STATE_HIDDEN;
@@ -337,7 +367,7 @@ int usdl_state(struct usdlwin *uw)
  */
 static void present(struct usdlwin *uw, struct ucanvas *c, Uint64 now);
 
-void usdl_present(struct usdlwin *uw, struct ucanvas *c, int force)
+static void present_l(struct usdlwin *uw, struct ucanvas *c, int force)
 {
    Uint64 now;
 
@@ -425,20 +455,20 @@ static void install_cursor(int shape)
       SDL_SetCursor(cursors[shape]);
 }
 
-void usdl_set_cursor(struct usdlwin *uw, int shape)
+static void set_cursor_l(struct usdlwin *uw, int shape)
 {
    uw->cursor = shape;
    if (SDL_GetMouseFocus() == uw->win)
       install_cursor(shape);
 }
 
-void usdl_warp_pointer(struct usdlwin *uw, int x, int y)
+static void warp_pointer_l(struct usdlwin *uw, int x, int y)
 {
    SDL_WarpMouseInWindow(uw->win, (float)x, (float)y);
 }
 
 /* pointer position relative to the window; 0 if it is unknown */
-int usdl_pointer(struct usdlwin *uw, int *x, int *y)
+static int pointer_l(struct usdlwin *uw, int *x, int *y)
 {
    float gx, gy;
    int wx, wy;
@@ -449,7 +479,7 @@ int usdl_pointer(struct usdlwin *uw, int *x, int *y)
    return 1;
 }
 
-void usdl_global_pointer(int *x, int *y)
+static void global_pointer_l(int *x, int *y)
 {
    float gx = 0, gy = 0;
    if (usdl_init())
@@ -462,7 +492,7 @@ void usdl_global_pointer(int *x, int *y)
  * Clipboard text, converted between Unicon's Latin-1 and SDL's UTF-8.
  * usdl_get_clipboard returns a malloc'd string or NULL.
  */
-char *usdl_get_clipboard(void)
+static char *get_clipboard_l(void)
 {
    char *u, *r;
    unsigned char *s;
@@ -491,7 +521,7 @@ char *usdl_get_clipboard(void)
    return r;
 }
 
-int usdl_set_clipboard(char *s, int len)
+static int set_clipboard_l(char *s, int len)
 {
    char *u;
    int i, j = 0, ok;
@@ -799,7 +829,7 @@ static void translate(SDL_Event *e)
 /*
  * Return the next translated event without blocking; 0 if none.
  */
-int usdl_poll(struct usdl_event *ev)
+static int poll_l(struct usdl_event *ev)
 {
    SDL_Event e;
    if (!sdl_ready || offmain()) return 0;
@@ -818,24 +848,39 @@ int usdl_wait(struct usdl_event *ev, int timeout_ms)
 {
    SDL_Event e;
    Uint64 deadline = SDL_GetTicks() + (timeout_ms < 0 ? 0 : timeout_ms);
+   int got;
    if (!sdl_ready) return 0;
    if (offmain()) {                     /* the main thread gets events */
       SDL_Delay((timeout_ms < 0 || timeout_ms > 10) ? 10 : timeout_ms);
       return 0;
       }
+   LOCK();
    for (;;) {
       Sint32 left;
       while (pop_event(ev))
-         if (ev->type != USDL_EV_NONE) return 1;
+         if (ev->type != USDL_EV_NONE) {
+            UNLOCK();
+            return 1;
+            }
       if (timeout_ms < 0)
          left = -1;
       else {
          Uint64 now = SDL_GetTicks();
-         if (now >= deadline) return 0;
+         if (now >= deadline) {
+            UNLOCK();
+            return 0;
+            }
          left = (Sint32)(deadline - now);
          }
-      if (!SDL_WaitEventTimeout(&e, left)) {
-         if (timeout_ms >= 0) return 0;
+      /* other threads may draw while this one waits */
+      UNLOCK();
+      got = SDL_WaitEventTimeout(&e, left);
+      LOCK();
+      if (!got) {
+         if (timeout_ms >= 0) {
+            UNLOCK();
+            return 0;
+            }
          continue;
          }
       translate(&e);
@@ -946,7 +991,7 @@ static int glsetup(void)
    return 1;
 }
 
-struct usdlgl *usdl_gl_open(void)
+static struct usdlgl *gl_open_l(void)
 {
    struct usdlgl *g;
 
@@ -975,7 +1020,7 @@ struct usdlgl *usdl_gl_open(void)
 /*
  * Make g's context current (in this thread) and draw into its window.
  */
-int usdl_gl_current(struct usdlgl *g)
+static int gl_current_l(struct usdlgl *g)
 {
    if (g == NULL) return 0;
    if (SDL_GL_GetCurrentContext() != g->ctx &&
@@ -991,7 +1036,7 @@ int usdl_gl_current(struct usdlgl *g)
  * failure.  It has the display's resolution: scale x scale pixels per
  * Unicon pixel, as the canvas does.
  */
-int usdl_gl_size(struct usdlgl *g, int w, int h)
+static int gl_size_l(struct usdlgl *g, int w, int h)
 {
    unsigned int *nb;
    int s = uc_get_scale();
@@ -1026,7 +1071,7 @@ int usdl_gl_size(struct usdlgl *g, int w, int h)
 /*
  * Copy the rendered frame into canvas c at (x,y).
  */
-int usdl_gl_show(struct usdlgl *g, struct ucanvas *c, int x, int y)
+static int gl_show_l(struct usdlgl *g, struct ucanvas *c, int x, int y)
 {
    GLint align, rowlen;
 
@@ -1087,7 +1132,7 @@ void usdl_gl_readpixels(int x, int y, int w, int h, unsigned int format,
    free(big);
 }
 
-void usdl_gl_close(struct usdlgl *g)
+static void gl_close_l(struct usdlgl *g)
 {
    if (g == NULL) return;
    if (SDL_GL_MakeCurrent(glwin, g->ctx)) {
@@ -1101,7 +1146,273 @@ void usdl_gl_close(struct usdlgl *g)
    free(g->buf);
    free(g);
 }
+
+struct usdlgl *usdl_gl_open(void)
+{
+   struct usdlgl *r;
+   LOCK();
+   r = gl_open_l();
+   UNLOCK();
+   return r;
+}
+
+int usdl_gl_current(struct usdlgl *g)
+{
+   int r;
+   LOCK();
+   r = gl_current_l(g);
+   UNLOCK();
+   return r;
+}
+
+int usdl_gl_size(struct usdlgl *g, int w, int h)
+{
+   int r;
+   LOCK();
+   r = gl_size_l(g, w, h);
+   UNLOCK();
+   return r;
+}
+
+int usdl_gl_show(struct usdlgl *g, struct ucanvas *c, int x, int y)
+{
+   int r;
+   LOCK();
+   r = gl_show_l(g, c, x, y);
+   UNLOCK();
+   return r;
+}
+
+void usdl_gl_close(struct usdlgl *g)
+{
+   LOCK();
+   gl_close_l(g);
+   UNLOCK();
+}
 #endif                                  /* Graphics3D && HAVE_LIBGL */
+
+/*
+ * ------------------------------------------------------------------
+ * The entry points.  Unicon threads may use windows concurrently, so
+ * each takes one (recursive) lock around its use of SDL and of this
+ * file's state.
+ * ------------------------------------------------------------------
+ */
+
+int usdl_init(void)
+{
+   int r;
+   LOCK();
+   r = init_l();
+   UNLOCK();
+   return r;
+}
+
+void usdl_display_size(int *w, int *h)
+{
+   LOCK();
+   display_size_l(w, h);
+   UNLOCK();
+}
+
+struct usdlwin *usdl_open(char *title, int x, int y, int w, int h, int flags, void *owner)
+{
+   struct usdlwin *r;
+   LOCK();
+   r = open_l(title, x, y, w, h, flags, owner);
+   UNLOCK();
+   return r;
+}
+
+void usdl_close(struct usdlwin *win)
+{
+   LOCK();
+   close_l(win);
+   UNLOCK();
+}
+
+void usdl_set_title(struct usdlwin *win, char *title)
+{
+   LOCK();
+   set_title_l(win, title);
+   UNLOCK();
+}
+
+void usdl_set_icon(struct usdlwin *win, struct ucanvas *c)
+{
+   LOCK();
+   set_icon_l(win, c);
+   UNLOCK();
+}
+
+void usdl_set_position(struct usdlwin *win, int x, int y)
+{
+   LOCK();
+   set_position_l(win, x, y);
+   UNLOCK();
+}
+
+void usdl_get_position(struct usdlwin *win, int *x, int *y)
+{
+   LOCK();
+   get_position_l(win, x, y);
+   UNLOCK();
+}
+
+void usdl_set_size(struct usdlwin *win, int w, int h)
+{
+   LOCK();
+   set_size_l(win, w, h);
+   UNLOCK();
+}
+
+void usdl_get_size(struct usdlwin *win, int *w, int *h)
+{
+   LOCK();
+   get_size_l(win, w, h);
+   UNLOCK();
+}
+
+void usdl_set_resizable(struct usdlwin *win, int on)
+{
+   LOCK();
+   set_resizable_l(win, on);
+   UNLOCK();
+}
+
+void usdl_set_min_size(struct usdlwin *win, int w, int h)
+{
+   LOCK();
+   set_min_size_l(win, w, h);
+   UNLOCK();
+}
+
+void usdl_show(struct usdlwin *win)
+{
+   LOCK();
+   show_l(win);
+   UNLOCK();
+}
+
+void usdl_hide(struct usdlwin *win)
+{
+   LOCK();
+   hide_l(win);
+   UNLOCK();
+}
+
+void usdl_raise(struct usdlwin *win)
+{
+   LOCK();
+   raise_l(win);
+   UNLOCK();
+}
+
+void usdl_minimize(struct usdlwin *win)
+{
+   LOCK();
+   minimize_l(win);
+   UNLOCK();
+}
+
+void usdl_maximize(struct usdlwin *win)
+{
+   LOCK();
+   maximize_l(win);
+   UNLOCK();
+}
+
+void usdl_restore(struct usdlwin *win)
+{
+   LOCK();
+   restore_l(win);
+   UNLOCK();
+}
+
+int usdl_state(struct usdlwin *win)
+{
+   int r;
+   LOCK();
+   r = state_l(win);
+   UNLOCK();
+   return r;
+}
+
+void usdl_sync(struct usdlwin *win)
+{
+   LOCK();
+   sync_l(win);
+   UNLOCK();
+}
+
+void usdl_present_locked(struct usdlwin *win, struct ucanvas *c, int force)
+{
+   present_l(win, c, force);
+}
+
+void usdl_present(struct usdlwin *win, struct ucanvas *c, int force)
+{
+   LOCK();
+   present_l(win, c, force);
+   UNLOCK();
+}
+
+void usdl_set_cursor(struct usdlwin *win, int shape)
+{
+   LOCK();
+   set_cursor_l(win, shape);
+   UNLOCK();
+}
+
+void usdl_warp_pointer(struct usdlwin *win, int x, int y)
+{
+   LOCK();
+   warp_pointer_l(win, x, y);
+   UNLOCK();
+}
+
+int usdl_pointer(struct usdlwin *win, int *x, int *y)
+{
+   int r;
+   LOCK();
+   r = pointer_l(win, x, y);
+   UNLOCK();
+   return r;
+}
+
+void usdl_global_pointer(int *x, int *y)
+{
+   LOCK();
+   global_pointer_l(x, y);
+   UNLOCK();
+}
+
+char *usdl_get_clipboard(void)
+{
+   char *r;
+   LOCK();
+   r = get_clipboard_l();
+   UNLOCK();
+   return r;
+}
+
+int usdl_set_clipboard(char *s, int len)
+{
+   int r;
+   LOCK();
+   r = set_clipboard_l(s, len);
+   UNLOCK();
+   return r;
+}
+
+int usdl_poll(struct usdl_event *ev)
+{
+   int r;
+   LOCK();
+   r = poll_l(ev);
+   UNLOCK();
+   return r;
+}
 
 #else                                   /* SDLGraphics */
 #pragma GCC diagnostic push

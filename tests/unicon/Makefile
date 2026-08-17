@@ -23,5 +23,6 @@ include ../Makefile.test
 # Precompiled package for import testing (list_test, FxPtTest).
 tester.u: data/tester.icn
 	@$(UC) -s -u -c $^
+	cp tester.u data/tester.u
 
 list_test FxPtTest: | tester.u

@@ -3789,8 +3789,9 @@ static int ssh_request_interactive_pty(ssh_channel chan, const char *term,
  * Mode "hs" (ssh_sftp) is a transport-only session intended for an
  * immediate SFTP open on the same handle.  channel=yes is the
  * default.  Passing do_verify = 0 (the '-' mode char) skips host-key
- * verification.  cmd= without mode 'c', and channel=no with 'c' or
- * cmd=, are bad attributes.
+ * verification; verifyPeer=yes|no overrides that flag, matching TLS.
+ * cmd= without mode 'c', and channel=no with 'c' or cmd=, are bad
+ * attributes.
  *
  * On failure sets &errortext and returns NULL, so open() can fail
  * rather than raise a runtime error, matching the SSL connect path.
@@ -3934,6 +3935,13 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
       else if (strcmp(tmps, "channel") == 0) {
          want_channel = sock_attr_bool(val);
          if (want_channel < 0) {
+            set_errortext_with_val(1321, tmps);
+            return NULL;
+            }
+         }
+      else if (strcmp(tmps, "verifyPeer") == 0) {
+         do_verify = sock_attr_bool(val);
+         if (do_verify < 0) {
             set_errortext_with_val(1321, tmps);
             return NULL;
             }

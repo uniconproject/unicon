@@ -1056,6 +1056,9 @@ procedure main() \\
 end
 }
 
+Mode \texttt{"ne-"} or \texttt{verifyPeer=no} skips peer certificate
+verification. \texttt{keypass=} unlocks an encrypted private key.
+
 \subsection*{Secure Shell (SSH)}
 
 When Unicon is built with \texttt{libssh}, mode \texttt{"h"} opens an
@@ -1086,7 +1089,9 @@ shells also accept \texttt{term=} (terminal type; default \$TERM or
 \texttt{xterm}), \texttt{cols=}, and \texttt{rows=} (PTY size; default
 from the local tty, else 80$\times$24). With neither
 \texttt{key=} nor \texttt{password=}, the default identities and a
-running agent are tried. Mode \texttt{"h-"} skips host-key verification.
+running agent are tried. Mode \texttt{"h-"} or \texttt{verifyPeer=no}
+skips host-key verification (\texttt{verifyPeer=} overrides the mode
+flag, as on TLS).
 Without \texttt{cmd=}, mode \texttt{"h"} opens an interactive shell on a PTY.
 Use \texttt{net::ssh\_interactive(s)} (Unicon class library) to attach
 the local tty: raw mode, \texttt{select} mux with \texttt{\&input}, and
@@ -1209,13 +1214,16 @@ once and reused across connections:
 
 \iconcode{
 \>   id := open("client.pem", "e") \\
-\>   conn := open("host:443", "ne", id, "verifyPeer=no")
+\>   conn := open("host:443", "ne", id, "verifyPeer=no") \\
+\>   conn := open("host:443", "ne-", id)  \# same as verifyPeer=no
 }
 
 Useful attributes include \texttt{op=} (\texttt{hash}, \texttt{hmac},
 \texttt{sign}, \texttt{verify}, \texttt{encrypt}, \texttt{decrypt}),
-\texttt{alg=} (digest name), \texttt{cipher=}, \texttt{iv=}, and
-\texttt{sig=} (for verify). \texttt{Attrib()} may change them only in
+\texttt{alg=} (digest name), \texttt{cipher=}, \texttt{iv=},
+\texttt{sig=} (for verify), and \texttt{keypass=} (key-file passphrase;
+\texttt{password=} is an alias). Mode \texttt{"ne-"} is the same as
+\texttt{verifyPeer=no}. \texttt{Attrib()} may change them only in
 the idle window between operations; a change while a digest or cipher
 is in flight fails. \texttt{Attrib(h, "type")} reports the material
 role (\texttt{symkey}, \texttt{key}, \texttt{cert}, \ldots).

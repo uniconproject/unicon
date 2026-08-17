@@ -1176,7 +1176,7 @@ void set_errortext_with_val(int i, char* errval);
 #define DTLS_SERVER 3
 #define DTLS_CLIENT 4
 
-SSL_CTX* create_ssl_context(dptr attr, int n, int type);
+SSL_CTX* create_ssl_context(dptr attr, int n, int type, int do_verify);
 int is_ssl_attr(char *name);
 int set_ssl_connection_errortext(SSL *ssl, int err);
 void set_ssl_context_errortext(int err, char* errtext);

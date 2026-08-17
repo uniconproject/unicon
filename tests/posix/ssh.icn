@@ -17,6 +17,10 @@ procedure main()
    f := open("nobody@127.0.0.1", "h", "channel=maybe")
    write("bad-channel open fails: ", failed_with_text(f))
 
+   # verifyPeer= is the TLS spelling of mode '-'; values are yes/no.
+   f := open("nobody@127.0.0.1", "h", "verifyPeer=maybe")
+   write("bad-verifyPeer open fails: ", failed_with_text(f))
+
    # channel=no with cmd= is contradictory (mode "hc" selects a channel).
    f := open("nobody@127.0.0.1", "hc", "channel=no", "cmd=true")
    write("channel=no+cmd open fails: ", failed_with_text(f))

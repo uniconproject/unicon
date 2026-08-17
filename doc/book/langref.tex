@@ -3006,7 +3006,8 @@ include \texttt{user=}, \texttt{key=}, \texttt{keypass=},
 \texttt{"hc"}),
 \texttt{term=}/\texttt{cols=}/\texttt{rows=} (interactive PTY), and
 \texttt{channel=} (\texttt{yes}/\texttt{no}; \texttt{channel=no} is a
-transport-only session). Mode \texttt{"h-"} skips host-key verification.
+transport-only session), and \texttt{verifyPeer=} (\texttt{yes}/\texttt{no}).
+Mode \texttt{"h-"} or \texttt{verifyPeer=no} skips host-key verification.
 \texttt{open(s, "hc", ...)} on an existing SSH file opens another channel on
 the same session; \texttt{open(s, "hs", "path=\textit{path}", ...)}
 opens a remote file or directory over SFTP. See Chapter~6.
@@ -3017,13 +3018,16 @@ a digest name (\texttt{"eh"}), a key/certificate path, a raw key string
 (\texttt{"er"}), or another crypto handle that supplies material.
 Trailing attributes include \texttt{op=} (\texttt{hash}, \texttt{hmac},
 \texttt{sign}, \texttt{verify}, \texttt{encrypt}, \texttt{decrypt}),
-\texttt{alg=}, \texttt{cipher=}, \texttt{iv=}, and \texttt{sig=}.
+\texttt{alg=}, \texttt{cipher=}, \texttt{iv=}, \texttt{sig=}, and
+\texttt{keypass=} (key-file passphrase; \texttt{password=} is an alias).
 Defaults are \texttt{sha256} and \texttt{aes-256-gcm}.
 Modes \texttt{"re"} and \texttt{"we"} take a data-file path as the
 target and obtain key material from \texttt{key=} or a handle attribute.
 Encrypted sockets (\texttt{"ne"}, \texttt{"nue"}, \ldots) also accept
 crypto material handles as attributes so identity can be reused across
-connections. See Chapter~6.
+connections. Mode \texttt{"ne-"} or \texttt{verifyPeer=no} skips peer
+certificate verification; \texttt{keypass=} unlocks an encrypted
+private key. See Chapter~6.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{opmask}

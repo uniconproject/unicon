@@ -19,8 +19,8 @@
  * TLS/DTLS open() attributes (also skipped by apply_sock_attrs).
  */
 static char *ssl_attr_names[] = {
-   "cert", "key", "password", "ca", "caDir", "caStore", "ciphers",
-   "ciphers1.3", "minProto", "maxProto", "verifyPeer", NULL
+   "cert", "key", "keypass", "ca", "caDir", "caStore",
+   "ciphers", "ciphers1.3", "minProto", "maxProto", "verifyPeer", NULL
    };
 
 int is_ssl_attr(char *name)
@@ -130,8 +130,10 @@ int set_ssl_connection_errortext(SSL *ssl, int err)
  *     attr: attribute array passed to open()
  *     n   : size of the array
  *    type : connection type TLS/DTLS Server/Client
+ *    do_verify : 0 when mode '-' is set (same as verifyPeer=no);
+ *                verifyPeer= overrides the mode flag
  */
-SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
+SSL_CTX * create_ssl_context(dptr attr, int n, int type, int do_verify) {
 
    SSL_CTX *ctx;
    //      if (status & Fs_Encrypt) {
@@ -210,7 +212,7 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
            certFile = val;
          else if (strcmp(tmps, "key") == 0)
            keyFile = val;
-         else if (strcmp(tmps, "password") == 0)
+         else if (strcmp(tmps, "keypass") == 0)
            password = val;
          else if (strcmp(tmps, "ca") == 0)
            ca_file = val;
@@ -409,6 +411,12 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type ) {
        return NULL;
      }
    }
+   /*
+    * Mode '-' is verifyPeer=no.  An explicit verifyPeer= wins.
+    */
+   if (verifyPeer == NULL && !do_verify)
+     verifyPeer = "no";
+
    if (verifyPeer == NULL) {
      if ((type == TLS_CLIENT) || (type == DTLS_CLIENT)) {
        // cannot fail
@@ -741,7 +749,8 @@ struct CryptoFile *crypto_open_material(dptr target, int israw, dptr attr,
       val = strchr(tmps, '=');
       if (val == NULL) continue;
       *val++ = '\0';
-      if (strcmp(tmps, "password") == 0) password = val;
+      if (strcmp(tmps, "keypass") == 0 || strcmp(tmps, "password") == 0)
+         password = val;
       else if (strcmp(tmps, "type") == 0) {
          if      (strcmp(val, "cert")   == 0) want = CRYPTO_ROLE_CERT;
          else if (strcmp(val, "key")    == 0) want = CRYPTO_ROLE_PRIVKEY;

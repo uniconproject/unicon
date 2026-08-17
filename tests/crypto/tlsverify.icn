@@ -1,6 +1,6 @@
 #
 # TLS verify modes: reject cleartext and missing CA; accept verifyPeer=no
-# and a client that trusts the server CA.
+# and mode "ne-" (same meaning); accept a client that trusts the server CA.
 #
 
 link tlsutil
@@ -18,7 +18,7 @@ procedure main()
    ca := "ca=./data/unicon-ca.crt"
 
    port := tls_port()
-   tls_start([port, "nae", key, cert, ca], 4)
+   tls_start([port, "nae", key, cert, ca], 5)
 
    # Cleartext client must not speak TLS.
    if tls_echo([port, "n", 5000]) then
@@ -34,10 +34,16 @@ procedure main()
       write("noca:ok")
    delay(250)
 
-   if tls_echo([port, "ne", 5000, "verifyPeer=no"]) then
+   if tls_echo([port, "ne", 5000, "verifyPeer=no", "keypass=unused"]) then
       write("noverify:ok")
    else
       write("noverify:fail")
+   delay(250)
+
+   if tls_echo([port, "ne-", 5000]) then
+      write("dashverify:ok")
+   else
+      write("dashverify:fail")
    delay(250)
 
    if tls_echo([port, "ne", 5000, ca]) then

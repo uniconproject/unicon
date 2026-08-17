@@ -12,8 +12,8 @@
    descriptor rather than introducing a new allocated representation --
    is the tagged-qualifier design. The report covers the bit-level
    representation, the mechanisms that apply it, the operations that
-   have been made Unicode-aware, the alternatives that were evaluated
-   and why they were not chosen, and the work that remains. It is
+   have been made Unicode-aware, examples, the alternatives that were
+   evaluated and why they were not chosen, and the work that remains. It is
    intended to remain useful as a reference after the feature has
    shipped, not only as a plan for building it. Keywords: Unicon,
    Unicode, UTF-8, strings, runtime, technical report.
@@ -28,8 +28,12 @@ This report records the as-built native Unicode support in the Unicon
 runtime: how a string is tagged, how literals and I/O become tagged,
 which operations interpret positions as codepoints, and what is still
 byte-oriented. It is formatted as a Unicon Technical Report
-:cite:`Jeffery:UTR15`. Automated tests live under
-``tests/unicode/``.
+:cite:`Jeffery:UTR15`. :ref:`section 8 <sec-examples>` collects short
+programs by operation. Automated tests live under ``tests/unicode/``.
+
+The feature is optional. A 64-bit build without ``NoUniconUnicode``
+reports ``Unicode`` in ``&features``. On 32-bit, or with that switch,
+the tag macros are no-ops and the suite is skipped.
 
 .. _sec-term:
 
@@ -138,7 +142,7 @@ structure to within a few percent for strings up to roughly sixteen
 thousand codepoints. It was not adopted because the codepoint-count
 design above has the better-evidenced claim on the same bits, not
 because it does not work; it remains a candidate for a future
-representation, discussed in :ref:`section 8 <sec-status>`.
+representation, discussed in :ref:`section 9 <sec-status>`.
 
 .. _sec-macros:
 
@@ -309,7 +313,7 @@ literal's codepoint count is not cached until something explicitly
 computes it; the size operation on such a literal remains correct,
 falling back to a full scan, but does not receive the constant-time
 benefit that a cached count would provide until a future revision
-addresses this (:ref:`section 8 <sec-status>`).
+addresses this (:ref:`section 9 <sec-status>`).
 
 .. _sec-uchar:
 
@@ -427,7 +431,7 @@ needed, rather than making it automatic:
   produce a taggable result -- the file, socket, and secure-shell
   channel paths -- with the exception of pseudo-terminal reads, which
   return through a different internal mechanism not yet adapted for
-  tagging (:ref:`section 8 <sec-status>`).
+  tagging (:ref:`section 9 <sec-status>`).
 - **A global default**, changing what ``open()`` assumes when a caller
   does not specify a mode explicitly, has been designed but not
   implemented.
@@ -534,9 +538,197 @@ A content test is not a tag test. Inverse plus ``*`` covers content.
 A tag predicate is needed only if a program must ask "am I in the
 text view?" without assigning ``unicode(s)``.
 
+.. _sec-examples:
+
+8. Examples
+===========
+
+These examples assume a Unicon build with ``Unicode`` in
+``&features``. Non-ASCII literals are tagged at compile time, so
+``"café"`` already has a text view: ``*s`` and ``s[i]`` are
+codepoints. The programs under ``tests/unicode/`` are the
+executable form of this section; ``languages.icn`` is a longer
+script sample.
+
+.. _sec-ex-size:
+
+8.1 Length and subscript
+------------------------
+
+``*s`` is 4, not 5. ``s[4]`` is the letter é, not a continuation
+byte:
+
+.. code-block:: unicon
+
+   procedure main()
+      local s, i
+      s := "café"
+      write("*s = ", *s)
+      every i := 1 to *s do
+         write("s[", i, "] = ", s[i])
+   end
+
+Output::
+
+   *s = 4
+   s[1] = c
+   s[2] = a
+   s[3] = f
+   s[4] = é
+
+``"hello"`` is untagged ASCII, so ``*`` and ``[]`` still mean
+bytes, which for ASCII are the same as codepoints.
+
+.. _sec-ex-convert:
+
+8.2 ``unicode()``, ``uchar()``, and ``uord()``
+---------------------------------------------
+
+``unicode(s)`` tags non-ASCII UTF-8. ``uchar`` / ``uord`` are the
+codepoint pair; ``char`` / ``ord`` stay byte-oriented
+(:ref:`section 4 <sec-uchar>`):
+
+.. code-block:: unicon
+
+   procedure main()
+      write(*unicode("hello"))
+      write(*unicode("café"))
+      write(unicode("café")[4])
+      write(uord(uchar(233)))
+      write(*uchar(233))
+      write(char(65), " ", ord("A"))
+   end
+
+Output::
+
+   5
+   4
+   é
+   233
+   1
+   A 65
+
+``uord`` on more than one codepoint is error 205.
+
+.. _sec-ex-concat:
+
+8.3 Concatenation
+-----------------
+
+``||`` tags the result if either operand is tagged, and adds
+cached codepoint counts when both are known
+(:ref:`section 5 <sec-concat>`):
+
+.. code-block:: unicon
+
+   procedure main()
+      write(*("café" || "naïve"))
+      write(*("café" || "hello"))
+      write(*("hello" || "café"))
+   end
+
+Output::
+
+   9
+   9
+   9
+
+``string(a, b, ...)`` concatenates too and **keeps** the tag, the
+same as ``||``. It is not a byte-view switch
+(:ref:`section 7.1 <sec-string>`).
+
+.. _sec-ex-scan:
+
+8.4 Scanning
+------------
+
+On a tagged subject, ``move``, ``tab``, and ``pos`` use
+codepoint positions:
+
+.. code-block:: unicon
+
+   procedure main()
+      &subject := "café naïve"
+      &pos := 1
+      write(move(4))
+      &pos := 1
+      write(tab(5))
+      &pos := 1
+      write(pos(1))
+   end
+
+Output::
+
+   café
+   café
+   1
+
+.. _sec-ex-io:
+
+8.5 ``open()`` mode ``i``
+-------------------------
+
+Without ``i``, ``reads()`` is untagged (byte ``*``). With ``i``,
+the same UTF-8 is tagged (:ref:`section 6 <sec-io>`):
+
+.. code-block:: unicon
+
+   procedure main()
+      local f, s
+      f := open("uio.dat", "wu") | stop("open")
+      writes(f, "café")
+      close(f)
+
+      f := open("uio.dat", "r") | stop("open")
+      s := reads(f, 100)
+      close(f)
+      write(*s)
+
+      f := open("uio.dat", "ri") | stop("open")
+      s := reads(f, 100)
+      close(f)
+      write(*s)
+      write(s[4])
+      remove("uio.dat")
+   end
+
+Output::
+
+   5
+   4
+   é
+
+.. _sec-ex-tag:
+
+8.6 Content vs. tag
+-------------------
+
+Untagged UTF-8 from a file, or built from ``char()`` bytes, has
+byte ``*``. ``unicode()`` is the text view. The two disagree
+exactly when the payload is multi-byte
+(:ref:`section 7.2 <sec-tests>`):
+
+.. code-block:: unicon
+
+   procedure main()
+      local raw
+      raw := char(195) || char(169)    # UTF-8 of é, untagged
+      write(*raw)
+      write(*unicode(raw))
+      write(*string(unicode(raw)))
+   end
+
+Output::
+
+   2
+   1
+   1
+
+``string(s)`` on ``"café"`` also keeps the tag: ``*string(s) = *s``.
+
 .. _sec-status:
 
-8. Status and future work
+9. Status and future work
 =========================
 
 The following operations have been made Unicode-aware. Subscripting
@@ -752,7 +944,7 @@ Automated tests specific to this feature live under
 ``match``, ``find``, ``reverse``, ``file_i``, ``socket_i``, plus
 ``ascii_*`` and ``languages``). ``tests/general/Makefile`` excludes
 the pre-existing ``utf8``/``utf8_ovld`` tests
-(:ref:`section 8 <sec-status>`) when the feature is enabled.
+(:ref:`section 9 <sec-status>`) when the feature is enabled.
 
 References
 ==========

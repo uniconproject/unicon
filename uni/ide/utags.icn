@@ -28,14 +28,19 @@ procedure utags(contents, parentfile)
       line[find("//",line):0] := ""
 
       line ? {
-         gword := getword3(line)
 ### Unicon Tags ###
 
          if find(".icn", parentfile) then {    #Unicon Tags
-            gword := getword()
-            tab(many(' '))
+            # Declaration keywords are the first token, not a match
+            # later on the line (issue 651: "link" : add_link(decl)).
+            tab(many(' \t'))
+            if match("$include") then
+               gword := "$include"
+            else
+               gword := tab(many(&letters ++ '_'))
+            tab(many(' \t'))
 
-            case gword of {
+            case \gword of {
                "procedure"|"class": {
                   put(outlines, Tag(gword, getword(), lineno, parentfile))
                   }
@@ -66,14 +71,16 @@ procedure getword()
    local word
    static letts, ids
    initial {
-      letts := &letters ++ '({'
-      ids :=&letters ++ &digits ++ '_.'
+      # Do not treat '(' or '{' as word starters: they are not in ids,
+      # so &pos would never advance (issue 651).
+      letts := &letters ++ '_'
+      ids := &letters ++ &digits ++ '_.'
       }
 
    while tab(upto(letts)) do {
       word := tab(many(ids))
-      if /word then word := "(missing field-name)"
-      suspend word
+      if \word then suspend word
+      else move(1) | break
       }
 end
 

@@ -1068,7 +1068,7 @@ set (they do not abort), matching the SSL connect path.
 
 \iconcode{
 procedure main() \\
-\>   s := open("user@router.example", "h", "key=~/.ssh/id\_rsa", \\
+\>   s := open("user@router.example", "hc", "key=~/.ssh/id\_rsa", \\
 \>\>\>\>"cmd=show version") {\textbar} stop(\&errortext) \\
 \>   while write(read(s)) \\
 \>   write("exit status: ", Attrib(s, "exitstatus")) \\
@@ -1080,29 +1080,31 @@ Attributes include \texttt{user=},
 \texttt{key=} (private key path), \texttt{keypass=} (passphrase for an
 encrypted key), \texttt{password=} (login password),
 \texttt{hostkeyfile=} (known\_hosts path), \texttt{cmd=} (remote
-command), and \texttt{channel=} (\texttt{yes}/\texttt{no}). Interactive
+command; requires mode \texttt{"hc"}), and \texttt{channel=} (\texttt{yes}/\texttt{no}). Interactive
 shells also accept \texttt{term=} (terminal type; default \$TERM or
 \texttt{xterm}), \texttt{cols=}, and \texttt{rows=} (PTY size; default
 from the local tty, else 80$\times$24). With neither
 \texttt{key=} nor \texttt{password=}, the default identities and a
 running agent are tried. Mode \texttt{"h-"} skips host-key verification.
-Without \texttt{cmd=}, an interactive shell on a PTY is opened.
+Without \texttt{cmd=}, mode \texttt{"h"} opens an interactive shell on a PTY.
 Use \texttt{net::ssh\_interactive(s)} (Unicon class library) to attach
 the local tty: raw mode, \texttt{select} mux with \texttt{\&input}, and
 display CRLF mapping. \texttt{channel=no} opens an authenticated session with no channel
-(useful for SFTP or later \texttt{open(s, ...)} channels);
+(useful for SFTP or later \texttt{open(s, "hc")} / \texttt{open(s, "hs")} handles);
 \texttt{channel=yes} is the default. Combining \texttt{channel=no} with
-\texttt{cmd=} fails. The default port is 22 when \texttt{:port} is
+mode \texttt{"hc"} or \texttt{cmd=} fails. The default port is 22 when \texttt{:port} is
 omitted.
 
 A second \texttt{open(s, ...)} on an existing SSH file opens another
-channel on the same session (no new handshake). Closing the session
-invalidates every channel derived from it.
+channel or SFTP handle on the same session (no new handshake). The
+second argument is a mode string: \texttt{"hc"} for an extra
+shell or exec channel (\texttt{cmd=} selects exec), \texttt{"hs"} for
+SFTP. Closing the session invalidates every handle derived from it.
 
 \iconcode{
 \>   s := open("user@host", "h", "key=id\_rsa") {\textbar} stop(\&errortext) \\
-\>   c1 := open(s, "cmd=uname -a") \\
-\>   c2 := open(s, "cmd=uptime")
+\>   c1 := open(s, "hc", "cmd=uname -a") \\
+\>   c2 := open(s, "hc", "cmd=uptime")
 }
 
 Ordinary \texttt{read}/\texttt{writes} use the remote standard streams.
@@ -1113,7 +1115,7 @@ accumulated since the previous call, and whether remote EOF has arrived.
 \texttt{posix\_message} records whose \texttt{addr} is
 \texttt{"stdout"}, \texttt{"stderr"}, or \texttt{"exit"}.
 
-SFTP uses the same session. Opening with \texttt{"sftp"} and
+SFTP uses the same session. Mode \texttt{"hs"} with
 \texttt{path=} transfers a remote file (or lists a remote directory,
 with the same auto-detect behavior as a local directory open).
 \texttt{reads}/\texttt{writes} transfer raw bytes.
@@ -1123,7 +1125,7 @@ SSH session argument.
 
 \iconcode{
 \>   s := open("user@host", "h", "key=id\_rsa", "channel=no") {\textbar} stop(\&errortext) \\
-\>   c := open(s, "sftp", "path=/tmp/out.bin", "w") {\textbar} stop(\&errortext) \\
+\>   c := open(s, "hs", "path=/tmp/out.bin", "w") {\textbar} stop(\&errortext) \\
 \>   writes(c, ReadBytes("local.bin")) \\
 \>   close(c) \\
 \>   info := stat(s, "/tmp/out.bin") \\

@@ -42,7 +42,7 @@ Implementation-oriented LaTeX (parts 1–3, appendices) for *The Icon Programmin
 
 ## Unicon Technical Reports (UTRs)
 
-Numbered project reports (UTR #1, UTR #2, …). HTML, PDF, and office exports may live under `doc/utr/`, `doc/unicon/`, or `doc/udb/` depending on age and format. The [Technical Reports](https://unicon.sourceforge.io/reports.html) page on [unicon.sourceforge.io](https://unicon.sourceforge.io/) lists reports with links to PDFs/HTML on unicon.org and elsewhere.
+Numbered project reports (UTR #1, UTR #2, …). HTML, PDF, and office exports may live under `doc/utr/`, `doc/unicon/`, or `doc/udb/` depending on age and format. The [Technical Reports](https://unicon.sourceforge.io/reports.html) page on [unicon.sourceforge.io](https://unicon.sourceforge.io/) lists reports with links to PDFs/HTML on unicon.org and elsewhere. RST sources listed in `utr/utr.manifest` are built by `make -C doc/utr html` and indexed at [utr/html/](utr/html/).
 
 Standard Markdown tables use equal column widths, so a narrow “#” column still wastes space. Each report below is one line: **UTR #N** — format links — *title*.
 
@@ -61,7 +61,8 @@ Standard Markdown tables use equal column widths, so a narrow “#” column sti
 - **UTR #13** — [OpenDocument](utr/utr13.odt) — *The Unicon Messaging Facilities*
 - **UTR #14** — [Word](utr/utr14.docx) — *Unicon Threads User's Guide and Reference Manual*
 - **UTR #21** — [HTML](utr/utr21.html) — *Configuring and Building Version 13 of Unicon*
-- **UTR #26** — [RST](utr/utr26.rst), [HTML](utr/html/utr26.html) — *Native SSH and SFTP Support in Unicon* (libssh-backed client; build with `make -C doc/utr html`)
+- **UTR #26** — [RST](utr/utr26.rst), [HTML](utr/html/utr26.html) — *Native SSH and SFTP Support in Unicon* (libssh-backed client)
+- **UTR #27** — [RST](utr/utr27.rst), [HTML](utr/html/utr27.html) — *Cryptographic Facilities in Unicon* (hash, HMAC, sign, encrypt, TLS/DTLS)
 
 ### Unicode reference data (for UTF-8 / UTR work)
 

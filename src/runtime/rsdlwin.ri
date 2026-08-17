@@ -351,8 +351,14 @@ static void present(wsp ws, int force)
       ws = ws->parent->window;
    if (ws == NULL || ws->win == NULL || ws->pix == NULL)
       return;
+   /*
+    * Hold the same lock as the texture upload.  Another thread can
+    * resize the canvas and free its pixels while this one shows them.
+    */
+   usdl_lock();
    if (ws->children == NULL && ws->comp == NULL) {
-      usdl_present(ws->win, ws->pix, force);
+      usdl_present_locked(ws->win, ws->pix, force);
+      usdl_unlock();
       return;
       }
 
@@ -363,8 +369,10 @@ static void present(wsp ws, int force)
       ws->comp = NULL;
       }
    if (ws->comp == NULL) {
-      if ((ws->comp = uc_canvas_new(ws->pix->width, ws->pix->height, 0)) == NULL)
+      if ((ws->comp = uc_canvas_new(ws->pix->width, ws->pix->height, 0)) == NULL) {
+         usdl_unlock();
          return;
+         }
       ws->recompose = 1;
       }
    if (subwin_dirty(ws)) {
@@ -377,7 +385,8 @@ static void present(wsp ws, int force)
       gc.cliph = ws->pix->height;
       subwin_draw(ws, ws->comp, 0, 0, &gc);
       }
-   usdl_present(ws->win, ws->comp, force);
+   usdl_present_locked(ws->win, ws->comp, force);
+   usdl_unlock();
 }
 
 /*
@@ -1281,7 +1290,12 @@ int resizePixmap(wbp w, int width, int height)
    if (ws->pix == NULL) return 1;
    if (width > ws->pixwidth || height > ws->pixheight) {
       int nw = Max(ws->pixwidth, width), nh = Max(ws->pixheight, height);
-      if (!uc_canvas_resize(ws->pix, nw, nh, (unsigned int)w->context->bg))
+      int ok;
+      /* do not free the pixels while another thread is uploading them */
+      usdl_lock();
+      ok = uc_canvas_resize(ws->pix, nw, nh, (unsigned int)w->context->bg);
+      usdl_unlock();
+      if (!ok)
          return 0;
       ws->pixwidth = nw;
       ws->pixheight = nh;

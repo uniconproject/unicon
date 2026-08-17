@@ -44,8 +44,10 @@ package uscribe
 # are tried before shorter ones so e.g.
 # <tt>"**bold**"</tt> is not misread as two adjacent <tt>"*emph*"</tt>
 # runs, and <tt>``code``</tt> is not misread as two empty
-# single-backtick spans. Unclosed delimiters are left as plain text
-# (the opener is not eaten).
+# single-backtick spans. The interior of <tt>**strong**</tt> and
+# <tt>*emphasis*</tt> is parsed again so <tt>**``code``**</tt> is
+# bold code, not literal backticks. Unclosed delimiters are left as
+# plain text (the opener is not eaten).
 # <[param s one line/run of source text]>
 # <[returns a list of <tt>Inline</tt> node instances]>
 #</p>
@@ -123,7 +125,7 @@ procedure parseInline(s)
                 if tok := tab(find("**")) then {
                     move(2)
                     flushText(out, buf); buf := ""
-                    put(out, mkStrong([mkText(tok)]))
+                    put(out, mkStrong(parseInline(tok)))
                     }
                 else
                     buf ||:= "**"
@@ -141,7 +143,7 @@ procedure parseInline(s)
                 if tok := tab(find("*")) then {
                     move(1)
                     flushText(out, buf); buf := ""
-                    put(out, mkEmphasis([mkText(tok)]))
+                    put(out, mkEmphasis(parseInline(tok)))
                     }
                 else
                     buf ||:= "*"

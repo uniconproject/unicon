@@ -108,3 +108,6 @@ Where files go
 - ``images/`` — figures (copied into ``out/images/``)
 - ``out/`` — generated HTML and/or ``STEM.tex`` / ``STEM.pdf``
 - ``themes/`` — built-in skins shared across projects (HTML)
+
+A report (one paper) or a catalog of reports uses the same tools
+with a different manifest. See :doc:`reports`.

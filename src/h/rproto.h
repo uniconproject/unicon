@@ -989,6 +989,34 @@ int apply_sock_attrs            (int s, int prebind, dptr attr, int nattr,
                                  int join_only);
 int sattrib                     (int s, char *str, long len, dptr answer,
                                  char *abuf);
+int sock_peek                   (int fd, char *name, dptr rv);
+char *sock_peek_field           (int fd, int i);
+int sock_peek_key_nth           (int fd, int i, dptr key);
+
+#define FILEPEEK_OK     1
+#define FILEPEEK_FAIL   0
+#define FILEPEEK_ERR   -1
+
+struct filepeek_field {
+   char *name;
+   int (*get)(void *h, dptr rv);
+};
+
+int filepeek_yes                (int truth, dptr rv);
+int filepeek_lookup             (const struct filepeek_field *tab, void *h,
+                                 char *name, dptr rv, int unknown_err);
+int filepeek_key_nth            (void *h, int i,
+                                 int (*peek)(void *, char *, dptr),
+                                 char *(*field)(void *, int),
+                                 dptr key);
+int filepeek_key_nth_tab        (const struct filepeek_field *tab, void *h,
+                                 int i, dptr key);
+int filepeek_snapshot           (const struct filepeek_field *tab, void *h,
+                                 dptr rv);
+char *filepeek_field_tab        (const struct filepeek_field *tab, int i);
+int filepeek_alclist            (dptr rv);
+int filepeek_list_putstr        (dptr lst, char *s, word n);
+int filepeek_csv_list           (char *csv, dptr rv);
 int sock_attrs_af               (dptr attr, int nattr);
 int is_sock_attr                (char *name);
 int sock_getstrg                (char *buf, int maxi, dptr file);
@@ -1011,11 +1039,12 @@ dptr make_serv                  (struct servent *pw, dptr result);
 int sock_listen                 (char *s, int sock_type, int keep_listener,
                                  int af_fam, dptr attr, int nattr);
 void sock_close                 (int fd);
-int sock_pin                    (int fd, word gen);
+int sock_pin                    (int fd, uword gen);
 void sock_release               (int fd);
 int sock_purge                  (int fd);
-void sock_unclaim               (int fd, word gen);
-word sock_listener_gen          (int fd);
+void sock_unclaim               (int fd, uword gen);
+uword sock_listener_gen         (int fd);
+uword sock_file_gen             (void);
 int sock_name                   (int sock, char* addr, char* addrbuf, int bufsize);
 int sock_me                     (int sock, char* addrbuf, int bufsize);
 int sock_send                   (char* addr, char* msg, int msglen, int af_fam);
@@ -1176,6 +1205,7 @@ void set_errortext_with_val(int i, char* errval);
 SSL_CTX* create_ssl_context(dptr attr, int n, int type, int do_verify);
 int is_ssl_attr(char *name);
 int set_ssl_connection_errortext(SSL *ssl, int err);
+void set_ssl_handshake_errortext(SSL *ssl, int err);
 void set_ssl_context_errortext(int err, char* errtext);
 int ssl_dtls_accept(SSL *ssl, int fd);
 int ssl_dtls_connect(SSL *ssl, int fd);
@@ -1192,8 +1222,13 @@ void  cryptofile_free    (struct CryptoFile *cf);
 int   crypto_setattr (struct CryptoFile *cf, char *name, char *val, word vlen);
 int   crypto_merge   (struct CryptoFile *cf, char *name, char *val);
 int   crypto_borrow  (struct CryptoFile *op, struct CryptoFile *src);
-int   crypto_getstate(struct CryptoFile *cf, char **blobp, word *lenp);
 char *crypto_rolename(struct CryptoFile *cf);
+int   crypto_peek(struct CryptoFile *cf, char *name, dptr rv);
+char *crypto_peek_field(struct CryptoFile *cf, int i);
+int   crypto_peek_key_nth(struct CryptoFile *cf, int i, dptr key);
+int   tls_peek(struct b_file *fl, char *name, dptr rv);
+char *tls_peek_field(struct b_file *fl, int i);
+int   tls_peek_key_nth(struct b_file *fl, int i, dptr key);
 #endif                                  /* HAVE_LIBSSL */
 
 #if HAVE_LIBSSH
@@ -1208,6 +1243,9 @@ int ssh_pump(struct SSHfile *sshf, int block, int want_stdout);
 int ssh_chan_read(struct SSHfile *sshf, char *buf, int n, int block);
 int ssh_file_pending(struct b_file *fp);
 void ssh_drain_stderr(struct SSHfile *sshf, dptr d);
+int  ssh_peek(struct SSHfile *sshf, char *name, dptr rv);
+char *ssh_peek_field(struct SSHfile *sshf, int i);
+int  ssh_peek_key_nth(struct SSHfile *sshf, int i, dptr key);
 struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
                                  int status, int *isdir, int as_owner);
 int ssh_sftp_readdir(struct SSHfile *sshf, char *buf, int maxi);

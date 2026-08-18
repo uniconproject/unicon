@@ -1088,6 +1088,7 @@ function{0,1} filepair()
          Protect(fl = alcfile(0, Fs_Write|Fs_Read|Fs_Socket, &fname),
                  runerr(0));
          fl->fd.fd = fds[i];
+         fl->sock_gen = sock_file_gen();
          Blk(ep,Lelem)->lslots[i].dword = D_File;
          ep->Lelem.lslots[i].vword.bptr = (union block*)fl;
          }
@@ -2236,7 +2237,7 @@ function{0,1} receive(f)
 #ifdef Concurrent
             MUTEX_UNLOCKID(ssh_mtx);
 #endif                                  /* Concurrent */
-            set_ssh_errortext(sshf->sess, 1324);
+            set_ssh_errortext(sshf->sess, 1334);
             fail;
             }
          if (prc == 0) {
@@ -2490,7 +2491,7 @@ void post_if_ready(dptr ldp, dptr f, fd_set *fdsp)
        */
       if (status & Fs_Listen) {
          int lfd = fd;
-         word gen = BlkD(*f, File)->sock_gen;
+         uword gen = BlkD(*f, File)->sock_gen;
          /*
           * Pin the listener across accept() so a concurrent close()
           * cannot sock_purge()+sock_close() the descriptor under us.
@@ -2524,7 +2525,7 @@ void post_if_ready(dptr ldp, dptr f, fd_set *fdsp)
             sock_unclaim(lfd, gen);
          BlkD(*f,File)->fd.fd = fd;
          BlkLoc(*f)->File.status = Fs_Socket | Fs_Read | Fs_Write;
-         BlkLoc(*f)->File.sock_gen = 0;
+         BlkLoc(*f)->File.sock_gen = sock_file_gen();
          }
       c_put(ldp, f);
       }

@@ -16,8 +16,53 @@ static void     listimage       (FILE *f,struct b_list *lp, int noimage);
 static void     printimage      (FILE *f,int c,int q);
 static char *   csname          (dptr dp);
 static int construct_funcimage(union block *pe, int aicode, int bpcode, dptr result, int index);
+static word     file_fname_nulen(char *s, word len);
+#ifdef PosixFns
+static int      file_image_sockfd(struct b_file *fl);
+#endif                                  /* PosixFns */
 int        find_cindex(union block *l, union block *r);
 
+
+/*
+ * Socket fname is stored with a trailing NUL so sock_name() can treat
+ * it as a C string.  Drop that extra byte (and any other trailing NULs)
+ * so image() does not print "\\x00".
+ */
+static word file_fname_nulen(char *s, word len)
+{
+   if (s == NULL)
+      return 0;
+   while (len > 0 && s[len - 1] == '\0')
+      len--;
+   return len;
+}
+
+#ifdef PosixFns
+/*
+ * Real socket descriptor for image().  TLS stores SSL * in the fd union;
+ * using that pointer as an int fd makes getpeername() fail and image()
+ * come out as file().
+ */
+static int file_image_sockfd(struct b_file *fl)
+{
+   if (fl == NULL || fl->status == 0)
+      return -1;
+#if HAVE_LIBSSH
+   if (fl->status & Fs_SSH)
+      return -1;
+#endif                                  /* HAVE_LIBSSH */
+#if HAVE_LIBSSL
+   if ((fl->status & Fs_Encrypt) && (fl->status & Fs_Socket)) {
+      if (fl->fd.ssl == NULL)
+         return -1;
+      return SSL_get_fd(fl->fd.ssl);
+      }
+#endif                                  /* HAVE_LIBSSL */
+   if (fl->status & Fs_Socket)
+      return fl->fd.fd;
+   return -1;
+}
+#endif                                  /* PosixFns */
 
 /*
  * eq - compare two Icon strings for equality
@@ -586,7 +631,8 @@ uword hash(dptr dp)
             /*
              * The file isn't a special one, just print "file(name)".
              */
-            i = StrLen(BlkD(*dp,File)->fname);
+            i = file_fname_nulen(StrLoc(BlkLoc(*dp)->File.fname),
+                                 StrLen(BlkD(*dp,File)->fname));
             s = StrLoc(BlkLoc(*dp)->File.fname);
 #ifdef PosixFns
             if (BlkLoc(*dp)->File.status & Fs_Socket) {
@@ -2609,15 +2655,23 @@ int getimage(dptr dp1, dptr dp2)
                    && !(BlkD(source,File)->status & Fs_SSH)
 #endif                                  /* HAVE_LIBSSH */
                    ) {
-                   s = namebuf;
-                   len = sock_name(BlkLoc(source)->File.fd.fd,
-                                 StrLoc(BlkLoc(source)->File.fname),
-                                 namebuf, sizeof(namebuf));
+                   int sfd = file_image_sockfd(BlkD(source,File));
+                   len = 0;
+                   if (sfd >= 0)
+                      len = sock_name(sfd,
+                                    StrLoc(BlkLoc(source)->File.fname),
+                                    namebuf, sizeof(namebuf));
+                   if (len > 0)
+                      s = namebuf;
+                   else {
+                      s = StrLoc(BlkD(source,File)->fname);
+                      len = file_fname_nulen(s, StrLen(BlkD(source,File)->fname));
+                      }
                }
                else {
 #endif                                  /* PosixFns */
                s = StrLoc(BlkD(source,File)->fname);
-               len = StrLen(BlkD(source,File)->fname);
+               len = file_fname_nulen(s, StrLen(BlkD(source,File)->fname));
 #ifdef PosixFns
                }
 #endif                                  /* PosixFns */

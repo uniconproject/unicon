@@ -139,9 +139,28 @@ operator{*} ! bang(underef x -> dx)
              * x is a file.  Read the next line into the string space
              *  and suspend the newly allocated string.
              */
+            status = BlkLoc(dx)->File.status;
+
+#ifdef PosixFns
+#if HAVE_LIBSSL
+            /*
+             * Crypto handles are not line streams; fd.fp is the CryptoFile.
+             */
+            if (status & Fs_Crypto)
+               fail;
+#endif                                  /* HAVE_LIBSSL */
+#if HAVE_LIBSSH
+            /*
+             * SSH sessions without a channel are not line streams.
+             * Channels carry Fs_Socket and generate input lines below.
+             */
+            if ((status & Fs_SSH) && !(status & Fs_Socket))
+               fail;
+#endif                                  /* HAVE_LIBSSH */
+#endif                                  /* PosixFns */
+
             fd = BlkD(dx,File)->fd.fp;
 
-            status = BlkLoc(dx)->File.status;
             if ((status & Fs_Read) == 0)
                runerr(212, dx);
 
@@ -886,7 +905,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
    type_case dx of {
       file: {
          abstract {
-            return string ++ integer /* bug: this value is for messaging */
+            return string ++ integer ++ list
             }
 
          body {
@@ -990,7 +1009,132 @@ operator{0,1} [] subsc(underef x -> dx,y)
                }
             else
 #endif                                  /* Messaging */
+               {
+#ifdef PosixFns
+               tended char *c_y;
+               int peek_rc;
+#ifdef Concurrent
+               word peek_mtx = BlkD(dx,File)->mutexid;
+#endif                                  /* Concurrent */
+               if (!cnv:C_string(y, c_y))
+                  runerr(103, y);
+
+#if HAVE_LIBSSL
+               if (status & Fs_Crypto) {
+                  struct CryptoFile *cf;
+#ifdef Concurrent
+                  MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                  status = BlkD(dx,File)->status;
+                  cf = BlkD(dx,File)->fd.cf;
+                  if (cf == NULL || (status & Fs_Crypto) == 0) {
+#ifdef Concurrent
+                     MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                     runerr(174, dx);
+                     }
+                  peek_rc = crypto_peek(cf, c_y, &result);
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                  if (peek_rc == FILEPEEK_ERR)
+                     runerr(1302, y);
+                  if (peek_rc == FILEPEEK_FAIL)
+                     fail;
+                  return result;
+                  }
+#endif                                  /* HAVE_LIBSSL */
+#if HAVE_LIBSSH
+               if (status & Fs_SSH) {
+                  struct SSHfile *sshf;
+#ifdef Concurrent
+                  MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                  status = BlkD(dx,File)->status;
+                  sshf = BlkD(dx,File)->fd.sshf;
+                  if (sshf == NULL || (status & Fs_SSH) == 0) {
+#ifdef Concurrent
+                     MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                     runerr(174, dx);
+                     }
+                  peek_rc = ssh_peek(sshf, c_y, &result);
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                  if (peek_rc == FILEPEEK_ERR)
+                     runerr(1331, y);
+                  if (peek_rc == FILEPEEK_FAIL)
+                     fail;
+                  return result;
+                  }
+#endif                                  /* HAVE_LIBSSH */
+#if HAVE_LIBSSL
+               if ((status & Fs_Encrypt) && (status & Fs_Socket)) {
+                  SSL *ssl;
+#ifdef Concurrent
+                  MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                  status = BlkD(dx,File)->status;
+                  ssl = BlkD(dx,File)->fd.ssl;
+                  if (ssl == NULL ||
+                      ((status & Fs_Encrypt) == 0) ||
+                      ((status & Fs_Socket) == 0)) {
+#ifdef Concurrent
+                     MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                     runerr(174, dx);
+                     }
+                  peek_rc = tls_peek(BlkD(dx,File), c_y, &result);
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                  if (peek_rc == FILEPEEK_ERR)
+                     runerr(1326, y);
+                  if (peek_rc == FILEPEEK_FAIL)
+                     fail;
+                  return result;
+                  }
+#endif                                  /* HAVE_LIBSSL */
+               if (status & Fs_Socket) {
+                  int s;
+#ifdef Concurrent
+                  MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                  status = BlkD(dx,File)->status;
+                  if ((status & Fs_Socket) == 0) {
+#ifdef Concurrent
+                     MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                     runerr(174, dx);
+                     }
+#if HAVE_LIBSSL
+                  if (status & Fs_Encrypt) {
+                     SSL *ssl = BlkD(dx,File)->fd.ssl;
+                     if (ssl == NULL) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        runerr(174, dx);
+                        }
+                     s = SSL_get_fd(ssl);
+                     }
+                  else
+#endif                                  /* HAVE_LIBSSL */
+                     s = BlkD(dx,File)->fd.fd;
+                  peek_rc = sock_peek(s, c_y, &result);
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                  if (peek_rc == FILEPEEK_ERR)
+                     runerr(1310, y);
+                  if (peek_rc == FILEPEEK_FAIL)
+                     fail;
+                  return result;
+                  }
+#endif                                  /* PosixFns */
                runerr(114,dx);
+               }
             }
          }
 

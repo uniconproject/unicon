@@ -168,6 +168,8 @@ struct SSHfile {
    int closed;                  /* set when cascade-invalidated by close()
                                  * of the owning session; Unicon file still
                                  * holds this SSHfile until its own close */
+   word bytesread;              /* stdout/SFTP bytes delivered to Unicon */
+   word byteswritten;           /* bytes sent on the channel/SFTP file */
    };
 #endif                                  /* HAVE_LIBSSH */
 
@@ -232,6 +234,11 @@ struct CryptoFile {
    int iv_ready;               /* encrypt: IV written; decrypt: IV consumed */
    unsigned char taghold[16];  /* decrypt AEAD: held-back tag bytes */
    int taghold_len;
+
+   word bytecount;             /* bytes fed via write(); peekable */
+   int verified;               /* 0 unknown, 1 pass, -1 fail */
+   unsigned char used_iv[16];  /* IV actually used by encrypt/decrypt */
+   int used_ivlen;
 };
 #endif                                  /* HAVE_LIBSSL */
 
@@ -277,7 +284,7 @@ struct b_file {                 /* file block */
    word mutexid;
 #endif                          /* Concurrent */
 #ifdef PosixFns
-   word sock_gen;               /* listener-cache generation; 0 = none */
+   uword sock_gen;              /* identity cookie; 0 = closed / untracked */
 #endif                          /* PosixFns */
    struct descrip fname;        /*   file name (string qualifier) */
    };

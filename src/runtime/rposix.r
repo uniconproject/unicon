@@ -26,6 +26,10 @@
  * Also drop per-fd metadata (UDP/raw destination addrinfo).
  */
 static void sock_release_fd_meta(int fd);
+static void sock_meta_free(int fd);
+static void sock_meta_set_proto(int fd, int proto);
+static void sock_meta_join(int fd, char *grp, char *src);
+static void sock_meta_leave(int fd, char *grp, char *src);
 
 void sock_close(int fd)
 {
@@ -758,8 +762,12 @@ dptr rec_structor(char *name)
          AsgnCStr(s, "posix_message");
          AsgnCStr(fields[0], "addr");
          AsgnCStr(fields[1], "msg");
+         AsgnCStr(fields[2], "saddr");
+         AsgnCStr(fields[3], "daddr");
+         AsgnCStr(fields[4], "ttl");
+         AsgnCStr(fields[5], "proto");
          posix_message.dword = D_Proc;
-         posix_message.vword.bptr = (union block *)dynrecord(&s, fields, 2);
+         posix_message.vword.bptr = (union block *)dynrecord(&s, fields, 6);
          }
       return &posix_message;
       }
@@ -965,6 +973,357 @@ static void sock_release_fd_meta(int fd)
       freeaddrinfo(saddrs[fd]);
       saddrs[fd] = NULL;
       }
+   sock_meta_free(fd);
+}
+
+/*
+ * Per-fd peek metadata: raw proto= and joined multicast groups.
+ * Independent of saddrs[] (which only tracks UDP/raw destinations).
+ */
+struct sock_meta {
+   int fd;
+   int proto;                   /* IPPROTO_* for raw sockets; -1 unknown */
+   char *groups;                /* comma-separated join list, malloc'd */
+   struct sock_meta *next;
+   };
+static struct sock_meta *sock_metas;
+
+static struct sock_meta *sock_meta_get(int fd, int create)
+{
+   struct sock_meta *m;
+   for (m = sock_metas; m != NULL; m = m->next)
+      if (m->fd == fd)
+         return m;
+   if (!create)
+      return NULL;
+   m = calloc(1, sizeof(struct sock_meta));
+   if (m == NULL)
+      return NULL;
+   m->fd = fd;
+   m->proto = -1;
+   m->next = sock_metas;
+   sock_metas = m;
+   return m;
+}
+
+static void sock_meta_free(int fd)
+{
+   struct sock_meta **pp, *m;
+   for (pp = &sock_metas; *pp != NULL; pp = &(*pp)->next) {
+      if ((*pp)->fd == fd) {
+         m = *pp;
+         *pp = m->next;
+         free(m->groups);
+         free(m);
+         return;
+         }
+      }
+}
+
+static void sock_meta_set_proto(int fd, int proto)
+{
+   struct sock_meta *m = sock_meta_get(fd, 1);
+   if (m != NULL)
+      m->proto = proto;
+}
+
+static int sock_meta_has_item(char *list, char *item)
+{
+   char *p, *q;
+   size_t n;
+   if (list == NULL || item == NULL)
+      return 0;
+   n = strlen(item);
+   for (p = list; *p; ) {
+      q = strchr(p, ',');
+      if (q == NULL)
+         return strcmp(p, item) == 0;
+      if ((size_t)(q - p) == n && strncmp(p, item, n) == 0)
+         return 1;
+      p = q + 1;
+      }
+   return 0;
+}
+
+static void sock_meta_join(int fd, char *grp, char *src)
+{
+   struct sock_meta *m;
+   char item[256];
+   size_t olen, ilen;
+   char *nbuf;
+
+   if (grp == NULL || grp[0] == '\0')
+      return;
+   if (src != NULL && src[0] != '\0')
+      snprintf(item, sizeof(item), "%s@%s", src, grp);
+   else
+      snprintf(item, sizeof(item), "%s", grp);
+   m = sock_meta_get(fd, 1);
+   if (m == NULL)
+      return;
+   if (sock_meta_has_item(m->groups, item))
+      return;
+   ilen = strlen(item);
+   if (m->groups == NULL) {
+      m->groups = malloc(ilen + 1);
+      if (m->groups != NULL)
+         memcpy(m->groups, item, ilen + 1);
+      return;
+      }
+   olen = strlen(m->groups);
+   nbuf = realloc(m->groups, olen + 1 + ilen + 1);
+   if (nbuf == NULL)
+      return;
+   nbuf[olen] = ',';
+   memcpy(nbuf + olen + 1, item, ilen + 1);
+   m->groups = nbuf;
+}
+
+static void sock_meta_leave(int fd, char *grp, char *src)
+{
+   struct sock_meta *m;
+   char item[256], *p, *q, *dst;
+   size_t n;
+
+   if (grp == NULL || grp[0] == '\0')
+      return;
+   m = sock_meta_get(fd, 0);
+   if (m == NULL || m->groups == NULL)
+      return;
+   if (src != NULL && src[0] != '\0')
+      snprintf(item, sizeof(item), "%s@%s", src, grp);
+   else
+      snprintf(item, sizeof(item), "%s", grp);
+   n = strlen(item);
+   dst = m->groups;
+   for (p = m->groups; *p; ) {
+      q = strchr(p, ',');
+      if (q == NULL) {
+         if (!(strlen(p) == n && strncmp(p, item, n) == 0)) {
+            if (dst != m->groups)
+               *dst++ = ',';
+            while (*p)
+               *dst++ = *p++;
+            }
+         break;
+         }
+      if (!((size_t)(q - p) == n && strncmp(p, item, n) == 0)) {
+         if (dst != m->groups)
+            *dst++ = ',';
+         while (p < q)
+            *dst++ = *p++;
+         }
+      p = q + 1;
+      }
+   *dst = '\0';
+}
+
+/*
+ * Boolean peek: success + "yes", or success + &null for false.
+ * Failure is reserved for "this field cannot answer."
+ */
+int filepeek_yes(int truth, dptr rv)
+{
+   if (!truth) {
+      *rv = nulldesc;
+      return FILEPEEK_OK;
+      }
+   Protect(StrLoc(*rv) = alcstr("yes", 3), return FILEPEEK_ERR);
+   StrLen(*rv) = 3;
+   return FILEPEEK_OK;
+}
+
+static int filepeek_tblput(union block **pbp, dptr key, dptr val)
+{
+   tended struct descrip s;
+   union block **pd;
+   struct b_telem *te;
+   uword hn;
+   int res;
+
+   s.dword = D_Table;
+   BlkLoc(s) = *pbp;
+   hn = hash(key);
+   Protect(te = alctelem(), return FILEPEEK_ERR);
+   pd = memb(*pbp, key, hn, &res);
+   if (res == 0) {
+      Blk(*pbp, Table)->size++;
+      te->clink = *pd;
+      *pd = (union block *)te;
+      te->hashnum = hn;
+      te->tref = *key;
+      te->tval = *val;
+      if (TooCrowded(*pbp))
+         hgrow(*pbp);
+      }
+   else {
+      deallocate((union block *)te);
+      te = (struct b_telem *)*pd;
+      te->tval = *val;
+      }
+   return FILEPEEK_OK;
+}
+
+int filepeek_snapshot(const struct filepeek_field *tab, void *h, dptr rv)
+{
+   tended struct descrip tbl, key, val;
+   tended union block *bp;
+   int i, rc, nslots;
+   word n;
+
+   if (tab == NULL)
+      return FILEPEEK_ERR;
+   nslots = 0;
+   for (i = 0; tab[i].name != NULL; i++)
+      nslots++;
+   Protect(bp = hmake(T_Table, (word)0, (word)(nslots > 0 ? nslots : 8)),
+           return FILEPEEK_ERR);
+   bp->Table.defvalue = nulldesc;
+   tbl.dword = D_Table;
+   BlkLoc(tbl) = bp;
+
+   for (i = 0; tab[i].name != NULL; i++) {
+      rc = (*tab[i].get)(h, &val);
+      if (rc == FILEPEEK_ERR)
+         return FILEPEEK_ERR;
+      if (rc != FILEPEEK_OK)
+         continue;
+      n = (word)strlen(tab[i].name);
+      Protect(StrLoc(key) = alcstr(tab[i].name, n), return FILEPEEK_ERR);
+      StrLen(key) = n;
+      if (filepeek_tblput(&BlkLoc(tbl), &key, &val) != FILEPEEK_OK)
+         return FILEPEEK_ERR;
+      }
+   *rv = tbl;
+   return FILEPEEK_OK;
+}
+
+int filepeek_lookup(const struct filepeek_field *tab, void *h,
+                    char *name, dptr rv, int unknown_err)
+{
+   int i;
+
+   if (tab == NULL || name == NULL)
+      return FILEPEEK_ERR;
+   if (strcmp(name, "*") == 0)
+      return filepeek_snapshot(tab, h, rv);
+   for (i = 0; tab[i].name != NULL; i++)
+      if (strcmp(name, tab[i].name) == 0)
+         return (*tab[i].get)(h, rv);
+   set_errortext(unknown_err);
+   return FILEPEEK_ERR;
+}
+
+char *filepeek_field_tab(const struct filepeek_field *tab, int i)
+{
+   if (tab == NULL || i < 0 || tab[i].name == NULL)
+      return NULL;
+   return tab[i].name;
+}
+
+int filepeek_key_nth_tab(const struct filepeek_field *tab, void *h,
+                         int i, dptr key)
+{
+   tended struct descrip val;
+   char *name;
+   int rc;
+   word n;
+
+   if (tab == NULL)
+      return -1;
+   while ((name = filepeek_field_tab(tab, i)) != NULL) {
+      i++;
+      rc = (*tab[i - 1].get)(h, &val);
+      if (rc == FILEPEEK_OK) {
+         n = (word)strlen(name);
+         Protect(StrLoc(*key) = alcstr(name, n), return -1);
+         StrLen(*key) = n;
+         return i;
+         }
+      if (rc == FILEPEEK_ERR)
+         return -1;
+      }
+   return 0;
+}
+
+/*
+ * Yield the next populated field name starting at index i.
+ * Unpopulated fields are skipped. Returns the index after the
+ * yielded name, 0 if exhausted, -1 on error.
+ */
+int filepeek_key_nth(void *h, int i,
+                     int (*peek)(void *, char *, dptr),
+                     char *(*field)(void *, int),
+                     dptr key)
+{
+   char *name;
+   tended struct descrip val;
+   int rc;
+   word n;
+
+   while ((name = field(h, i)) != NULL) {
+      i++;
+      rc = peek(h, name, &val);
+      if (rc == FILEPEEK_OK) {
+         n = (word)strlen(name);
+         Protect(StrLoc(*key) = alcstr(name, n), return -1);
+         StrLen(*key) = n;
+         return i;
+         }
+      if (rc == FILEPEEK_ERR)
+         return -1;
+      }
+   return 0;
+}
+
+int filepeek_alclist(dptr rv)
+{
+   struct b_list *lp;
+   Protect(lp = alclist(0, MinListSlots), return FILEPEEK_ERR);
+   rv->dword = D_List;
+   BlkLoc(*rv) = (union block *)lp;
+   return FILEPEEK_OK;
+}
+
+int filepeek_list_putstr(dptr lst, char *s, word n)
+{
+   tended struct descrip elem;
+   if (s == NULL)
+      return FILEPEEK_FAIL;
+   elem = emptystr;
+   Protect(StrLoc(elem) = alcstr(s, n), return FILEPEEK_ERR);
+   StrLen(elem) = n;
+   c_put(lst, &elem);
+   return FILEPEEK_OK;
+}
+
+int filepeek_csv_list(char *csv, dptr rv)
+{
+   tended struct descrip lst;
+   char *p, *q;
+   word n;
+   int rc;
+
+   if (csv == NULL || csv[0] == '\0')
+      return FILEPEEK_FAIL;
+   lst = nulldesc;
+   if (filepeek_alclist(&lst) != FILEPEEK_OK)
+      return FILEPEEK_ERR;
+   for (p = csv; *p; p = q ? q + 1 : p + n) {
+      q = strchr(p, ',');
+      n = q ? (word)(q - p) : (word)strlen(p);
+      if (n > 0) {
+         rc = filepeek_list_putstr(&lst, p, n);
+         if (rc != FILEPEEK_OK)
+            return rc;
+         }
+      if (!q)
+         break;
+      }
+   if (BlkD(lst, List)->size <= 0)
+      return FILEPEEK_FAIL;
+   *rv = lst;
+   return FILEPEEK_OK;
 }
 
 #if !defined(MAXHOSTNAMELEN)
@@ -2004,11 +2363,15 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
          if ((src = strchr(val, ',')) != NULL)
             *src++ = '\0';
          rc = sock_join_group(s, val, src, mcif4, mcif6);
+         if (rc >= 0)
+            sock_meta_join(s, val, src);
          }
       else if (strcmp(abuf, "leave") == 0) {
          if ((src = strchr(val, ',')) != NULL)
             *src++ = '\0';
          rc = sock_leave_group(s, val, src, mcif4, mcif6);
+         if (rc >= 0)
+            sock_meta_leave(s, val, src);
          }
       else if (strcmp(abuf, "source") == 0) {
          /*
@@ -2023,6 +2386,8 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
             }
          saw_source = 1;
          rc = sock_join_group(s, autojoin, val, mcif4, mcif6);
+         if (rc >= 0)
+            sock_meta_join(s, autojoin, val);
          }
 
       if (rc < 0) {
@@ -2045,12 +2410,14 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
             set_syserrortext(errno);
             return 0;
             }
+         sock_meta_join(s, autojoin, autosource);
          }
       else if (!saw_source) {
          if (sock_join_group(s, autojoin, NULL, mcif4, mcif6) < 0) {
             set_syserrortext(errno);
             return 0;
             }
+         sock_meta_join(s, autojoin, NULL);
          }
       }
    return 1;
@@ -2212,6 +2579,106 @@ int sattrib(int s, char *str, long len, dptr answer, char *abuf)
    return RunError;
 }
 
+static int sock_peek_fd(void *h)
+{
+   return (int)(word)h;
+}
+
+static int sockg_proto(void *h, dptr rv)
+{
+   int fd = sock_peek_fd(h);
+   struct sock_meta *m;
+   int proto;
+   unsigned int len;
+
+   m = sock_meta_get(fd, 0);
+   if (m != NULL && m->proto >= 0) {
+      MakeInt(m->proto, rv);
+      return FILEPEEK_OK;
+      }
+#ifdef SO_PROTOCOL
+   proto = 0;
+   len = sizeof(proto);
+   if (getsockopt(fd, SOL_SOCKET, SO_PROTOCOL, (char *)&proto, &len) == 0) {
+      MakeInt(proto, rv);
+      return FILEPEEK_OK;
+      }
+#endif                                  /* SO_PROTOCOL */
+   return FILEPEEK_FAIL;
+}
+
+static int sockg_groups(void *h, dptr rv)
+{
+   struct sock_meta *m = sock_meta_get(sock_peek_fd(h), 0);
+   if (m == NULL || m->groups == NULL || m->groups[0] == '\0')
+      return FILEPEEK_FAIL;
+   return filepeek_csv_list(m->groups, rv);
+}
+
+static int sockg_sattrib(void *h, dptr rv, char *name, int boolean)
+{
+   char abuf[256];
+   tended struct descrip ans;
+   int rc;
+
+   rc = sattrib(sock_peek_fd(h), name, (long)strlen(name), &ans, abuf);
+   if (rc != Succeeded)
+      return FILEPEEK_FAIL;
+   if (boolean && is:string(ans)) {
+      if (StrLen(ans) == 2 && strncmp(StrLoc(ans), "no", 2) == 0)
+         return filepeek_yes(0, rv);
+      if (StrLen(ans) == 3 && strncmp(StrLoc(ans), "yes", 3) == 0)
+         return filepeek_yes(1, rv);
+      }
+   if (is:string(ans)) {
+      Protect(StrLoc(ans) = alcstr(StrLoc(ans), StrLen(ans)),
+              return FILEPEEK_ERR);
+      }
+   *rv = ans;
+   return FILEPEEK_OK;
+}
+
+static int sockg_ttl(void *h, dptr rv)       { return sockg_sattrib(h, rv, "ttl", 0); }
+static int sockg_hdrincl(void *h, dptr rv)   { return sockg_sattrib(h, rv, "hdrincl", 1); }
+static int sockg_iface(void *h, dptr rv)     { return sockg_sattrib(h, rv, "iface", 0); }
+static int sockg_mcastloop(void *h, dptr rv) { return sockg_sattrib(h, rv, "mcastloop", 1); }
+static int sockg_reuseaddr(void *h, dptr rv) { return sockg_sattrib(h, rv, "reuseaddr", 1); }
+static int sockg_reuseport(void *h, dptr rv) { return sockg_sattrib(h, rv, "reuseport", 1); }
+static int sockg_broadcast(void *h, dptr rv) { return sockg_sattrib(h, rv, "broadcast", 1); }
+static int sockg_rcvbuf(void *h, dptr rv)    { return sockg_sattrib(h, rv, "rcvbuf", 0); }
+static int sockg_sndbuf(void *h, dptr rv)    { return sockg_sattrib(h, rv, "sndbuf", 0); }
+
+static const struct filepeek_field sock_peek_tab[] = {
+   {"proto",     sockg_proto},
+   {"ttl",       sockg_ttl},
+   {"hdrincl",   sockg_hdrincl},
+   {"iface",     sockg_iface},
+   {"groups",    sockg_groups},
+   {"mcastloop", sockg_mcastloop},
+   {"reuseaddr", sockg_reuseaddr},
+   {"reuseport", sockg_reuseport},
+   {"broadcast", sockg_broadcast},
+   {"rcvbuf",    sockg_rcvbuf},
+   {"sndbuf",    sockg_sndbuf},
+   {NULL, NULL}
+};
+
+int sock_peek(int fd, char *name, dptr rv)
+{
+   return filepeek_lookup(sock_peek_tab, (void *)(word)fd, name, rv, 1310);
+}
+
+char *sock_peek_field(int fd, int i)
+{
+   (void)fd;
+   return filepeek_field_tab(sock_peek_tab, i);
+}
+
+int sock_peek_key_nth(int fd, int i, dptr key)
+{
+   return filepeek_key_nth_tab(sock_peek_tab, (void *)(word)fd, i, key);
+}
+
 /*
  * Empty handler for connection alarm signals (used for timeouts).
  */
@@ -2298,6 +2765,8 @@ int sock_connect(char *fn, int sock_type, int timeout, int af_fam,
         if (s < 0) {
           continue;
         }
+        if (sock_type == SOCK_T_RAW)
+           sock_meta_set_proto(s, sproto);
 
         /*
         if (connect(s, res->ai_addr, res->ai_addrlen) < 0) {
@@ -2662,6 +3131,8 @@ again:
            if (s < 0) {
              continue;
            }
+           if (sock_type == SOCK_T_RAW)
+              sock_meta_set_proto(s, sproto);
 
            is_mc = sockaddr_is_multicast(res->ai_addr);
 
@@ -3119,14 +3590,32 @@ int sock_recv(int s, struct b_record **rp)
 
    StrLen((*rp)->fields[1]) = msglen;
    StrLoc((*rp)->fields[1]) = alcstr(buf, msglen);
+
+   (*rp)->fields[2] = nulldesc;          /* saddr */
+   (*rp)->fields[3] = nulldesc;          /* daddr */
+   (*rp)->fields[4] = nulldesc;          /* ttl */
+   (*rp)->fields[5] = nulldesc;          /* proto */
+   if (s_type == SOCK_RAW && msglen >= 20 && ((buf[0] >> 4) & 0xf) == 4) {
+      char ip[INET_ADDRSTRLEN];
+      struct in_addr in;
+      MakeInt((unsigned char)buf[8], &(*rp)->fields[4]);
+      MakeInt((unsigned char)buf[9], &(*rp)->fields[5]);
+      memcpy(&in, buf + 12, 4);
+      if (inet_ntop(AF_INET, &in, ip, sizeof(ip)) != NULL)
+         String((*rp)->fields[2], ip);
+      memcpy(&in, buf + 16, 4);
+      if (inet_ntop(AF_INET, &in, ip, sizeof(ip)) != NULL)
+         String((*rp)->fields[3], ip);
+      }
+   else if (print_sockaddr(sa, addrbuf, INET6_ADDRSTRLEN) != NULL)
+      String((*rp)->fields[2], addrbuf);
    free(heap);
 
    s = getnameinfo(sa, addrlen, host,
                                 NI_MAXHOST,
                                serv, NI_MAXSERV, NI_NUMERICSERV);
-   if (s == 0) {
+   if (s == 0)
       snprintf(addrstr, sizeof(addrstr), "%s:%s", host, serv);
-   }
    else {
      if ((print_sockaddr(sa, addrbuf, INET6_ADDRSTRLEN)) == NULL) {
        set_syserrortext(errno);
@@ -3162,13 +3651,13 @@ int sock_write(int f, char *msg, int n)
 static struct {
    char *name;
    int fd;
-   unsigned gen;        /* identity; distinguishes fd number reuse */
+   uword gen;           /* identity; distinguishes fd number reuse */
    int pins;            /* sock_get / sock_pin holds across listen/accept */
    int owners;          /* File objects holding this cached listener */
    int closing;         /* close deferred until pins drop to 0 */
 } sock_map[64] = { {0, 0, 0, 0, 0, 0} };
 static int nsock = 0;
-static unsigned sock_gen_seq = 1;       /* 0 reserved for "not cached" */
+static uword sock_gen_seq = 1;          /* 0 reserved for "not cached" */
 
 /*
  * Lookup a socket by name and pin it.  Caller must sock_release().
@@ -3225,17 +3714,34 @@ static int sock_put(char *s, int fd)
  * track entry), or 0 if not in the map.  Stored on the File at open so
  * sock_pin can reject a reused fd number.
  */
-word sock_listener_gen(int fd)
+uword sock_listener_gen(int fd)
 {
    int i;
-   word gen = 0;
+   uword gen = 0;
 
    MUTEX_LOCKID(MTX_SOCK_MAP);
    for (i = 0; i < nsock; i++)
       if (sock_map[i].fd == fd && !sock_map[i].closing) {
-         gen = (word)sock_map[i].gen;
+         gen = sock_map[i].gen;
          break;
          }
+   MUTEX_UNLOCKID(MTX_SOCK_MAP);
+   return gen;
+}
+
+/*
+ * Fresh identity cookie for a File that is not a cached listener.
+ * 0 is reserved (closed / untracked).  Same sequence as the listener
+ * map so values do not collide with live cache gens.
+ */
+uword sock_file_gen(void)
+{
+   uword gen;
+
+   MUTEX_LOCKID(MTX_SOCK_MAP);
+   if (sock_gen_seq == 0)
+      sock_gen_seq = 1;
+   gen = sock_gen_seq++;
    MUTEX_UNLOCKID(MTX_SOCK_MAP);
    return gen;
 }
@@ -3321,7 +3827,7 @@ static int sock_track(int fd)
  * and the number reused for a different cache entry, or if gen is 0.
  * Named and nameless (sock_track) entries are both eligible.
  */
-int sock_pin(int fd, word gen)
+int sock_pin(int fd, uword gen)
 {
    int i, ok = 0;
 
@@ -3330,7 +3836,7 @@ int sock_pin(int fd, word gen)
    MUTEX_LOCKID(MTX_SOCK_MAP);
    for (i = 0; i < nsock; i++)
       if (sock_map[i].fd == fd && !sock_map[i].closing &&
-          sock_map[i].gen == (unsigned)gen) {
+          sock_map[i].gen == gen) {
          sock_map[i].pins++;
          ok = 1;
          break;
@@ -3345,7 +3851,7 @@ int sock_pin(int fd, word gen)
  * map for the next open() (genserve).  Nameless track entries are
  * closed when the last owner and pin drop — nothing else references them.
  */
-void sock_unclaim(int fd, word gen)
+void sock_unclaim(int fd, uword gen)
 {
    int i, j;
    int do_close = 0;
@@ -3354,7 +3860,7 @@ void sock_unclaim(int fd, word gen)
       return;
    MUTEX_LOCKID(MTX_SOCK_MAP);
    for (i = 0; i < nsock; i++) {
-      if (sock_map[i].fd != fd || sock_map[i].gen != (unsigned)gen)
+      if (sock_map[i].fd != fd || sock_map[i].gen != gen)
          continue;
       if (sock_map[i].owners > 0)
          sock_map[i].owners--;
@@ -3646,6 +4152,8 @@ int ssh_chan_read(struct SSHfile *sshf, char *buf, int n, int block)
       rc = sftp_read(sshf->sfile, buf, n);
       if (rc < 0)
          return -1;                     /* caller sets &errortext after INC */
+      if (rc > 0)
+         sshf->bytesread += rc;
       return rc;                        /* 0 == EOF */
       }
 
@@ -3683,6 +4191,7 @@ int ssh_chan_read(struct SSHfile *sshf, char *buf, int n, int block)
          }
       ck = nextck;
       }
+   sshf->bytesread += copied;
    return copied;
 }
 
@@ -3732,6 +4241,273 @@ void ssh_drain_stderr(struct SSHfile *sshf, dptr d)
          prev = ck;
       ck = nextck;
       }
+}
+
+/*
+ * Peek the current stderr buffer without draining it.
+ */
+static int ssh_peek_stderr(struct SSHfile *sshf, dptr d)
+{
+   struct SSHchunk *ck;
+   word total = 0;
+   char *p;
+
+   for (ck = sshf->qhead; ck != NULL; ck = ck->next)
+      if (ck->tag == SSH_CHUNK_STDERR)
+         total += ck->len;
+
+   if (total == 0)
+      return FILEPEEK_FAIL;
+   Protect(StrLoc(*d) = alcstr(NULL, total), return FILEPEEK_ERR);
+   StrLen(*d) = total;
+   p = StrLoc(*d);
+   for (ck = sshf->qhead; ck != NULL; ck = ck->next)
+      if (ck->tag == SSH_CHUNK_STDERR) {
+         memcpy(p, ck->data, ck->len);
+         p += ck->len;
+         }
+   return FILEPEEK_OK;
+}
+
+static int ssh_is_session(struct SSHfile *sshf)
+{
+   return sshf->parent == NULL && sshf->chan == NULL &&
+          sshf->sfile == NULL && sshf->sdir == NULL;
+}
+
+static char *ssh_type_name(struct SSHfile *sshf)
+{
+   if (sshf->sfile != NULL || sshf->sdir != NULL)
+      return "sftp";
+   if (sshf->chan != NULL)
+      return "channel";
+   return "session";
+}
+
+static int ssh_peek_alcstr(char *s, dptr rv)
+{
+   word n;
+   if (s == NULL || s[0] == '\0')
+      return FILEPEEK_FAIL;
+   n = (word)strlen(s);
+   Protect(StrLoc(*rv) = alcstr(s, n), return FILEPEEK_ERR);
+   StrLen(*rv) = n;
+   return FILEPEEK_OK;
+}
+
+static int sshg_pump(struct SSHfile *sshf, int want_exit)
+{
+   int prc;
+
+   if (sshf->chan == NULL)
+      return 0;
+   DEC_NARTHREADS;
+   prc = ssh_pump(sshf, want_exit, 0);
+   INC_NARTHREADS_CONTROLLED;
+   if (prc < 0) {
+      set_ssh_errortext(sshf->sess, 1334);
+      return -1;
+      }
+   return 0;
+}
+
+static int sshg_type(void *h, dptr rv)
+{
+   return ssh_peek_alcstr(ssh_type_name((struct SSHfile *)h), rv);
+}
+
+static int sshg_exitstatus(void *h, dptr rv)
+{
+   struct SSHfile *sshf = h;
+   if (sshg_pump(sshf, 1) < 0)
+      return FILEPEEK_FAIL;
+   if (!sshf->exit_seen)
+      return FILEPEEK_FAIL;
+   MakeInt(sshf->exit_status, rv);
+   return FILEPEEK_OK;
+}
+
+static int sshg_stderr(void *h, dptr rv)
+{
+   struct SSHfile *sshf = h;
+   if (sshg_pump(sshf, 0) < 0)
+      return FILEPEEK_FAIL;
+   return ssh_peek_stderr(sshf, rv);
+}
+
+static int sshg_eof(void *h, dptr rv)
+{
+   struct SSHfile *sshf = h;
+   if (sshg_pump(sshf, 0) < 0)
+      return FILEPEEK_FAIL;
+   if (sshf->chan == NULL && sshf->sfile == NULL)
+      return FILEPEEK_FAIL;
+   return filepeek_yes(sshf->eof_seen, rv);
+}
+
+static int sshg_bytesread(void *h, dptr rv)
+{
+   MakeInt(((struct SSHfile *)h)->bytesread, rv);
+   return FILEPEEK_OK;
+}
+
+static int sshg_byteswritten(void *h, dptr rv)
+{
+   MakeInt(((struct SSHfile *)h)->byteswritten, rv);
+   return FILEPEEK_OK;
+}
+
+static int sshg_connected(void *h, dptr rv)
+{
+   ssh_session sess = ((struct SSHfile *)h)->sess;
+   if (sess == NULL)
+      return FILEPEEK_FAIL;
+   return filepeek_yes(ssh_is_connected(sess), rv);
+}
+
+static int sshg_serverbanner(void *h, dptr rv)
+{
+   ssh_session sess = ((struct SSHfile *)h)->sess;
+   if (sess == NULL)
+      return FILEPEEK_FAIL;
+   return ssh_peek_alcstr((char *)ssh_get_serverbanner(sess), rv);
+}
+
+static int sshg_cipher(void *h, dptr rv)
+{
+   ssh_session sess = ((struct SSHfile *)h)->sess;
+   const char *c;
+   if (sess == NULL)
+      return FILEPEEK_FAIL;
+   c = ssh_get_cipher_in(sess);
+   return ssh_peek_alcstr((char *)c, rv);
+}
+
+static int sshg_mac(void *h, dptr rv)
+{
+   ssh_session sess = ((struct SSHfile *)h)->sess;
+   const char *c;
+   if (sess == NULL)
+      return FILEPEEK_FAIL;
+   c = ssh_get_hmac_in(sess);
+   return ssh_peek_alcstr((char *)c, rv);
+}
+
+static int sshg_kex(void *h, dptr rv)
+{
+   ssh_session sess = ((struct SSHfile *)h)->sess;
+   const char *c;
+   if (sess == NULL)
+      return FILEPEEK_FAIL;
+   c = ssh_get_kex_algo(sess);
+   return ssh_peek_alcstr((char *)c, rv);
+}
+
+static int sshg_authmethods(void *h, dptr rv)
+{
+   ssh_session sess = ((struct SSHfile *)h)->sess;
+   tended struct descrip lst;
+   char *names[5];
+   int methods, n = 0, i;
+
+   if (sess == NULL)
+      return FILEPEEK_FAIL;
+   methods = ssh_userauth_list(sess, NULL);
+   if (methods & SSH_AUTH_METHOD_NONE)
+      names[n++] = "none";
+   if (methods & SSH_AUTH_METHOD_PASSWORD)
+      names[n++] = "password";
+   if (methods & SSH_AUTH_METHOD_PUBLICKEY)
+      names[n++] = "publickey";
+   if (methods & SSH_AUTH_METHOD_HOSTBASED)
+      names[n++] = "hostbased";
+   if (methods & SSH_AUTH_METHOD_INTERACTIVE)
+      names[n++] = "keyboard-interactive";
+   if (n == 0)
+      return FILEPEEK_FAIL;
+   lst = nulldesc;
+   if (filepeek_alclist(&lst) != FILEPEEK_OK)
+      return FILEPEEK_ERR;
+   for (i = 0; i < n; i++)
+      if (filepeek_list_putstr(&lst, names[i],
+                               (word)strlen(names[i])) != FILEPEEK_OK)
+         return FILEPEEK_ERR;
+   *rv = lst;
+   return FILEPEEK_OK;
+}
+
+static int sshg_fingerprint(void *h, dptr rv)
+{
+   ssh_session sess = ((struct SSHfile *)h)->sess;
+   ssh_key key = NULL;
+   unsigned char *hash = NULL;
+   size_t hlen = 0;
+   char *fp;
+   int rc;
+
+   if (sess == NULL)
+      return FILEPEEK_FAIL;
+   if (ssh_get_server_publickey(sess, &key) != SSH_OK)
+      return FILEPEEK_FAIL;
+   if (ssh_get_publickey_hash(key, SSH_PUBLICKEY_HASH_SHA256,
+                              &hash, &hlen) != 0) {
+      ssh_key_free(key);
+      return FILEPEEK_FAIL;
+      }
+   fp = ssh_get_fingerprint_hash(SSH_PUBLICKEY_HASH_SHA256, hash, hlen);
+   ssh_clean_pubkey_hash(&hash);
+   ssh_key_free(key);
+   if (fp == NULL)
+      return FILEPEEK_FAIL;
+   rc = ssh_peek_alcstr(fp, rv);
+   ssh_string_free_char(fp);
+   return rc;
+}
+
+static const struct filepeek_field ssh_session_tab[] = {
+   {"type",         sshg_type},
+   {"fingerprint",  sshg_fingerprint},
+   {"authmethods",  sshg_authmethods},
+   {"cipher",       sshg_cipher},
+   {"kex",          sshg_kex},
+   {"mac",          sshg_mac},
+   {"serverbanner", sshg_serverbanner},
+   {"connected",    sshg_connected},
+   {NULL, NULL}
+};
+
+static const struct filepeek_field ssh_channel_tab[] = {
+   {"type",          sshg_type},
+   {"exitstatus",    sshg_exitstatus},
+   {"stderr",        sshg_stderr},
+   {"eof",           sshg_eof},
+   {"bytesread",     sshg_bytesread},
+   {"byteswritten",  sshg_byteswritten},
+   {NULL, NULL}
+};
+
+static const struct filepeek_field *ssh_fields(struct SSHfile *sshf)
+{
+   return ssh_is_session(sshf) ? ssh_session_tab : ssh_channel_tab;
+}
+
+int ssh_peek(struct SSHfile *sshf, char *name, dptr rv)
+{
+   if (sshf == NULL || name == NULL)
+      return FILEPEEK_ERR;
+   if (sshf->closed)
+      return FILEPEEK_FAIL;
+   return filepeek_lookup(ssh_fields(sshf), sshf, name, rv, 1331);
+}
+
+char *ssh_peek_field(struct SSHfile *sshf, int i)
+{
+   return filepeek_field_tab(ssh_fields(sshf), i);
+}
+
+int ssh_peek_key_nth(struct SSHfile *sshf, int i, dptr key)
+{
+   return filepeek_key_nth_tab(ssh_fields(sshf), sshf, i, key);
 }
 
 /*
@@ -3822,7 +4598,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
     * uses the same host:port form as socket open(), not a port= attr.
     */
    if (strlen(fnamestr) >= sizeof(namebuf)) {
-      set_errortext(1320);
+      set_errortext(1330);
       return NULL;
       }
    strncpy(namebuf, fnamestr, sizeof(namebuf)-1);
@@ -3836,7 +4612,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
       host = at + 1;
       }
    if (*host == '\0') {
-      set_errortext_with_val(1320, fnamestr);
+      set_errortext_with_val(1330, fnamestr);
       return NULL;
       }
    /*
@@ -3847,19 +4623,19 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
    if (host[0] == '[') {
       rbrack = strchr(host + 1, ']');
       if (rbrack == NULL || (rbrack[1] != '\0' && rbrack[1] != ':')) {
-         set_errortext_with_val(1320, fnamestr);
+         set_errortext_with_val(1330, fnamestr);
          return NULL;
          }
       *rbrack = '\0';
       host++;                           /* skip '[' */
       if (*host == '\0') {
-         set_errortext_with_val(1320, fnamestr);
+         set_errortext_with_val(1330, fnamestr);
          return NULL;
          }
       if (rbrack[1] == ':') {
          port = atol(rbrack + 2);
          if (port <= 0 || port > 65535) {
-            set_errortext_with_val(1320, fnamestr);
+            set_errortext_with_val(1330, fnamestr);
             return NULL;
             }
          }
@@ -3870,7 +4646,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
          *colon = '\0';
          port = atol(colon + 1);
          if (port <= 0 || port > 65535 || *host == '\0') {
-            set_errortext_with_val(1320, fnamestr);
+            set_errortext_with_val(1330, fnamestr);
             return NULL;
             }
          }
@@ -3887,11 +4663,11 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
       if (a==0 && cnv:C_integer(attr[a], timeout))
          continue;
       if (!cnv:C_string(attr[a], tmps)) {
-         set_errortext(1321);
+         set_errortext(1331);
          return NULL;
          }
       if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
-         set_errortext_with_val(1321, tmps);
+         set_errortext_with_val(1331, tmps);
          return NULL;
          }
       /*
@@ -3901,13 +4677,13 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
       Protect(tmps = alcstr(tmps, (word)strlen(tmps)+1), fatalerr(0,NULL));
       val = strchr(tmps, '=');
       if (val == NULL) {
-         set_errortext_with_val(1321, tmps);
+         set_errortext_with_val(1331, tmps);
          return NULL;
          }
       *val = '\0';
       val++;
       if (strlen(val) == 0) {
-         set_errortext_with_val(1321, tmps);
+         set_errortext_with_val(1331, tmps);
          return NULL;
          }
       if (strcmp(tmps, "user") == 0)
@@ -3935,19 +4711,19 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
       else if (strcmp(tmps, "channel") == 0) {
          want_channel = sock_attr_bool(val);
          if (want_channel < 0) {
-            set_errortext_with_val(1321, tmps);
+            set_errortext_with_val(1331, tmps);
             return NULL;
             }
          }
       else if (strcmp(tmps, "verifyPeer") == 0) {
          do_verify = sock_attr_bool(val);
          if (do_verify < 0) {
-            set_errortext_with_val(1321, tmps);
+            set_errortext_with_val(1331, tmps);
             return NULL;
             }
          }
       else {
-         set_errortext_with_val(1321, tmps);
+         set_errortext_with_val(1331, tmps);
          return NULL;
          }
       }
@@ -3957,12 +4733,12 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
       user = userattr;
 
    if (ssh_cmd && ssh_sftp) {
-      set_errortext_with_val(1321, "c");
+      set_errortext_with_val(1331, "c");
       return NULL;
       }
    /* cmd= is selected by mode 'c', not by the attribute alone */
    if (cmd != NULL && !ssh_cmd) {
-      set_errortext_with_val(1321, "cmd");
+      set_errortext_with_val(1331, "cmd");
       return NULL;
       }
    /* mode "hs": SFTP, not a shell/exec channel */
@@ -3970,13 +4746,13 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
       want_channel = 0;
    /* channel=no with 'c' or cmd= is contradictory */
    if (!want_channel && (ssh_cmd || cmd != NULL)) {
-      set_errortext_with_val(1321, "channel");
+      set_errortext_with_val(1331, "channel");
       return NULL;
       }
 
    sess = ssh_new();
    if (sess == NULL) {
-      set_errortext(1320);
+      set_errortext(1330);
       return NULL;
       }
    ssh_options_set(sess, SSH_OPTIONS_HOST, host);
@@ -3998,7 +4774,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
    sshf = malloc(sizeof(struct SSHfile));
    if (sshf == NULL) {
       ssh_free(sess);
-      set_errortext(1320);
+      set_errortext(1330);
       return NULL;
       }
    memset(sshf, 0, sizeof(struct SSHfile));
@@ -4008,7 +4784,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
     * DEC_NARTHREADS and INC_NARTHREADS_CONTROLLED, so error text is
     * only produced at the ssh_fail label after re-registering.
     */
-   err = 1320;
+   err = 1330;
    DEC_NARTHREADS;
 
    if (ssh_connect(sess) != SSH_OK)
@@ -4016,7 +4792,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
 
    if (do_verify) {
       if (ssh_session_is_known_server(sess) != SSH_KNOWN_HOSTS_OK) {
-         err = 1323;
+         err = 1333;
          goto ssh_fail;
          }
       }
@@ -4047,7 +4823,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
          }
       }
    if (!authed) {
-      err = 1322;
+      err = 1332;
       goto ssh_fail;
       }
 
@@ -4059,7 +4835,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
     * open so no early data bypasses the event queue.
     */
    if (want_channel) {
-      err = 1324;
+      err = 1334;
       chan = ssh_channel_new(sess);
       if (chan == NULL)
          goto ssh_fail;
@@ -4190,7 +4966,7 @@ int ssh_file_write(struct SSHfile *sshf, char *s, word n)
    int rc;
 
    if (sshf == NULL || sshf->closed) {
-      set_errortext(1324);
+      set_errortext(1334);
       return -1;
       }
    if (n == 0)
@@ -4201,21 +4977,22 @@ int ssh_file_write(struct SSHfile *sshf, char *s, word n)
          rc = sftp_write(sshf->sfile, s + total, (size_t)(n - total));
          if (rc < 0) {
             INC_NARTHREADS_CONTROLLED;
-            set_ssh_errortext(sshf->sess, 1325);
+            set_ssh_errortext(sshf->sess, 1335);
             return -1;
             }
          if (rc == 0) {
             INC_NARTHREADS_CONTROLLED;
-            set_ssh_errortext(sshf->sess, 1325);
+            set_ssh_errortext(sshf->sess, 1335);
             return -1;
             }
          total += rc;
          }
       INC_NARTHREADS_CONTROLLED;
+      sshf->byteswritten += n;
       return (int)n;
       }
    if (sshf->chan == NULL) {
-      set_errortext(1324);
+      set_errortext(1334);
       return -1;
       }
    DEC_NARTHREADS;
@@ -4223,17 +5000,18 @@ int ssh_file_write(struct SSHfile *sshf, char *s, word n)
       rc = ssh_channel_write(sshf->chan, s + total, (uint32_t)(n - total));
       if (rc == SSH_ERROR) {
          INC_NARTHREADS_CONTROLLED;
-         set_ssh_errortext(sshf->sess, 1324);
+         set_ssh_errortext(sshf->sess, 1334);
          return -1;
          }
       if (rc == 0) {
          INC_NARTHREADS_CONTROLLED;
-         set_ssh_errortext(sshf->sess, 1324);
+         set_ssh_errortext(sshf->sess, 1334);
          return -1;
          }
       total += rc;
       }
    INC_NARTHREADS_CONTROLLED;
+   sshf->byteswritten += n;
    return (int)n;
 }
 
@@ -4304,7 +5082,7 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
    /* resolve to the session owner: opening on a channel opens a sibling */
    owner = (sf->parent != NULL) ? sf->parent : sf;
    if (owner->sess == NULL) {
-      set_errortext(1324);
+      set_errortext(1334);
       return NULL;
       }
 
@@ -4314,7 +5092,7 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
          continue;
          }
       if (!cnv:C_string(attr[a], tmps)) {
-         set_errortext(1321);
+         set_errortext(1331);
          return NULL;
          }
       /*
@@ -4324,7 +5102,7 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
       if (strchr(tmps, '=') == NULL)
          continue;
       if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
-         set_errortext_with_val(1321, tmps);
+         set_errortext_with_val(1331, tmps);
          return NULL;
          }
       Protect(tmps = alcstr(tmps, (word)strlen(tmps)+1), fatalerr(0,NULL));
@@ -4332,7 +5110,7 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
       *val = '\0';
       val++;
       if (strlen(val) == 0) {
-         set_errortext_with_val(1321, tmps);
+         set_errortext_with_val(1331, tmps);
          return NULL;
          }
       if (strcmp(tmps, "cmd") == 0)
@@ -4344,14 +5122,14 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
       else if (strcmp(tmps, "rows") == 0)
          pty_rows = atol(val);
       else {
-         set_errortext_with_val(1321, tmps);
+         set_errortext_with_val(1331, tmps);
          return NULL;
          }
       }
 
    sshf = malloc(sizeof(struct SSHfile));
    if (sshf == NULL) {
-      set_errortext(1324);
+      set_errortext(1334);
       return NULL;
       }
    memset(sshf, 0, sizeof(struct SSHfile));
@@ -4386,7 +5164,7 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
 
 chan_fail:
    INC_NARTHREADS_CONTROLLED;
-   set_ssh_errortext(owner->sess, 1324);
+   set_ssh_errortext(owner->sess, 1334);
    if (chan != NULL)
       ssh_channel_free(chan);
    ssh_free_file_state(sshf);
@@ -4405,11 +5183,11 @@ static sftp_session ssh_owner_sftp(struct SSHfile *owner)
       return owner->sftp;
    sftp = sftp_new(owner->sess);
    if (sftp == NULL) {
-      set_ssh_errortext(owner->sess, 1325);
+      set_ssh_errortext(owner->sess, 1335);
       return NULL;
       }
    if (sftp_init(sftp) != SSH_OK) {
-      set_ssh_errortext(owner->sess, 1325);
+      set_ssh_errortext(owner->sess, 1335);
       sftp_free(sftp);
       return NULL;
       }
@@ -4438,7 +5216,7 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
    *isdir = 0;
    owner = (sf->parent != NULL) ? sf->parent : sf;
    if (owner->sess == NULL) {
-      set_errortext(1324);
+      set_errortext(1334);
       return NULL;
       }
 
@@ -4448,7 +5226,7 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
          continue;
          }
       if (!cnv:C_string(attr[a], tmps)) {
-         set_errortext(1321);
+         set_errortext(1331);
          return NULL;
          }
       /*
@@ -4458,7 +5236,7 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
       if (strchr(tmps, '=') == NULL)
          continue;
       if (tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
-         set_errortext_with_val(1321, tmps);
+         set_errortext_with_val(1331, tmps);
          return NULL;
          }
       Protect(tmps = alcstr(tmps, (word)strlen(tmps)+1), fatalerr(0,NULL));
@@ -4466,18 +5244,18 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
       *val = '\0';
       val++;
       if (strlen(val) == 0) {
-         set_errortext_with_val(1321, tmps);
+         set_errortext_with_val(1331, tmps);
          return NULL;
          }
       if (strcmp(tmps, "path") == 0)
          path = val;
       else {
-         set_errortext_with_val(1321, tmps);
+         set_errortext_with_val(1331, tmps);
          return NULL;
          }
       }
    if (path == NULL) {
-      set_errortext(1325);
+      set_errortext(1335);
       return NULL;
       }
 
@@ -4490,7 +5268,7 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
    else {
       sshf = malloc(sizeof(struct SSHfile));
       if (sshf == NULL) {
-         set_errortext(1325);
+         set_errortext(1335);
          return NULL;
          }
       memset(sshf, 0, sizeof(struct SSHfile));
@@ -4506,7 +5284,7 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
       sshf->sdir = sftp_opendir(sftp, path);
       INC_NARTHREADS_CONTROLLED;
       if (sshf->sdir == NULL) {
-         set_ssh_errortext(owner->sess, 1325);
+         set_ssh_errortext(owner->sess, 1335);
          if (!as_owner)
             free(sshf);
          return NULL;
@@ -4527,7 +5305,7 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
       sshf->sfile = sftp_open(sftp, path, accesstype, 0644);
       INC_NARTHREADS_CONTROLLED;
       if (sshf->sfile == NULL) {
-         set_ssh_errortext(owner->sess, 1325);
+         set_ssh_errortext(owner->sess, 1335);
          if (!as_owner)
             free(sshf);
          return NULL;
@@ -4552,7 +5330,7 @@ int ssh_sftp_readdir(struct SSHfile *sshf, char *buf, int maxi)
    int len;
 
    if (sshf->sdir == NULL) {
-      set_errortext(1325);
+      set_errortext(1335);
       return -1;
       }
    DEC_NARTHREADS;
@@ -4560,7 +5338,7 @@ int ssh_sftp_readdir(struct SSHfile *sshf, char *buf, int maxi)
    INC_NARTHREADS_CONTROLLED;
    if (at == NULL) {
       if (!sftp_dir_eof(sshf->sdir))
-         set_ssh_errortext(sshf->sess, 1325);
+         set_ssh_errortext(sshf->sess, 1335);
       return -1;
       }
    len = (at->name != NULL) ? (int)strlen(at->name) : 0;
@@ -4667,7 +5445,7 @@ int ssh_sftp_stat_rec(struct SSHfile *sf, char *path, int use_fstat,
    owner = (sf->parent != NULL) ? sf->parent : sf;
    if (use_fstat) {
       if (sf->sfile == NULL) {
-         set_errortext(1325);
+         set_errortext(1335);
          return 0;
          }
       sftp = sf->sftp;
@@ -4684,7 +5462,7 @@ int ssh_sftp_stat_rec(struct SSHfile *sf, char *path, int use_fstat,
       INC_NARTHREADS_CONTROLLED;
       }
    if (at == NULL) {
-      set_ssh_errortext(owner->sess, 1325);
+      set_ssh_errortext(owner->sess, 1335);
       return 0;
       }
    sftp2rec(at, dp, rp);
@@ -4708,7 +5486,7 @@ int ssh_sftp_unlink(struct SSHfile *sf, char *path)
    rc = sftp_unlink(sftp, path);
    INC_NARTHREADS_CONTROLLED;
    if (rc != SSH_OK) {
-      set_ssh_errortext(owner->sess, 1325);
+      set_ssh_errortext(owner->sess, 1335);
       return -1;
       }
    return 0;
@@ -4726,7 +5504,7 @@ int ssh_sftp_rename(struct SSHfile *sf, char *from, char *to)
    rc = sftp_rename(sftp, from, to);
    INC_NARTHREADS_CONTROLLED;
    if (rc != SSH_OK) {
-      set_ssh_errortext(owner->sess, 1325);
+      set_ssh_errortext(owner->sess, 1335);
       return -1;
       }
    return 0;
@@ -5270,7 +6048,7 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
          if (sshf == NULL || sshf->closed ||
              (sshf->chan == NULL && sshf->sfile == NULL &&
               sshf->q_stdout == 0)) {
-            set_errortext(1324);
+            set_errortext(1334);
             tally = -1;
             }
          else if (sshf->nl_pending) {
@@ -5283,7 +6061,7 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
             tally = ssh_chan_read(sshf, StrLoc(*d), n, 1);
             INC_NARTHREADS_CONTROLLED;
             if (tally < 0)
-               set_ssh_errortext(sshf->sess, sshf->sfile ? 1325 : 1324);
+               set_ssh_errortext(sshf->sess, sshf->sfile ? 1335 : 1334);
             }
 #ifdef Concurrent
          MUTEX_UNLOCKID(BlkD(*f,File)->mutexid);
@@ -5351,7 +6129,7 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
             if (sshf == NULL || sshf->closed ||
                 (sshf->chan == NULL && sshf->sfile == NULL &&
                  sshf->q_stdout == 0)) {
-               set_errortext(1324);
+               set_errortext(1334);
 #if defined(Concurrent)
                if (ssh_have_mtx)
                   MUTEX_UNLOCKID(ssh_mtx);
@@ -5367,7 +6145,7 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
                prc = ssh_pump(sshf, 0, 1);
                INC_NARTHREADS_CONTROLLED;
                if (prc == -1) {
-                  set_ssh_errortext(sshf->sess, 1324);
+                  set_ssh_errortext(sshf->sess, 1334);
 #if defined(Concurrent)
                   if (ssh_have_mtx)
                      MUTEX_UNLOCKID(ssh_mtx);
@@ -5439,7 +6217,7 @@ tryagain:
                                      bufsize, 0);
                INC_NARTHREADS_CONTROLLED;
                if (tally < 0) {
-                  set_ssh_errortext(sshf->sess, sshf->sfile ? 1325 : 1324);
+                  set_ssh_errortext(sshf->sess, sshf->sfile ? 1335 : 1334);
                   strtotal += bufsize;
                   strfree = StrLoc(*d);
 #if defined(Concurrent)

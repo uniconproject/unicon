@@ -476,6 +476,9 @@ struct b_file *f(FILE *fd, int status, dptr name)
    blk->fd.fp = fd;
    blk->status = status;
    blk->fname = tname;
+#ifdef PosixFns
+   blk->sock_gen = 0;
+#endif                                  /* PosixFns */
 #ifdef Concurrent
    blk->mutexid = get_mutex(&rmtx_attr);
 #endif                                  /* Concurrent */

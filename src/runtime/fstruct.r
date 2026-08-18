@@ -351,7 +351,7 @@ function{*} key(t)
             fail;
             }
          }
-#if defined(Dbm) || defined(Messaging)
+#if defined(Dbm) || defined(Messaging) || defined(PosixFns)
       file: {
          abstract {
             return string
@@ -374,7 +374,7 @@ function{*} key(t)
                }
 #endif                                  /* Dbm */
 #ifdef Messaging
-               else if (status & Fs_Messaging) {
+            if (status & Fs_Messaging) {
                   struct MFile *mf = BlkD(t,File)->fd.mf;
                   char *field, *end;
 
@@ -415,11 +415,226 @@ function{*} key(t)
                   fail;
                   }
 #endif                                  /* Messaging */
-            else
-               runerr(122, t);
+#ifdef PosixFns
+            {
+               int peek_i, peek_n;
+#ifdef Concurrent
+               word peek_mtx = BlkD(t,File)->mutexid;
+#endif                                  /* Concurrent */
+#if HAVE_LIBSSL
+               if (status & Fs_Crypto) {
+                  struct CryptoFile *cf, *cf_id = NULL;
+#ifdef Concurrent
+                  MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                  peek_i = 0;
+                  for (;;) {
+                     status = BlkD(t,File)->status;
+                     cf = BlkD(t,File)->fd.cf;
+                     if (cf == NULL || (status & Fs_Crypto) == 0 ||
+                         (peek_i != 0 && cf != cf_id)) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        if (peek_i == 0)
+                           runerr(174, t);
+                        fail;
+                        }
+                     cf_id = cf;
+                     peek_n = crypto_peek_key_nth(cf, peek_i, &result);
+                     if (peek_n < 0) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        runerr(0);
+                        }
+                     if (peek_n == 0) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        fail;
+                        }
+                     peek_i = peek_n;
+#ifdef Concurrent
+                     MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                     suspend result;
+#ifdef Concurrent
+                     MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                     }
+                  }
+#endif                                  /* HAVE_LIBSSL */
+#if HAVE_LIBSSH
+               if (status & Fs_SSH) {
+                  struct SSHfile *sshf, *ssh_id = NULL;
+#ifdef Concurrent
+                  MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                  peek_i = 0;
+                  for (;;) {
+                     status = BlkD(t,File)->status;
+                     sshf = BlkD(t,File)->fd.sshf;
+                     if (sshf == NULL || (status & Fs_SSH) == 0 ||
+                         (peek_i != 0 && sshf != ssh_id)) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        if (peek_i == 0)
+                           runerr(174, t);
+                        fail;
+                        }
+                     ssh_id = sshf;
+                     peek_n = ssh_peek_key_nth(sshf, peek_i, &result);
+                     if (peek_n < 0) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        runerr(0);
+                        }
+                     if (peek_n == 0) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        fail;
+                        }
+                     peek_i = peek_n;
+#ifdef Concurrent
+                     MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                     suspend result;
+#ifdef Concurrent
+                     MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                     }
+                  }
+#endif                                  /* HAVE_LIBSSH */
+#if HAVE_LIBSSL
+               if ((status & Fs_Encrypt) && (status & Fs_Socket)) {
+                  SSL *ssl, *ssl_id = NULL;
+                  uword peek_gen = 0;
+#ifdef Concurrent
+                  MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                  peek_i = 0;
+                  for (;;) {
+                     status = BlkD(t,File)->status;
+                     ssl = BlkD(t,File)->fd.ssl;
+                     if (ssl == NULL ||
+                         ((status & Fs_Encrypt) == 0) ||
+                         ((status & Fs_Socket) == 0) ||
+                         (peek_i != 0 &&
+                          (ssl != ssl_id ||
+                           BlkD(t,File)->sock_gen != peek_gen))) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        if (peek_i == 0)
+                           runerr(174, t);
+                        fail;
+                        }
+                     ssl_id = ssl;
+                     peek_gen = BlkD(t,File)->sock_gen;
+                     peek_n = tls_peek_key_nth(BlkD(t,File), peek_i, &result);
+                     if (peek_n < 0) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        runerr(0);
+                        }
+                     if (peek_n == 0) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        fail;
+                        }
+                     peek_i = peek_n;
+#ifdef Concurrent
+                     MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                     suspend result;
+#ifdef Concurrent
+                     MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                     }
+                  }
+#endif                                  /* HAVE_LIBSSL */
+               if (status & Fs_Socket) {
+                  int s, peek_fd = -1;
+                  uword peek_gen = 0;
+#ifdef Concurrent
+                  MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                  peek_i = 0;
+                  for (;;) {
+                     status = BlkD(t,File)->status;
+                     if ((status & Fs_Socket) == 0) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        if (peek_i == 0)
+                           runerr(174, t);
+                        fail;
+                        }
+#if HAVE_LIBSSL
+                     if (status & Fs_Encrypt) {
+                        SSL *ssl = BlkD(t,File)->fd.ssl;
+                        if (ssl == NULL) {
+#ifdef Concurrent
+                           MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                           if (peek_i == 0)
+                              runerr(174, t);
+                           fail;
+                           }
+                        s = SSL_get_fd(ssl);
+                        }
+                     else
+#endif                                  /* HAVE_LIBSSL */
+                        s = BlkD(t,File)->fd.fd;
+                     /*
+                      * peek_i != 0: a closed handle already raised 174
+                      * above, so identity mismatch cannot take that path.
+                      */
+                     if (peek_i != 0 &&
+                         (s != peek_fd ||
+                          BlkD(t,File)->sock_gen != peek_gen)) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        fail;
+                        }
+                     peek_fd = s;
+                     peek_gen = BlkD(t,File)->sock_gen;
+                     peek_n = sock_peek_key_nth(s, peek_i, &result);
+                     if (peek_n < 0) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        runerr(0);
+                        }
+                     if (peek_n == 0) {
+#ifdef Concurrent
+                        MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                        fail;
+                        }
+                     peek_i = peek_n;
+#ifdef Concurrent
+                     MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                     suspend result;
+#ifdef Concurrent
+                     MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                     }
+                  }
+            }
+#endif                                  /* PosixFns */
+            runerr(122, t);
             }
          }
-#endif                                  /* Dbm || Messaging */
+#endif                                  /* Dbm || Messaging || PosixFns */
    default: {
       runerr(124, t)
       }

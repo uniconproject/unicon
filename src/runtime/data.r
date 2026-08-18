@@ -457,6 +457,14 @@ struct errtab errtab[] = {
    1316, "invalid cryptographic operation state",
    1317, "cryptographic material could not be loaded",
 
+   1320, "TLS certificate expired",
+   1321, "TLS untrusted CA",
+   1322, "TLS hostname mismatch",
+   1323, "TLS no shared cipher",
+   1324, "TLS protocol version mismatch",
+   1325, "TLS handshake failed",
+   1326, "bad TLS status field",
+
 #endif                                  /* HAVE_LIBSSL */
 
 #endif                                  /* Messaging */
@@ -466,12 +474,12 @@ struct errtab errtab[] = {
 #endif                                  /* PosixFns */
 
 #ifdef HAVE_LIBSSH
-   1320, "SSH error",
-   1321, "bad ssh attribute",
-   1322, "SSH authentication error",
-   1323, "SSH host key verification error",
-   1324, "SSH channel error",
-   1325, "SFTP error",
+   1330, "SSH error",
+   1331, "bad ssh attribute",
+   1332, "SSH authentication error",
+   1333, "SSH host key verification error",
+   1334, "SSH channel error",
+   1335, "SFTP error",
 #endif                                  /* HAVE_LIBSSH */
 
 /*

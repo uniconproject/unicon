@@ -30,7 +30,7 @@ global bookConfig, logoSrc
 #</p>
 procedure main(args)
     local manifestPath, mf, parser, registry, labels, cites, chapterPath, doc
-    local docs, format, cliDocClass
+    local docs, format, cliDocClass, explicitTitle
 
     Args(args, set("manifest","title","targetDir","theme","themePath","format",
                    "copyright","logo","docclass","name","config"),
@@ -38,8 +38,8 @@ procedure main(args)
 
     manifestPath := Args().getOpt("manifest") | "book.manifest"
     bookConfig := loadBookConfig(manifestPath)
-    bookTitle    := Args().getOpt("title") | (\bookConfig).get("title") |
-          "Untitled Book"
+    explicitTitle := Args().getOpt("title") | (\bookConfig).get("title")
+    bookTitle    := \explicitTitle | "Untitled Book"
     bookOutputName := parseBookOutputName()
     copyrightNotice := Args().getOpt("copyright") | (\bookConfig).get("copyright")
     logoSrc := Args().getOpt("logo") | (\bookConfig).getPath("logo")
@@ -99,6 +99,13 @@ procedure main(args)
         }
 
     docs := mf.getOrderedDocuments()
+    # One report, no --title / book.conf title: use the paper's :title:
+    # for the sidebar and index heading.
+    if /explicitTitle & *docs = 1 then {
+        doc := docs[1]
+        if doc.isReport() & \doc.getTitle() then
+            bookTitle := doc.getTitle()
+        }
 
     cites := CitationTable()
     every doc := !docs do
@@ -124,8 +131,8 @@ end
 # <[param cites CitationTable after collect/loadAll]>
 #</p>
 procedure renderHtml(docs, labels, cites)
-    local themePath, themeDir, nav, indexDocs, doc, outp, outPath, f, i
-    local logoBase, bookPdf
+    local themePath, themeDir, catalogNav, indexDocs, doc, outp, outPath, f, i
+    local logoBase, bookPdf, reports
 
     themePath := Args().getOpt("themePath") | (\bookConfig).getPath("themepath")
     themeDir := resolveThemeDir(themeName, themePath) |
@@ -144,7 +151,10 @@ procedure renderHtml(docs, labels, cites)
         write("logo: ", logoHref)
         }
 
-    nav := buildNavEntries(docs)
+    catalogNav := buildNavEntries(docs)
+    reports := &null
+    if allDocsAreReports(docs) then
+        reports := 1
     indexDocs := []
     every doc := !docs do
         put(indexDocs, [
@@ -153,12 +163,12 @@ procedure renderHtml(docs, labels, cites)
             collectSearchText(doc)
             ])
     bookPdf := &null
-    if not allDocsAreReports(docs) then
+    if /reports then
         bookPdf := bookOutputName || ".pdf"
 
     writeSearchIndex(targetDir, indexDocs)
-    writeSearchPage(targetDir, bookTitle, nav, bookPdf)
-    writeIndexPage(targetDir, bookTitle, nav, docs)
+    writeSearchPage(targetDir, bookTitle, catalogNav, bookPdf, reports)
+    writeIndexPage(targetDir, bookTitle, catalogNav, docs)
     ensureDir(targetDir || "/_sources")
 
     every i := 1 to *docs do {
@@ -170,7 +180,12 @@ procedure renderHtml(docs, labels, cites)
         outp.setOutFile(f)
         outp.setLabelTable(labels)
         outp.setCitationTable(cites)
-        outp.setNav(bookTitle, nav, i, themeName)
+        if doc.isReport() then {
+            outp.setNav(bookTitle, buildSectionNavEntries(doc), 0, themeName)
+            outp.setPageKind("report")
+            }
+        else
+            outp.setNav(bookTitle, catalogNav, i, themeName)
         outp.setCopyright(copyrightNotice)
         outp.setLogo(logoHref)
         outp.setOutDir(targetDir)
@@ -616,7 +631,10 @@ end
 
 #<p>
 # Build sidebar/nav entries from ordered documents.
-# Reports use <tt>UTR N</tt> (plus short title) when a TR number is set.
+# Used on book chapter pages and on the collection index/search
+# pages. Report <i>pages</i> use <tt>buildSectionNavEntries</tt>
+# instead (this report's sections). Reports use <tt>UTR N</tt>
+# (plus short title) when a TR number is set.
 # <[param docs list of Document nodes]>
 # <[returns list of [htmlFile, displayTitle] pairs]>
 #</p>
@@ -625,6 +643,21 @@ procedure buildNavEntries(docs)
     nav := []
     every doc := !docs do
         put(nav, [chapterOutputName(doc.getSrcName()), chapterNavTitle(doc)])
+    return nav
+end
+
+#<p>
+# In-page section TOC for a report: <tt>[#anchor, title, level]</tt>.
+# Levels follow heading underline style (<tt>= - ~ ^</tt>).
+# <[param doc a Document node]>
+# <[returns list of [href, title, level] triples]>
+#</p>
+procedure buildSectionNavEntries(doc)
+    local nav, n
+    nav := []
+    every n := !doc.getChildren() do
+        if n.nodeType() == "Section" then
+            put(nav, ["#" || sectionAnchor(n), n.getTitle(), n.getLevel()])
     return nav
 end
 
@@ -830,15 +863,21 @@ end
 
 #<p>
 # Emit a sidebar TOC for shell pages, marking <tt>currentFile</tt> as
-# the current entry when it matches.
+# the current entry when it matches. Report collections use this for
+# the catalog index and search page (links to each report), not for
+# the report pages themselves.
 # <[param f open output file]>
-# <[param title book title]>
+# <[param title book / collection title]>
 # <[param nav list of [htmlFile, chapterTitle] pairs]>
 # <[param currentFile basename of the current page, or null]>
+# <[param isReports non-null when this is a report catalog]>
 #</p>
-procedure writeSidebarStatic(f, title, nav, currentFile)
+procedure writeSidebarStatic(f, title, nav, currentFile, isReports)
     local e
-    write(f, "<nav class=\"sidebar\" aria-label=\"Book contents\">")
+    if \isReports then
+        write(f, "<nav class=\"sidebar\" aria-label=\"Report index\">")
+    else
+        write(f, "<nav class=\"sidebar\" aria-label=\"Book contents\">")
     if \logoHref & *logoHref > 0 then
         write(f, "<a class=\"sidebar-logo\" href=\"index.html\">",
               "<img src=\"", escapeHtml(logoHref),
@@ -851,9 +890,15 @@ procedure writeSidebarStatic(f, title, nav, currentFile)
     write(f, "<option value=\"classic\">classic</option>")
     write(f, "<option value=\"dark\">dark</option>")
     write(f, "</select>")
-    write(f, "<p class=\"search-hint\">Filter chapters; Enter for full search</p>")
+    if \isReports then
+        write(f, "<p class=\"search-hint\">Filter reports; Enter for full search</p>")
+    else
+        write(f, "<p class=\"search-hint\">Filter chapters; Enter for full search</p>")
     write(f, "<input class=\"search-box\" id=\"nav-search\" type=\"search\" ")
-    write(f, "placeholder=\"Search...\" aria-label=\"Filter chapter list\">")
+    if \isReports then
+        write(f, "placeholder=\"Search...\" aria-label=\"Filter report list\">")
+    else
+        write(f, "placeholder=\"Search...\" aria-label=\"Filter chapter list\">")
     write(f, "<ol id=\"nav-toc\">")
     every e := !nav do {
         if \currentFile == e[1] then
@@ -870,18 +915,22 @@ end
 
 #<p>
 # Write <tt>index.html</tt>. Book manifests get an ordered chapter
-# list; report manifests get a UTR table (number, title, author, date).
+# list; report manifests get a catalog table (number, title, author,
+# date) that links to each standalone report.
 # <[param dir output directory]>
 # <[param title book / collection title]>
 # <[param nav list of [htmlFile, chapterTitle] pairs]>
 # <[param docs ordered Document nodes (for report metadata)]>
 #</p>
 procedure writeIndexPage(dir, title, nav, docs)
-    local f, e
+    local f, e, isReports
     f := open(dir || "/index.html", "w") |
         stop("uscribe: could not write '", dir, "/index.html'")
     writeShellHead(f, title)
-    writeSidebarStatic(f, title, nav, "index.html")
+    isReports := &null
+    if allDocsAreReports(docs) then
+        isReports := 1
+    writeSidebarStatic(f, title, nav, "index.html", isReports)
     write(f, "<div class=\"main\">")
     write(f, "<h1>", escapeHtml(title), "</h1>")
     if allDocsAreReports(docs) then
@@ -914,7 +963,6 @@ end
 #</p>
 procedure writeReportIndex(f, docs)
     local doc, href, pdfHref, srcTxt, tr, title, authors, date
-    write(f, "<p>Unicon Technical Reports</p>")
     write(f, "<table class=\"report-index\">")
     write(f, "<thead><tr>")
     write(f, "<th>UTR</th><th>Title</th><th>Author</th>")
@@ -978,18 +1026,22 @@ end
 # <[param title book title]>
 # <[param nav list of [htmlFile, chapterTitle] pairs]>
 # <[param pdfHref optional book PDF href (omit for report collections)]>
+# <[param isReports non-null when this is a report catalog]>
 #</p>
-procedure writeSearchPage(dir, title, nav, pdfHref)
+procedure writeSearchPage(dir, title, nav, pdfHref, isReports)
     local f
     f := open(dir || "/search.html", "w") |
         stop("uscribe: could not write search.html")
     writeShellHead(f, title || " - Search")
     write(f, "<script src=\"searchindex.js\"></script>")
-    writeSidebarStatic(f, title, nav, "search.html")
+    writeSidebarStatic(f, title, nav, "search.html", isReports)
     write(f, "<div class=\"main\">")
     write(f, "<h1>Search</h1>")
     write(f, "<input class=\"search-box\" id=\"full-search\" type=\"search\" ")
-    write(f, "placeholder=\"Search the book...\" style=\"max-width:28rem\">")
+    if \isReports then
+        write(f, "placeholder=\"Search reports...\" style=\"max-width:28rem\">")
+    else
+        write(f, "placeholder=\"Search the book...\" style=\"max-width:28rem\">")
     write(f, "<div id=\"search-results\"></div>")
     write(f, "<script>")
     write(f, "(function(){")
@@ -1169,6 +1221,8 @@ procedure helpMesg()
     write("  :date:, :copyright:, :abstract:). Book chapters may use")
     write("  :author: / :date: / :copyright: for a byline under the title.")
     write()
+    write("  HTML: report pages list that report's sections in the sidebar;")
+    write("  a report manifest also writes a catalog index.html.")
     write("  HTML footers always include \"Powered by uscribe\".")
     write("  latex writes STEM.tex (default book.tex); pdf also runs")
     write("  pdflatex/xelatex/lualatex.")

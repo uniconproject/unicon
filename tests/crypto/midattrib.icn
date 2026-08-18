@@ -1,0 +1,17 @@
+#
+# Attrib() during an in-flight digest is rejected (error 1316).
+#
+
+procedure main()
+   local hasher
+
+   hasher := open("sha256", "eh") | stop("open eh failed: ", &errortext)
+   # Starts the digest; not yet finalized.
+   write(hasher, "partial")
+   # Changing alg= mid-operation must fail (idle window only).
+   if Attrib(hasher, "alg=sha512") then
+      write("mid:fail")
+   else
+      write("mid:ok ", &errornumber)
+   close(hasher)
+end

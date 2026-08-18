@@ -1,0 +1,1627 @@
+/*
+ * rcrypto.ri -- OpenSSL support for Unicon.
+ *
+ * Included from rposix.r under HAVE_LIBSSL.  Covers:
+ *   - TLS/DTLS context setup (create_ssl_context) and SSL error text helpers
+ *   - Cryptographic file handles (Fs_Crypto) over EVP for hash/HMAC/
+ *     sign/verify/encrypt/decrypt
+ *
+ * Material handles (no op=) hold parsed keys and certificates.  Operation
+ * handles accumulate input via write() and produce their result on read(),
+ * which finalizes and resets so the handle can be reused.  File-transform
+ * modes ("re"/"we") wrap a real FILE*: writes encrypt to disk, reads hash
+ * or decrypt from disk.  EVP contexts are created lazily on first I/O.
+ */
+
+#if HAVE_LIBSSL
+
+/*
+ * TLS/DTLS open() attributes (also skipped by apply_sock_attrs).
+ */
+static char *ssl_attr_names[] = {
+   "cert", "key", "keypass", "ca", "caDir", "caStore",
+   "ciphers", "ciphers1.3", "minProto", "maxProto", "verifyPeer", NULL
+   };
+
+int is_ssl_attr(char *name)
+{
+   int i;
+   for (i = 0; ssl_attr_names[i]; i++)
+      if (strcmp(name, ssl_attr_names[i]) == 0)
+         return 1;
+   return 0;
+}
+
+/*
+ * set &errornumber and &errortext based on error values from openssl.
+ */
+void set_ssl_context_errortext(int err, char* errval)
+{
+   int buflen = 0;
+   char* sslerr;
+   CURTSTATE();
+
+   if (err != 0)
+     k_errornumber = err;
+   else
+     k_errornumber = 1301;
+
+   if (errval != NULL) {
+     buflen = strlen(errval);
+     if ((StrLoc(k_errorvalue) = alcstr(NULL, buflen)) != NULL) {
+       strcpy(StrLoc(k_errorvalue), errval);
+       have_errval = 1;
+       StrLen(k_errorvalue) = buflen;
+     }
+   }
+
+   sslerr = (char *) ERR_reason_error_string(ERR_get_error());
+
+   if (sslerr != NULL) {
+     buflen = strlen(sslerr);
+     if ((StrLoc(k_errortext) = alcstr(NULL, buflen)) != NULL) {
+       strcpy(StrLoc(k_errortext), sslerr);
+       StrLen(k_errortext) = buflen;
+     }
+   }
+   else
+     set_errortext(1301);
+
+
+}
+
+int set_ssl_connection_errortext(SSL *ssl, int err)
+{
+   int buflen;
+   char* buf;
+   char buf2[32];
+   CURTSTATE();
+
+   err = SSL_get_error(ssl, err);
+   k_errornumber = err;
+   switch (err) {
+   case SSL_ERROR_WANT_WRITE  : snprintf(buf2, 32, "SSL_ERROR_WANT_WRITE"); break;
+   case SSL_ERROR_WANT_READ   : snprintf(buf2, 32 ,"SSL_ERROR_WANT_READ"); break;
+   case SSL_ERROR_WANT_ACCEPT : snprintf(buf2, 32 ,"SSL_ERROR_WANT_ACCEPT"); break;
+   case SSL_ERROR_WANT_CONNECT: snprintf(buf2, 32 ,"SSL_ERROR_WANT_CONNECT"); break;
+   case SSL_ERROR_SYSCALL     :
+     if (errno == 0) {
+       /*
+        * OpenSSL bug: an enexpcted EOF from peer, see:
+        * https://www.openssl.org/docs/man1.1.1/man3/SSL_get_error.html
+        */
+       snprintf(buf2, 32 ,"unexpected EOF from peer");
+     }
+     else {
+       set_syserrortext(errno);
+       return err;
+     }
+
+     break;
+   case SSL_ERROR_ZERO_RETURN : return err; /* EOF */
+   case SSL_ERROR_SSL         : snprintf(buf2, 32 ,"SSL_ERROR_SSL"); break;
+   default                    : snprintf(buf2, 32 ,"SSL_ERROR_OTHER"); break;
+   }
+
+
+#ifdef DEVMODE_DEBUG
+   {
+     char buf3[1024];
+     ERR_error_string_n(ERR_get_error(), buf3 , 1024);
+     printf("\n%s\n", buf3);
+   }
+#endif                          /* DEVMODE_DEBUG */
+
+   buf = (char *) ERR_reason_error_string(ERR_get_error());
+   if (buf == NULL)
+     buf = buf2;
+
+   buflen = strlen(buf);
+   if ((StrLoc(k_errortext) = alcstr(NULL, buflen)) != NULL) {
+     strcpy(StrLoc(k_errortext), buf);
+     StrLen(k_errortext) = buflen;
+   }
+
+   return err;
+}
+
+/*
+ *  Create and initialize an SSL context
+ *     attr: attribute array passed to open()
+ *     n   : size of the array
+ *    type : connection type TLS/DTLS Server/Client
+ *    do_verify : 0 when mode '-' is set (same as verifyPeer=no);
+ *                verifyPeer= overrides the mode flag
+ */
+SSL_CTX * create_ssl_context(dptr attr, int n, int type, int do_verify) {
+
+   SSL_CTX *ctx;
+   //      if (status & Fs_Encrypt) {
+   tended char *tmps, *val;
+   tended char *certFile=NULL, *keyFile=NULL, *ciphers=NULL, *ciphers13=NULL, *password=NULL;
+   tended char *ca_file=NULL, *ca_dir=NULL, *ca_store=NULL;
+   tended char *min_proto=NULL, *max_proto=NULL, *verifyPeer=NULL;
+   X509 *cert_obj = NULL;
+   EVP_PKEY *key_obj = NULL;
+   struct CryptoFile *id_handles[8];
+   int n_id_handles = 0;
+   static int SSL_is_initialized = 0;
+   C_integer timeout = 0;
+   int count;
+   int a;
+
+   /*
+    * Loop through and check the  attributes
+    */
+   for (a=0; a<n; a++) {
+     if (is:null(attr[a])) {
+       attr[a] = emptystr;
+     }
+     else if (a==0 && cnv:C_integer(attr[a], timeout)) {
+       //timeout_set = 1;
+     }
+     else if (is:file(attr[a])) {
+       /*
+        * Crypto material handle (UTR 27 §8.6): reuse a parsed cert/key
+        * across TLS/DTLS opens instead of re-reading cert=/key= paths.
+        */
+       struct CryptoFile *cf;
+       if (!(BlkD(attr[a],File)->status & Fs_Crypto)) {
+         set_errortext(1302);
+         return NULL;
+         }
+       cf = BlkD(attr[a],File)->fd.cf;
+       if (cf == NULL) {
+         set_errortext(1302);
+         return NULL;
+         }
+       if (n_id_handles >= 8) {
+         set_errortext(1302);
+         return NULL;
+         }
+       id_handles[n_id_handles++] = cf;
+       }
+     else if (cnv:C_string(attr[a], tmps)) {
+       /*
+        * quick santiy check, reject any attribute
+        *  - under 3 characters
+        *  - starts or ends with '='
+        */
+      if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
+        set_errortext_with_val(1302, tmps);
+        return NULL;
+      }
+
+      /*
+       * Split a private copy at the '=' sign: cnv:C_string can return
+       * the caller's own string storage (see cnv_c_str), which must not
+       * be mutated because apply_sock_attrs() parses it again.
+       * attrib name up to '=', val is whatever comes after '='
+       */
+      Protect(tmps = alcstr(tmps, (word)strlen(tmps)+1), fatalerr(0,NULL));
+      val = strchr(tmps,'=');
+       if (val != NULL) {
+         *val = '\0';
+         val++;
+         if (strlen(val) == 0) {
+           set_errortext_with_val(1302, tmps);
+           return NULL;
+         }
+         //printf("attr: %s=%s\n", tmps, val);
+         if (strcmp(tmps, "cert") == 0)
+           certFile = val;
+         else if (strcmp(tmps, "key") == 0)
+           keyFile = val;
+         else if (strcmp(tmps, "keypass") == 0)
+           password = val;
+         else if (strcmp(tmps, "ca") == 0)
+           ca_file = val;
+         else if (strcmp(tmps, "caDir") == 0)
+           ca_dir = val;
+         else if (strcmp(tmps, "caStore") == 0)
+           ca_store = val;
+         else if (strcmp(tmps, "ciphers") == 0)
+           ciphers = val;
+         else if (strcmp(tmps, "ciphers1.3") == 0)
+           ciphers13 = val;
+         else if (strcmp(tmps, "minProto") == 0)
+           min_proto = val;
+         else if (strcmp(tmps, "maxProto") == 0)
+           max_proto = val;
+         else if (strcmp(tmps, "verifyPeer") == 0)
+           verifyPeer = val;
+         else if (is_sock_attr(tmps))
+           ; /* socket attribute: applied by apply_sock_attrs() */
+         else  {
+           set_errortext_with_val(1302, tmps);
+           return NULL;
+         }
+       }
+       else  {
+           set_errortext_with_val(1302, tmps);
+           return NULL;
+         }
+     }
+     else {
+           set_errortext(1302);
+           return NULL;
+         }
+    }
+
+   /*
+    * initialize OpenSSL library
+    * TODO: make this thread safe.
+    */
+   if (!SSL_is_initialized) {
+     SSL_library_init();
+     OpenSSL_add_all_algorithms();  /* load & register all cryptos, etc. */
+     SSL_load_error_strings();   /* load all error messages */
+     SSL_is_initialized = 1;
+   }
+
+   const SSL_METHOD *method;
+
+   switch (type) {
+
+#if !defined(MacOS) && OPENSSL_VERSION_NUMBER < 0x10100000L
+   case TLS_SERVER: method = SSLv23_server_method(); break;
+   case TLS_CLIENT: method = SSLv23_client_method(); break;
+#else
+   case TLS_SERVER: method = TLS_server_method(); break;
+   case TLS_CLIENT: method = TLS_client_method(); break;
+#endif
+
+   case DTLS_SERVER: method = DTLS_server_method(); break;
+   case DTLS_CLIENT: method = DTLS_client_method(); break;
+   }
+
+   ctx = SSL_CTX_new(method);   /* create new context from method */
+   if (ctx == NULL) {
+     set_ssl_context_errortext(1301, NULL);
+     return NULL;
+   }
+
+   /*
+    * cipher suites list for TLS 1.3 is differet hence we have ciphers and ciphers1.3.
+    * Let us make the default "High" security for TLS1.2 and earlier.
+    * TLS1.3 cihpher suite list is short and is already strong
+    */
+   if (ciphers == NULL)
+     ciphers = "HIGH";
+   // all ciphers string: "ALL"
+   // For TLS 1.2 and below
+   if (SSL_CTX_set_cipher_list(ctx, ciphers) != 1) {
+     set_ssl_context_errortext(1306, ciphers);
+     SSL_CTX_free(ctx);
+     return NULL;
+   }
+
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+   if (ciphers13 != NULL) {
+     // For TLS 1.3
+     if (SSL_CTX_set_ciphersuites(ctx, ciphers13) != 1) {
+       set_ssl_context_errortext(1306, ciphers);
+       SSL_CTX_free(ctx);
+       return NULL;
+     }
+   }
+#endif
+
+   count = 2;
+   do {
+      char *proto;
+      if (count == 2)
+        proto = min_proto;
+      else
+        proto = max_proto;
+
+      if (proto != NULL) {
+        // supported versions are SSL3_VERSION, TLS1_VERSION, TLS1_1_VERSION,
+        // TLS1_2_VERSION, TLS1_3_VERSION for TLS and DTLS1_VERSION, DTLS1_2_VERSION for DTLS.
+#if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#define TLS1_VERSION 10
+#define TLS1_1_VERSION 11
+#define TLS1_2_VERSION 12
+#define TLS1_3_VERSION 13
+
+#define DTLS1_VERSION 20
+#define DTLS1_2_VERSION 22
+
+#endif
+        int ver;
+        if (strcmp(proto, "TLS1.3") == 0)
+          ver = TLS1_3_VERSION;
+        else if (strcmp(proto, "TLS1.2") == 0)
+          ver = TLS1_2_VERSION;
+        else if (strcmp(proto, "TLS1.1") == 0)
+          ver = TLS1_1_VERSION;
+        else if (strcmp(proto, "TLS1.0") == 0)
+          ver = TLS1_VERSION;
+        /*      else if (strcmp(proto, "SSL3.0") == 0)
+                ver = SSL3_VERSION; */
+        else if (strcmp(proto, "DTLS1.2") == 0)
+          ver = DTLS1_2_VERSION;
+        else if (strcmp(proto, "DTLS1.0") == 0)
+          ver = DTLS1_VERSION;
+        else {
+          set_ssl_context_errortext(1308, proto);
+          SSL_CTX_free(ctx);
+          return NULL;
+        }
+
+        /*
+         * Set min/max acceptable protocol
+         * OpenSSL 1.1 and after supports and easy way to set min/max
+         * but we have to "manully" do it for earlier versions
+         * Notice that only TLS protocols are considered,
+         * SSL protocls are already old and deprecated
+         */
+
+        if (count == 2) {
+#if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+          int old_ssl_flags=0;
+          switch (ver) {
+          case TLS1_2_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 |
+              SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
+          case TLS1_1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1 |
+              SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
+          case TLS1_VERSION: old_ssl_flags |= SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; break;
+          default:
+            set_ssl_context_errortext(1308, proto);
+            SSL_CTX_free(ctx);
+            return NULL;
+          }
+          SSL_CTX_set_options(ctx, old_ssl_flags);
+#else
+          if (SSL_CTX_set_min_proto_version(ctx, ver) != 1) {
+            set_ssl_context_errortext(1301, proto);
+            SSL_CTX_free(ctx);
+            return NULL;
+          }
+#endif
+        }
+        else {
+#if !defined(MacOS) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+         int old_ssl_flags=0;
+          switch (ver) {
+          case TLS1_2_VERSION: break;
+          case TLS1_1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1_2; break;
+          case TLS1_VERSION: old_ssl_flags |= SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2; break;
+          default:
+            set_ssl_context_errortext(1308, proto);
+            SSL_CTX_free(ctx);
+            return NULL;
+            }
+          SSL_CTX_set_options(ctx, old_ssl_flags);
+#else
+          if (SSL_CTX_set_max_proto_version(ctx, ver) != 1) {
+            set_ssl_context_errortext(1301, proto);
+            SSL_CTX_free(ctx);
+            return NULL;
+          }
+#endif
+        }
+      }
+   } while (--count>0);
+
+   if (ca_file != NULL || ca_dir != NULL) {
+     if (SSL_CTX_load_verify_locations(ctx, ca_file, ca_dir) != 1) {
+       set_ssl_context_errortext(1305, ca_file);
+       SSL_CTX_free(ctx);
+       return NULL;
+     }
+   }
+   /*
+    * Mode '-' is verifyPeer=no.  An explicit verifyPeer= wins.
+    */
+   if (verifyPeer == NULL && !do_verify)
+     verifyPeer = "no";
+
+   if (verifyPeer == NULL) {
+     if ((type == TLS_CLIENT) || (type == DTLS_CLIENT)) {
+       // cannot fail
+       SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER,  NULL);
+     }
+   } else {
+     if (strcmp(verifyPeer, "yes") == 0) {
+       if ((type == TLS_CLIENT) || (type == DTLS_CLIENT))
+         SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER,  NULL);
+       else
+         SSL_CTX_set_verify(ctx,  SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,  NULL);
+     } else if (strcmp(verifyPeer, "no") != 0) {
+       set_errortext_with_val(1302, verifyPeer);
+       SSL_CTX_free(ctx);
+       return NULL;
+       }
+   }
+
+   //SSL_CTX_set_verify_depth(ctx, 4);
+
+
+   /*
+   if (ca_dir != NULL) {
+     if (SSL_CTX_set_default_verify_dir(ctx);SSL_CTX_load_verify_dir(ctx, ca_dir) != 1) {
+       set_ssl_context_errortext(0, "ca dir");
+       return NULL;
+     }
+   }
+
+     if (ca_store != NULL) {
+        if (SSL_CTX_load_verify_store(ctx,ca_store) <= 0) {
+           set_ssl_context_errortext(0, "ca dir");
+           return NULL;
+         }
+         SSL_CTX_set_default_verify_store(ctx);
+     }
+   */
+
+   if (SSL_CTX_set_default_verify_paths(ctx) != 1) {
+       set_ssl_context_errortext(1305, "verify paths");
+       SSL_CTX_free(ctx);
+       return NULL;
+   }
+
+   /*
+    * Identity from crypto handles first, then cert=/key= path attributes.
+    */
+   for (a = 0; a < n_id_handles; a++) {
+      struct CryptoFile *cf = id_handles[a];
+      if (cf->cert != NULL && cert_obj == NULL) {
+         if (!X509_up_ref(cf->cert)) {
+            set_ssl_context_errortext(0, NULL);
+            SSL_CTX_free(ctx);
+            return NULL;
+            }
+         cert_obj = cf->cert;
+         }
+      if ((cf->roles & CRYPTO_ROLE_PRIVKEY) && cf->pkey != NULL &&
+          key_obj == NULL) {
+         if (!EVP_PKEY_up_ref(cf->pkey)) {
+            if (cert_obj) { X509_free(cert_obj); cert_obj = NULL; }
+            set_ssl_context_errortext(0, NULL);
+            SSL_CTX_free(ctx);
+            return NULL;
+            }
+         key_obj = cf->pkey;
+         }
+      }
+
+   if (cert_obj != NULL) {
+      if (SSL_CTX_use_certificate(ctx, cert_obj) <= 0) {
+         set_ssl_context_errortext(1304, NULL);
+         X509_free(cert_obj);
+         if (key_obj) EVP_PKEY_free(key_obj);
+         SSL_CTX_free(ctx);
+         return NULL;
+         }
+      X509_free(cert_obj);              /* CTX holds its own ref */
+      cert_obj = NULL;
+      }
+   else if (certFile != NULL) {
+     /* set the local certificate from CertFile */
+     if (SSL_CTX_use_certificate_file(ctx, certFile, SSL_FILETYPE_PEM) <= 0) {
+       set_ssl_context_errortext(1304, certFile);
+       if (key_obj) EVP_PKEY_free(key_obj);
+       SSL_CTX_free(ctx);
+       return NULL;
+     }
+   }
+
+   /* set the private key from KeyFile (may be the same as CertFile) */
+   if (password != NULL) {
+     // doesn't fail
+     SSL_CTX_set_default_passwd_cb_userdata(ctx, password);
+
+   }
+   if (key_obj != NULL) {
+      if (SSL_CTX_use_PrivateKey(ctx, key_obj) <= 0) {
+         set_ssl_context_errortext(1303, NULL);
+         EVP_PKEY_free(key_obj);
+         SSL_CTX_free(ctx);
+         return NULL;
+         }
+      EVP_PKEY_free(key_obj);           /* CTX holds its own ref */
+      key_obj = NULL;
+      if (!SSL_CTX_check_private_key(ctx)) {
+         set_ssl_context_errortext(0, NULL);
+         SSL_CTX_free(ctx);
+         return NULL;
+         }
+      }
+   else if (keyFile != NULL) {
+     if (SSL_CTX_use_PrivateKey_file(ctx, keyFile, SSL_FILETYPE_PEM) <= 0) {
+       set_ssl_context_errortext(1303, keyFile);
+       SSL_CTX_free(ctx);
+       return NULL;
+     }
+     /* verify that the private key matches the cert */
+     if (!SSL_CTX_check_private_key(ctx)) {
+       set_ssl_context_errortext(0, NULL);
+       SSL_CTX_free(ctx);
+       return NULL;
+     }
+   }
+
+   return ctx;
+}
+
+#define CRYPTO_OUT_CHUNK 4096
+#define CRYPTO_AEAD_TAGLEN 16
+
+#define E_CryptoAlg      1311
+#define E_CryptoRole     1312
+#define E_CryptoDupRole  1313
+#define E_CryptoAuth     1314
+#define E_CryptoVerify   1315
+#define E_CryptoState    1316
+#define E_CryptoLoad     1317
+
+#define CRYPTO_DEF_MD     "sha256"
+#define CRYPTO_DEF_CIPHER "aes-256-gcm"
+
+static int out_append(struct CryptoFile *cf, unsigned char *p, int n)
+{
+   if (n <= 0) return 1;
+   if (cf->outlen + n > cf->outcap) {
+      int cap = cf->outcap ? cf->outcap * 2 : CRYPTO_OUT_CHUNK;
+      unsigned char *q;
+      while (cap < cf->outlen + n) cap *= 2;
+      q = realloc(cf->out, cap);
+      if (q == NULL) return 0;
+      cf->out = q;
+      cf->outcap = cap;
+      }
+   memcpy(cf->out + cf->outlen, p, n);
+   cf->outlen += n;
+   return 1;
+}
+
+static void out_reset(struct CryptoFile *cf)
+{
+   cf->outlen = 0;
+   cf->out_off = 0;
+}
+
+static int in_append(struct CryptoFile *cf, unsigned char *p, int n)
+{
+   if (n <= 0) return 1;
+   if (cf->inlen + n > cf->incap) {
+      int cap = cf->incap ? cf->incap * 2 : CRYPTO_OUT_CHUNK;
+      unsigned char *q;
+      while (cap < cf->inlen + n) cap *= 2;
+      q = realloc(cf->in, cap);
+      if (q == NULL) return 0;
+      cf->in = q;
+      cf->incap = cap;
+      }
+   memcpy(cf->in + cf->inlen, p, n);
+   cf->inlen += n;
+   return 1;
+}
+
+/*
+ * detect_and_load -- identify PEM/DER material from content.
+ * want is a CRYPTO_ROLE_* mask from type=, or 0 for everything.
+ */
+static int detect_and_load(struct CryptoFile *cf, BIO *bio, int want,
+                           char *password)
+{
+   int found = 0;
+   char first[32];
+   int n;
+
+   n = BIO_gets(bio, first, sizeof(first));
+   (void)BIO_reset(bio);
+
+   if (n > 0 && strncmp(first, "-----BEGIN", 10) == 0) {
+      X509 *x;
+      EVP_PKEY *k;
+
+      for (;;) {
+         long pos_before = BIO_tell(bio);
+
+         if ((!want || (want & CRYPTO_ROLE_CERT)) &&
+             (x = PEM_read_bio_X509(bio, NULL, NULL, NULL)) != NULL) {
+            if (cf->cert == NULL) {
+               cf->cert = x;
+               cf->roles |= CRYPTO_ROLE_CERT;
+               }
+            else {
+               if (cf->chain == NULL) cf->chain = sk_X509_new_null();
+               sk_X509_push(cf->chain, x);
+               }
+            found = 1;
+            continue;
+            }
+         (void)BIO_seek(bio, pos_before);
+
+         if ((!want || (want & (CRYPTO_ROLE_PRIVKEY|CRYPTO_ROLE_PUBKEY))) &&
+             (k = PEM_read_bio_PrivateKey(bio, NULL, NULL, password)) != NULL) {
+            if (cf->pkey) EVP_PKEY_free(cf->pkey);
+            cf->pkey = k;
+            cf->roles |= CRYPTO_ROLE_PRIVKEY | CRYPTO_ROLE_PUBKEY;
+            found = 1;
+            continue;
+            }
+         (void)BIO_seek(bio, pos_before);
+
+         if ((!want || (want & CRYPTO_ROLE_PUBKEY)) &&
+             (k = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL)) != NULL) {
+            if (cf->pkey == NULL) {
+               cf->pkey = k;
+               cf->roles |= CRYPTO_ROLE_PUBKEY;
+               }
+            else EVP_PKEY_free(k);
+            found = 1;
+            continue;
+            }
+         (void)BIO_seek(bio, pos_before);
+         break;
+         }
+      }
+   else {
+      X509 *x;
+      EVP_PKEY *k;
+
+      if ((!want || (want & CRYPTO_ROLE_CERT)) &&
+          (x = d2i_X509_bio(bio, NULL)) != NULL) {
+         cf->cert = x;
+         cf->roles |= CRYPTO_ROLE_CERT;
+         found = 1;
+         }
+      else {
+         (void)BIO_reset(bio);
+         if ((!want || (want & CRYPTO_ROLE_PRIVKEY)) &&
+             (k = d2i_PrivateKey_bio(bio, NULL)) != NULL) {
+            cf->pkey = k;
+            cf->roles |= CRYPTO_ROLE_PRIVKEY | CRYPTO_ROLE_PUBKEY;
+            found = 1;
+            }
+         else {
+            (void)BIO_reset(bio);
+            if ((!want || (want & CRYPTO_ROLE_PUBKEY)) &&
+                (k = d2i_PUBKEY_bio(bio, NULL)) != NULL) {
+               cf->pkey = k;
+               cf->roles |= CRYPTO_ROLE_PUBKEY;
+               found = 1;
+               }
+            }
+         }
+      }
+
+   ERR_clear_error();
+   return found;
+}
+
+static void load_symkey_bytes(struct CryptoFile *cf, unsigned char *p, int n)
+{
+   cf->symkey = malloc(n);
+   if (cf->symkey == NULL) return;
+   memcpy(cf->symkey, p, n);
+   cf->symkeylen = n;
+   cf->roles |= CRYPTO_ROLE_SYMKEY;
+}
+
+/*
+ * Reject keys whose length does not match a fixed-length cipher.
+ * OpenSSL's EncryptInit/DecryptInit read key_len bytes from the pointer
+ * and do not take an explicit length, so a short allocation would OOB.
+ */
+static int check_symkey_len(struct CryptoFile *cf)
+{
+   int need;
+
+   if (cf->cipher == NULL)
+      cf->cipher = EVP_get_cipherbyname(CRYPTO_DEF_CIPHER);
+   if (cf->cipher == NULL)
+      return E_CryptoAlg;
+   need = EVP_CIPHER_key_length(cf->cipher);
+   if (need > 0 && cf->symkeylen != need)
+      return E_CryptoAlg;
+   return 0;
+}
+
+/*
+ * crypto_open_material -- open(target, "e") / open(target, "er")
+ */
+struct CryptoFile *crypto_open_material(dptr target, int israw, dptr attr,
+                                        int nattr, int *rc)
+{
+   struct CryptoFile *cf;
+   BIO *bio = NULL;
+   tended char *password = NULL;
+   tended char *s;
+   tended struct descrip tstr;
+   int want = 0;
+   int a;
+   word len;
+
+   cf = calloc(1, sizeof(struct CryptoFile));
+   if (cf == NULL) { *rc = E_CryptoLoad; return NULL; }
+   cf->op = CRYPTO_OP_MATERIAL;
+
+   for (a = 0; a < nattr; a++) {
+      tended char *tmps, *val;
+      if (is:null(attr[a])) continue;
+      if (is:file(attr[a])) continue;
+      if (!cnv:C_string(attr[a], tmps)) continue;
+      Protect(tmps = alcstr(tmps, (word)strlen(tmps)+1), fatalerr(0,NULL));
+      val = strchr(tmps, '=');
+      if (val == NULL) continue;
+      *val++ = '\0';
+      if (strcmp(tmps, "keypass") == 0 || strcmp(tmps, "password") == 0)
+         password = val;
+      else if (strcmp(tmps, "type") == 0) {
+         if      (strcmp(val, "cert")   == 0) want = CRYPTO_ROLE_CERT;
+         else if (strcmp(val, "key")    == 0) want = CRYPTO_ROLE_PRIVKEY;
+         else if (strcmp(val, "pubkey") == 0) want = CRYPTO_ROLE_PUBKEY;
+         else { cryptofile_free(cf); *rc = E_CryptoLoad; return NULL; }
+         }
+      }
+
+   if (!cnv:string(*target, tstr)) {
+      cryptofile_free(cf); *rc = E_CryptoLoad; return NULL;
+      }
+   s = StrLoc(tstr);
+   len = StrLen(tstr);
+
+   if (israw) {
+      bio = BIO_new_mem_buf(s, (int)len);
+      if (bio == NULL) { cryptofile_free(cf); *rc = E_CryptoLoad; return NULL; }
+      }
+   else {
+      char pathbuf[MaxPath];
+      if (len >= MaxPath) { cryptofile_free(cf); *rc = E_CryptoLoad; return NULL; }
+      memcpy(pathbuf, s, len);
+      pathbuf[len] = '\0';
+      bio = BIO_new_file(pathbuf, "rb");
+      if (bio == NULL) { cryptofile_free(cf); *rc = E_CryptoLoad; return NULL; }
+      }
+
+   if (!detect_and_load(cf, bio, want, password)) {
+      if (want) {
+         BIO_free(bio); cryptofile_free(cf); *rc = E_CryptoLoad; return NULL;
+         }
+      if (israw) {
+         load_symkey_bytes(cf, (unsigned char *)s, (int)len);
+         if (cf->symkey == NULL) {
+            BIO_free(bio); cryptofile_free(cf); *rc = E_CryptoLoad; return NULL;
+            }
+         }
+      else {
+         unsigned char *buf = NULL;
+         int n, cap = 0, total = 0, got;
+         (void)BIO_reset(bio);
+         for (;;) {
+            if (total + 8192 > cap) {
+               cap = cap ? cap * 2 : 8192;
+               buf = realloc(buf, cap);
+               if (buf == NULL) {
+                  BIO_free(bio); cryptofile_free(cf); *rc = E_CryptoLoad;
+                  return NULL;
+                  }
+               }
+            got = BIO_read(bio, buf + total, 8192);
+            if (got <= 0) break;
+            total += got;
+            }
+         if (total <= 0) {
+            free(buf); BIO_free(bio); cryptofile_free(cf); *rc = E_CryptoLoad;
+            return NULL;
+            }
+         load_symkey_bytes(cf, buf, total);
+         free(buf);
+         if (cf->symkey == NULL) {
+            BIO_free(bio); cryptofile_free(cf); *rc = E_CryptoLoad; return NULL;
+            }
+         }
+      }
+
+   BIO_free(bio);
+   return cf;
+}
+
+int crypto_merge(struct CryptoFile *cf, char *name, char *val)
+{
+   BIO *bio;
+   int want, ok;
+
+   if (cf->op != CRYPTO_OP_MATERIAL) return E_CryptoState;
+
+   if      (strcmp(name, "key")  == 0) want = CRYPTO_ROLE_PRIVKEY;
+   else if (strcmp(name, "cert") == 0) want = CRYPTO_ROLE_CERT;
+   else return E_CryptoState;
+
+   bio = BIO_new_file(val, "rb");
+   if (bio == NULL) return E_CryptoLoad;
+   ok = detect_and_load(cf, bio, want, NULL);
+   BIO_free(bio);
+   return ok ? 0 : E_CryptoLoad;
+}
+
+/*
+ * crypto_borrow -- operation handle takes material by role from src.
+ */
+int crypto_borrow(struct CryptoFile *op, struct CryptoFile *src)
+{
+   int need;
+
+   switch (op->op) {
+      case CRYPTO_OP_SIGN:    need = CRYPTO_ROLE_PRIVKEY; break;
+      case CRYPTO_OP_VERIFY:  need = CRYPTO_ROLE_PUBKEY | CRYPTO_ROLE_CERT; break;
+      case CRYPTO_OP_HMAC:
+      case CRYPTO_OP_ENCRYPT:
+      case CRYPTO_OP_DECRYPT: need = CRYPTO_ROLE_SYMKEY; break;
+      default:                need = 0; break;
+      }
+
+   if (need && !(src->roles & need)) return E_CryptoRole;
+
+   if (need & (CRYPTO_ROLE_PRIVKEY|CRYPTO_ROLE_PUBKEY|CRYPTO_ROLE_CERT)) {
+      if ((need & (CRYPTO_ROLE_PRIVKEY|CRYPTO_ROLE_PUBKEY)) &&
+          (src->roles & (CRYPTO_ROLE_PRIVKEY|CRYPTO_ROLE_PUBKEY|CRYPTO_ROLE_CERT))) {
+         if (op->pkey != NULL) return E_CryptoDupRole;
+         if (src->pkey) {
+            if (!EVP_PKEY_up_ref(src->pkey)) return E_CryptoLoad;
+            op->pkey = src->pkey;
+            }
+         else if (src->cert) {
+            op->pkey = X509_get_pubkey(src->cert);
+            if (op->pkey == NULL) return E_CryptoRole;
+            }
+         }
+      }
+   if (need & CRYPTO_ROLE_SYMKEY) {
+      if (op->symkey != NULL) return E_CryptoDupRole;
+      op->symkey = malloc(src->symkeylen);
+      if (op->symkey == NULL) return E_CryptoLoad;
+      memcpy(op->symkey, src->symkey, src->symkeylen);
+      op->symkeylen = src->symkeylen;
+      }
+   return 0;
+}
+
+/*
+ * crypto_setattr -- idle-window reconfiguration.  vlen is the value
+ * length (needed for binary sig=/iv=/state=); for text attributes it
+ * may be strlen(val).
+ */
+/*
+ * Load key=path into cf.  Content detection: PEM/DER asymmetric, else
+ * raw symmetric bytes (UTR 27 §4).
+ */
+static int crypto_load_key_path(struct CryptoFile *cf, char *path, word pathlen)
+{
+   struct CryptoFile *m;
+   int rc;
+   tended struct descrip td;
+   char pathbuf[MaxPath];
+
+   if (pathlen <= 0 || pathlen >= MaxPath) return E_CryptoLoad;
+   memcpy(pathbuf, path, pathlen);
+   pathbuf[pathlen] = '\0';
+   StrLoc(td) = pathbuf;
+   StrLen(td) = pathlen;
+   m = crypto_open_material(&td, 0, NULL, 0, &rc);
+   if (m == NULL) return rc ? rc : E_CryptoLoad;
+
+   /*
+    * Copy whatever roles the file offered that we still lack.  Role
+    * checks at first I/O reject mismatches (e.g. PEM key for encrypt).
+    */
+   if ((m->roles & CRYPTO_ROLE_SYMKEY) && cf->symkey == NULL) {
+      cf->symkey = malloc(m->symkeylen);
+      if (cf->symkey == NULL) { cryptofile_free(m); return E_CryptoLoad; }
+      memcpy(cf->symkey, m->symkey, m->symkeylen);
+      cf->symkeylen = m->symkeylen;
+      cf->roles |= CRYPTO_ROLE_SYMKEY;
+      }
+   if ((m->roles & (CRYPTO_ROLE_PRIVKEY|CRYPTO_ROLE_PUBKEY)) &&
+       cf->pkey == NULL && m->pkey != NULL) {
+      if (!EVP_PKEY_up_ref(m->pkey)) { cryptofile_free(m); return E_CryptoLoad; }
+      cf->pkey = m->pkey;
+      cf->roles |= m->roles & (CRYPTO_ROLE_PRIVKEY|CRYPTO_ROLE_PUBKEY);
+      }
+   if ((m->roles & CRYPTO_ROLE_CERT) && cf->cert == NULL && m->cert != NULL) {
+      cf->cert = m->cert;
+      m->cert = NULL;           /* transfer ownership */
+      cf->roles |= CRYPTO_ROLE_CERT;
+      }
+   cryptofile_free(m);
+   return 0;
+}
+
+int crypto_setattr(struct CryptoFile *cf, char *name, char *val, word vlen)
+{
+   if (cf->initialized) return E_CryptoState;
+
+   if (strcmp(name, "op") == 0) {
+      if      (strcmp(val, "hash")    == 0) cf->op = CRYPTO_OP_HASH;
+      else if (strcmp(val, "hmac")    == 0) cf->op = CRYPTO_OP_HMAC;
+      else if (strcmp(val, "sign")    == 0) cf->op = CRYPTO_OP_SIGN;
+      else if (strcmp(val, "verify")  == 0) cf->op = CRYPTO_OP_VERIFY;
+      else if (strcmp(val, "encrypt") == 0) cf->op = CRYPTO_OP_ENCRYPT;
+      else if (strcmp(val, "decrypt") == 0) cf->op = CRYPTO_OP_DECRYPT;
+      else return E_CryptoState;
+      return 0;
+      }
+   if (strcmp(name, "alg") == 0) {
+      const EVP_MD *md = EVP_get_digestbyname(val);
+      if (md == NULL) return E_CryptoAlg;
+      cf->md = md;
+      return 0;
+      }
+   if (strcmp(name, "cipher") == 0) {
+      const EVP_CIPHER *c = EVP_get_cipherbyname(val);
+      if (c == NULL) return E_CryptoAlg;
+      cf->cipher = c;
+      return 0;
+      }
+   if (strcmp(name, "iv") == 0) {
+      free(cf->iv);
+      cf->ivlen = (int)vlen;
+      cf->iv = malloc(cf->ivlen ? cf->ivlen : 1);
+      if (cf->iv == NULL) return E_CryptoLoad;
+      if (vlen > 0) memcpy(cf->iv, val, vlen);
+      return 0;
+      }
+   if (strcmp(name, "sig") == 0) {
+      free(cf->sig);
+      cf->siglen = (int)vlen;
+      cf->sig = malloc(cf->siglen ? cf->siglen : 1);
+      if (cf->sig == NULL) return E_CryptoLoad;
+      if (vlen > 0) memcpy(cf->sig, val, vlen);
+      return 0;
+      }
+   if (strcmp(name, "key") == 0)
+      return crypto_load_key_path(cf, val, vlen);
+   if (strcmp(name, "state") == 0) {
+      /* Digest checkpoint unavailable: OpenSSL 3 dropped MD_CTX export. */
+      (void)val; (void)vlen;
+      return E_CryptoState;
+      }
+   return E_CryptoState;
+}
+
+static int lazy_init(struct CryptoFile *cf)
+{
+   if (cf->initialized) return 0;
+
+   if (cf->md == NULL)     cf->md     = EVP_get_digestbyname(CRYPTO_DEF_MD);
+   if (cf->cipher == NULL) cf->cipher = EVP_get_cipherbyname(CRYPTO_DEF_CIPHER);
+
+   switch (cf->op) {
+      case CRYPTO_OP_HASH:
+         cf->mdctx = EVP_MD_CTX_new();
+         if (cf->mdctx == NULL) return E_CryptoLoad;
+         if (!EVP_DigestInit_ex(cf->mdctx, cf->md, NULL)) return E_CryptoAlg;
+         break;
+
+      case CRYPTO_OP_HMAC: {
+         EVP_PKEY *mac;
+         if (cf->symkey == NULL) return E_CryptoRole;
+         mac = EVP_PKEY_new_mac_key(EVP_PKEY_HMAC, NULL,
+                                    cf->symkey, cf->symkeylen);
+         if (mac == NULL) return E_CryptoRole;
+         cf->mdctx = EVP_MD_CTX_new();
+         if (cf->mdctx == NULL) { EVP_PKEY_free(mac); return E_CryptoLoad; }
+         if (!EVP_DigestSignInit(cf->mdctx, NULL, cf->md, NULL, mac)) {
+            EVP_PKEY_free(mac); return E_CryptoAlg;
+            }
+         EVP_PKEY_free(mac);
+         break;
+         }
+
+      case CRYPTO_OP_SIGN:
+         if (cf->pkey == NULL) return E_CryptoRole;
+         cf->mdctx = EVP_MD_CTX_new();
+         if (cf->mdctx == NULL) return E_CryptoLoad;
+         if (!EVP_DigestSignInit(cf->mdctx, NULL, cf->md, NULL, cf->pkey))
+            return E_CryptoAlg;
+         break;
+
+      case CRYPTO_OP_VERIFY:
+         if (cf->pkey == NULL) return E_CryptoRole;
+         cf->mdctx = EVP_MD_CTX_new();
+         if (cf->mdctx == NULL) return E_CryptoLoad;
+         if (!EVP_DigestVerifyInit(cf->mdctx, NULL, cf->md, NULL, cf->pkey))
+            return E_CryptoAlg;
+         break;
+
+      case CRYPTO_OP_ENCRYPT: {
+         unsigned char ivbuf[EVP_MAX_IV_LENGTH];
+         int ivlen;
+         int krc;
+         if (cf->symkey == NULL) return E_CryptoRole;
+         if ((krc = check_symkey_len(cf)) != 0) return krc;
+         out_reset(cf);                 /* fresh output per operation */
+         cf->cctx = EVP_CIPHER_CTX_new();
+         if (cf->cctx == NULL) return E_CryptoLoad;
+         ivlen = EVP_CIPHER_iv_length(cf->cipher);
+         if (cf->iv != NULL) {
+            if (cf->ivlen != ivlen) return E_CryptoAlg;
+            memcpy(ivbuf, cf->iv, ivlen);
+            }
+         else {
+            if (ivlen > 0 && RAND_bytes(ivbuf, ivlen) != 1)
+               return E_CryptoLoad;
+            }
+         if (!EVP_EncryptInit_ex(cf->cctx, cf->cipher, NULL,
+                                 cf->symkey, ivlen ? ivbuf : NULL))
+            return E_CryptoAlg;
+         if (cf->iv == NULL && ivlen > 0)
+            if (!out_append(cf, ivbuf, ivlen)) return E_CryptoLoad;
+         break;
+         }
+
+      case CRYPTO_OP_DECRYPT:
+         if (cf->symkey == NULL) return E_CryptoRole;
+         /* ciphertext buffered in cf->in until read(); no ctx yet */
+         break;
+
+      default:
+         return E_CryptoState;
+      }
+
+   cf->initialized = 1;
+   return 0;
+}
+
+static void crypto_reset_ctx(struct CryptoFile *cf);
+int crypto_reads(struct CryptoFile *cf, word maxlen, char **bufp, word *lenp);
+
+/*
+ * Flush cf->out to the underlying file (we+encrypt IV / residual).
+ */
+static int xform_flush_out(struct CryptoFile *cf)
+{
+   size_t n;
+   if (cf->fp == NULL || cf->outlen <= 0) return 0;
+   n = fwrite(cf->out, 1, (size_t)cf->outlen, cf->fp);
+   if (n != (size_t)cf->outlen) return E_CryptoState;
+   out_reset(cf);
+   return 0;
+}
+
+static int xform_encrypt_final(struct CryptoFile *cf)
+{
+   unsigned char tmp[EVP_MAX_BLOCK_LENGTH];
+   int outl = 0;
+
+   if (!cf->initialized) return 0;
+   if (!EVP_EncryptFinal_ex(cf->cctx, tmp, &outl)) return E_CryptoState;
+   if (outl > 0 && fwrite(tmp, 1, (size_t)outl, cf->fp) != (size_t)outl)
+      return E_CryptoState;
+   if (EVP_CIPHER_flags(cf->cipher) & EVP_CIPH_FLAG_AEAD_CIPHER) {
+      unsigned char tag[CRYPTO_AEAD_TAGLEN];
+      if (!EVP_CIPHER_CTX_ctrl(cf->cctx, EVP_CTRL_AEAD_GET_TAG,
+                               CRYPTO_AEAD_TAGLEN, tag))
+         return E_CryptoState;
+      if (fwrite(tag, 1, CRYPTO_AEAD_TAGLEN, cf->fp) != CRYPTO_AEAD_TAGLEN)
+         return E_CryptoState;
+      }
+   cf->sealed = 1;
+   crypto_reset_ctx(cf);
+   return 0;
+}
+
+static int xform_decrypt_init(struct CryptoFile *cf)
+{
+   unsigned char ivbuf[EVP_MAX_IV_LENGTH];
+   int ivlen;
+   int krc;
+
+   if (cf->cctx != NULL) return 0;
+   if (cf->symkey == NULL) return E_CryptoRole;
+   if (cf->cipher == NULL)
+      cf->cipher = EVP_get_cipherbyname(CRYPTO_DEF_CIPHER);
+   if (cf->cipher == NULL) return E_CryptoAlg;
+   if ((krc = check_symkey_len(cf)) != 0) return krc;
+
+   ivlen = EVP_CIPHER_iv_length(cf->cipher);
+   if (cf->iv != NULL) {
+      if (cf->ivlen != ivlen) return E_CryptoAlg;
+      memcpy(ivbuf, cf->iv, ivlen);
+      }
+   else if (ivlen > 0) {
+      if (fread(ivbuf, 1, (size_t)ivlen, cf->fp) != (size_t)ivlen)
+         return E_CryptoState;
+      }
+
+   cf->cctx = EVP_CIPHER_CTX_new();
+   if (cf->cctx == NULL) return E_CryptoLoad;
+   if (!EVP_DecryptInit_ex(cf->cctx, cf->cipher, NULL,
+                           cf->symkey, ivlen ? ivbuf : NULL))
+      return E_CryptoAlg;
+   cf->iv_ready = 1;
+   cf->initialized = 1;
+   return 0;
+}
+
+/*
+ * Feed ciphertext bytes; for AEAD hold back the trailing tag until EOF.
+ */
+static int xform_decrypt_feed(struct CryptoFile *cf, unsigned char *data, int n)
+{
+   int aead;
+   unsigned char tmp[CRYPTO_OUT_CHUNK + EVP_MAX_BLOCK_LENGTH];
+   int outl;
+   unsigned char *combo = NULL;
+   int combalen;
+   int commit;
+
+   if (n <= 0) return 0;
+   aead = EVP_CIPHER_flags(cf->cipher) & EVP_CIPH_FLAG_AEAD_CIPHER;
+   if (!aead) {
+      if (!EVP_DecryptUpdate(cf->cctx, tmp, &outl, data, n))
+         return E_CryptoState;
+      if (!out_append(cf, tmp, outl)) return E_CryptoLoad;
+      return 0;
+      }
+
+   combalen = cf->taghold_len + n;
+   combo = malloc(combalen);
+   if (combo == NULL) return E_CryptoLoad;
+   if (cf->taghold_len > 0)
+      memcpy(combo, cf->taghold, cf->taghold_len);
+   memcpy(combo + cf->taghold_len, data, n);
+
+   if (combalen <= CRYPTO_AEAD_TAGLEN) {
+      memcpy(cf->taghold, combo, combalen);
+      cf->taghold_len = combalen;
+      free(combo);
+      return 0;
+      }
+
+   commit = combalen - CRYPTO_AEAD_TAGLEN;
+   memcpy(cf->taghold, combo + commit, CRYPTO_AEAD_TAGLEN);
+   cf->taghold_len = CRYPTO_AEAD_TAGLEN;
+
+   {
+      int off = 0;
+      while (off < commit) {
+         int chunk = commit - off;
+         if (chunk > CRYPTO_OUT_CHUNK) chunk = CRYPTO_OUT_CHUNK;
+         if (!EVP_DecryptUpdate(cf->cctx, tmp, &outl, combo + off, chunk)) {
+            free(combo); return E_CryptoState;
+            }
+         if (!out_append(cf, tmp, outl)) { free(combo); return E_CryptoLoad; }
+         off += chunk;
+         }
+      }
+   free(combo);
+   return 0;
+}
+
+static int xform_decrypt_finish(struct CryptoFile *cf)
+{
+   unsigned char tmp[EVP_MAX_BLOCK_LENGTH];
+   int outl = 0;
+   int aead;
+
+   aead = EVP_CIPHER_flags(cf->cipher) & EVP_CIPH_FLAG_AEAD_CIPHER;
+   if (aead) {
+      if (cf->taghold_len != CRYPTO_AEAD_TAGLEN) return E_CryptoAuth;
+      if (!EVP_CIPHER_CTX_ctrl(cf->cctx, EVP_CTRL_AEAD_SET_TAG,
+                               CRYPTO_AEAD_TAGLEN, cf->taghold))
+         return E_CryptoState;
+      }
+   if (EVP_DecryptFinal_ex(cf->cctx, tmp, &outl) <= 0)
+      return E_CryptoAuth;
+   if (!out_append(cf, tmp, outl)) return E_CryptoLoad;
+   cf->sealed = 1;
+   cf->taghold_len = 0;
+   return 0;
+}
+
+static int xform_hash_file(struct CryptoFile *cf)
+{
+   unsigned char buf[CRYPTO_OUT_CHUNK];
+   unsigned char digest[EVP_MAX_MD_SIZE];
+   unsigned int dlen = 0;
+   size_t n;
+   int rc;
+
+   if (cf->sealed) return E_CryptoState;
+   if ((rc = lazy_init(cf)) != 0) return rc;
+   while ((n = fread(buf, 1, sizeof(buf), cf->fp)) > 0) {
+      if (!EVP_DigestUpdate(cf->mdctx, buf, n)) return E_CryptoState;
+      }
+   if (ferror(cf->fp)) return E_CryptoState;
+   if (!EVP_DigestFinal_ex(cf->mdctx, digest, &dlen)) return E_CryptoState;
+   out_reset(cf);
+   if (!out_append(cf, digest, (int)dlen)) return E_CryptoLoad;
+   cf->sealed = 1;
+   crypto_reset_ctx(cf);
+   return 0;
+}
+
+/*
+ * Deliver up to maxlen bytes from cf->out; advance out_off so the
+ * caller can alcstr from *bufp before any later compaction.
+ */
+static void out_deliver(struct CryptoFile *cf, word maxlen,
+                        char **bufp, word *lenp)
+{
+   word avail = cf->outlen - cf->out_off;
+   word n = avail;
+   if (maxlen >= 0 && n > maxlen) n = maxlen;
+   *bufp = (char *)(cf->out + cf->out_off);
+   *lenp = n;
+   cf->out_off += (int)n;
+   if (cf->out_off >= cf->outlen) {
+      cf->out_off = 0;
+      cf->outlen = 0;
+      }
+}
+
+int crypto_write(struct CryptoFile *cf, char *buf, word len)
+{
+   int rc;
+
+   if (cf->op == CRYPTO_OP_MATERIAL) return E_CryptoState;
+   if (cf->xform) {
+      if (cf->op != CRYPTO_OP_ENCRYPT) return E_CryptoState;
+      if (cf->sealed) return E_CryptoState;
+      if ((rc = lazy_init(cf)) != 0) return rc;
+      if (!cf->iv_ready) {
+         if ((rc = xform_flush_out(cf)) != 0) return rc; /* auto-IV */
+         cf->iv_ready = 1;
+         }
+      {
+         unsigned char tmp[CRYPTO_OUT_CHUNK + EVP_MAX_BLOCK_LENGTH];
+         int outl;
+         word off = 0;
+         while (off < len) {
+            word n = (len - off > CRYPTO_OUT_CHUNK) ? CRYPTO_OUT_CHUNK
+                                                    : len - off;
+            if (!EVP_EncryptUpdate(cf->cctx, tmp, &outl,
+                                   (unsigned char *)buf + off, (int)n))
+               return E_CryptoState;
+            if (outl > 0 &&
+                fwrite(tmp, 1, (size_t)outl, cf->fp) != (size_t)outl)
+               return E_CryptoState;
+            off += n;
+            }
+         }
+      return 0;
+      }
+
+   if (cf->op == CRYPTO_OP_DECRYPT) {
+      if ((rc = lazy_init(cf)) != 0) return rc;
+      if (!in_append(cf, (unsigned char *)buf, (int)len))
+         return E_CryptoLoad;
+      return 0;
+      }
+
+   if ((rc = lazy_init(cf)) != 0) return rc;
+
+   switch (cf->op) {
+      case CRYPTO_OP_HASH:
+         if (!EVP_DigestUpdate(cf->mdctx, buf, (size_t)len))
+            return E_CryptoState;
+         break;
+      case CRYPTO_OP_HMAC:
+      case CRYPTO_OP_SIGN:
+         if (!EVP_DigestSignUpdate(cf->mdctx, buf, (size_t)len))
+            return E_CryptoState;
+         break;
+      case CRYPTO_OP_VERIFY:
+         if (!EVP_DigestVerifyUpdate(cf->mdctx, buf, (size_t)len))
+            return E_CryptoState;
+         break;
+      case CRYPTO_OP_ENCRYPT: {
+         unsigned char tmp[CRYPTO_OUT_CHUNK + EVP_MAX_BLOCK_LENGTH];
+         int outl;
+         word off = 0;
+         while (off < len) {
+            word n = (len - off > CRYPTO_OUT_CHUNK) ? CRYPTO_OUT_CHUNK
+                                                    : len - off;
+            if (!EVP_EncryptUpdate(cf->cctx, tmp, &outl,
+                                   (unsigned char *)buf + off, (int)n))
+               return E_CryptoState;
+            if (!out_append(cf, tmp, outl)) return E_CryptoLoad;
+            off += n;
+            }
+         break;
+         }
+      }
+   return 0;
+}
+
+static void crypto_reset_ctx(struct CryptoFile *cf)
+{
+   if (cf->mdctx) { EVP_MD_CTX_free(cf->mdctx); cf->mdctx = NULL; }
+   if (cf->cctx)  { EVP_CIPHER_CTX_free(cf->cctx); cf->cctx = NULL; }
+   if (cf->pkctx) { EVP_PKEY_CTX_free(cf->pkctx); cf->pkctx = NULL; }
+   cf->initialized = 0;
+   cf->inlen = 0;
+}
+
+int crypto_read(struct CryptoFile *cf, char **bufp, word *lenp)
+{
+   unsigned char digest[EVP_MAX_MD_SIZE];
+   unsigned int dlen = 0;
+   int rc = 0;
+
+   if (cf->op == CRYPTO_OP_MATERIAL) return E_CryptoState;
+
+   if (cf->xform) {
+      if (cf->op == CRYPTO_OP_HASH) {
+         if ((rc = xform_hash_file(cf)) != 0) return rc;
+         *bufp = (char *)cf->out;
+         *lenp = cf->outlen;
+         cf->outlen = 0;
+         return 0;
+         }
+      if (cf->op == CRYPTO_OP_DECRYPT) {
+         /*
+          * Drain the rest of the file into plaintext (streaming under
+          * the hood).  Auth is checked when EOF is reached.
+          */
+         return crypto_reads(cf, -1, bufp, lenp);
+         }
+      return E_CryptoState;
+      }
+
+   if (!cf->initialized) return E_CryptoState;
+
+   switch (cf->op) {
+      case CRYPTO_OP_HASH:
+         if (!EVP_DigestFinal_ex(cf->mdctx, digest, &dlen)) rc = E_CryptoState;
+         else {
+            out_reset(cf);
+            if (!out_append(cf, digest, dlen)) rc = E_CryptoLoad;
+            }
+         break;
+
+      case CRYPTO_OP_HMAC:
+      case CRYPTO_OP_SIGN: {
+         size_t siglen = 0;
+         unsigned char *sig;
+         if (!EVP_DigestSignFinal(cf->mdctx, NULL, &siglen)) {
+            rc = E_CryptoState; break;
+            }
+         sig = malloc(siglen);
+         if (sig == NULL) { rc = E_CryptoLoad; break; }
+         if (!EVP_DigestSignFinal(cf->mdctx, sig, &siglen)) {
+            free(sig); rc = E_CryptoState; break;
+            }
+         out_reset(cf);
+         if (!out_append(cf, sig, (int)siglen)) rc = E_CryptoLoad;
+         free(sig);
+         break;
+         }
+
+      case CRYPTO_OP_VERIFY: {
+         int v;
+         if (cf->sig == NULL) { rc = E_CryptoState; break; }
+         v = EVP_DigestVerifyFinal(cf->mdctx, cf->sig, cf->siglen);
+         if (v != 1) rc = E_CryptoVerify;
+         else {
+            out_reset(cf);
+            out_append(cf, (unsigned char *)"1", 1);
+            }
+         break;
+         }
+
+      case CRYPTO_OP_ENCRYPT: {
+         unsigned char tmp[EVP_MAX_BLOCK_LENGTH];
+         int outl = 0;
+         if (!EVP_EncryptFinal_ex(cf->cctx, tmp, &outl)) {
+            rc = E_CryptoState; break;
+            }
+         if (!out_append(cf, tmp, outl)) { rc = E_CryptoLoad; break; }
+         if (EVP_CIPHER_flags(cf->cipher) & EVP_CIPH_FLAG_AEAD_CIPHER) {
+            unsigned char tag[CRYPTO_AEAD_TAGLEN];
+            if (!EVP_CIPHER_CTX_ctrl(cf->cctx, EVP_CTRL_AEAD_GET_TAG,
+                                     CRYPTO_AEAD_TAGLEN, tag)) {
+               rc = E_CryptoState; break;
+               }
+            if (!out_append(cf, tag, CRYPTO_AEAD_TAGLEN)) rc = E_CryptoLoad;
+            }
+         break;
+         }
+
+      case CRYPTO_OP_DECRYPT: {
+         unsigned char *ct = cf->in;
+         int ctlen = cf->inlen;
+         int ivlen;
+         unsigned char *tag = NULL;
+         unsigned char tmp[CRYPTO_OUT_CHUNK + EVP_MAX_BLOCK_LENGTH];
+         int outl;
+         word off;
+
+         if (cf->cipher == NULL)
+            cf->cipher = EVP_get_cipherbyname(CRYPTO_DEF_CIPHER);
+         ivlen = EVP_CIPHER_iv_length(cf->cipher);
+
+         if (cf->iv != NULL) {
+            if (cf->ivlen != ivlen) { rc = E_CryptoAlg; break; }
+            }
+         else {
+            if (ctlen < ivlen) { rc = E_CryptoState; break; }
+            }
+
+         if (EVP_CIPHER_flags(cf->cipher) & EVP_CIPH_FLAG_AEAD_CIPHER) {
+            /*
+             * Auto-IV framing prefixes the IV; explicit iv= does not.
+             * Either way the AEAD tag is the final CRYPTO_AEAD_TAGLEN bytes.
+             */
+            {
+               int minlen = CRYPTO_AEAD_TAGLEN;
+               if (cf->iv == NULL)
+                  minlen += ivlen;
+               if (ctlen < minlen) {
+                  rc = E_CryptoAuth; break;
+                  }
+               }
+            tag = ct + ctlen - CRYPTO_AEAD_TAGLEN;
+            ctlen -= CRYPTO_AEAD_TAGLEN;
+            }
+
+         cf->cctx = EVP_CIPHER_CTX_new();
+         if (cf->cctx == NULL) { rc = E_CryptoLoad; break; }
+         if ((rc = check_symkey_len(cf)) != 0) break;
+         if (cf->iv != NULL) {
+            if (!EVP_DecryptInit_ex(cf->cctx, cf->cipher, NULL,
+                                    cf->symkey, cf->iv)) {
+               rc = E_CryptoAlg; break;
+               }
+            }
+         else {
+            if (!EVP_DecryptInit_ex(cf->cctx, cf->cipher, NULL,
+                                    cf->symkey, ct)) {
+               rc = E_CryptoAlg; break;
+               }
+            ct += ivlen;
+            ctlen -= ivlen;
+            }
+
+         if (tag != NULL) {
+            if (!EVP_CIPHER_CTX_ctrl(cf->cctx, EVP_CTRL_AEAD_SET_TAG,
+                                     CRYPTO_AEAD_TAGLEN, tag)) {
+               rc = E_CryptoState; break;
+               }
+            }
+
+         out_reset(cf);
+         off = 0;
+         while (off < (word)ctlen) {
+            word n = ((word)ctlen - off > CRYPTO_OUT_CHUNK)
+                     ? CRYPTO_OUT_CHUNK : (word)ctlen - off;
+            if (!EVP_DecryptUpdate(cf->cctx, tmp, &outl, ct + off, (int)n)) {
+               rc = E_CryptoState; break;
+               }
+            if (!out_append(cf, tmp, outl)) { rc = E_CryptoLoad; break; }
+            off += n;
+            }
+         if (rc != 0) break;
+         if (EVP_DecryptFinal_ex(cf->cctx, tmp, &outl) <= 0) {
+            rc = E_CryptoAuth; break;
+            }
+         if (!out_append(cf, tmp, outl)) rc = E_CryptoLoad;
+         break;
+         }
+      }
+
+   if (rc != 0) {
+      crypto_reset_ctx(cf);
+      out_reset(cf);
+      return rc;
+      }
+
+   *bufp = (char *)cf->out;
+   *lenp = cf->outlen;
+   crypto_reset_ctx(cf);
+   /*
+    * Leave the bytes in out[] for the caller to copy (alcstr), but mark
+    * the buffer empty so the next operation does not append to them.
+    */
+   cf->outlen = 0;
+   return 0;
+}
+
+/*
+ * crypto_reads -- bounded read for file-transform decrypt (and hash).
+ * maxlen < 0 means "drain the rest".  Returns 0 with *lenp==0 at EOF.
+ */
+int crypto_reads(struct CryptoFile *cf, word maxlen, char **bufp, word *lenp)
+{
+   int rc;
+   unsigned char buf[CRYPTO_OUT_CHUNK];
+   size_t n;
+
+   *bufp = NULL;
+   *lenp = 0;
+   if (!cf->xform) return E_CryptoState;
+
+   if (cf->op == CRYPTO_OP_HASH) {
+      if (!cf->sealed) {
+         if ((rc = xform_hash_file(cf)) != 0) return rc;
+         }
+      if (cf->out_off >= cf->outlen) return 0; /* EOF after digest */
+      out_deliver(cf, maxlen < 0 ? (cf->outlen - cf->out_off) : maxlen,
+                  bufp, lenp);
+      return 0;
+      }
+
+   if (cf->op != CRYPTO_OP_DECRYPT) return E_CryptoState;
+
+   if (cf->sealed && cf->out_off >= cf->outlen) return 0;
+
+   if (!cf->iv_ready) {
+      if ((rc = xform_decrypt_init(cf)) != 0) return rc;
+      }
+
+   while (!cf->sealed &&
+          (maxlen < 0 || (cf->outlen - cf->out_off) < maxlen)) {
+      n = fread(buf, 1, sizeof(buf), cf->fp);
+      if (n > 0) {
+         if ((rc = xform_decrypt_feed(cf, buf, (int)n)) != 0) return rc;
+         }
+      if (n < sizeof(buf)) {
+         if (ferror(cf->fp)) return E_CryptoState;
+         if ((rc = xform_decrypt_finish(cf)) != 0) return rc;
+         break;
+         }
+      }
+
+   if (cf->out_off >= cf->outlen) return 0;
+   out_deliver(cf, maxlen < 0 ? (cf->outlen - cf->out_off) : maxlen, bufp, lenp);
+   return 0;
+}
+
+int crypto_close(struct CryptoFile *cf)
+{
+   int rc = 0;
+
+   if (cf == NULL) return 0;
+   if (cf->xform && cf->fp != NULL) {
+      if (cf->op == CRYPTO_OP_ENCRYPT && cf->initialized && !cf->sealed)
+         rc = xform_encrypt_final(cf);
+      fclose(cf->fp);
+      cf->fp = NULL;
+      }
+   cryptofile_free(cf);
+   return rc;
+}
+
+void cryptofile_free(struct CryptoFile *cf)
+{
+   if (cf == NULL) return;
+   if (cf->fp) { fclose(cf->fp); cf->fp = NULL; }
+   if (cf->mdctx)  EVP_MD_CTX_free(cf->mdctx);
+   if (cf->cctx)   EVP_CIPHER_CTX_free(cf->cctx);
+   if (cf->pkctx)  EVP_PKEY_CTX_free(cf->pkctx);
+   if (cf->pkey)   EVP_PKEY_free(cf->pkey);
+   if (cf->cert)   X509_free(cf->cert);
+   if (cf->chain)  sk_X509_pop_free(cf->chain, X509_free);
+   if (cf->symkey) { memset(cf->symkey, 0, cf->symkeylen); free(cf->symkey); }
+   if (cf->iv)     free(cf->iv);
+   if (cf->sig)    free(cf->sig);
+   if (cf->out)    { memset(cf->out, 0, cf->outcap); free(cf->out); }
+   if (cf->in)     { memset(cf->in, 0, cf->incap); free(cf->in); }
+   free(cf);
+}
+
+int crypto_getstate(struct CryptoFile *cf, char **blobp, word *lenp)
+{
+   (void)cf; (void)blobp; (void)lenp;
+   return E_CryptoState;
+}
+
+char *crypto_rolename(struct CryptoFile *cf)
+{
+   static char buf[64];
+   buf[0] = '\0';
+   if (cf->roles & CRYPTO_ROLE_PRIVKEY) strcat(buf, "key,");
+   else if (cf->roles & CRYPTO_ROLE_PUBKEY) strcat(buf, "pubkey,");
+   if (cf->roles & CRYPTO_ROLE_CERT)    strcat(buf, "cert,");
+   if (cf->roles & CRYPTO_ROLE_SYMKEY)  strcat(buf, "symkey,");
+   if (buf[0] == '\0') return "none";
+   buf[strlen(buf)-1] = '\0';
+   return buf;
+}
+
+#endif                                  /* HAVE_LIBSSL */

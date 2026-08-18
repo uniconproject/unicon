@@ -1,0 +1,23 @@
+#
+# Mode "eh" with sha512: compare against the known digest for "abc".
+#
+
+import crypto
+
+procedure main()
+   local hasher, digest, expect
+
+   # FIPS 180-4 / OpenSSL: SHA-512("abc").
+   expect := "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a" ||
+             "2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"
+
+   hasher := open("sha512", "eh") | stop("open eh failed: ", &errortext)
+   write(hasher, "abc")
+   digest := read(hasher) | stop("read failed: ", &errortext)
+   # Must match the known answer above.
+   if hexbytes(digest, 1) == expect then
+      write("sha512(abc):ok")
+   else
+      write("sha512(abc):fail")
+   close(hasher)
+end

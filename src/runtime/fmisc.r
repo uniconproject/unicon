@@ -3082,6 +3082,89 @@ function{*} Attrib(argv[argc])
 
       if (argc == 0) runerr(130, nulldesc);
 
+#if HAVE_LIBSSL
+      /*
+       * Cryptographic handles (UTR 27): Attrib(h, "name") / Attrib(h, "name=value")
+       * during the idle window.  Handles are never accepted as attribute
+       * values here (open() only).
+       */
+      if (is:file(argv[0]) && (BlkD(argv[0],File)->status & Fs_Crypto)) {
+         struct CryptoFile *cryptof = BlkD(argv[0],File)->fd.cf;
+         word i;
+
+         if (cryptof == NULL)
+            runerr(174, argv[0]);
+         if (argc < 2)
+            runerr(130, nulldesc);
+
+         for (i = 1; i < argc; i++) {
+            tended struct descrip sbuf;
+            char nbuf[64];
+            word eq, vlen;
+            char *v;
+            int rc;
+
+            if (is:null(argv[i])) continue;
+            if (is:file(argv[i]))
+               runerr(103, argv[i]);    /* handles not valid in Attrib */
+            if (!cnv:string(argv[i], sbuf))
+               runerr(109, argv[i]);
+
+            for (eq = 0; eq < StrLen(sbuf); eq++)
+               if (StrLoc(sbuf)[eq] == '=') break;
+
+            if (eq >= StrLen(sbuf)) {
+               /* query form: Attrib(h, "state") / Attrib(h, "type") */
+               if (StrLen(sbuf) == 5 && strncmp(StrLoc(sbuf), "state", 5) == 0) {
+                  char *blob; word bloblen;
+                  if ((rc = crypto_getstate(cryptof, &blob, &bloblen)) != 0) {
+                     set_errortext(rc);
+                     fail;
+                     }
+                  Protect(StrLoc(result) = alcstr(blob, bloblen), runerr(0));
+                  StrLen(result) = bloblen;
+                  suspend result;
+                  continue;
+                  }
+               if (StrLen(sbuf) == 4 && strncmp(StrLoc(sbuf), "type", 4) == 0) {
+                  char *r = crypto_rolename(cryptof);
+                  Protect(StrLoc(result) = alcstr(r, (word)strlen(r)), runerr(0));
+                  StrLen(result) = strlen(r);
+                  suspend result;
+                  continue;
+                  }
+               runerr(1302, argv[i]);
+               }
+
+            if (eq >= (word)sizeof(nbuf))
+               runerr(1302, argv[i]);
+            memcpy(nbuf, StrLoc(sbuf), eq);
+            nbuf[eq] = '\0';
+            v = StrLoc(sbuf) + eq + 1;
+            vlen = StrLen(sbuf) - eq - 1;
+
+            if (cryptof->op == CRYPTO_OP_MATERIAL &&
+                (strcmp(nbuf, "key") == 0 || strcmp(nbuf, "cert") == 0)) {
+               char pathbuf[MaxPath];
+               if (vlen >= MaxPath) { set_errortext(1317); fail; }
+               memcpy(pathbuf, v, vlen);
+               pathbuf[vlen] = '\0';
+               if ((rc = crypto_merge(cryptof, nbuf, pathbuf)) != 0) {
+                  set_errortext(rc);
+                  fail;
+                  }
+               continue;
+               }
+
+            if ((rc = crypto_setattr(cryptof, nbuf, v, vlen)) != 0) {
+               set_errortext(rc);
+               fail;
+               }
+            }
+         fail;
+         }
+#endif                                  /* HAVE_LIBSSL */
+
 #if HAVE_LIBSSH
       /*
        * SSH channel attributes (query only):
@@ -3223,6 +3306,9 @@ function{*} Attrib(argv[argc])
 #if HAVE_LIBSSH
                                           | Fs_SSH
 #endif                                  /* HAVE_LIBSSH */
+#if HAVE_LIBSSL
+                                          | Fs_Crypto
+#endif                                  /* HAVE_LIBSSL */
                                           ))) {
          tended struct descrip sbuf, ans;
          word i;

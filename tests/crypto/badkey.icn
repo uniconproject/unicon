@@ -1,0 +1,21 @@
+#
+# Short symmetric key rejected before cipher init (error 1311).
+#
+
+procedure main()
+   local ky, cipher
+
+   # AES-256-GCM needs 32 bytes; this key is intentionally too short.
+   ky := open("short-key", "er") | stop("open key failed: ", &errortext)
+   cipher := open(ky, "e", "op=encrypt") | stop("open encrypt failed: ", &errortext)
+   # lazy_init runs on first write and must refuse the short key.
+   write(cipher, "payload") | {
+      write("badkey:ok ", &errornumber)
+      close(cipher)
+      close(ky)
+      return
+      }
+   write("badkey:fail")
+   close(cipher)
+   close(ky)
+end

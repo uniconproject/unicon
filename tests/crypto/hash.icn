@@ -1,0 +1,34 @@
+#
+# Hash via mode "eh": write accumulates, read finalizes and resets.
+#
+
+import crypto
+
+procedure main()
+   local hasher, digest, digest1, digest2
+
+   # Known SHA-256("abc") vector, printed as lowercase hex.
+   hasher := open("sha256", "eh") | stop("open eh failed: ", &errortext)
+   write(hasher, "abc")
+   digest := read(hasher) | stop("read failed: ", &errortext)
+   write("sha256(abc)=", hexbytes(digest, 1))
+
+   # After read(), the handle resets. One write of "abc" and chunked
+   # "a"+"bc" must produce the same digest.
+   write(hasher, "abc")
+   digest1 := read(hasher)
+   write(hasher, "a")
+   write(hasher, "bc")
+   digest2 := read(hasher)
+   if digest1 == digest2 then
+      write("reuse:ok")
+   else
+      write("reuse:fail")
+
+   # Idle handle: nothing left to finalize, so read fails.
+   if read(hasher) then
+      write("idle:fail")
+   else
+      write("idle:ok")
+   close(hasher)
+end

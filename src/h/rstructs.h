@@ -171,6 +171,70 @@ struct SSHfile {
    };
 #endif                                  /* HAVE_LIBSSH */
 
+#if HAVE_LIBSSL
+/*
+ * Cryptographic handle (UTR 27).  Material handles hold parsed keys and
+ * certificates; operation handles accumulate via write() and finalize on
+ * read().  Allocated with malloc like SSHfile; freed by close/cryptofile_free.
+ */
+#define CRYPTO_ROLE_NONE    0
+#define CRYPTO_ROLE_PRIVKEY 01
+#define CRYPTO_ROLE_PUBKEY  02
+#define CRYPTO_ROLE_CERT    04
+#define CRYPTO_ROLE_SYMKEY  010
+
+#define CRYPTO_OP_MATERIAL  0
+#define CRYPTO_OP_HASH      1
+#define CRYPTO_OP_HMAC      2
+#define CRYPTO_OP_SIGN      3
+#define CRYPTO_OP_VERIFY    4
+#define CRYPTO_OP_ENCRYPT   5
+#define CRYPTO_OP_DECRYPT   6
+
+struct CryptoFile {
+   int op;                     /* CRYPTO_OP_* */
+   int roles;                  /* CRYPTO_ROLE_* bitmask */
+
+   EVP_PKEY *pkey;
+   X509     *cert;
+   struct stack_st_X509 *chain;  /* STACK_OF(X509); RTT-safe spelling */
+   unsigned char *symkey;
+   int symkeylen;
+
+   const EVP_MD     *md;
+   const EVP_CIPHER *cipher;
+   unsigned char *iv;
+   int ivlen;
+   unsigned char *sig;
+   int siglen;
+
+   EVP_MD_CTX     *mdctx;
+   EVP_CIPHER_CTX *cctx;
+   EVP_PKEY_CTX   *pkctx;
+   int initialized;            /* 0 = idle, safe to reconfigure */
+
+   unsigned char *out;         /* result drained by read() */
+   int outlen, outcap;
+   int out_off;                /* start of unread bytes in out[] */
+
+   unsigned char *in;          /* decrypt: raw ciphertext until read() */
+   int inlen, incap;
+
+   struct b_file *parent;      /* material handle borrowed from, if any */
+
+   /*
+    * File-transform mode ("re" / "we"): crypto over an underlying FILE*.
+    * Pipe handles leave fp NULL.
+    */
+   FILE *fp;
+   int xform;                  /* 1 = re/we file transform */
+   int sealed;                 /* finalize done (hash/encrypt/decrypt) */
+   int iv_ready;               /* encrypt: IV written; decrypt: IV consumed */
+   unsigned char taghold[16];  /* decrypt AEAD: held-back tag bytes */
+   int taghold_len;
+};
+#endif                                  /* HAVE_LIBSSL */
+
 /*
  * This union was pulled out of struct b_file and made non-anonymous
  * in order to eliminate an error in some version of gcc on amd64.
@@ -197,6 +261,7 @@ union f {
 #endif                                  /* PseudoPty */
 #if HAVE_LIBSSL
     SSL *ssl;
+    struct CryptoFile *cf;
 #endif                                  /* HAVE_LIBSSL */
 #if HAVE_LIBSSH
     struct SSHfile *sshf;

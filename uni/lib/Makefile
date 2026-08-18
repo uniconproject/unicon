@@ -18,7 +18,7 @@ UFILES=gui.u file_dlg.u db.u \
  stringbuff.u misc_util.u heap.u str_util.u str_replacer.u \
  texthandler.u time.u timezone.u typehandler.u \
  undoableedit.u undomanager.u url.u webup.u \
- notification.u md5.u httprequest.u httpresponse.u exception.u \
+ notification.u md5.u crypto.u httprequest.u httpresponse.u exception.u \
  thread.u matrix_util.u struct.u db_util.u database.u addressdb.u \
  union.u pdb_util.u propertydb.u property.u utf8.u unittest.u jsonrpc.u logger.u
 

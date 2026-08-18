@@ -1,0 +1,25 @@
+#
+# Auto-IV: encrypting the same plaintext twice yields different ciphertext.
+#
+
+procedure main()
+   local ky, cipher, ciphertext, ciphertext2
+
+   ky := open("sixteen-byte-key-material-here!!", "er") |
+      stop("open key failed: ", &errortext)
+   cipher := open(ky, "e", "op=encrypt") | stop("open encrypt failed: ", &errortext)
+
+   # Two encryptions of the same plaintext; a fresh IV is chosen each
+   # time, so the ciphertext blobs must differ.
+   write(cipher, "same")
+   ciphertext := read(cipher)
+   write(cipher, "same")
+   ciphertext2 := read(cipher)
+   if ciphertext ~== ciphertext2 then
+      write("freshiv:ok")
+   else
+      write("freshiv:fail")
+
+   close(cipher)
+   close(ky)
+end

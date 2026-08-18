@@ -1,0 +1,35 @@
+#
+# Sign / verify with PEM key and certificate under data/.
+#
+
+procedure main()
+   local ky, cert, signer, verifier, signature, msgs, msg
+
+   msgs := ["first", "second", "third"]
+
+   # Private key signs; certificate verifies.
+   ky := open("data/client.key", "e") | stop("load key failed: ", &errortext)
+   write("key=", Attrib(ky, "type"))
+   signer := open(ky, "e", "op=sign", "alg=sha256") |
+      stop("open sign failed: ", &errortext)
+
+   cert := open("data/client.crt", "e") | stop("load cert failed: ", &errortext)
+   write("cert=", Attrib(cert, "type"))
+   verifier := open(cert, "e", "op=verify", "alg=sha256") |
+      stop("open verify failed: ", &errortext)
+
+   every msg := !msgs do {
+      # Sign the message; read() returns the signature bytes.
+      write(signer, msg)
+      signature := read(signer) | stop("sign failed: ", &errortext)
+      # Attach that signature, then verify the same message.
+      Attrib(verifier, "sig=" || signature)
+      write(verifier, msg)
+      if read(verifier) then
+         write("verify ", msg, ":ok")
+      else
+         write("verify ", msg, ":fail")
+      }
+
+   every close(signer | verifier | ky | cert)
+end

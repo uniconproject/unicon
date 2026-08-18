@@ -9073,7 +9073,8 @@ case $unicon_host in
        DASHG="-G"
        LDFLAGS="$LDFLAGS --static -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        CPPFLAGS="$CPPFLAGS --static -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
-       LIBS="$LIBS -lgdi32 -lws2_32 -liphlpapi"
+       # crypt32 is required when statically linking OpenSSL (and thus libssh).
+       LIBS="$LIBS -lgdi32 -lws2_32 -liphlpapi -lcrypt32"
 
        WSTKLDFLAG="-Xlinker --stack -Xlinker 8192000"
        WGLIBS="-lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lwinmm"
@@ -16419,6 +16420,21 @@ fi
 
 
 if test "x$with_ssl" != "xno"; then
+  # Homebrew keeps OpenSSL under a keg-only prefix (not on default -I/-L).
+  if test "x$ssl_HOME" = "x"; then
+    if test -f /opt/homebrew/opt/openssl/include/openssl/ssl.h; then
+      ssl_HOME=/opt/homebrew/opt/openssl
+    elif test -f /usr/local/opt/openssl/include/openssl/ssl.h; then
+      ssl_HOME=/usr/local/opt/openssl
+    elif test -f /usr/local/include/openssl/ssl.h; then
+      ssl_HOME=/usr/local
+    fi
+  fi
+  # MinGW --static builds need Windows system libs that OpenSSL references.
+  ssl_extralibs=
+  if test "x$unicon_os" = "xwindows"; then
+    ssl_extralibs="-lcrypt32 -lws2_32 -lgdi32 -ladvapi32 -luser32"
+  fi
 
 if test  x${ssl_HOME} != "x"
 then
@@ -16611,7 +16627,7 @@ do
     ac_res="none required"
   else
     ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    LIBS="-l$ac_lib ${ssl_extralibs} $ac_func_search_save_LIBS"
   fi
   if ac_fn_c_try_link "$LINENO"
 then :
@@ -16875,7 +16891,7 @@ do
     ac_res="none required"
   else
     ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    LIBS="-l$ac_lib -lcrypto ${ssl_extralibs} $ac_func_search_save_LIBS"
   fi
   if ac_fn_c_try_link "$LINENO"
 then :
@@ -17140,7 +17156,7 @@ do
     ac_res="none required"
   else
     ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    LIBS="-l$ac_lib -lcrypto ${ssl_extralibs} $ac_func_search_save_LIBS"
   fi
   if ac_fn_c_try_link "$LINENO"
 then :
@@ -17258,6 +17274,11 @@ if test "x$with_libssh" != "xno"; then
     elif test -f /opt/homebrew/include/libssh/libssh.h; then
       libssh_HOME=/opt/homebrew
     fi
+  fi
+  # libssh depends on OpenSSL; MinGW --static also needs Windows system libs.
+  ssh_extralibs=
+  if test "x$unicon_os" = "xwindows"; then
+    ssh_extralibs="-lssl -lcrypto -lcrypt32 -lws2_32 -lgdi32"
   fi
 
 if test  x${libssh_HOME} != "x"
@@ -17451,7 +17472,7 @@ do
     ac_res="none required"
   else
     ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    LIBS="-l$ac_lib ${ssh_extralibs} $ac_func_search_save_LIBS"
   fi
   if ac_fn_c_try_link "$LINENO"
 then :

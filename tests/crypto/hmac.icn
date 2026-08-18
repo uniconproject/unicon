@@ -1,0 +1,32 @@
+#
+# HMAC: keyed digest over mode "e"/"er" with op=hmac.
+#
+
+import crypto
+
+procedure main()
+   local ky, hmac, mac, mac2
+
+   # "er" treats the open target as raw key bytes (not a file path).
+   ky := open("secret-key-bytes", "er") | stop("open er failed: ", &errortext)
+   write("type=", Attrib(ky, "type"))
+
+   # write() feeds the message; read() returns the MAC bytes.
+   hmac := open(ky, "e", "op=hmac", "alg=sha256") |
+      stop("open hmac failed: ", &errortext)
+   write(hmac, "message one")
+   mac := read(hmac) | stop("hmac read failed: ", &errortext)
+   write("hmac=", hexbytes(mac, 1))
+   write("len=", *mac)
+
+   # Same message again after finalize => identical MAC.
+   write(hmac, "message one")
+   mac2 := read(hmac)
+   if mac == mac2 then
+      write("reuse:ok")
+   else
+      write("reuse:fail")
+
+   close(hmac)
+   close(ky)
+end

@@ -1,0 +1,70 @@
+#<p>
+# Helpers and (eventually) higher-level abstractions for Unicon's
+# cryptographic facilities.  Digests, MACs, signatures, and
+# encryption are primarily accessed via
+# <tt>open</tt>/<tt>read</tt>/<tt>write</tt>/<tt>close</tt> with
+# mode <tt>e</tt>/<tt>er</tt>/<tt>eh</tt>; this package supplies
+# encodings and other utilities that sit beside that API.
+#</p>
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh
+#</p>
+
+package crypto
+
+# Bring MIME base64encode / base64decode into this package.
+link base64
+
+#<p>
+# Hexadecimal encoding of binary string <tt>s</tt> (two digits per
+# byte).  If <tt>lowercase</tt> is non-null, use <tt>a-f</tt>;
+# otherwise <tt>A-F</tt>.
+#</p>
+procedure hexencode(s, lowercase)
+   local digits, r, b
+   static upper, lower
+   initial {
+      upper := "0123456789ABCDEF"
+      lower := "0123456789abcdef"
+      }
+   digits := if \lowercase then lower else upper
+   r := ""
+   every b := ::ord(!s) do
+      r ||:= digits[::ishift(b, -4) + 1] || digits[::iand(b, 15) + 1]
+   return r
+end
+
+#<p>
+# Synonym for <tt>hexencode</tt> — convenient for dumping digests
+# and MACs.
+#</p>
+procedure hexbytes(s, lowercase)
+   return hexencode(s, lowercase)
+end
+
+#<p>
+# Decode a hexadecimal string into binary.  Whitespace is ignored.
+# Fails if the digit count is odd or a non-hex character appears.
+#</p>
+procedure hexdecode(s)
+   local digits, r, hi, lo, c
+   static hexchars
+   initial hexchars := "0123456789abcdef"
+
+   digits := ""
+   every c := !::map(s) do {
+      if c == (" " | "\t" | "\n" | "\r") then next
+      digits ||:= c
+      }
+   if *digits % 2 ~= 0 then fail
+
+   r := ""
+   digits ? {
+      while c := ::move(1) do {
+         hi := ::find(c, hexchars) | fail
+         lo := ::find(::move(1), hexchars) | fail
+         r ||:= ::char(::ior(::ishift(hi - 1, 4), lo - 1))
+         }
+      }
+   return r
+end

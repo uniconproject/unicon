@@ -139,10 +139,12 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Install dependencies
-      run: brew install libssh
+      run: brew install openssl libssh
 
     - name: Configure
-      run: sh configure  ${{ matrix.cfg.opt }}
+      run: |
+        OPENSSL_PREFIX="$(brew --prefix openssl)"
+        sh configure ${{ matrix.cfg.opt }} --with-ssl="$OPENSSL_PREFIX"
 
     - name: Make
       id: build
@@ -258,7 +260,7 @@ jobs:
               ;;
            alpine*)
               apk update
-              apk add build-base diffutils libssh-dev
+              apk add build-base diffutils libssh-dev openssl-dev
               ;;
             esac
 
@@ -331,6 +333,8 @@ jobs:
         packages: >
           build-base
           diffutils
+          openssl-dev
+          libssh-dev
 
     - name: Checkout
       uses: actions/checkout@v6
@@ -495,7 +499,7 @@ jobs:
      with:
       usesh: true # default shell is csh, switch to sh
       prepare: |
-        pkg install -y -f autoconf gmake lang/gcc git libssh
+        pkg install -y -f autoconf gmake lang/gcc git libssh openssl
 
    - name: Configure
      shell: freebsd {0}

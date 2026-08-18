@@ -1176,9 +1176,27 @@ void set_errortext_with_val(int i, char* errval);
 #define DTLS_SERVER 3
 #define DTLS_CLIENT 4
 
-SSL_CTX* create_ssl_context(dptr attr, int n, int type);
+SSL_CTX* create_ssl_context(dptr attr, int n, int type, int do_verify);
+int is_ssl_attr(char *name);
 int set_ssl_connection_errortext(SSL *ssl, int err);
 void set_ssl_context_errortext(int err, char* errtext);
+int ssl_dtls_accept(SSL *ssl, int fd);
+int ssl_dtls_connect(SSL *ssl, int fd);
+int sock_udp_connect_saved(int fd);
+
+struct CryptoFile *crypto_open_material(dptr target, int israw, dptr attr,
+                                        int nattr, int *rc);
+int   crypto_write   (struct CryptoFile *cf, char *buf, word len);
+int   crypto_read    (struct CryptoFile *cf, char **bufp, word *lenp);
+int   crypto_reads   (struct CryptoFile *cf, word maxlen,
+                      char **bufp, word *lenp);
+int   crypto_close   (struct CryptoFile *cf);
+void  cryptofile_free    (struct CryptoFile *cf);
+int   crypto_setattr (struct CryptoFile *cf, char *name, char *val, word vlen);
+int   crypto_merge   (struct CryptoFile *cf, char *name, char *val);
+int   crypto_borrow  (struct CryptoFile *op, struct CryptoFile *src);
+int   crypto_getstate(struct CryptoFile *cf, char **blobp, word *lenp);
+char *crypto_rolename(struct CryptoFile *cf);
 #endif                                  /* HAVE_LIBSSL */
 
 #if HAVE_LIBSSH

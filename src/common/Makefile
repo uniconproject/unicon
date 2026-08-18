@@ -10,7 +10,8 @@ HDRS= $(AUTO_H) ../h/define.h ../h/config.h ../h/cstructs.h ../h/mproto.h \
 
 OBJS=   long.$(O) getopt.$(O) time.$(O) filepart.$(O) identify.$(O) strtbl.$(O) rtdb.$(O)\
 	mlocal.$(O) literals.$(O) rswitch.$(O) alloc.$(O) \
-	save.$(O) redirerr.$(O) xwindow.$(O) dlrgint.$(O) ipp.$(O) drawstring3d.$(O)
+	save.$(O) redirerr.$(O) xwindow.$(O) dlrgint.$(O) ipp.$(O) drawstring3d.$(O) \
+	ssl_dtls.$(O)
 
 PROGS= libucommon.a doincl$(EXE) patchstr$(EXE) libuconsole.a $(LIBWUCONSOLE)
 

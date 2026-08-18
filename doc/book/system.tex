@@ -11,6 +11,7 @@ with the operating system. This chapter shows how to
   \item Write \index{Internet}Internet \index{client}client and
     \index{server}server applications, including multicast and
     raw IP sockets
+  \item Hash, sign, and encrypt data with OpenSSL-backed crypto handles
 \end{itemize}
 
 \section{The Role of the System Interface}
@@ -1055,6 +1056,9 @@ procedure main() \\
 end
 }
 
+Mode \texttt{"ne-"} or \texttt{verifyPeer=no} skips peer certificate
+verification. \texttt{keypass=} unlocks an encrypted private key.
+
 \subsection*{Secure Shell (SSH)}
 
 When Unicon is built with \texttt{libssh}, mode \texttt{"h"} opens an
@@ -1085,7 +1089,9 @@ shells also accept \texttt{term=} (terminal type; default \$TERM or
 \texttt{xterm}), \texttt{cols=}, and \texttt{rows=} (PTY size; default
 from the local tty, else 80$\times$24). With neither
 \texttt{key=} nor \texttt{password=}, the default identities and a
-running agent are tried. Mode \texttt{"h-"} skips host-key verification.
+running agent are tried. Mode \texttt{"h-"} or \texttt{verifyPeer=no}
+skips host-key verification (\texttt{verifyPeer=} overrides the mode
+flag, as on TLS).
 Without \texttt{cmd=}, mode \texttt{"h"} opens an interactive shell on a PTY.
 Use \texttt{net::ssh\_interactive(s)} (Unicon class library) to attach
 the local tty: raw mode, \texttt{select} mux with \texttt{\&input}, and
@@ -1132,6 +1138,97 @@ SSH session argument.
 \>   write("remote size: ", info.size) \\
 \>   close(s)
 }
+
+\subsection*{Cryptographic Facilities}
+
+When Unicon is built with OpenSSL (already required for secure sockets),
+modes \texttt{"e"}, \texttt{"er"}, and \texttt{"eh"} also open
+\index{cryptography}cryptographic handles for hashing, HMAC, signing,
+verification, and symmetric encryption. These are distinct from TLS
+socket mode \texttt{"ne"}: the first argument is an algorithm name, a
+key or certificate path, a raw key string (\texttt{"er"}), or another
+crypto handle that supplies material. Trailing
+\texttt{"\textit{name}=\textit{value}"} attributes select the operation
+and parameters. Failures set \texttt{\&errortext} and do not abort.
+
+\iconcode{
+import crypto\\
+\\
+procedure main() \\
+\>   h := open("sha256", "eh") {\textbar} stop(\&errortext) \\
+\>   write(h, "abc") \\
+\>   write("digest=", hexbytes(read(h), 1)) \\
+\>   close(h) \\
+end
+}
+
+Mode \texttt{"eh"} hashes; the target is the digest name
+(\texttt{sha256}, \texttt{sha512}, \ldots). Writes accumulate input;
+\texttt{read()} finalizes and resets so the handle can be reused.
+HMAC and public-key operations use mode \texttt{"e"} (or
+\texttt{"er"} for an inline symmetric key) with \texttt{op=}:
+
+\iconcode{
+\>   k := open("secret-key-bytes", "er") \\
+\>   m := open(k, "e", "op=hmac", "alg=sha256") \\
+\>   write(m, "message") \\
+\>   mac := read(m) \\
+\>   close(m); close(k)
+}
+
+\iconcode{
+\>   key := open("client.key", "e") \\
+\>   cert := open("client.crt", "e") \\
+\>   signer := open(key, "e", "op=sign", "alg=sha256") \\
+\>   verifier := open(cert, "e", "op=verify", "alg=sha256") \\
+\>   write(signer, "payload"); sig := read(signer) \\
+\>   Attrib(verifier, "sig=" || sig) \\
+\>   write(verifier, "payload") \\
+\>   write(if read(verifier) then "ok" else "fail")
+}
+
+Symmetric encrypt/decrypt defaults to \texttt{aes-256-gcm}. With no
+\texttt{iv=}, a fresh IV is chosen per message and prefixed on the
+ciphertext; an explicit \texttt{iv=} omits that prefix. Package
+\texttt{crypto} (Unicon class library) supplies \texttt{hexencode}~/
+\texttt{hexbytes}, \texttt{hexdecode}, and base64 helpers for dumping
+binary digests and keys.
+
+Modes \texttt{"we"} and \texttt{"re"} apply the same operations to a
+named file: writes encrypt (finalized on \texttt{close()}), reads
+decrypt or hash. The key is given with \texttt{key=} or a material
+handle attribute rather than as the open target.
+
+\iconcode{
+\>   f := open("secrets.dat", "we", "op=encrypt", "key=aes.key") \\
+\>   writes(f, plaintext); close(f) \\
+\>   f := open("secrets.dat", "re", "op=decrypt", "key=aes.key") \\
+\>   while chunk := reads(f, 4096) do put(pending, chunk) \\
+\>   if \textbackslash\&errornumber then \{ /* AEAD auth failed */ \}
+}
+
+Encrypted TCP remains mode \texttt{"ne"}; encrypted UDP (DTLS) uses
+\texttt{"nue"}~/~\texttt{"naue"}. Material handles from mode
+\texttt{"e"} may be passed as attributes so certs and keys are parsed
+once and reused across connections:
+
+\iconcode{
+\>   id := open("client.pem", "e") \\
+\>   conn := open("host:443", "ne", id, "verifyPeer=no") \\
+\>   conn := open("host:443", "ne-", id)  \# same as verifyPeer=no
+}
+
+Useful attributes include \texttt{op=} (\texttt{hash}, \texttt{hmac},
+\texttt{sign}, \texttt{verify}, \texttt{encrypt}, \texttt{decrypt}),
+\texttt{alg=} (digest name), \texttt{cipher=}, \texttt{iv=},
+\texttt{sig=} (for verify), and \texttt{keypass=} (key-file passphrase;
+\texttt{password=} is an alias). Mode \texttt{"ne-"} is the same as
+\texttt{verifyPeer=no}. \texttt{Attrib()} may change them only in
+the idle window between operations; a change while a digest or cipher
+is in flight fails. \texttt{Attrib(h, "type")} reports the material
+role (\texttt{symkey}, \texttt{key}, \texttt{cert}, \ldots).
+Digest checkpoint \texttt{state}~/~\texttt{state=} is not available
+with OpenSSL~3 (the MD\_CTX export APIs were removed).
 
 \section{Messaging Facilities}
 

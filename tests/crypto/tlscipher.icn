@@ -1,0 +1,30 @@
+#
+# Cipher pin: AES-256 suite on both ends (TLS 1.2 max for classic ciphers=).
+#
+
+link tlsutil
+
+procedure main()
+   local port, key, cert, ca
+
+   if not (&features == "secure sockets layer encryption") then
+      stop("needs SSL")
+   if not (&features == "concurrent threads") then
+      stop("needs concurrent threads")
+
+   key := "key=./data/unicon-server.key"
+   cert := "cert=./data/unicon-server.crt"
+   ca := "ca=./data/unicon-ca.crt"
+
+   port := tls_port()
+   tls_start([port, "nae", 2000, key, cert, ca,
+              "ciphers=AES256", "maxProto=TLS1.2",
+              "ciphers1.3=TLS_AES_256_GCM_SHA384"], 1)
+
+   if tls_echo([port, "ne", 5000, ca,
+                "ciphers=AES256",
+                "ciphers1.3=TLS_AES_256_GCM_SHA384"]) then
+      write("aes256:ok")
+   else
+      write("aes256:fail")
+end

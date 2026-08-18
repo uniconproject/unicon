@@ -1,0 +1,29 @@
+#
+# Load a symmetric key from a file path (mode "e"), then encrypt/decrypt.
+#
+
+procedure main()
+   local ky, cipher, ciphertext, plaintext
+
+   # Path form of mode "e" loads raw key bytes from the file.
+   ky := open("data/aes.key", "e", "keypass=unused") |
+      stop("open aes.key failed: ", &errortext)
+   write("type=", Attrib(ky, "type"))
+
+   cipher := open(ky, "e", "op=encrypt") | stop("open encrypt failed: ", &errortext)
+   write(cipher, "from file")
+   ciphertext := read(cipher) | stop("encrypt failed: ", &errortext)
+
+   # Idle-window switch from encrypt to decrypt on the same handle.
+   Attrib(cipher, "op=decrypt")
+   # Decrypting that ciphertext yields the original plaintext.
+   write(cipher, ciphertext)
+   plaintext := read(cipher) | stop("decrypt failed: ", &errortext)
+   if plaintext == "from file" then
+      write("roundtrip:ok")
+   else
+      write("roundtrip:fail")
+
+   close(cipher)
+   close(ky)
+end

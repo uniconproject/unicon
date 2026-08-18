@@ -1,0 +1,27 @@
+#
+# Idle-window Attrib(op=) switches encrypt to decrypt on one handle.
+#
+
+procedure main()
+   local ky, cipher, ciphertext, plaintext
+
+   ky := open("sixteen-byte-key-material-here!!", "er") |
+      stop("open key failed: ", &errortext)
+   cipher := open(ky, "e", "op=encrypt") | stop("open encrypt failed: ", &errortext)
+
+   write(cipher, "switch me")
+   # Finalize encrypt; handle returns to the idle window.
+   ciphertext := read(cipher)
+   # Flip the same handle to decrypt (only legal between operations).
+   Attrib(cipher, "op=decrypt")
+   # Decrypting that ciphertext yields the original plaintext.
+   write(cipher, ciphertext)
+   plaintext := read(cipher)
+   if plaintext == "switch me" then
+      write("opswitch:ok")
+   else
+      write("opswitch:fail")
+
+   close(cipher)
+   close(ky)
+end

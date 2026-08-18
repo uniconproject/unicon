@@ -118,8 +118,14 @@ jobs:
           make -C doc/utr pdf-rst
           make -C doc/utr html
           test -f doc/utr/html/index.html
-          test -f doc/utr/html/utr26.html
-          test -f doc/utr/html/utr26.pdf
+          # Every RST report in utr.manifest must have been rendered.
+          while read -r src; do
+            case "$src" in
+              ''|\#*) continue ;;
+            esac
+            base="${src%.rst}"
+            test -f "doc/utr/html/${base}.html"
+          done < doc/utr/utr.manifest
 
       - name: Build site
         env:
@@ -204,14 +210,14 @@ jobs:
             const pr = context.payload.pull_request.number;
             const url = `https://uniconproject.github.io/unicon/previews/pr-${pr}/`;
             const guide = `https://uniconproject.github.io/unicon/previews/pr-${pr}/doc/uscribe/out/`;
-            const utr = `https://uniconproject.github.io/unicon/previews/pr-${pr}/doc/utr/html/utr26.html`;
+            const utr = `https://uniconproject.github.io/unicon/previews/pr-${pr}/doc/utr/html/`;
             const marker = '<!-- pages-pr-preview -->';
             const body =
               `${marker}\n` +
               `### Pages preview\n\n` +
               `- Site: ${url}\n` +
               `- uscribe user guide: ${guide}\n` +
-              `- UTR #26: ${utr}\n\n` +
+              `- Technical reports (RST): ${utr}\n\n` +
               `_Updated on each Pages workflow run; removed when the PR is closed._`;
 
             const { data: comments } = await github.rest.issues.listComments({
@@ -258,7 +264,7 @@ jobs:
           echo "Live preview (after push to the fork with Pages enabled):"
           echo "  https://${FORK_OWNER}.github.io/unicon/"
           echo "  https://${FORK_OWNER}.github.io/unicon/doc/uscribe/out/"
-          echo "  https://${FORK_OWNER}.github.io/unicon/doc/utr/html/utr26.html"
+          echo "  https://${FORK_OWNER}.github.io/unicon/doc/utr/html/"
 
       - name: Comment that fork PR preview was skipped
         continue-on-error: true
@@ -269,7 +275,7 @@ jobs:
             const owner = context.payload.pull_request.head.repo.owner.login;
             const forkSite = `https://${owner}.github.io/unicon/`;
             const guide = `${forkSite}doc/uscribe/out/`;
-            const utr = `${forkSite}doc/utr/html/utr26.html`;
+            const utr = `${forkSite}doc/utr/html/`;
             const marker = '<!-- pages-pr-preview-skipped -->';
             const body =
               `${marker}\n` +
@@ -280,7 +286,7 @@ jobs:
               `Pages → Deploy from branch \`gh-pages\`). Site root:\n` +
               `- ${forkSite}\n` +
               `- uscribe guide: ${guide}\n` +
-              `- UTR #26: ${utr}\n`;
+              `- Technical reports (RST): ${utr}\n`;
 
             try {
               const { data: comments } = await github.rest.issues.listComments({

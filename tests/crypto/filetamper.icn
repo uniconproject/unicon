@@ -1,0 +1,38 @@
+#
+# Tampering with a we/re ciphertext must fail authentication at EOF.
+#
+
+procedure main()
+   local ky, f, raw, chunk, pending
+
+   ky := open("data/aes.key", "e") | stop("open key failed: ", &errortext)
+
+   f := open("data/tamper.dat", "we", "op=encrypt", ky) |
+      stop("open we failed: ", &errortext)
+   writes(f, "authentic")
+   close(f)
+
+   # Flip a byte in the middle of the ciphertext file.
+   f := open("data/tamper.dat", "r") | stop("open raw failed: ", &errortext)
+   raw := reads(f, 10000) | stop("read raw failed")
+   close(f)
+   if *raw < 8 then
+      stop("ciphertext too short")
+   raw[8] := char(ixor(ord(raw[8]), 1))
+   f := open("data/tamper.dat", "w") | stop("rewrite failed")
+   writes(f, raw)
+   close(f)
+
+   f := open("data/tamper.dat", "re", "op=decrypt", ky) |
+      stop("open re failed: ", &errortext)
+   pending := []
+   while chunk := reads(f, 4096) do
+      put(pending, chunk)
+   # Auth failure is reported when the stream finishes.
+   if \ &errornumber then
+      write("filetamper:ok")
+   else
+      write("filetamper:fail")
+   close(f)
+   close(ky)
+end

@@ -5,23 +5,19 @@
 # and uscribe-userguide.pdf are included under doc/uscribe/out/, and
 # RST Unicon Technical Reports (make -C doc/utr html) under doc/utr/html/.
 #
-# Publishing uses the gh-pages branch (peaceiris/actions-gh-pages):
-#   - push to master/main on uniconproject/unicon → site root
-#   - push on a fork → that fork's gh-pages (e.g. https://jafaral.github.io/unicon/)
-#   - same-repo pull_request → previews/pr-<N>/
-#   - PR closed (same-repo) → remove that preview directory
+# Upstream (uniconproject/unicon): a push to master/main builds the site
+# and publishes it with actions/deploy-pages. Generated HTML is not in
+# git, so "Deploy from a branch → master" cannot serve it (Jekyll on the
+# source tree also cannot). Settings → Pages → Source: GitHub Actions.
 #
-# Fork PRs against upstream: GITHUB_TOKEN cannot push to uniconproject/unicon
-# (403). Those PRs still build the artifact here; for a live preview, push to
-# your fork (enable Actions + Pages → branch gh-pages) so deploy runs there.
+# Forks: still push the same tree to that fork's gh-pages branch
+# (peaceiris), e.g. https://jafaral.github.io/unicon/ — set the fork's
+# Pages source to branch gh-pages / (root).
 #
-# Settings → Pages → Build and deployment → Source: Deploy from a branch
-#   Branch: gh-pages / (root)
-# Do NOT use "GitHub Actions" as the Pages source with this workflow, or
-# production and PR previews will not both be served.
-# Also ensure Actions → General → Workflow permissions allow write (or rely on
-# the job-level contents: write below) so deploys can push.
-# https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site
+# Fork PRs against upstream: GITHUB_TOKEN cannot publish the project
+# site. Preview on the fork after a push there (forks may still use a
+# gh-pages branch). The project site updates when the PR merges to
+# master.
 
 name: Pages
 
@@ -44,7 +40,7 @@ on:
       - 'Makefile'
       - 'Makedefs*'
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened]
     paths:
       - 'README.md'
       - 'CONTRIBUTING.md'
@@ -71,7 +67,6 @@ concurrency:
 jobs:
   build:
     if: >-
-      (github.event_name != 'pull_request' || github.event.action != 'closed') &&
       (
         github.repository == 'uniconproject/unicon' ||
         github.event_name == 'push' ||
@@ -129,8 +124,7 @@ jobs:
 
       - name: Build site
         env:
-          # Production: /unicon ; PR preview: /unicon/previews/pr-<N>
-          UNICON_SITE_PREFIX: ${{ github.event_name == 'pull_request' && format('/unicon/previews/pr-{0}', github.event.pull_request.number) || '/unicon' }}
+          UNICON_SITE_PREFIX: /unicon
         run: bash config/scripts/gh-pages/build-gh-pages-site.sh _site
 
       - name: Upload site artifact
@@ -141,15 +135,47 @@ jobs:
           retention-days: 3
 
   deploy-production:
-    # Upstream: master/main (or manual). Forks: any push/dispatch → that fork's Pages.
+    # uniconproject: publish the master/main (or dispatch) build via Pages.
     if: >-
+      github.repository == 'uniconproject/unicon' &&
       github.event_name != 'pull_request' &&
       (
-        github.repository != 'uniconproject/unicon' ||
         github.ref == 'refs/heads/master' ||
         github.ref == 'refs/heads/main' ||
         github.event_name == 'workflow_dispatch'
       )
+    needs: build
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages-production-${{ github.repository }}
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download site artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: _site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+
+  deploy-fork:
+    # Forks: any push/dispatch → that fork's gh-pages branch.
+    if: >-
+      github.repository != 'uniconproject/unicon' &&
+      github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     concurrency:
@@ -172,84 +198,11 @@ jobs:
           keep_files: true
           commit_message: "Deploy Pages ${{ github.sha }}"
 
-  # Same-repo PRs on upstream only: fork PR tokens cannot push gh-pages (403).
-  deploy-preview:
-    if: >-
-      github.repository == 'uniconproject/unicon' &&
-      github.event_name == 'pull_request' &&
-      github.event.action != 'closed' &&
-      github.event.pull_request.head.repo.full_name == github.repository
-    needs: build
-    runs-on: ubuntu-latest
-    concurrency:
-      group: pages-gh-pages-${{ github.repository }}
-      cancel-in-progress: false
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - name: Download site artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: site
-          path: _site
-
-      - name: Deploy PR preview to gh-pages
-        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_site
-          destination_dir: previews/pr-${{ github.event.pull_request.number }}
-          keep_files: true
-          commit_message: "Deploy PR #${{ github.event.pull_request.number }} preview (${{ github.sha }})"
-
-      - name: Comment preview URL on PR
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const pr = context.payload.pull_request.number;
-            const url = `https://uniconproject.github.io/unicon/previews/pr-${pr}/`;
-            const guide = `https://uniconproject.github.io/unicon/previews/pr-${pr}/doc/uscribe/out/`;
-            const utr = `https://uniconproject.github.io/unicon/previews/pr-${pr}/doc/utr/html/`;
-            const marker = '<!-- pages-pr-preview -->';
-            const body =
-              `${marker}\n` +
-              `### Pages preview\n\n` +
-              `- Site: ${url}\n` +
-              `- uscribe user guide: ${guide}\n` +
-              `- Technical reports (RST): ${utr}\n\n` +
-              `_Updated on each Pages workflow run; removed when the PR is closed._`;
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: pr,
-            });
-            const existing = comments.find(c => c.body && c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr,
-                body,
-              });
-            }
-
-  # Point fork authors at their own Pages site instead of failing deploy.
-  # Fork pull_request tokens are read-only, so PR comments often fail with
-  # "Resource not accessible by integration" — treat that as non-fatal.
+  # Fork PRs cannot publish uniconproject.github.io; point authors at the fork.
   skip-preview-fork:
     if: >-
       github.repository == 'uniconproject/unicon' &&
       github.event_name == 'pull_request' &&
-      github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     permissions:
@@ -260,7 +213,8 @@ jobs:
           FORK_OWNER: ${{ github.event.pull_request.head.repo.owner.login }}
         run: |
           echo "### Pages preview skipped on upstream"
-          echo "Fork PRs cannot push to uniconproject/unicon gh-pages (403)."
+          echo "This fork PR does not publish https://uniconproject.github.io/unicon/"
+          echo "The project site updates when the PR merges to master."
           echo "Live preview (after push to the fork with Pages enabled):"
           echo "  https://${FORK_OWNER}.github.io/unicon/"
           echo "  https://${FORK_OWNER}.github.io/unicon/doc/uscribe/out/"
@@ -280,10 +234,12 @@ jobs:
             const body =
               `${marker}\n` +
               `### Pages preview skipped on upstream\n\n` +
-              `This PR is from a fork, so \`GITHUB_TOKEN\` cannot push to ` +
-              `\`uniconproject/unicon\` \`gh-pages\` (403).\n\n` +
-              `For a live preview, push to your fork (Actions must be enabled; ` +
-              `Pages → Deploy from branch \`gh-pages\`). Site root:\n` +
+              `This PR is from a fork, so it cannot publish ` +
+              `https://uniconproject.github.io/unicon/.\n\n` +
+              `The project site updates when this merges to \`master\`. ` +
+              `For a live preview, push to your fork (Actions enabled; ` +
+              `Pages → Deploy from a branch \`gh-pages\` / (root)). ` +
+              `Site:\n` +
               `- ${forkSite}\n` +
               `- uscribe guide: ${guide}\n` +
               `- Technical reports (RST): ${utr}\n`;
@@ -307,39 +263,3 @@ jobs:
                 `pull-requests: write): ${err.message}`
               );
             }
-
-  cleanup-preview:
-    if: >-
-      github.repository == 'uniconproject/unicon' &&
-      github.event_name == 'pull_request' &&
-      github.event.action == 'closed' &&
-      github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    concurrency:
-      group: pages-gh-pages-${{ github.repository }}
-      cancel-in-progress: false
-    permissions:
-      contents: write
-    steps:
-      - name: Remove PR preview from gh-pages
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR: ${{ github.event.pull_request.number }}
-        run: |
-          set -euo pipefail
-          git clone --depth=1 --branch gh-pages \
-            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages || {
-            echo "No gh-pages branch yet; nothing to clean."
-            exit 0
-          }
-          cd gh-pages
-          dir="previews/pr-${PR}"
-          if [ -d "$dir" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git rm -rf "$dir"
-            git commit -m "Remove Pages preview for PR #${PR}"
-            git push origin gh-pages
-          else
-            echo "Preview dir ${dir} not present."
-          fi

@@ -140,7 +140,7 @@ end
 # Consume a leading RST field list into document metadata on
 # <tt>doc</tt>: <tt>:title:</tt>, <tt>:author:</tt> (repeatable),
 # <tt>:trnumber:</tt>, <tt>:date:</tt>, <tt>:copyright:</tt>,
-# <tt>:abstract:</tt>, <tt>:docclass:</tt>. Continuation lines are
+# <tt>:abstract:</tt>, <tt>:keywords:</tt>, <tt>:docclass:</tt>. Continuation lines are
 # indented. Book chapters use author/date/copyright as a byline;
 # report fields also drive the UTR cover.
 # <[param doc Document being filled]>
@@ -197,6 +197,8 @@ procedure parseDocFields(doc, lines)
                 doc.setCopyright(val)
             "abstract":
                 doc.setAbstract(val)
+            "keywords":
+                doc.setKeywords(val)
             "docclass" | "doc-class":
                 doc.setDocClass(map(val, &ucase, &lcase))
             default: {

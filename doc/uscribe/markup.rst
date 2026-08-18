@@ -29,7 +29,7 @@ A chapter may start with an RST field list (Docutils bibliographic
 fields). Repeat ``:author:`` for several names. Book chapters show
 these as a byline under the first heading; omit the fields and
 nothing is added. Reports also use ``:title:``, ``:trnumber:``,
-``:abstract:``, and ``:docclass:`` for the cover — see :doc:`reports`
+``:abstract:``, ``:keywords:``, and ``:docclass:`` for the cover — see :doc:`reports`
 for the one-paper and catalog workflows.
 
 .. code-block:: rst

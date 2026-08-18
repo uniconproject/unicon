@@ -115,13 +115,15 @@ end
 # <tt>Manifest</tt>'s job (<tt>manifest.icn</tt>), not the doctree's.
 # Optional bibliographic metadata (<tt>authors</tt>, <tt>trNumber</tt>,
 # <tt>dateStr</tt>, <tt>copyrightStr</tt>, <tt>abstractText</tt>,
-# <tt>docClass</tt>) comes from a leading RST field list.
+# <tt>keywordsText</tt>, <tt>docClass</tt>) comes from a leading RST
+# field list.
 # <tt>docClass</tt> of <tt>"report"</tt> (or a set <tt>trNumber</tt>)
 # selects article/UTR rendering. Book chapters may still carry
 # <tt>authors</tt> / <tt>date</tt> / <tt>copyright</tt> for a byline.
 #</p>
 class Document : Block (children, title, srcName, authors, trNumber,
-                        dateStr, copyrightStr, abstractText, docClass)
+                        dateStr, copyrightStr, abstractText, keywordsText,
+                        docClass)
 
     #<p>
     # Set the source file path for this document.
@@ -247,6 +249,24 @@ class Document : Block (children, title, srcName, authors, trNumber,
     #</p>
     method getAbstract()
         return \abstractText
+    end
+
+    #<p>
+    # Set the keyword list (comma-separated; no "Keywords:" prefix).
+    # <[param k keywords string]>
+    #</p>
+    method setKeywords(k)
+        keywordsText := k
+        return
+    end
+
+    #<p>
+    # Return the keywords string, if any.
+    # <[returns the keywords string]>
+    # <[fails if unset]>
+    #</p>
+    method getKeywords()
+        return \keywordsText
     end
 
     #<p>

@@ -13,9 +13,9 @@
    the operation; keys and certificates are loaded as file-typed
    handles and passed as attributes. Encrypted TCP is unchanged;
    encrypted UDP uses DTLS. The implementation is the OpenSSL EVP
-   interface already linked for TLS. Keywords: Unicon, cryptography,
-   OpenSSL, TLS, DTLS, hash, HMAC, sign, encrypt, runtime,
-   technical report.
+   interface already linked for TLS.
+:keywords: Unicon, cryptography, OpenSSL, TLS, DTLS, hash, HMAC,
+   sign, encrypt, runtime, technical report.
 :docclass: report
 
 .. _sec-intro:

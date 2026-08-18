@@ -1138,15 +1138,25 @@ function{0,1} pipe()
 end
 
 "fork() - spawn a new identical process."
+" Optional ns File joins that network namespace in the child before return."
 
 #if NT
 function{0} fork()
 #else                                   /* NT */
+#if HAVE_NETNS
+function{0,1} fork(ns)
+#else                                   /* HAVE_NETNS */
 function{0,1} fork()
+#endif                                  /* HAVE_NETNS */
 #endif                                  /* NT */
    abstract {
       return integer
       }
+#if HAVE_NETNS && !NT
+   if !is:null(ns) then
+      if !is:file(ns) then
+         runerr(105, ns)
+#endif                                  /* HAVE_NETNS && !NT */
    inline {
       int pid;
 #if !ConcurrentCOMPILER
@@ -1156,10 +1166,24 @@ function{0,1} fork()
 #if NT
       fail;
 #else                                   /* NT */
+#if HAVE_NETNS
+      struct b_file *nsf = NULL;
+      if (!is:null(ns)) {
+         if (!(BlkD(ns,File)->status & Fs_NETNS))
+            runerr(174, ns);
+         nsf = BlkD(ns,File);
+         }
+#endif                                  /* HAVE_NETNS */
       if ((pid = fork()) < 0) {
          IntVal(amperErrno) = errno;
          fail;
          }
+#if HAVE_NETNS
+      if (pid == 0 && nsf != NULL) {
+         if (netns_join(nsf->fd.netns) != 0)
+            _exit(126);
+         }
+#endif                                  /* HAVE_NETNS */
       return C_integer pid;
 #endif                                  /* NT */
       }

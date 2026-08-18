@@ -36,9 +36,18 @@ IGNORE=
 #   rusage      getrusage() stubbed on NT (fail); needs a Windows implementation or skip.
 #   select-io is enabled on Windows: CRT &input / files use findactivecrt().
 #
-WINSKIP=pty_uni tcp wait fork fdup filepair kill pipe-select select udp uxsocket rusage
+# netns: HAVE_NETNS ("Network namespaces"); needs CAP_NET_ADMIN or userns.
+ifneq ($(UCFEAT),)
+ifeq ($(findstring Network namespaces,$(UCFEAT)),)
+SKIP += netns
+endif
+endif
 
-BSDSKIP=pty_uni uxsocket
+WINSKIP=pty_uni tcp wait fork fdup filepair kill pipe-select select udp uxsocket rusage netns
+
+BSDSKIP=pty_uni uxsocket netns
+
+MACOSSKIP=netns
 
 # default is to run all tests, using icont
 Test:  DoTest

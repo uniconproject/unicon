@@ -1,0 +1,80 @@
+#
+# nettopo: package net topology (Netns + Veth + addr/up).
+# Complements tests/posix/netns.icn (native open(...,"j")).
+#
+# Bootstraps with plain open(...,"j") (implicit userns fallback).
+# Veth is created *inside* ns1 (host RTNETLINK create is often denied
+# in a mapped-root userns).
+#
+import net
+
+procedure ifaces_in(nsname)
+   local p, line, names, n, i
+   names := []
+   p := open("ip netns exec " || nsname || " ip -o link show", "pr") | fail
+   while line := read(p) do {
+      line ? {
+         tab(upto(':'))
+         move(1)
+         tab(many(' \t'))
+         n := tab(upto(':') | 0)
+         if i := find("@", n) then n := n[1:i]
+         if *n > 0 then put(names, n)
+         }
+      }
+   close(p)
+   return csv(sort(names))
+end
+
+procedure csv(L)
+   local s, x
+   s := ""
+   every x := !L do
+      s := if *s = 0 then x else s || "," || x
+   return s
+end
+
+procedure cleanup()
+   system("ip link del ut-va 2>/dev/null")
+   system("ip link del ut-vb 2>/dev/null")
+   system("ip netns del ut-lib-a 2>/dev/null")
+   system("ip netns del ut-lib-b 2>/dev/null")
+end
+
+procedure main()
+   local boot, ns1, ns2, v, peer
+
+   if not (&features == "Network namespaces") then
+      stop("This Program Requires Network namespaces")
+
+   boot := open("ut-lib-boot", "j") |
+      stop("This Program Requires network-namespace privileges ",
+           "(implicit userns fallback or CAP_NET_ADMIN)")
+   close(boot)
+
+   cleanup()
+
+   ns1 := Netns("ut-lib-a") | stop("Netns(ut-lib-a) failed: ", &errortext)
+   ns2 := Netns("ut-lib-b") | stop("Netns(ut-lib-b) failed: ", &errortext)
+   write("netns=ok")
+
+   # Create the pair inside ns1, then move the peer into ns2.
+   v := Veth("ut-va", "ut-vb", ns1) | stop("Veth failed: ", &errortext)
+   peer := v.peer()
+   peer.move(ns2) | stop("move b failed")
+   write("veth=ok")
+
+   v.addr("10.200.0.1/24") | stop("addr a failed")
+   peer.addr("10.200.0.2/24") | stop("addr b failed")
+   v.up() | stop("up a failed")
+   peer.up() | stop("up b failed")
+   write("addr=ok")
+
+   write("ifaces-a=", ifaces_in("ut-lib-a") | "fail")
+   write("ifaces-b=", ifaces_in("ut-lib-b") | "fail")
+
+   v.delete() | stop("delete veth failed")
+   ns1.delete() | stop("delete ns1 failed")
+   ns2.delete() | stop("delete ns2 failed")
+   write("done")
+end

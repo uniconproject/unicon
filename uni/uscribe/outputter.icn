@@ -201,7 +201,7 @@ end
 # Shared CSS/JS come from <tt>--theme</tt>
 # (see <tt>uni/uscribe/themes/</tt>).
 #</p>
-class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo, citationTable, footnoteList, outDir, bookPdfHref, currentDoc, wroteByline)
+class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo, citationTable, footnoteList, outDir, bookPdfHref, currentDoc, wroteByline, pageKind)
 
     #<p>
     # Set the open file to which HTML is written.
@@ -246,6 +246,17 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
         navEntries := entries
         navIndex := index
         defaultTheme := \theme | "basic"
+        return
+    end
+
+    #<p>
+    # Page chrome: <tt>"book"</tt> (default, chapter list + prev/next)
+    # or <tt>"report"</tt> (this document's section TOC, no sibling
+    # prev/next). The collection catalog stays on <tt>index.html</tt>.
+    # <[param kind <tt>"book"</tt> or <tt>"report"</tt>]>
+    #</p>
+    method setPageKind(kind)
+        pageKind := kind
         return
     end
 
@@ -430,14 +441,21 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     end
 
     #<p>
-    # Emit the left sidebar: optional logo, book title, theme picker,
-    # chapter filter box, TOC list, and link to the full search page.
+    # Emit the left sidebar: optional logo, book/collection title
+    # (links to <tt>index.html</tt>), theme picker, filter box, TOC,
+    # and a link to the full search page. Report pages list this
+    # document's sections; book pages list chapters.
     #</p>
     method writeSidebar()
-        local i, e
+        local i, e, report
         /navEntries := []
         /navIndex := 0
-        write(outFile, "<nav class=\"sidebar\" aria-label=\"Book contents\">")
+        if (\pageKind | "book") == "report" then
+            report := 1
+        if \report then
+            write(outFile, "<nav class=\"sidebar\" aria-label=\"Report contents\">")
+        else
+            write(outFile, "<nav class=\"sidebar\" aria-label=\"Book contents\">")
         if \logoHref & *logoHref > 0 then
             write(outFile, "<a class=\"sidebar-logo\" href=\"index.html\">",
                   "<img src=\"", escapeHtml(logoHref),
@@ -445,13 +463,25 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
         write(outFile, "<div class=\"book-title\"><a href=\"index.html\">",
               escapeHtml(\bookTitle) | "Book", "</a></div>")
         writeThemePicker(\defaultTheme | "basic")
-        write(outFile, "<p class=\"search-hint\">Filter chapters; Enter for full search</p>")
+        if \report then
+            write(outFile, "<p class=\"search-hint\">Filter sections; Enter for full search</p>")
+        else
+            write(outFile, "<p class=\"search-hint\">Filter chapters; Enter for full search</p>")
         write(outFile, "<input class=\"search-box\" id=\"nav-search\" type=\"search\" ")
-        write(outFile, "placeholder=\"Search...\" aria-label=\"Filter chapter list\">")
+        if \report then
+            write(outFile, "placeholder=\"Search...\" aria-label=\"Filter section list\">")
+        else
+            write(outFile, "placeholder=\"Search...\" aria-label=\"Filter chapter list\">")
         write(outFile, "<ol id=\"nav-toc\">")
         every i := 1 to *navEntries do {
             e := navEntries[i]
-            if i = navIndex then
+            if \report then {
+                writes(outFile, "<li class=\"", tocLevelClass(e[3] | 1),
+                       "\"><a href=\"", escapeHtml(e[1]), "\">")
+                writeInlineTitle(e[2])
+                write(outFile, "</a></li>")
+                }
+            else if i = navIndex then
                 write(outFile, "<li class=\"current\">", escapeHtml(e[2]), "</li>")
             else
                 write(outFile, "<li><a href=\"", escapeHtml(e[1]), "\">",
@@ -480,9 +510,12 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
 
     #<p>
     # Emit previous/next chapter links for the current <tt>navIndex</tt>.
+    # Omitted for reports (each report is a standalone page).
     #</p>
     method writePrevNext()
         local prev, nxt
+        if (\pageKind | "book") == "report" then
+            return
         /navEntries := []
         /navIndex := 0
         write(outFile, "<div class=\"prevnext\">")
@@ -1016,8 +1049,34 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     # <[returns anchor string]>
     #</p>
     method anchorFor(sectionNode)
-        return \sectionNode.getLabel() | slugify(sectionNode.getTitle())
+        return sectionAnchor(sectionNode)
     end
+end
+
+#<p>
+# HTML id for a section: explicit <tt>.. _label:</tt> if set, else
+# <tt>slugify</tt> of the title. Shared by the page renderer and the
+# report sidebar TOC.
+# <[param sectionNode a Section node]>
+# <[returns anchor string]>
+#</p>
+procedure sectionAnchor(sectionNode)
+    return \sectionNode.getLabel() | slugify(sectionNode.getTitle())
+end
+
+#<p>
+# Sidebar class for a 1-based section level (<tt>toc-l1</tt> ..
+# <tt>toc-l4</tt>).
+# <[param level section level, or null]>
+# <[returns class name string]>
+#</p>
+procedure tocLevelClass(level)
+    /level := 1
+    if level < 1 then
+        level := 1
+    if level > 4 then
+        level := 4
+    return "toc-l" || level
 end
 
 #<p>

@@ -8,4 +8,10 @@
 Overview
 ========
 
-This companion fixture exists only to exercise the UTR index table.
+This companion fixture exists only to exercise the catalog index
+(two rows) and a short section sidebar.
+
+Notes
+=====
+
+The second heading is here so the sidebar has more than one entry.

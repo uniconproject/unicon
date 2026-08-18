@@ -12,7 +12,7 @@ OUTDIR = out
 THEME ?= basic
 USCRIBE_FLAGS = --targetDir=$(OUTDIR)
 
-.PHONY: all html latex pdf basic classic dark clean
+.PHONY: all html latex pdf basic classic dark clean report-examples
 
 default: html
 all: html
@@ -21,6 +21,19 @@ html: $(USCRIBE)
 	mkdir -p $(OUTDIR)/images
 	-cp -f images/* $(OUTDIR)/images/ 2>/dev/null || true
 	$(USCRIBE) $(USCRIBE_FLAGS) --theme=$(THEME)
+	$(MAKE) report-examples THEME=$(THEME)
+
+# Standalone report fixtures linked from reports.rst
+report-examples: $(USCRIBE)
+	mkdir -p $(OUTDIR)/ex-one-report $(OUTDIR)/ex-reports
+	$(USCRIBE) --manifest=report-example.manifest \
+		--config=report-example.conf \
+		--theme=$(THEME) \
+		--targetDir=$(OUTDIR)/ex-one-report
+	$(USCRIBE) --manifest=reports-example.manifest \
+		--config=reports-example.conf \
+		--theme=$(THEME) \
+		--targetDir=$(OUTDIR)/ex-reports
 
 latex: $(USCRIBE)
 	mkdir -p $(OUTDIR)/images

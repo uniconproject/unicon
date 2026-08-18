@@ -53,7 +53,9 @@ Options
   Output format: ``html`` (default), ``latex``, or ``pdf``.
 
   - ``html`` — one page per chapter plus index/search/themes.
-    Report manifests get a UTR index table on ``index.html``.
+    Report manifests get a catalog table on ``index.html``. Each
+    report page's sidebar lists that report's sections.
+    See :doc:`reports`.
   - ``latex`` — for books, a single ``STEM.tex`` (default
     ``book.tex``); for report manifests (every chapter is a
     report), one ``.tex`` per report
@@ -80,9 +82,8 @@ Outputs
 **HTML** (``--format=html``): for each chapter ``path/name.rst``,
 writes ``targetDir/name.html``, plus:
 
-- ``index.html`` — contents landing page (chapter list, or a UTR
-  table with a **Formats** column of ``pdf`` / ``txt`` for report
-  collections)
+- ``index.html`` — contents landing page (chapter list, or a catalog
+  table of reports with a **Formats** column of ``pdf`` / ``txt``)
 - ``search.html`` + ``searchindex.js`` — full-text search
 - ``_static/`` — theme CSS, search JS, highlighter, theme switcher
 - ``_sources/`` — chapter sources as ``name.rst.txt`` (browser-viewable

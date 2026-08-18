@@ -1,7 +1,7 @@
 Themes
 ======
 
-HTML chrome (sidebar, search, prev/next) is fixed in the generator.
+HTML chrome (sidebar, search, prev/next on book chapters) is fixed in the generator.
 A *theme* is a CSS skin plus shared JavaScript.
 
 Built-in themes

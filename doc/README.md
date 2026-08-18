@@ -42,7 +42,12 @@ Implementation-oriented LaTeX (parts 1–3, appendices) for *The Icon Programmin
 
 ## Unicon Technical Reports (UTRs)
 
-Numbered project reports (UTR #1, UTR #2, …). HTML, PDF, and office exports may live under `doc/utr/`, `doc/unicon/`, or `doc/udb/` depending on age and format. The [Technical Reports](https://unicon.sourceforge.io/reports.html) page on [unicon.sourceforge.io](https://unicon.sourceforge.io/) lists reports with links to PDFs/HTML on unicon.org and elsewhere. RST sources listed in `utr/utr.manifest` are built by `make -C doc/utr html` and indexed at [utr/html/](utr/html/).
+On GitHub Pages the RST report catalog is at
+[doc/utr/html/](utr/html/)
+(e.g. `https://…/unicon/doc/utr/html/`). RST sources listed in
+`utr/utr.manifest` are built by `make -C doc/utr html`.
+
+Numbered project reports (UTR #1, UTR #2, …). HTML, PDF, and office exports may live under `doc/utr/`, `doc/unicon/`, or `doc/udb/` depending on age and format. The [Technical Reports](https://unicon.sourceforge.io/reports.html) page on [unicon.sourceforge.io](https://unicon.sourceforge.io/) lists reports with links to PDFs/HTML on unicon.org and elsewhere.
 
 Standard Markdown tables use equal column widths, so a narrow “#” column still wastes space. Each report below is one line: **UTR #N** — format links — *title*.
 

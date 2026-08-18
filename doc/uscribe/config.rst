@@ -96,6 +96,10 @@ per chapter with ``:docclass: report`` or ``:trnumber:``; this
 key forces the class for every chapter. Also accepted as
 ``doc_class`` or ``doc-class``. CLI: ``--docclass``.
 
+A report is one HTML page and one PDF. The sidebar on that page is
+the report's sections. ``index.html`` is a catalog of links.
+Workflow and live examples: :doc:`reports`.
+
 Not in book.conf
 ----------------
 

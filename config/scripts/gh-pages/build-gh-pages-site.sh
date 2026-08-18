@@ -124,6 +124,11 @@ rewrite_site_links() {
     "$f"
 }
 
+# Skip uscribe/UTR generated HTML: those pages use their own relative links
+# and must not be rewritten as if they were pandoc site chrome.
 while IFS= read -r -d '' f; do
   rewrite_site_links "$f"
-done < <(find "$SITE" -name '*.html' -print0)
+done < <(find "$SITE" -name '*.html' \
+  ! -path "$SITE/doc/uscribe/out/*" \
+  ! -path "$SITE/doc/utr/html/*" \
+  -print0)

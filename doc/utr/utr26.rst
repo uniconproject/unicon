@@ -14,7 +14,8 @@
    covers the connection and channel model, authentication and
    attributes, examples and use cases, the three I/O tiers,
    interactive shells, SFTP, build integration, and remaining
-   work. Keywords: Unicon, SSH, SFTP, libssh, sockets, runtime,
+   work.
+:keywords: Unicon, SSH, SFTP, libssh, sockets, runtime,
    technical report.
 :docclass: report
 

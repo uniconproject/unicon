@@ -30,7 +30,7 @@ FILES=utr3.pdf utr15.pdf utr16.pdf utr18.pdf utr19.pdf utr22.pdf utr20.pdf utr23
 
 all: $(FILES)
 
-# RST reports listed in utr.manifest (currently UTR #26 and #27).
+# RST reports listed in utr.manifest (currently UTR #26–#29).
 html: $(USCRIBE)
 	mkdir -p $(HTMLDIR)
 	-cp -f *.pdf $(HTMLDIR)/ 2>/dev/null || true

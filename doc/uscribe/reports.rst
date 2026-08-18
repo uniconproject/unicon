@@ -14,8 +14,8 @@ Mark a file as a report
 -----------------------
 
 Start the ``.rst`` with a field list. ``:docclass: report`` (or a
-``:trnumber:``) selects report layout: masthead, abstract, article
-PDF, section sidebar.
+``:trnumber:``) selects report layout: masthead, abstract, keywords,
+article PDF, section sidebar.
 
 .. literalinclude:: includes/ex-report.rst
 

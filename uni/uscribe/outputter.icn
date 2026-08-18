@@ -409,10 +409,16 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
             }
         if \bits then
             write(outFile, "</p>")
-        if \n.getAbstract() then {
+        if \n.getAbstract() | \n.getKeywords() then {
             write(outFile, "<div class=\"report-abstract\">")
-            write(outFile, "<p class=\"report-abstract-label\">Abstract</p>")
-            write(outFile, "<p>", escapeHtml(n.getAbstract()), "</p>")
+            if \n.getAbstract() then {
+                write(outFile, "<p class=\"report-abstract-label\">Abstract</p>")
+                write(outFile, "<p>", escapeHtml(n.getAbstract()), "</p>")
+                }
+            if \n.getKeywords() then
+                write(outFile, "<p class=\"report-keywords\"><span ",
+                      "class=\"report-keywords-label\">Keywords:</span> ",
+                      escapeHtml(n.getKeywords()), "</p>")
             write(outFile, "</div>")
             }
         write(outFile, "</header>")

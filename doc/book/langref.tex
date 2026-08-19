@@ -1306,7 +1306,8 @@ consisting of one-letter substrings. Set and table elements are
 generated in an undefined order. If \texttt{x} is a messaging
 connection to a POP server, \texttt{!x} produces complete messages as
 strings. Other types of files, including network connections, produce
-elements consisting of text lines.
+elements consisting of text lines. Cryptographic handles and SSH
+sessions with no channel are not line streams; \texttt{!x} fails.
 Care should be taken \WarningNotThreadSafe\ when generating the elements
 of a variable that might change during the generation.
 
@@ -1765,6 +1766,22 @@ arbitrary keys, and records may be subscripted by either string
 fieldname or 1-based integer index. Message connections may be
 subscripted by string header to obtain server responses; POP
 connections may also be subscripted by 1-based integer message numbers.
+Cryptographic handles, SSH files, TLS sockets, and network sockets may
+be subscripted by a status field name for a non-destructive peek
+(\texttt{h["type"]}, \texttt{c["exitstatus"]}, \texttt{f["ttl"]},
+\texttt{conn["cipher"]}); an unknown name is a runtime error
+(1302 crypto, 1326 TLS, 1331 SSH, 1310 sockets) and an
+unpopulated field fails. Boolean peeks succeed with \texttt{"yes"} or
+\texttt{\&null}. \texttt{f["*"]} is a table snapshot of the answerable
+fields. Peeking a closed handle is error 174.
+\texttt{key(f)} that has not yet produced a name also raises 174 if the
+handle is already closed; after the first suspend, \texttt{close()}
+makes the generator fail instead of raising.
+\texttt{f["groups"]}, \texttt{s["authmethods"]}, \texttt{h["san"]}, and
+\texttt{conn["certchain"]} produce a list (a single item is still a
+list of length 1); other peeks are a string, integer, or \texttt{\&null}.
+\texttt{key(f)} generates the answerable field names, matching
+\texttt{key()} on a messaging connection.
 
 Subsectioning works on strings and lists. For strings, the subsection is
 a variable if the string was a variable, and
@@ -1905,30 +1922,26 @@ hyperbolic tangent of \texttt{r}. Arguments are given in radians.
 \hrule\vspace{0.1cm}
 \index{Attrib}
 \noindent
-{\bf Attrib(x, ...) : x* } \hfill {\bf get or set attributes}
+{\bf Attrib(x, ...) : x* } \hfill {\bf set attributes}
 
 \noindent
-\texttt{Attrib()} gets or sets attributes of its first argument.
-For a network socket file, trailing string arguments use the same
-\texttt{"\textit{name}"} / \texttt{"\textit{name}=\textit{value}"} form
-as \texttt{open()} socket attributes and \texttt{WAttrib()}: assignments
-set options (including \texttt{join}/\texttt{leave} for multicast
-memberships); bare names query the current value except for
-\texttt{join}, \texttt{leave}, and \texttt{source}, which fail.
+\texttt{Attrib()} sets attributes of its first argument.
+For a network socket file, trailing \texttt{"\textit{name}=\textit{value}"}
+strings set options (including \texttt{join}/\texttt{leave} for multicast
+memberships), using the same names as \texttt{open()} socket attributes
+and \texttt{WAttrib()}. Status is peeked with \texttt{f["\textit{name}"]},
+not with a bare name to \texttt{Attrib()}.
 Boolean values are \texttt{yes}/\texttt{no}; numeric values are
 integers. Socket attributes do not require the Concurrent build
 feature.
-For an SSH channel file, \texttt{Attrib(c, "exitstatus")} produces the
-remote command's exit status (and fails until it has arrived),
-\texttt{Attrib(c, "stderr")} returns stderr bytes accumulated since the
-previous such call, and \texttt{Attrib(c, "eof")} produces 1 once remote
-EOF has been seen.
-For a cryptographic handle, \texttt{Attrib(h, "type")} reports the
-material role; assignments such as \texttt{op=}, \texttt{alg=},
+SSH status (\texttt{exitstatus}, \texttt{stderr}, \texttt{eof}, and
+session fields such as \texttt{fingerprint}) is peeked with
+\texttt{c["\textit{name}"]}; \texttt{Attrib()} has no SSH setters.
+For a cryptographic handle, assignments such as \texttt{op=}, \texttt{alg=},
 \texttt{cipher=}, \texttt{iv=}, and \texttt{sig=} are allowed only in
-the idle window between operations. Digest checkpoint
-\texttt{Attrib(h, "state")}~/~\texttt{Attrib(h, "state=\textit{blob}")}
-is not supported with OpenSSL~3.
+the idle window between operations. Status including \texttt{type}
+(material role), \texttt{op} (operation), certificate identity, and a
+non-destructive hash \texttt{hash} peek uses \texttt{h["\textit{name}"]}.
 For a co-expression or list, integer attribute codes from
 \texttt{threadh.icn} query or set thread inbox/outbox and channel limits
 (see Chapter~8; requires Concurrent).
@@ -2619,6 +2632,11 @@ table \texttt{T}. \texttt{key(L)} generates the indices from 1 to
 \texttt{*L} in list \texttt{L}. \texttt{key(R)} generates the string
 field names of record \texttt{R}.
 \texttt{key(D)} generates the string key values of a DBM database \texttt{D}.
+\texttt{key(M)} generates header names on a messaging connection
+\texttt{M} (including \texttt{Status-Code} and \texttt{Reason-Phrase}).
+\texttt{key(f)} generates answerable status-field names on a cryptographic
+handle, SSH file, TLS socket, or network socket; \texttt{f[k]} peeks
+the corresponding value.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{keyword}
@@ -2962,10 +2980,11 @@ Mode \texttt{"nr"} opens a raw IP socket and requires
 \texttt{igmp}, or 0--255); the host argument is a bare address with
 no port. Optional \texttt{hdrincl=yes} sets \texttt{IP\_HDRINCL}.
 Packet bytes are built by the application (see package \texttt{net}
-/ \texttt{PacketSpec} in Chapter~5). The same attributes can be read
-or changed after \texttt{open()} with \texttt{Attrib()} (except
-\texttt{proto}, which is fixed at \texttt{socket()} time). See
-Chapter~5 for examples.
+/ \texttt{PacketSpec} in Chapter~5). The same attributes can be
+changed after \texttt{open()} with \texttt{Attrib()} (except
+\texttt{proto}, which is fixed at \texttt{socket()} time); status is
+peeked with \texttt{f["\textit{name}"]} (see
+Chapter~5 for examples).
 
 For a UDP socket, there is not really a connection, but any writes to
 that file will send a datagram to that address, so that the address
@@ -3214,9 +3233,15 @@ or fails if the conversion cannot be performed.
 \noindent
 \index{receive datagram}\texttt{receive(f)} reads a datagram addressed
 to the port associated with \texttt{f}, waiting if necessary. The
-returned value is a record of type \texttt{posix\_message(addr, msg)},
-containing the address of the sender and the contents of the message
-respectively. For an SSH channel file, \texttt{receive(c)} instead
+returned value is a record of type
+\texttt{posix\_message(addr, msg, saddr, daddr, ttl, proto)},
+containing the sender address (\texttt{host:port}), the message
+bytes, and IP-style \texttt{saddr}/\texttt{daddr}.
+On UDP, \texttt{saddr} is the numeric peer and \texttt{daddr} is
+null. On an IPv4 raw datagram that includes a header,
+\texttt{saddr}, \texttt{daddr}, \texttt{ttl}, and \texttt{proto}
+come from that header.
+For an SSH channel file, \texttt{receive(c)} instead
 yields the next channel event in arrival order: \texttt{addr} is
 \texttt{"stdout"}, \texttt{"stderr"}, or \texttt{"exit"}, and
 \texttt{msg} holds the data (the exit status as a string for
@@ -5114,12 +5139,19 @@ length\\
 1315 \ \ \ \ \ \ \ signature verification failed\\
 1316 \ \ \ \ \ \ \ invalid cryptographic operation state\\
 1317 \ \ \ \ \ \ \ cryptographic material could not be loaded\\
-1320 \ \ \ \ \ \ \ SSH error\\
-1321 \ \ \ \ \ \ \ bad ssh attribute\\
-1322 \ \ \ \ \ \ \ SSH authentication error\\
-1323 \ \ \ \ \ \ \ SSH host key verification error\\
-1324 \ \ \ \ \ \ \ SSH channel error\\
-1325 \ \ \ \ \ \ \ SFTP error\\
+1320 \ \ \ \ \ \ \ TLS certificate expired\\
+1321 \ \ \ \ \ \ \ TLS untrusted CA\\
+1322 \ \ \ \ \ \ \ TLS hostname mismatch\\
+1323 \ \ \ \ \ \ \ TLS no shared cipher\\
+1324 \ \ \ \ \ \ \ TLS protocol version mismatch\\
+1325 \ \ \ \ \ \ \ TLS handshake failed\\
+1326 \ \ \ \ \ \ \ bad TLS status field\\
+1330 \ \ \ \ \ \ \ SSH error\\
+1331 \ \ \ \ \ \ \ bad ssh attribute\\
+1332 \ \ \ \ \ \ \ SSH authentication error\\
+1333 \ \ \ \ \ \ \ SSH host key verification error\\
+1334 \ \ \ \ \ \ \ SSH channel error\\
+1335 \ \ \ \ \ \ \ SFTP error\\
 
 \subsection*{System errors}
 

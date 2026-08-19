@@ -729,10 +729,15 @@ and the message in it. The server uses the address to send the reply.
 \ \ \ \ \ \ \}
 }
 
-The record returned by \texttt{receive()} has two fields: the
-\texttt{addr} field contains the address of the sender in
+The record returned by \texttt{receive()} is
+\texttt{posix\_message}: \texttt{addr} is the sender in
 \texttt{"}\texttt{\textit{host}}\texttt{:}\texttt{\textit{port}}\texttt{"}
-form, and the \texttt{msg} field contains the message.
+form, \texttt{msg} is the payload. \texttt{saddr} and
+\texttt{daddr} are the IP-header names for source and destination.
+On UDP, \texttt{saddr} is the numeric peer address and
+\texttt{daddr} is null. On an IPv4 raw receive that includes a
+header, \texttt{saddr}/\texttt{daddr}/\texttt{ttl}/\texttt{proto}
+come from that header.
 
 To write a UDP client, use mode \texttt{"nu"}
 Since UDP is not reliable, the \texttt{receive()} is guarded
@@ -882,14 +887,17 @@ Explicit attributes always override the defaults. On send or connect,
 a \texttt{source@group:port} address keeps only the group so the
 destination is the group address.
 
-After \texttt{open()}, the same attributes can be read or changed with
-\index{Attrib()}\texttt{Attrib()}, using the same
-\texttt{"\textit{name}"} / \texttt{"\textit{name}=\textit{value}"} style
-as \texttt{WAttrib()}:
+After \texttt{open()}, assignments still use
+\index{Attrib()}\texttt{Attrib()} (\texttt{"\textit{name}=\textit{value}"}).
+Status is a non-destructive peek: \texttt{f["ttl"]}, \texttt{f["iface"]},
+\texttt{f["groups"]}, \texttt{f["proto"]}, \texttt{f["hdrincl"]}.
+\texttt{f["groups"]} is a list of joined group names (SSM as
+\texttt{source@group}); generate members with \texttt{!f["groups"]}.
+\texttt{key(f)} generates answerable field names.
 
 \iconcode{
 \>   Attrib(f, "ttl=4") \\
-\>   write(Attrib(f, "ttl")) \\
+\>   write(f["ttl"]) \\
 \>   Attrib(f, "join=239.1.1.2") \\
 \>   Attrib(f, "iface=127.0.0.1", "leave=239.1.1.1")
 }
@@ -897,10 +905,10 @@ as \texttt{WAttrib()}:
 \texttt{join} and \texttt{leave} add or drop memberships on an existing
 socket (forms match \texttt{open()}: \texttt{group} or
 \texttt{group,source}); pass \texttt{iface=} before \texttt{leave=}
-when the membership was joined on a specific interface. Memberships
-cannot be queried. Bare names for the other attributes return
-\texttt{yes}/\texttt{no}, an integer, or (for IPv4 \texttt{iface}) a
-dotted address; \texttt{source} cannot be queried either.
+when the membership was joined on a specific interface.
+\texttt{f["groups"]} reports joined groups as a list;
+\texttt{join}/\texttt{leave}
+themselves are not peek fields.
 
 \subsection*{Raw Sockets}
 \index{raw socket}\index{SOCK\_RAW}
@@ -914,7 +922,9 @@ privileges (root or administrator).
 The \texttt{proto=} attribute is required and selects the IP protocol
 number passed to \texttt{socket()}. Symbolic names include
 \texttt{icmp}, \texttt{igmp}, \texttt{ospf}, \texttt{pim}, and
-\texttt{gre}; any integer from 0 to 255 is also accepted. The first
+\texttt{gre}; any integer from 0 to 255 is also accepted.
+\texttt{f["proto"]} peeks that number; \texttt{Attrib()} cannot
+change it. The first
 argument to \texttt{open()} is a bare host or address (no
 \texttt{:port}): raw destinations are hosts, not transport endpoints.
 IPv6 literals are accepted as hosts and are not misparsed as
@@ -930,7 +940,10 @@ IPv6 literals are accepted as hosts and are not misparsed as
 
 On many platforms a raw receive buffer includes the IPv4 header in
 front of the protocol message; strip it (or use a library helper)
-before decoding the upper layer. The optional \texttt{hdrincl=yes}
+before decoding the upper layer. When that header is present,
+\texttt{r.saddr}, \texttt{r.daddr}, \texttt{r.ttl}, and
+\texttt{r.proto} are the source, destination, hop limit, and
+protocol from it. The optional \texttt{hdrincl=yes}
 attribute sets \texttt{IP\_HDRINCL} so writes may supply a complete
 IP header as well --- useful for crafted packets, but not required
 for ordinary ICMP or IGMP.
@@ -1075,7 +1088,7 @@ procedure main() \\
 \>   s := open("user@router.example", "hc", "key=~/.ssh/id\_rsa", \\
 \>\>\>\>"cmd=show version") {\textbar} stop(\&errortext) \\
 \>   while write(read(s)) \\
-\>   write("exit status: ", Attrib(s, "exitstatus")) \\
+\>   write("exit status: ", s["exitstatus"]) \\
 \>   close(s) \\
 end
 }
@@ -1114,9 +1127,13 @@ SFTP. Closing the session invalidates every handle derived from it.
 }
 
 Ordinary \texttt{read}/\texttt{writes} use the remote standard streams.
-\texttt{Attrib(c, "exitstatus")}, \texttt{Attrib(c, "stderr")}, and
-\texttt{Attrib(c, "eof")} report the command's exit status, stderr
-accumulated since the previous call, and whether remote EOF has arrived.
+\texttt{c["exitstatus"]}, \texttt{c["stderr"]}, and
+\texttt{c["eof"]} report the command's exit status, the current
+accumulated stderr (a peek, not a drain), and whether remote EOF has arrived
+(\texttt{"yes"} or \texttt{\&null}).
+\texttt{key(c)} generates answerable field names.
+On a session, \texttt{s["authmethods"]} is a list of advertised
+method names; \texttt{s["kex"]} is the key-exchange algorithm.
 \texttt{receive(c)} yields ordered events as
 \texttt{posix\_message} records whose \texttt{addr} is
 \texttt{"stdout"}, \texttt{"stderr"}, or \texttt{"exit"}.
@@ -1218,6 +1235,12 @@ once and reused across connections:
 \>   conn := open("host:443", "ne-", id)  \# same as verifyPeer=no
 }
 
+After a handshake, \texttt{conn["cipher"]} peeks the negotiated
+suite and \texttt{conn["version"]} the TLS version;
+\texttt{conn["certchain"]} is a list of peer certificates
+as PEM strings and \texttt{conn["san"]} is a list of peer
+Subject Alternative Names.
+
 Useful attributes include \texttt{op=} (\texttt{hash}, \texttt{hmac},
 \texttt{sign}, \texttt{verify}, \texttt{encrypt}, \texttt{decrypt}),
 \texttt{alg=} (digest name), \texttt{cipher=}, \texttt{iv=},
@@ -1225,10 +1248,16 @@ Useful attributes include \texttt{op=} (\texttt{hash}, \texttt{hmac},
 \texttt{password=} is an alias). Mode \texttt{"ne-"} is the same as
 \texttt{verifyPeer=no}. \texttt{Attrib()} may change them only in
 the idle window between operations; a change while a digest or cipher
-is in flight fails. \texttt{Attrib(h, "type")} reports the material
-role (\texttt{symkey}, \texttt{key}, \texttt{cert}, \ldots).
-Digest checkpoint \texttt{state}~/~\texttt{state=} is not available
-with OpenSSL~3 (the MD\_CTX export APIs were removed).
+is in flight fails. \texttt{h["type"]} reports the material
+role (\texttt{symkey}, \texttt{key}, \texttt{cert}, \ldots);
+\texttt{h["op"]} reports the operation (\texttt{hash}, \texttt{hmac},
+\texttt{sign}, \texttt{verify}, \texttt{encrypt}, \texttt{decrypt});
+\texttt{h["subject"]}, \texttt{h["san"]}, \texttt{h["notafter"]}, and
+\texttt{h["expired"]} introspect a certificate. On a hash, HMAC, or
+sign handle, \texttt{h["hash"]} peeks
+the current digest, MAC, or signature without finalizing. On encrypt/decrypt,
+\texttt{h["iv"]} peeks the IV that was set or generated.
+\texttt{key(h)} generates answerable field names.
 
 \section{Messaging Facilities}
 

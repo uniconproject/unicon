@@ -1,0 +1,86 @@
+#
+# Peek negotiated TLS status on a live socket (conn["cipher"], key(conn)).
+# Distinct from tlshandle.icn, which peeks material handles (cert/key files).
+#
+
+link tlsutil
+
+procedure main()
+   local port, skey, scert, ca, sock, k, n, chain, snap
+
+   if not (&features == "secure sockets layer encryption") then
+      stop("needs SSL")
+   if not (&features == "concurrent threads") then
+      stop("needs concurrent threads")
+
+   skey := "key=./data/unicon-server.key"
+   scert := "cert=./data/unicon-server.crt"
+   ca := "ca=./data/unicon-ca.crt"
+
+   port := tls_port()
+   tls_start([port, "nae", skey, scert, ca], 1)
+
+   sock := open(port, "ne", 5000, ca) | stop("client open: ", &errortext)
+
+   if \sock["cipher"] & (*sock["cipher"] > 0) then
+      write("cipher:ok")
+   else
+      write("cipher:fail")
+   if \sock["version"] then
+      write("version:ok")
+   else
+      write("version:fail")
+   if \sock["subject"] then
+      write("subject:ok")
+   else
+      write("subject:fail")
+   if sock["certverified"] == "yes" then
+      write("certverified:ok")
+   else
+      write("certverified:fail")
+   if sock["verifyresult"] == "ok" then
+      write("verifyresult:ok")
+   else
+      write("verifyresult:fail")
+   write("hostnamematch=", image(sock["hostnamematch"]) | "unpopulated")
+
+   n := 0
+   every k := !sock["san"] do {
+      n +:= 1
+      if k == "DNS:localhost" then
+         write("san localhost:ok")
+      }
+   if n > 0 then
+      write("san:ok")
+   else
+      write("san:fail")
+
+   chain := sock["certchain"] | stop("certchain unpopulated")
+   if type(chain) == "list" & *chain >= 1 &
+      match("-----BEGIN CERTIFICATE-----", chain[1]) then
+      write("certchain:ok")
+   else
+      write("certchain:fail")
+
+   n := 0
+   snap := sock["*"] | stop("snapshot failed")
+   every k := key(sock) do {
+      n +:= 1
+      sock[k] | stop("key without value: ", k)
+      snap[k] | stop("snapshot missing: ", k)
+      }
+   if n > 0 then
+      write("key:ok")
+   else
+      write("key:fail")
+
+   if match("file(", image(sock)) then
+      write("image:ok")
+   else
+      write("image:fail ", image(sock))
+   close(sock)
+   if match("file(", image(sock)) then
+      write("closed image:ok")
+   else
+      write("closed image:fail ", image(sock))
+end

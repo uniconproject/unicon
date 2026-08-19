@@ -1,0 +1,41 @@
+#
+# [ ] peek of socket status: ttl after Attrib set, groups as a list after join.
+#
+
+procedure main()
+   local f, group, group2, port, n, k, g, snap
+
+   group := "239.42.42.47"
+   group2 := "239.42.42.48"
+   port := "5106"
+   f := open(":" || port, "nua4") | stop("open failed: ", &errortext)
+   Attrib(f, "ttl=5") | stop("Attrib ttl failed")
+   write("ttl=", f["ttl"])
+   Attrib(f, "iface=127.0.0.1", "join=" || group) |
+      stop("join failed: ", &errortext)
+   Attrib(f, "iface=127.0.0.1", "join=" || group2) |
+      stop("join2 failed: ", &errortext)
+   g := f["groups"] | stop("groups unpopulated")
+   if type(g) == "list" & *g = 2 & g[1] == group & g[2] == group2 then
+      write("groups:ok")
+   else
+      write("groups:fail ", image(g))
+   n := 0
+   snap := f["*"] | stop("snapshot failed")
+   every k := key(f) do {
+      n +:= 1
+      f[k] | stop("key without value: ", k)
+      snap[k] | stop("snapshot missing: ", k)
+      }
+   if n > 0 then
+      write("key:ok")
+   else
+      write("key:fail")
+   write("image=", image(f))
+   Attrib(f, "iface=127.0.0.1", "leave=" || group) |
+      stop("leave failed: ", &errortext)
+   Attrib(f, "iface=127.0.0.1", "leave=" || group2) |
+      stop("leave2 failed: ", &errortext)
+   close(f)
+   write("closed image=", image(f))
+end

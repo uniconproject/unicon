@@ -13,13 +13,15 @@ procedure main()
    close(f)
 
    # Flip a byte in the middle of the ciphertext file.
-   f := open("data/tamper.dat", "r") | stop("open raw failed: ", &errortext)
+   # "u" is required on Windows: text-mode reads treat 0x1A as EOF, which
+   # truncates random AEAD ciphertext ("ciphertext too short").
+   f := open("data/tamper.dat", "ru") | stop("open raw failed: ", &errortext)
    raw := reads(f, 10000) | stop("read raw failed")
    close(f)
    if *raw < 8 then
       stop("ciphertext too short")
    raw[8] := char(ixor(ord(raw[8]), 1))
-   f := open("data/tamper.dat", "w") | stop("rewrite failed")
+   f := open("data/tamper.dat", "wu") | stop("rewrite failed")
    writes(f, raw)
    close(f)
 

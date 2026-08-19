@@ -32,7 +32,7 @@ The language-facing reference lives in *Programming with Unicon*
 :cite:`Jeffery:PwU` (Chapter 5, "Raw Sockets" and "PacketSpec
 and package net"; Chapter 14, ``uping`` and ``uigmp``) and the
 language reference (``open`` mode ``nr``, attributes ``proto``
-and ``hdrincl``). Automated plumbing tests live in
+and ``hdrincl``, subscript peek). Automated plumbing and peek tests live in
 ``tests/posix/raw_sock.icn``.
 
 Raw sockets are part of the POSIX network facility, not an
@@ -75,8 +75,8 @@ as read mode before ``n`` is seen.
 The third argument to ``socket(2)`` is the IP protocol number.
 There is no useful default: ICMP, IGMP, and OSPF are different
 sockets. A missing, empty, or unknown ``proto=`` is error 1310
-(``bad socket attribute``). ``Attrib(f, "proto")`` cannot query
-or change it afterwards.
+(``bad socket attribute``). ``f["proto"]`` peeks the protocol
+number stored at ``open()``; ``Attrib()`` cannot change it.
 
 **The runtime does not build protocol payloads.** Writes send
 whatever bytes the caller supplies. Receives return whatever the
@@ -87,7 +87,10 @@ fill that gap.
 **Datagram I/O matches UDP.** Raw sockets are not connected.
 ``writes()`` uses ``sendto(2)`` with the destination saved at
 ``open()``. Incoming packets use ``receive()``, which returns a
-record with ``addr`` and ``msg``, not ``read()`` / ``reads()``.
+record with ``addr``, ``msg``, ``saddr``, ``daddr``, and (for IPv4 raw
+datagrams that include a header) ``ttl`` and ``proto``.
+Those extra fields are also available as ``r.ttl`` /
+``r.saddr``. Use ``receive()``, not ``read()`` / ``reads()``.
 
 **Two layers for callers.** Session wrappers (``Ping``,
 ``Igmp``) hide mode letters for the common cases. PacketSpec
@@ -174,8 +177,8 @@ prints ``raw-icmp: ok`` (or the test suite's ``plumbing-ok``).
 
 .. _sec-attrs:
 
-5. Attributes
-=============
+5. Attributes and status peek
+=============================
 
 Trailing ``open()`` arguments are the same ``name=value``
 socket attributes used for TCP and UDP :cite:`AlGharaibeh:UTR28`.
@@ -189,7 +192,8 @@ multicast-only knobs.
    * - Attribute
      - Role on a raw socket
    * - ``proto=``
-     - Required. Consumed at ``socket()``. Not queryable.
+     - Required. Consumed at ``socket()``. Peek with
+       ``f["proto"]``; ``Attrib()`` cannot change it.
    * - ``hdrincl=yes``
      - Sets ``IP_HDRINCL`` so writes may include a complete IPv4
        header. Optional; ordinary ICMP/IGMP leave it off.
@@ -204,9 +208,46 @@ multicast-only knobs.
      - Multicast membership, including SSM ``source@group``
        forms. Useful when sniffing IGMP on a group.
 
-``Attrib(f, "ttl=4")`` and ``Attrib(f, "ttl")`` use the same
-names after ``open()``. ``proto`` remains create-time only.
-``hdrincl`` can be read back as ``yes`` / ``no``.
+``Attrib(f, "ttl=4")`` sets hop limits after ``open()``.
+Status uses the same ``[ ]`` / ``key()`` get as UDP
+:cite:`AlGharaibeh:UTR28`: unknown names raise 1310, unpopulated
+fields fail, ``Attrib()`` only assigns. Peeking a closed handle
+is error 174. ``key(f)`` that has not yet produced a name also
+raises 174 if the handle is already closed; after the first
+suspend, ``close()`` makes the generator fail instead of raising.
+Raw sockets add ``proto`` (fixed at ``socket()``) and ``hdrincl``.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Name
+     - Value
+   * - ``proto``
+     - IP protocol number from ``proto=``: ``1`` (``icmp``),
+       ``2`` (``igmp``), ``89`` (``ospf``)
+   * - ``hdrincl``
+     - ``"yes"`` or ``&null``
+   * - ``ttl``
+     - Hop limit (integer), e.g. ``64``
+   * - ``iface``
+     - Outbound / join interface, e.g. ``127.0.0.1``
+   * - ``groups``
+     - List of joined groups, e.g. ``239.1.1.1``; unpopulated
+       until ``join=``
+   * - ``mcastloop`` / ``reuseaddr`` / ``reuseport`` /
+       ``broadcast``
+     - ``"yes"`` or ``&null``
+   * - ``rcvbuf`` / ``sndbuf``
+     - Buffer sizes in bytes (integers)
+
+.. code-block:: unicon
+
+   f := open("127.0.0.1", "nr", "proto=icmp") | stop(&errortext)
+   write("proto=", f["proto"])
+   write("ttl=", f["ttl"] | "unpopulated")
+   every k := key(f) do
+      write("field ", k)
+   close(f)
 
 .. _sec-io:
 
@@ -228,8 +269,14 @@ destination in a supplied IP header).
 ``receive()`` peeks with ``MSG_PEEK`` into a 2K buffer, then
 consumes with ``recvfrom``. If the peek fills 2K, the consume
 uses a 64K buffer so a large datagram is not truncated. The
-result is a record: ``addr`` is the peer (often ``a.b.c.d:0``
-for raw IPv4), ``msg`` is the byte string.
+result is a ``posix_message``: ``addr`` is the peer (often
+``a.b.c.d:0`` for raw IPv4), ``msg`` is the byte string.
+``saddr`` / ``daddr`` use the usual IP-header names: on an IPv4
+raw receive they are the header source and destination; on UDP,
+``saddr`` is the numeric peer address and ``daddr`` is
+unpopulated. When the receive buffer starts
+with an IPv4 header, ``ttl`` and ``proto`` are that header's
+hop limit and protocol; otherwise those fields are null.
 
 On many IPv4 stacks a raw receive buffer starts with the IP
 header, then the protocol message. Linux ICMP is the usual
@@ -628,6 +675,10 @@ success. It checks that:
 - ``hdrincl=maybe`` is rejected
 - without a preceding ``n``, mode ``"r"`` still opens a file
   for reading
+- when ``SOCK_RAW`` is allowed, ``f["proto"]`` is 1 after
+  ``proto=icmp`` and ``key(f)`` yields populated names
+  (privilege denial still prints ``raw-peek:ok`` /
+  ``raw-key:ok`` so the ``.std`` stays portable)
 
 Expected output is ``tests/posix/stand/raw_sock.std``:
 
@@ -642,6 +693,8 @@ Expected output is ``tests/posix/stand/raw_sock.std``:
    raw-numeric: plumbing-ok
    bad-hdrincl: bad socket attribute
    read-mode-r: ok
+   raw-peek:ok
+   raw-key:ok
 
 On an unprivileged account the ``raw-*`` lines still print
 ``plumbing-ok``: the test treats both a successful ``socket()``

@@ -9,7 +9,7 @@
    design and implementation: a client that binds libssh and
    exposes sessions, multiplexed channels, and SFTP through
    existing language verbs -- open(), read()/write(), receive(),
-   Attrib(), stat(), remove(), and rename() -- rather than a
+   subscript peek, stat(), remove(), and rename() -- rather than a
    parallel SSH-specific API. The report
    covers the connection and channel model, authentication and
    attributes, examples and use cases, the three I/O tiers,
@@ -32,8 +32,8 @@ and what remains out of scope. It
 is formatted as a Unicon Technical Report :cite:`Jeffery:UTR15`.
 The language-facing reference lives in *Programming with Unicon*
 (Chapter 6, "Secure Shell") and the language reference
-(``open`` mode ``h``, ``Attrib``, ``receive``, ``stat`` /
-``remove`` / ``rename``). :ref:`section 6 <sec-examples>`
+(``open`` mode ``h``, subscript peek, ``key()``, ``receive``,
+``stat`` / ``remove`` / ``rename``). :ref:`section 6 <sec-examples>`
 collects examples by mode and use case. Automated tests live in
 ``tests/posix/ssh.icn``.
 
@@ -153,9 +153,10 @@ channel or session means not calling ``close()``, the same as any
 other file.
 
 ``receive()`` already returns a general-purpose ``posix_message``
-record (fields ``addr`` and ``msg``) for UDP and raw datagrams.
-SSH reuses that type for an ordered stdout/stderr/exit-status
-event stream (:ref:`section 8.3 <sec-receive>`).
+record (``addr``, ``msg``, ``saddr``, ``daddr``, ``ttl``, ``proto``) for
+UDP and raw datagrams. SSH reuses that type for an ordered
+stdout/stderr/exit-status event stream, using ``addr`` and
+``msg`` (:ref:`section 8.3 <sec-receive>`).
 
 ``stat(f)`` already ``type_case``s on its argument (string path
 versus open file). SFTP extends both branches
@@ -255,7 +256,7 @@ status:
 ================================
 
 Trailing ``open()`` arguments are ``name=value`` strings. Empty
-values and unknown names fail (error 1321). Boolean-style
+values and unknown names fail (error 1331). Boolean-style
 attributes without a value are not accepted -- every attribute
 must contain ``=``. SFTP is selected by mode character ``s`` after
 ``h`` (``"hs"``), not by a valueless attribute.
@@ -398,7 +399,7 @@ intent (``"hsw"``, or ``open(..., "hs", ..., "w")``).
      - attribute (timeout)
      - Connect timeout in milliseconds
 
-``channel=no`` with ``hc`` or ``cmd=`` fails (error 1321).
+``channel=no`` with ``hc`` or ``cmd=`` fails (error 1331).
 ``cmd=`` without ``c`` also fails.
 
 .. _sec-ex-shell:
@@ -433,7 +434,7 @@ of, or in addition to, ``key=``.
 
 Mode ``"hc"`` with ``cmd=`` runs one command and returns its
 stdout through ordinary ``read()`` / ``reads()``.
-``Attrib(c, "exitstatus")`` is the remote exit code once it has
+``c["exitstatus"]`` is the remote exit code once it has
 arrived:
 
 .. code-block:: unicon
@@ -442,7 +443,7 @@ arrived:
       s := open("user@host", "hc", "key=/home/user/.ssh/id_ed25519",
                 "cmd=uname -a") | stop(&errortext)
       while write(read(s))
-      write("exit status: ", Attrib(s, "exitstatus"))
+      write("exit status: ", s["exitstatus"])
       close(s)
    end
 
@@ -475,9 +476,9 @@ use ``receive()``:
          }
    close(s)
 
-``Attrib(c, "stderr")`` is the other stderr path: it drains bytes
-accumulated since the previous call, without preserving order
-against stdout. See :ref:`section 8 <sec-io>`.
+``c["stderr"]`` is the other stderr path: it peeks the current
+accumulated buffer, without preserving order against stdout. See
+:ref:`section 8 <sec-io>`.
 
 .. _sec-ex-channels:
 
@@ -573,7 +574,7 @@ This matches the SSL connect path: set ``&errortext``, tear down
 what was allocated, and fail, so callers write
 ``if s := open(...) then ... else ...``. Runtime errors are
 reserved for type mistakes (passing a non-SSH file to
-``open(s, "hc")``, a bad ``Attrib`` name on an SSH file).
+``open(s, "hc")``, a bad peek name on an SSH file).
 
 Error numbers, defined in ``src/runtime/data.r``:
 
@@ -583,22 +584,22 @@ Error numbers, defined in ``src/runtime/data.r``:
    * - Number
      - Text
      - Typical cause
-   * - 1320
+   * - 1330
      - SSH error
      - Connect failure, allocation, bad host string
-   * - 1321
+   * - 1331
      - bad ssh attribute
      - Unknown name, empty value, ``cmd=`` without ``c``, ``channel=no`` with ``hc``
-   * - 1322
+   * - 1332
      - SSH authentication error
      - No method succeeded
-   * - 1323
+   * - 1333
      - SSH host key verification error
      - Server not in ``known_hosts`` (when verifying)
-   * - 1324
+   * - 1334
      - SSH channel error
      - Channel open, I/O, or a closed/cascaded handle
-   * - 1325
+   * - 1335
      - SFTP error
      - SFTP subsystem, path, or transfer failure
 
@@ -609,7 +610,7 @@ because Unicon allocation is not allowed while unregistered.
 
 .. _sec-io:
 
-8. I/O: streams, ``Attrib()``, and ``receive()``
+8. I/O: streams, peek fields, and ``receive()``
 ================================================
 
 Three tiers, layered simple-default to full-fidelity. All three
@@ -629,41 +630,113 @@ distinguish stderr or preserve cross-stream order.
 
 Writes to a channel call ``ssh_channel_write()`` and retry short
 writes. Writes to a transport-only session (no channel) fail with
-1324. SFTP regular files use ``sftp_write()`` on the same path.
+1334. SFTP regular files use ``sftp_write()`` on the same path.
 
 .. _sec-attrib:
 
-8.2 ``Attrib()`` for exit status, stderr, and EOF
--------------------------------------------------
+8.2 Peek fields (``[ ]`` and ``key()``)
+---------------------------------------
 
-``Attrib()`` already exists generically -- documented as
-"read/write attributes (threads, sockets, ...)" -- and is already
-used for socket options. SSH channels add three query-only names:
+Status on SSH files is a non-destructive peek through ``[ ]``,
+not ``Attrib()``. ``Attrib()`` has no SSH setters. Unknown names
+raise 1331. An unpopulated field fails. Boolean fields that
+answered succeed with ``"yes"`` or ``&null`` (never ``"no"``).
+``key(c)`` generates every answerable field, including false
+booleans. ``c["*"]`` snapshots those fields under one lock.
+Peeking a closed handle is error 174; ``close()`` keeps the
+original name so ``image(c)`` remains ``file(user@host)``.
+``key(c)`` that has not yet produced a name also raises 174 if
+the handle is already closed. After the first suspend,
+``close()`` makes the generator fail instead of raising, so a
+walk does not turn a mid-generation close into an error.
+The same split as messaging: ``!`` generates content,
+``key()`` generates names. Channels keep line-generating
+``!`` (they carry ``Fs_Socket``). Transport-only sessions
+(``channel=no``) are not line streams; ``!s`` fails.
 
-- ``Attrib(c, "exitstatus")`` -- the remote command's exit status,
-  as an integer. **Fails until the exit-status callback has
-  fired.** The implementation pumps the channel until that happens
-  or the channel is done with no status. Preferring callback state
-  over libssh's blocking ``get_exit_*`` helpers avoids
-  version-sensitive fallbacks once callbacks are registered. This
-  reuses the ordinary Unicon "fail = not ready" idiom, the same as
-  ``read()`` failing at EOF.
-- ``Attrib(c, "stderr")`` -- drains **only new bytes since the
-  last call** (a live incremental accessor, not a cumulative
-  snapshot). Not gated on EOF: reading partial stderr mid-run is
-  safe and useful. Returns a possibly empty string.
-- ``Attrib(c, "eof")`` -- ``1`` once the remote sent EOF, else
-  ``0``. Useful when a caller is multiplexing with ``select()``
-  and needs to distinguish "no stdout yet" from "channel finished."
+A few fields are lists: one item is still a list of length 1.
+Walk members with ``!s["authmethods"]``.
 
-Unknown names on an SSH file raise 1321.
+**Channel** (exec, shell, or SFTP handle). ``c["type"]`` is
+``channel`` or ``sftp``.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Name
+     - Value
+   * - ``type``
+     - ``channel`` or ``sftp``
+   * - ``exitstatus``
+     - Integer remote exit code. **Fails until the exit-status
+       callback has fired.** The implementation pumps the channel
+       until that happens or the channel is done with no status.
+   * - ``stderr``
+     - Accumulated stderr (a peek, not a drain). Fails if empty.
+       Not gated on EOF.
+   * - ``eof``
+     - ``"yes"`` once the remote sent EOF, else ``&null``.
+       Fails on a transport-only session with no channel.
+   * - ``bytesread`` / ``byteswritten``
+     - Running counters (integers).
+
+**Session** (the authenticated connection, including
+``channel=no``).
+
+.. list-table::
+   :header-rows: 1
+
+   * - Name
+     - Value
+   * - ``type``
+     - ``session``
+   * - ``fingerprint``
+     - Server host-key SHA-256, e.g. ``SHA256:x3Gnt...``
+   * - ``authmethods``
+     - List of method names (``publickey``, ``password``,
+       ``keyboard-interactive``, ``hostbased``, ``none``)
+   * - ``cipher``
+     - Negotiated inbound cipher:
+       ``aes256-gcm@openssh.com``,
+       ``chacha20-poly1305@openssh.com``, ``aes256-ctr``
+   * - ``kex``
+     - Key-exchange algorithm: ``curve25519-sha256``,
+       ``ecdh-sha2-nistp256``, ``diffie-hellman-group14-sha256``
+   * - ``mac``
+     - Inbound MAC: ``hmac-sha2-256``, ``hmac-sha2-512``
+       (empty on AEAD ciphers)
+   * - ``serverbanner``
+     - Server identification string, e.g. ``SSH-2.0-OpenSSH_9.6``
+   * - ``connected``
+     - ``"yes"`` or ``&null``
 
 .. code-block:: unicon
 
+   s := open("user@host", "h", "key=id_rsa", "channel=no") |
+      stop(&errortext)
+   write("type=", s["type"], " kex=", s["kex"])
+   every m := !s["authmethods"] do
+      write("auth ", m)
+   every k := key(s) do
+      write("session field ", k)
+
    c := open(s, "hc", "cmd=apply-config /tmp/newconfig.json")
-   while line := reads(c) do process(line)
-   if \Attrib(c, "exitstatus") = 0 then write("ok")
-   else write("failed: " || Attrib(c, "stderr"))
+   while line := reads(c) do
+      process(line)
+   if \c["exitstatus"] = 0 then
+      write("ok")
+   else
+      write("failed: " || (c["stderr"] | ""))
+   every k := key(c) do
+      write("channel field ", k)
+   close(c)
+   close(s)
+
+Preferring callback state over libssh's blocking
+``get_exit_*`` helpers avoids version-sensitive fallbacks once
+callbacks are registered. Failing until the status is ready
+reuses the ordinary Unicon "fail = not ready" idiom, the same as
+``read()`` failing at EOF.
 
 .. _sec-receive:
 
@@ -673,7 +746,7 @@ Unknown names on an SSH file raise 1321.
 A command can produce interleaved stdout and stderr where the
 caller needs to know *when* an stderr message occurred relative
 to stdout. Neither ``reads()`` (stdout only) nor
-``Attrib(c, "stderr")`` (a separate drain) can preserve that.
+``c["stderr"]`` (a separate peek) can preserve that.
 
 ``receive(c)`` on an SSH channel yields the next queued event as a
 ``posix_message`` whose ``addr`` is ``"stdout"``, ``"stderr"``, or
@@ -713,7 +786,7 @@ Each callback appends a tagged chunk (``SSH_CHUNK_STDOUT`` /
 while the thread is unregistered (``DEC_NARTHREADS``), where Unicon
 allocation is not allowed. ``ssh_pump()`` drives
 ``ssh_channel_poll_timeout()`` so the callbacks run. Stream reads consume stdout chunks;
-``Attrib(c, "stderr")`` drains stderr chunks; ``receive()`` pops
+``c["stderr"]`` peeks stderr chunks; ``receive()`` pops
 whatever is at the head. One mechanism, three accessors.
 
 .. _sec-interactive:
@@ -976,7 +1049,7 @@ what that covers, and no exec timeout -- a stuck command blocks
 until ``close()``, matching ordinary blocking sockets.
 
 **Trust-on-first-use.** Verification is check-only
-(``ssh_session_is_known_server``). A new host fails with 1323
+(``ssh_session_is_known_server``). A new host fails with 1333
 unless the caller uses ``h-`` or installs the key in
 ``known_hosts`` out of band. The runtime does not write the
 store.
@@ -998,7 +1071,7 @@ round-trip runs only when
 ``UNICON_SSH_TESTHOST`` is set (host or ``user@host``), with
 optional ``UNICON_SSH_TESTPORT``, ``UNICON_SSH_TESTKEY``,
 ``UNICON_SSH_KNOWNHOSTS``, and ``UNICON_SSH_SFTPPATH``. The live
-path covers exec stdout, ``Attrib(c, "exitstatus")``,
+path covers exec stdout, ``c["exitstatus"]``,
 ``receive()`` event tags, partial-line ``reads()`` of a
 ``printf`` with no newline, and SFTP write/read/stat/remove of a
 binary payload.

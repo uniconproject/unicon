@@ -96,6 +96,9 @@ jobs:
     - name: Test
       run: make Test
 
+    - name: TLS Benchmark
+      run: make -C tests/rtt tls_bench
+
     - name: TestReport
       if: ${{ steps.build.outcome == 'success' }}
       run: |
@@ -158,6 +161,9 @@ jobs:
 
     - name: Test
       run: make Test
+
+    - name: TLS Benchmark
+      run: make -C tests/rtt tls_bench
 
     - name: TestReport
       if: ${{ steps.build.outcome == 'success' }}
@@ -280,6 +286,9 @@ jobs:
     - name: Test
       run: make Test
 
+    - name: TLS Benchmark
+      run: make -C tests/rtt tls_bench
+
     # In container jobs, ${{ github.workspace }} is expanded to the runner host path; the shell runs
     # inside the container where the repo lives under $GITHUB_WORKSPACE instead.
     - name: TestReport
@@ -350,6 +359,10 @@ jobs:
 
     - name: Test
       run: make Test
+      shell: alpine.sh {0}
+
+    - name: TLS Benchmark
+      run: make -C tests/rtt tls_bench
       shell: alpine.sh {0}
 
     - name: TestReport
@@ -458,6 +471,9 @@ jobs:
       env:
         VRFY: -2
 
+    - name: TLS Benchmark
+      run: make -C tests/rtt tls_bench
+
     - name: TestReport
       if: ${{ steps.build.outcome == 'success' }}
       run: |
@@ -534,6 +550,10 @@ jobs:
    - name: Test
      shell: freebsd {0}
      run: cd $GITHUB_WORKSPACE && gmake Test
+
+   - name: TLS Benchmark
+     shell: freebsd {0}
+     run: cd $GITHUB_WORKSPACE && gmake -C tests/rtt tls_bench
 
    # Tee to repo root so the file is on the runner workspace (vmactions sometimes omits subpaths under tests/).
    - name: TestReport

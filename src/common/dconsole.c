@@ -15,8 +15,23 @@ void wattr(FILE *, char *, int);
 
 /* FILE *ConsoleBinding = NULL; moved to rwindow.r */
 
+#ifdef Concurrent
+#ifdef HAVE_KEYWORD__THREAD
+UNICON_THREAD_LOCAL struct threadstate roottstate;
+UNICON_THREAD_LOCAL struct threadstate *curtstate;
+#else                                   /* HAVE_KEYWORD__THREAD */
+struct threadstate roottstate;
+struct threadstate *curtstate = &roottstate;
+#endif                                  /* HAVE_KEYWORD__THREAD */
+#else                                   /* Concurrent */
 struct threadstate roottstate, *curtstate = &roottstate;
+#endif                                  /* Concurrent */
+#if defined(Concurrent) && defined(HAVE_KEYWORD__THREAD)
+struct threadstate *global_curtstate;
+#else
 struct threadstate *global_curtstate = &roottstate;
+#endif
+
 
 #ifdef MultiProgram
 
@@ -95,10 +110,15 @@ void thread_control(int val)
 
 void init_threadstate(struct threadstate *ts)
 {
-
+#ifdef HAVE_KEYWORD__THREAD
+   curtstate = ts;
+#endif                                  /* HAVE_KEYWORD__THREAD */
+   global_curtstate = ts;
 }
 
+#ifndef HAVE_KEYWORD__THREAD
 pthread_key_t tstate_key;
+#endif                                  /* !HAVE_KEYWORD__THREAD */
 
 #endif                                          /* Concurrent */
 
@@ -284,7 +304,7 @@ void initalloc(word codesize)
            for(i=0; i<NUM_STATIC_MUTEXES-1; i++)
               MUTEX_INITID(i, NULL);
          }
-         /*init_threadstate(curtstate);*/  /* is this necessarry?  */
+         init_threadstate(&roottstate);
 #endif                                  /*Concurrent*/
 
    if ((strfree = strbase = (char *)AllocReg(ssize)) == NULL)

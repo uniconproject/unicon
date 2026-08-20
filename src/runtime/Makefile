@@ -77,42 +77,52 @@ interp_all: update_rev
 # but some versions of strip don't have the -x flag (e.g. strict POSIX compliance),
 # so only use strip -x when it is known to be needed and available (MacOS).
 
-# NTCONDEP is set to NTCON on windows only to add a dependency that sets NTCONSOLE
-$(UNICONX) $(ICONXEXE): $(NTCONDEP) $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
+ifneq ($(NTCONDEP),)
+#
+# Windows: console (iconx) and GUI (wiconx) share CONSOLEOBJS with different
+# -DNTConsole flags.  A phony "delete then rebuild" prerequisite races under
+# make -j (make decides .o files are current, then NTCON/WNTCON deletes them
+# before the link).  Wipe in the recipe, then recursive make with NTCONSOLE
+# on the command line so objects are remade before linking.
+#
+$(UNICONX) $(ICONXEXE): ../../rt/lib/libucommon.a ../../rt/lib/libuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a icon.$(O)
+	$(RM) $(CONSOLEOBJS)
+	$(MAKE) NTCONSOLE="-DNTConsole -DMSWindows" $(UNICONX)-relink
+
+.PHONY: $(UNICONX)-relink
+$(UNICONX)-relink: $(OBJS)
 	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o $(UNICONX)  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -luconsole
 	$(CP) $(UNICONX)$(EXE) ../../bin
 	$(STRIP) ../../bin/$(UNICONX)$(EXE);
 
-# on windows, always add WNTCON dependency to set NTCONSOLE accordingly
-$(UNICONWX) $(WICONEXE): WNTCON $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libwuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
+$(UNICONWX) $(WICONEXE): $(UNICONX) ../../rt/lib/libucommon.a ../../rt/lib/libwuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a icon.$(O)
+	$(RM) $(CONSOLEOBJS)
+	$(MAKE) NTCONSOLE="-DMSWindows" $(UNICONWX)-relink
+
+.PHONY: $(UNICONWX)-relink
+$(UNICONWX)-relink: $(OBJS)
 	$(CC) $(LDFLAGS) -Wl,--subsystem,windows $(WSTKLDFLAG) $(RLINK) -o $(UNICONWX)  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -lwuconsole
 	$(CP) $(UNICONWX)$(EXE) ../../bin
 	$(STRIP) ../../bin/$(UNICONWX)$(EXE);
+
+else
+# NTCONDEP is set to NTCON on windows only to add a dependency that sets NTCONSOLE
+$(UNICONX) $(ICONXEXE): $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
+	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o $(UNICONX)  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -luconsole
+	$(CP) $(UNICONX)$(EXE) ../../bin
+	$(STRIP) ../../bin/$(UNICONX)$(EXE);
+
+$(UNICONWX) $(WICONEXE): $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libwuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
+	$(CC) $(LDFLAGS) -Wl,--subsystem,windows $(WSTKLDFLAG) $(RLINK) -o $(UNICONWX)  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -lwuconsole
+	$(CP) $(UNICONWX)$(EXE) ../../bin
+	$(STRIP) ../../bin/$(UNICONWX)$(EXE);
+endif
 
 # prepare the icon for the executables
 icon.$(O):
 	$(CP) -u ../../config/win32/gcc/icon.rc .
 	$(CP) -u ../../config/win32/gcc/unicon.ico .
 	windres $(RCFLAGS) icon.rc icon.$(O)
-
-#
-# The following three rules are needed on windows
-#
-
-#iconx needs NTConsole to be defined/set, make this a dependency for iconx to set it
-NTCON: CONSOLE icon.$(O)
-	@echo set NTCONSOLE=-DNTConsole -DMSWindows
-	$(eval NTCONSOLE=-DNTConsole -DMSWindows)
-
-# set NTConsole for wiconx
-WNTCON: CONSOLE icon.$(O)
-	@echo set NTCONSOLE=-DMSWindows
-	$(eval NTCONSOLE=-DMSWindows )
-
-# make sure to clean the files affected by NTConsole to force rebuild them
-CONSOLE:
-	$(RM) $(CONSOLEOBJS)	
-
 
 # urtt's preprocessor does not see $(CPPFLAGS); pass -I so config.h finds auto.h (iconx and iconc).
 x%.$(O): %.r $(HDRS)
@@ -171,7 +181,8 @@ rt.a: ../../rt/lib/libucommon.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a ../.
 	$(CP) rt.a ../common/dlrgint.$(O) ../../rt/lib/
 	$(CP) rt.db ../../rt/lib/
 
-# One urtt run for all compiler RTL sources: single rt.db load/dump; C compiles parallel in urtt (Unix).
+# One urtt run for all compiler RTL sources: single rt.db load/dump; C compiles
+# parallel in urtt (fork on Unix; _spawnvp on Windows).
 compiler-rtl-stamp: $(RTL_BATCH_DEPS)
 	$(CMNT)	@echo "   [ICONC RTT batch] $(RTLSRC)"
 	$(RM) rt.db $(RTL_COBJS)

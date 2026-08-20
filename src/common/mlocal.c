@@ -393,7 +393,6 @@ FILE *pathOpen(char *fname, char *mode)
    char *s = findexe(fname, tmp, 255);
    if (s) {
 #if MSDOS
-     int pathOpenHandle(char *fname, char *mode);
      int handle = pathOpenHandle(s, mode);
      if (handle == -1) return NULL;
      return fdopen(handle, mode);

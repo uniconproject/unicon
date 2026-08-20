@@ -7,10 +7,12 @@ all:
 	cd ../gprocs; $(MAKE)
 	cd ../mprocs; $(MAKE)
 
+# CFUNCTARGET is "windows" / "disabled" when the shared lib is not built; only
+# copy artifacts when they exist (avoids noisy ignored cp errors on Windows).
 Cfun:
 	cd ../cfuncs; LPATH= $(MAKE) ICONT=../../bin/$(UNICONT)
-	-cd ../cfuncs; $(CP) cfunc.u ../lib
-	-cd ../cfuncs; cp libcfunc.so ../../bin
+	@if test -f ../cfuncs/cfunc.u; then $(CP) ../cfuncs/cfunc.u ../lib; fi
+	@if test -f ../cfuncs/libcfunc.so; then $(CP) ../cfuncs/libcfunc.so ../../bin; fi
 
 clean Clean Pure:
 	cd ../procs; $(MAKE) Clean

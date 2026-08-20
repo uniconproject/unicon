@@ -18,11 +18,11 @@ static void add_tdef (char *name);
 static void rtt_progress_file(const char *path);
 static int rtt_cc_is_tmp_chunk_c(const char *path);
 static void rtt_progress_cc(const char *path);
-#ifdef HAVE_WORKING_FORK
+#if defined(HAVE_WORKING_FORK) || NT
 static int rtt_parallel_cc(const char *ccomp, const char *copts,
                            const char *file_list, int silent);
 static void rtt_remove_c_files(const char *file_list);
-#endif /* HAVE_WORKING_FORK */
+#endif /* HAVE_WORKING_FORK || NT */
 extern int yynerrs;
 extern int __merr_errors;
 
@@ -120,7 +120,7 @@ static char *cur_src;                           /* current source (.r) file */
 static int silent = 0;
 
 /*
- * Parallel gcc -c job cap from -j n (Unix). -1 means option not given.
+ * Parallel gcc -c job cap from -j n. -1 means option not given.
  */
 static int rtt_cc_jobs_cli = -1;
 
@@ -298,10 +298,11 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 #endif                                  /* MSWindows */
 #endif                                  /* NTConsole */
 
-#ifdef HAVE_WORKING_FORK
+#if defined(HAVE_WORKING_FORK) || NT
 /*
- * Parallel gcc -c jobs after RTT translation (when fork works: configure
- * HAVE_WORKING_FORK — includes GNU/Linux, MSYS2, Cygwin, etc.).
+ * Parallel gcc -c jobs after RTT translation.
+ * Unix/Cygwin/MSYS: fork + sh -c (HAVE_WORKING_FORK).
+ * Native Windows (NT/MinGW): _spawnvp(_P_NOWAIT) + _cwait.
  * Precedence: -j n command line, RTT_JOBS env, MAKEFLAGS -jN, bare "make -j"
  * in MAKEFLAGS => min(CPU, RTT_CC_MAX_JOBS), else 1.
  */
@@ -355,11 +356,34 @@ static int parse_makeflags_jobs(void) {
   return RTT_MF_JOBS_NONE;
 }
 
+static long rtt_online_cpus(void) {
+  long cpus = 1;
+#ifdef HAVE_WORKING_FORK
+  cpus = (long)sysconf(_SC_NPROCESSORS_ONLN);
+#elif NT
+  {
+    char *e = getenv("NUMBER_OF_PROCESSORS");
+    char *end;
+    long n;
+
+    if (e != NULL && *e != '\0') {
+      n = strtol(e, &end, 10);
+      if (end != e && n > 0)
+        cpus = n;
+    }
+  }
+#endif
+  if (cpus < 1)
+    cpus = 1;
+  if (cpus > RTT_CC_MAX_JOBS)
+    cpus = RTT_CC_MAX_JOBS;
+  return cpus;
+}
+
 static int rtt_cc_max_jobs(void) {
   char *e;
   long n;
   char *end;
-  long cpus;
   int mj;
 
   if (rtt_cc_jobs_cli > 0)
@@ -374,14 +398,8 @@ static int rtt_cc_max_jobs(void) {
   mj = parse_makeflags_jobs();
   if (mj > 0)
     return mj;
-  if (mj == RTT_MF_JOBS_BARE_J) {
-    cpus = (long)sysconf(_SC_NPROCESSORS_ONLN);
-    if (cpus < 1)
-      cpus = 1;
-    if (cpus > RTT_CC_MAX_JOBS)
-      cpus = RTT_CC_MAX_JOBS;
-    return (int)cpus;
-  }
+  if (mj == RTT_MF_JOBS_BARE_J)
+    return (int)rtt_online_cpus();
   return 1;
 }
 
@@ -398,18 +416,103 @@ static void rtt_remove_c_files(const char *file_list) {
   free(copy);
 }
 
+#if NT
+/*
+ * Quote-aware split of a compiler command fragment into argv tokens.
+ * Whitespace separates tokens unless inside double quotes; quotes may
+ * appear mid-token (e.g. -I"C:\Program Files\SDK\include") and are
+ * stripped. No glob expansion (unlike unicon_win32_cmdline_to_argv).
+ */
+static void rtt_argv_push(char ***avp, int *n, int *cap, const char *s) {
+  char **p;
+
+  if (*n + 2 > *cap) {
+    *cap = (*cap < 8) ? 8 : *cap * 2;
+    p = realloc(*avp, (size_t)*cap * sizeof(char *));
+    if (p == NULL) {
+      fprintf(stderr, "%s: out of memory\n", progname);
+      exit(EXIT_FAILURE);
+    }
+    *avp = p;
+  }
+  (*avp)[(*n)++] = salloc((char *)s);
+  (*avp)[*n] = NULL;
+}
+
+static void rtt_cc_split_push(char ***avp, int *n, int *cap, const char *s) {
+  char *buf, *o;
+  const char *p;
+  int inq;
+
+  if (s == NULL)
+    return;
+  buf = (char *)alloc((unsigned int)(strlen(s) + 1));
+  for (p = s; *p != '\0';) {
+    while (*p != '\0' && isspace((unsigned char)*p))
+      p++;
+    if (*p == '\0')
+      break;
+    o = buf;
+    inq = 0;
+    while (*p != '\0') {
+      if (!inq && isspace((unsigned char)*p))
+        break;
+      if (*p == '"') {
+        inq = !inq;
+        p++;
+        continue;
+      }
+      *o++ = *p++;
+    }
+    *o = '\0';
+    if (buf[0] != '\0')
+      rtt_argv_push(avp, n, cap, buf);
+  }
+  free(buf);
+}
+
+static intptr_t rtt_spawn_cc(const char *ccomp, const char *copts,
+                             const char *src) {
+  char **av = NULL;
+  int n = 0, cap = 0, i;
+  intptr_t h;
+
+  rtt_cc_split_push(&av, &n, &cap, ccomp);
+  if (n < 1) {
+    if (av != NULL)
+      free(av);
+    return (intptr_t)-1;
+  }
+  rtt_argv_push(&av, &n, &cap, "-c");
+  rtt_cc_split_push(&av, &n, &cap, copts);
+  rtt_argv_push(&av, &n, &cap, src);
+  h = _spawnvp(_P_NOWAIT, av[0], (const char *const *)av);
+  for (i = 0; i < n; i++)
+    free(av[i]);
+  free(av);
+  return h;
+}
+#endif                                  /* NT */
+
 /*
  * Run the C compiler on each generated .c file, with up to max_jobs
- * processes at a time (fork pool when max_jobs > 1). file_list is
- * space-separated paths. Returns 0 on success, non-zero on failure.
+ * processes at a time. file_list is space-separated paths.
+ * Returns 0 on success, non-zero on failure.
  */
 static int rtt_parallel_cc(const char *ccomp, const char *copts,
                            const char *file_list, int silent) {
   char *copy, *copy2, *tok, *cmd;
   size_t cmdlen;
-  int nfiles, i, fi, max_jobs, nchild, wstatus, fail;
-  pid_t pid;
+  int nfiles, i, fi, max_jobs, nchild, fail;
   char **files;
+#ifdef HAVE_WORKING_FORK
+  int wstatus;
+  pid_t pid;
+#elif NT
+  intptr_t children[RTT_CC_MAX_JOBS];
+  intptr_t h;
+  int termstat;
+#endif
 
   if (ccomp == NULL)
     ccomp = "cc";
@@ -444,6 +547,8 @@ static int rtt_parallel_cc(const char *ccomp, const char *copts,
   max_jobs = rtt_cc_max_jobs();
   if (max_jobs < 1)
     max_jobs = 1;
+  if (max_jobs > RTT_CC_MAX_JOBS)
+    max_jobs = RTT_CC_MAX_JOBS;
 
   /*
    * Serial: must compile every file — do not use "only files[0]" when
@@ -485,6 +590,7 @@ static int rtt_parallel_cc(const char *ccomp, const char *copts,
         fprintf(stdout, "%s\n", cmd);
         fflush(stdout);
       }
+#ifdef HAVE_WORKING_FORK
       pid = fork();
       if (pid < 0) {
         fprintf(stderr, "%s: fork failed\n", progname);
@@ -497,6 +603,20 @@ static int rtt_parallel_cc(const char *ccomp, const char *copts,
         _exit(127);
       }
       free(cmd);
+#elif NT
+      free(cmd);
+      h = rtt_spawn_cc(ccomp, copts, files[fi]);
+      if (h == (intptr_t)-1) {
+        fprintf(stderr, "%s: spawn failed\n", progname);
+        fail = 1;
+        break;
+      }
+      children[nchild] = h;
+#else
+      free(cmd);
+      fail = 1;
+      break;
+#endif
       fi++;
       nchild++;
     }
@@ -504,6 +624,7 @@ static int rtt_parallel_cc(const char *ccomp, const char *copts,
       break;
     if (nchild == 0)
       break;
+#ifdef HAVE_WORKING_FORK
     pid = waitpid(-1, &wstatus, 0);
     if (pid < 0) {
       fprintf(stderr, "%s: waitpid failed\n", progname);
@@ -513,15 +634,40 @@ static int rtt_parallel_cc(const char *ccomp, const char *copts,
     nchild--;
     if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0)
       fail = 1;
+#elif NT
+    /* FIFO wait: good enough for a compile pool; keeps the code simple. */
+    if (_cwait(&termstat, children[0], 0) == -1) {
+      fprintf(stderr, "%s: cwait failed\n", progname);
+      fail = 1;
+      break;
+    }
+    for (i = 1; i < nchild; i++)
+      children[i - 1] = children[i];
+    nchild--;
+    if (termstat != 0)
+      fail = 1;
+#endif
   }
 
   while (nchild > 0) {
+#ifdef HAVE_WORKING_FORK
     pid = waitpid(-1, &wstatus, 0);
     if (pid < 0)
       break;
     nchild--;
     if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0)
       fail = 1;
+#elif NT
+    if (_cwait(&termstat, children[0], 0) == -1)
+      break;
+    for (i = 1; i < nchild; i++)
+      children[i - 1] = children[i];
+    nchild--;
+    if (termstat != 0)
+      fail = 1;
+#else
+    break;
+#endif
   }
 
   for (i = 0; i < nfiles; i++)
@@ -529,7 +675,7 @@ static int rtt_parallel_cc(const char *ccomp, const char *copts,
   free(files);
   return fail;
 }
-#endif /* HAVE_WORKING_FORK */
+#endif /* HAVE_WORKING_FORK || NT */
 
 int main(int argc, char **argv)
    {
@@ -621,7 +767,7 @@ int main(int argc, char **argv)
          case 'x':  /* produce code for interpreter rather than compiler */
             iconx_flg = 1;
             break;
-         case 'j': /* max parallel gcc -c jobs (Unix, with -c); Makefile uses -j
+         case 'j': /* max parallel gcc -c jobs (with -c); Makefile uses -j
                       $(RTT_CC_JOBS) */
          {
            char *ej;
@@ -808,14 +954,15 @@ int main(int argc, char **argv)
     * a loop of C library remove() calls.
     */
    if (ccomp_flg) {
-      char *ccomp_line;
       if (ccomp_opts == NULL) ccomp_opts = "";
-#ifdef HAVE_WORKING_FORK
+#if defined(HAVE_WORKING_FORK) || NT
       if (rtt_parallel_cc(CComp, ccomp_opts, curlst_string, silent))
         return EXIT_FAILURE;
       if (0 == keeptmp)
         rtt_remove_c_files(curlst_string);
-#else  /* HAVE_WORKING_FORK */
+#else  /* !(HAVE_WORKING_FORK || NT) */
+      {
+      char *ccomp_line;
       ccomp_line = alloc(strlen(CComp) + strlen(ccomp_opts) +
                          strlen(curlst_string) + 6);
       sprintf(ccomp_line, "%s -c %s%s", CComp, ccomp_opts, curlst_string);
@@ -835,7 +982,8 @@ int main(int argc, char **argv)
         if (!silent) { fprintf(stdout, "%s\n", ccomp_line); fflush(stdout); }
         if (system(ccomp_line)) return EXIT_FAILURE;
       }
-#endif /* HAVE_WORKING_FORK */
+      }
+#endif /* HAVE_WORKING_FORK || NT */
    }
 
    return EXIT_SUCCESS;

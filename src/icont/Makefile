@@ -23,28 +23,41 @@ PGMS=		$(UNICONT)$(EXE)
 
 all:		$(UNICONT)
 
-$(UNICONT) $(ICONTEXE):		 $(NTCONDEP) $(OBJS) ../../rt/lib/libucommon.a
+ifneq ($(NTCONDEP),)
+#
+# Windows: console/GUI icont share CONSOLEOBJS with different -DNTConsole.
+# Wipe in the recipe then recursive-make so make -j cannot delete .o files
+# that were already deemed up to date for the link (see runtime/Makefile).
+#
+$(UNICONT) $(ICONTEXE): ../../rt/lib/libucommon.a
+	$(RM) $(CONSOLEOBJS)
+	$(MAKE) NTCONSOLE="-DNTConsole -DMSWindows" $(UNICONT)-relink
+
+.PHONY: $(UNICONT)-relink
+$(UNICONT)-relink: $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(UNICONT) $(OBJS) -lucommon $(LIBS)
+	$(CP) $(PGMS) ../../bin
+	$(STRIP) ../../bin/$(PGMS)
+
+$(UNICONWT) $(WICONTEXE): $(UNICONT) ../../rt/lib/libucommon.a common
+	$(RM) $(CONSOLEOBJS)
+	$(MAKE) NTCONSOLE="-DMSWindows" $(UNICONWT)-relink
+
+.PHONY: $(UNICONWT)-relink
+$(UNICONWT)-relink: $(OBJS)
+	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o $(UNICONWT) -mwindows $(OBJS) $(WOBJS)  -lucommon -lwuconsole -lwinmm $(LIBS) $(WGLIBS)
+	$(CP) $(UNICONWT)$(EXE) ../../bin
+
+else
+$(UNICONT) $(ICONTEXE):		 $(OBJS) ../../rt/lib/libucommon.a
 		$(CC) $(CFLAGS) $(LDFLAGS) -o $(UNICONT) $(OBJS) -lucommon $(LIBS)
 		$(CP) $(PGMS) ../../bin
 		$(STRIP) ../../bin/$(PGMS)
 
-$(UNICONWT) $(WICONTEXE): WNTCON $(OBJS) ../../rt/lib/libucommon.a common
+$(UNICONWT) $(WICONTEXE): $(OBJS) ../../rt/lib/libucommon.a common
 	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o $(UNICONWT) -mwindows $(OBJS) $(WOBJS)  -lucommon -lwuconsole -lwinmm $(LIBS) $(WGLIBS)
 	$(CP) $(UNICONWT)$(EXE) ../../bin
-
-
-# set NTConsole for wiconx
-NTCON: CONSOLE
-	@echo set NTCONSOLE=-DNTConsole -DMSWindows
-	$(eval NTCONSOLE=-DNTConsole -DMSWindows)
-
-WNTCON: CONSOLE
-	@echo set NTCONSOLE=-DMSWindows
-	$(eval NTCONSOLE=-DMSWindows )
-
-# make sure to clean the files affected by NTConsole to force rebuild them
-CONSOLE:
-	$(RM) $(CONSOLEOBJS)
+endif
 
 common: $(COBJS) ../common/dconsole.$(O)
 #	cd ../common && $(MAKE) $(ICOBJS) CONSOLE=$(CONSOLE) DCONSOLE=../common/dconsole.o

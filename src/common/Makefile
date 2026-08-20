@@ -31,18 +31,19 @@ patchstr$(EXE): patchstr.$(O)
 		$(CP) patchstr$(EXE) ../../bin/
 		$(STRIP) ../../bin/patchstr$(EXE)
 
-# iconx needs NTConsole to be defined/set,
-# make this a dependency for iconx to set it
-NTCON:
-	$(RM) uconsole.$(O)
-	@echo set NTCONSOLE=-DNTConsole -DMSWindows
-	$(eval NTCONSOLE=-DNTConsole -DMSWindows)
+# Console and GUI uconsole objects use different -D flags and distinct .o names,
+# so they can build in parallel under make -j (no shared NTCONSOLE eval).
+uconsole.$(O): uconsole.c $(HDRS)
+	$(CMNT)@echo "   [COMMON] $<"
+ifneq ($(NTCONDEP),)
+	$(SLNT)$(CC) -DNTConsole -DMSWindows $(CPPFLAGS) $(CFLAGS) -c $<
+else
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+endif
 
-# set NTConsole for wiconx
-WNTCON:
-	$(RM) uconsole.$(O)
-	@echo set NTCONSOLE=-DMSWindows
-	$(eval NTCONSOLE=-DMSWindows )
+wuconsole.$(O): uconsole.c $(HDRS)
+	$(CMNT)@echo "   [COMMON] $<"
+	$(SLNT)$(CC) -DMSWindows $(CPPFLAGS) $(CFLAGS) -c -o wuconsole.o $<
 
 libucommon.a: $(OBJS) $(HDRS)
 	$(RM) $@
@@ -50,13 +51,13 @@ libucommon.a: $(OBJS) $(HDRS)
 	$(RANLIB) $@
 	$(CP) $@ ../../rt/lib/
 
-libuconsole.a: $(NTCONDEP) uconsole.$(O)
+libuconsole.a: uconsole.$(O)
 	$(RM) $@
 	$(AR) q $@ uconsole.$(O)
 	$(RANLIB) $@
 	$(CP) $@ ../../rt/lib/
 
-libwuconsole.a: WNTCON wuconsole.$(O)
+libwuconsole.a: wuconsole.$(O)
 	$(RM) $@
 	$(AR) q $@ wuconsole.$(O)
 	$(RANLIB) $@
@@ -73,11 +74,7 @@ dconsole.$(O): dconsole.c
 
 %.$(O): %.c
 	$(CMNT)@echo "   [COMMON] $<"
-	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c $<
-
-wuconsole.$(O): uconsole.c
-	$(CMNT)@echo "   [COMMON] $<"
-	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c -o wuconsole.o uconsole.c
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 identify.$(O): ../h/version.h
 

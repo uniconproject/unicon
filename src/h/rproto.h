@@ -869,9 +869,6 @@ int checkOpenConsole( FILE *w, char *s );
 
       void waitkey(FILE *w);
 
-
-      /* defined in src/common */
-      int pathOpenHandle(char *fname, char *mode);
       void closelog();
 
 #endif                          /* MSWindows */

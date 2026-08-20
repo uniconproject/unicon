@@ -67,6 +67,9 @@ char *relfile   (char *prog, char *mod);
 #if UNIX
    FILE *pathOpen       (char *fname, char*mode);
 #endif
+#if MSDOS
+   int pathOpenHandle(char *fname, char *mode);
+#endif                                  /* MSDOS */
 
 #if NT
 int unicon_win32_cmdline_to_argv(char *s, char ***avp, int dequote);

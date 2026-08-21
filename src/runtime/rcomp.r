@@ -123,11 +123,11 @@ int anycmpBase(dptr dp1,dptr dp2,int sortType)
             wbp w = BlkLoc(*dp1)->File.fd.wb;
             if (w->window) {
                StrLoc(s1) = w->window->windowlabel;
-               StrLen(s1) = strlen(StrLoc(s1));
+               SetStrLen(s1, strlen(StrLoc(s1)));
                }
             else {
                StrLoc(s1) = "";
-               StrLen(s1) = 0;
+               SetStrLen(s1, 0);
                }
             ps1 = &s1;
             }
@@ -135,11 +135,11 @@ int anycmpBase(dptr dp1,dptr dp2,int sortType)
             wbp w = BlkLoc(*dp2)->File.fd.wb;
             if (w->window) {
                StrLoc(s2) = w->window->windowlabel;
-               StrLen(s2) = strlen(StrLoc(s2));
+               SetStrLen(s2, strlen(StrLoc(s2)));
                }
             else {
                StrLoc(s2) = "";
-               StrLen(s2) = 0;
+               SetStrLen(s2, 0);
                }
             ps2 = &s2;
             }

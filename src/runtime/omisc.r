@@ -66,6 +66,31 @@ operator{1} * size(x)
       }
    type_case x of {
       string: inline {
+         /*
+          * Unicon Phase 0 (design doc, the *size fix): a tagged
+          * qualifier's size means codepoints, not bytes. The common
+          * case (string literal, cp_count cached by the Op_Str
+          * promotion trigger) is O(1). Concatenation results don't
+          * currently get cp_count propagated in every case (§5), so
+          * they can fall back to walking -- via the shared uq_scan
+          * helper (rmacros.h), not a fourth copy of the same loop.
+          * (Earlier version of this comment claimed RTT made sharing
+          * awkward -- that was never actually true for a plain C
+          * function in a universally-included header; the real RTT
+          * constraint, discovered later, was specifically about
+          * #ifdef evaluation inside .r body blocks, which doesn't
+          * apply to an ordinary function call like this one.)
+          */
+         if (IsUniQual(x)) {
+            word uq_cnt = CpCount(x);
+            if (uq_cnt != CpCountSentinel)
+               return C_integer uq_cnt;
+            {
+            word uq_ncps;
+            uq_scan((unsigned char *)StrLoc(x), StrLen(x), &uq_ncps);
+            return C_integer uq_ncps;
+            }
+            }
          return C_integer StrLen(x);
          }
       list: inline {
@@ -146,6 +171,41 @@ operator{1} * size(x)
             return C_integer StrLen(x);
             }
          }
+      }
+end
+
+
+"unicode(s) - treat s as Unicode text: tag the descriptor and cache a"
+" codepoint count if the UTF-8 bytes are non-ASCII. Same bytes, new view."
+" Pure ASCII is left untagged. Already tagged: fill in a missing count."
+
+function{1} unicode(s)
+
+   if !cnv:string(s) then
+      runerr(103, s)
+
+   abstract {
+      return string
+      }
+
+   body {
+      if (IsUniQual(s)) {
+         if (CpCount(s) == CpCountSentinel) {
+            word uq_ncps;
+            uq_scan((unsigned char *)StrLoc(s), StrLen(s), &uq_ncps);
+            if ((uword)uq_ncps <= CpCountMax)
+               SetCpCount(s, uq_ncps);
+            }
+         }
+      else {
+         word uq_ncps;
+         if (uq_scan((unsigned char *)StrLoc(s), StrLen(s), &uq_ncps)) {
+            SetUniQual(s);
+            if ((uword)uq_ncps <= CpCountMax)
+               SetCpCount(s, uq_ncps);
+            }
+         }
+      return s;
       }
 end
 

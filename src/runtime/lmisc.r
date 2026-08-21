@@ -817,7 +817,7 @@ operator{0,1} <@ rcv(x,y)
             INC_NARTHREADS_CONTROLLED;
             if (!status) fail;
             StrLoc(desc) = sbuf;
-            StrLen(desc) = tb;
+            SetStrLen(desc, tb);
             return desc;
          }
         else fail;
@@ -914,7 +914,7 @@ operator{0,1} <<@ rcvbk(x,y)
 
 #ifdef PosixFns
       if (status & Fs_Socket) {
-         StrLen(s) = 0;
+         SetStrLen(s, 0);
          do {
             DEC_NARTHREADS;
             if ((slen = sock_getstrg(sbuf, MaxReadStr, &y)) == -1) {
@@ -938,8 +938,8 @@ operator{0,1} <<@ rcvbk(x,y)
             Protect(sptr = alcstr(sbuf,rlen), runerr(0));
             if (StrLen(s) == 0)
                StrLoc(s) = sptr;
-            StrLen(s) += rlen;
-            if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { StrLen(s)--; break; }
+            SetStrLen(s, StrLen(s) + (rlen));
+            if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { SetStrLen(s, StrLen(s) - 1); break; }
             else {
                /* no newline to trim; EOF? */
                }

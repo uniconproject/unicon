@@ -499,7 +499,7 @@ int subs_asgn(dptr dest, const dptr src)
    len = prelen + StrLen(srcstr) + StrLen(deststr) - poststrt;
    Protect(s = alcstr(NULL, len), return RunError);
    StrLoc(rsltstr) = s;
-   StrLen(rsltstr) = len;
+   SetStrLen(rsltstr, len);
    /*
     * First, copy the portion of the substring string to the left of
     *  the substring into the string space.
@@ -524,6 +524,26 @@ int subs_asgn(dptr dest, const dptr src)
    postlen = StrLen(deststr) - poststrt;
 
    memcpy(StrLoc(rsltstr)+prelen+StrLen(srcstr), StrLoc(deststr)+poststrt, postlen);
+
+   /*
+    * Unicon Phase 0: propagate the tag if either deststr or srcstr
+    * is tagged -- this was the confirmed gap (design doc §8 item 2):
+    * subs_asgn never called SetUniQual at all, so a substring
+    * assignment into a tagged string silently untagged the result.
+    *
+    * Count the assembled result, not prefix+src+suffix slices.
+    * A trap can still cut inside a multibyte character (a constructed
+    * tvsubs, or an untagged source). Scanning those slices separately
+    * (a lead byte with no continuation, or a continuation with no
+    * lead) caches a count that does not match a walk of rsltstr.
+    */
+   if (IsUniQual(deststr) || IsUniQual(srcstr)) {
+      word uq_ncps;
+      SetUniQual(rsltstr);
+      uq_scan((unsigned char *)StrLoc(rsltstr), StrLen(rsltstr), &uq_ncps);
+      if ((uword)uq_ncps <= CpCountMax)
+         SetCpCount(rsltstr, uq_ncps);
+      }
 
    /*
     * Perform the assignment and update the trapped variable.

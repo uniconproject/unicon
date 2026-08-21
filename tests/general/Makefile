@@ -19,6 +19,10 @@ endif
 ifeq ($(findstring multiple programs,$(UCFEAT)),)
 SKIP += utf8
 endif
+# uni/lib/utf8.icn assumes byte indexing; skip it when native Unicode is on.
+ifneq ($(findstring Unicode,$(UCFEAT)),)
+SKIP += utf8 utf8_ovld
+endif
 endif
 
 WINSKIP=cfuncs

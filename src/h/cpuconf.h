@@ -60,6 +60,63 @@
 #endif                                  /* WordBits == 64 */
 
 /*
+ * F_UniQual -- UTF-8-tagged string qualifier (same bit as F_Var; that
+ * flag only applies when F_Nqual is set). Always defined: real bit when
+ * UniconUnicode is on, else 0 so call sites need no #ifdef.
+ *
+ * Qualifier dword layout with the feature on:
+ *   bits 0-31   byte length   (ByteLenMask)
+ *   bits 32-61  cached codepoint count (CpCountMask); 0 = not cached
+ *   bit 62      F_UniQual
+ * Byte length keeps 32 bits (no secondary source of truth). CpCount can
+ * fall back to walking; CpCountMax is capacity, CpCountSentinel means
+ * uncached -- do not conflate them.
+ */
+#ifdef UniconUnicode
+   #ifndef F_UniQual
+      #define F_UniQual 0x4000000000000000ULL
+   #endif                               /* F_UniQual */
+#else
+   #ifndef F_UniQual
+      #define F_UniQual 0
+   #endif                               /* F_UniQual */
+#endif
+
+#ifdef UniconUnicode
+   #ifndef CpCountMask
+      #define CpCountMask   0x3FFFFFFF00000000ULL  /* bits 32-61 */
+   #endif
+   #ifndef CpCountShift
+      #define CpCountShift  32
+   #endif
+   #ifndef CpCountMax
+      #define CpCountMax 0x3FFFFFFFUL             /* max storable count */
+   #endif
+   #ifndef CpCountSentinel
+      #define CpCountSentinel 0                   /* uncached (tagged => >=1 cp) */
+   #endif
+   #ifndef ByteLenMask
+      #define ByteLenMask   0xFFFFFFFFULL           /* bits 0-31 */
+   #endif
+#else
+   #ifndef CpCountMask
+      #define CpCountMask   0
+   #endif
+   #ifndef CpCountShift
+      #define CpCountShift  0
+   #endif
+   #ifndef CpCountMax
+      #define CpCountMax    0
+   #endif
+   #ifndef CpCountSentinel
+      #define CpCountSentinel 0
+   #endif
+   #ifndef ByteLenMask
+      #define ByteLenMask   (~F_UniQual)
+   #endif
+#endif
+
+/*
  * 32-bit words.
  */
 

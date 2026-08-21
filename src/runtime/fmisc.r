@@ -112,6 +112,74 @@ function{1} char(i)
 end
 
 
+"uchar(i) - produce a UTF-8 encoded string for Unicode codepoint i. The"
+" Unicode-aware alternative to char(), which stays byte-oriented (0-255)"
+" for backward compatibility -- see design doc for why."
+
+function{1} uchar(i)
+
+   if !cnv:C_integer(i) then
+      runerr(101,i)
+   abstract {
+      return string
+      }
+   body {
+      unsigned char uq_buf[4];
+      int uq_w;
+
+      if (i < 0 || i > 0x10FFFF) {
+         irunerr(205, i);
+         errorfail;
+         }
+      /* surrogate codepoints (D800-DFFF) are not valid standalone
+         Unicode scalar values -- reserved for UTF-16 encoding, never
+         appear in well-formed UTF-8 */
+      if (i >= 0xD800 && i <= 0xDFFF) {
+         irunerr(205, i);
+         errorfail;
+         }
+
+      if (i <= 0x7F) {
+         uq_buf[0] = (unsigned char)i;
+         uq_w = 1;
+         }
+      else if (i <= 0x7FF) {
+         uq_buf[0] = 0xC0 | (i >> 6);
+         uq_buf[1] = 0x80 | (i & 0x3F);
+         uq_w = 2;
+         }
+      else if (i <= 0xFFFF) {
+         uq_buf[0] = 0xE0 | (i >> 12);
+         uq_buf[1] = 0x80 | ((i >> 6) & 0x3F);
+         uq_buf[2] = 0x80 | (i & 0x3F);
+         uq_w = 3;
+         }
+      else {
+         uq_buf[0] = 0xF0 | (i >> 18);
+         uq_buf[1] = 0x80 | ((i >> 12) & 0x3F);
+         uq_buf[2] = 0x80 | ((i >> 6) & 0x3F);
+         uq_buf[3] = 0x80 | (i & 0x3F);
+         uq_w = 4;
+         }
+
+      {
+      tended struct descrip uq_result;
+      char *uq_sptr;
+      Protect(uq_sptr = alcstr((char *)uq_buf, uq_w), runerr(0));
+      StrLoc(uq_result) = uq_sptr;
+      SetStrLen(uq_result, uq_w);
+      if (uq_w > 1) {
+         /* genuinely multi-byte by construction -- tag it, and the
+            codepoint count is trivially 1, no scan needed */
+         SetUniQual(uq_result);
+         SetCpCount(uq_result, 1);
+         }
+      return uq_result;
+      }
+      }
+end
+
+
 "collect(i1,i2) - call garbage collector to ensure i2 bytes in region i1."
 " no longer works."
 
@@ -634,6 +702,62 @@ function{1} ord(s)
       if (StrLen(s) != 1)
          runerr(205, s);
       return C_integer ToAscii(*StrLoc(s) & 0xFF);
+      }
+end
+
+
+"uord(s) - produce the Unicode codepoint of the single UTF-8 character"
+" in s. The Unicode-aware alternative to ord(), which stays byte-oriented"
+" for backward compatibility. Strict about malformed input -- errors"
+" rather than the lenient 1-byte fallback the scanning primitives use,"
+" per the design doc's decision that decoding should fail loudly."
+
+function{1} uord(s)
+   if !cnv:tmp_string(s) then
+      runerr(103, s)
+   abstract {
+      return integer
+      }
+   body {
+      unsigned char *uq_bytes;
+      word uq_blen, uq_w, uq_cp, uq_k;
+      unsigned char uq_b0;
+
+      uq_blen = StrLen(s);
+      if (uq_blen == 0 || uq_blen > 4)
+         runerr(205, s);
+
+      uq_bytes = (unsigned char *)StrLoc(s);
+      uq_b0 = uq_bytes[0];
+
+      if ((uq_b0 & 0x80) == 0)      { uq_w = 1; uq_cp = uq_b0; }
+      else if ((uq_b0 & 0xE0) == 0xC0) { uq_w = 2; uq_cp = uq_b0 & 0x1F; }
+      else if ((uq_b0 & 0xF0) == 0xE0) { uq_w = 3; uq_cp = uq_b0 & 0x0F; }
+      else if ((uq_b0 & 0xF8) == 0xF0) { uq_w = 4; uq_cp = uq_b0 & 0x07; }
+      else
+         runerr(205, s);   /* not a valid UTF-8 lead byte */
+
+      if (uq_blen != uq_w)
+         runerr(205, s);   /* s must be exactly one codepoint's worth,
+                               no more, no less -- strict per design */
+
+      for (uq_k = 1; uq_k < uq_w; uq_k++) {
+         if ((uq_bytes[uq_k] & 0xC0) != 0x80)
+            runerr(205, s);   /* malformed continuation byte */
+         uq_cp = (uq_cp << 6) | (uq_bytes[uq_k] & 0x3F);
+         }
+
+      /* reject overlong encodings and surrogate codepoints -- not
+         well-formed UTF-8 even though the byte pattern superficially
+         parses */
+      if ((uq_w == 2 && uq_cp < 0x80) ||
+          (uq_w == 3 && uq_cp < 0x800) ||
+          (uq_w == 4 && uq_cp < 0x10000) ||
+          (uq_cp >= 0xD800 && uq_cp <= 0xDFFF) ||
+          uq_cp > 0x10FFFF)
+         runerr(205, s);
+
+      return C_integer uq_cp;
       }
 end
 
@@ -2256,7 +2380,7 @@ static stringint siKeywords[] = {
                fail;
                }
             else {
-               StrLen(s) = strlen(StrLoc(s));
+               SetStrLen(s, strlen(StrLoc(s)));
                return s;
                }
             }
@@ -2265,12 +2389,12 @@ static stringint siKeywords[] = {
             ipc_opnd = findoldipc(BlkD(d,Coexpr),i);
             ENTERPSTATE(p);
             StrLoc(s) = findfile(ipc_opnd);
-            StrLen(s) = strlen(StrLoc(s));
+            SetStrLen(s, strlen(StrLoc(s)));
             }
          else{
             ENTERPSTATE(p);
             StrLoc(s) = findfile(BlkD(d,Coexpr)->es_ipc.opnd);
-            StrLen(s) = strlen(StrLoc(s));
+            SetStrLen(s, strlen(StrLoc(s)));
             }
          ENTERPSTATE(savedp);
          if (!strcmp(StrLoc(s),"?")) fail;
@@ -3122,14 +3246,14 @@ function{*} Attrib(argv[argc])
                      fail;
                      }
                   Protect(StrLoc(result) = alcstr(blob, bloblen), runerr(0));
-                  StrLen(result) = bloblen;
+                  SetStrLen(result, bloblen);
                   suspend result;
                   continue;
                   }
                if (StrLen(sbuf) == 4 && strncmp(StrLoc(sbuf), "type", 4) == 0) {
                   char *r = crypto_rolename(cryptof);
                   Protect(StrLoc(result) = alcstr(r, (word)strlen(r)), runerr(0));
-                  StrLen(result) = strlen(r);
+                  SetStrLen(result, strlen(r));
                   suspend result;
                   continue;
                   }

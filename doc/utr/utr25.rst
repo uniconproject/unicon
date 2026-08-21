@@ -15,8 +15,8 @@
    have been made Unicode-aware, examples, the alternatives that were
    evaluated and why they were not chosen, and the work that remains. It is
    intended to remain useful as a reference after the feature has
-   shipped, not only as a plan for building it. Keywords: Unicon,
-   Unicode, UTF-8, strings, runtime, technical report.
+   shipped, not only as a plan for building it.
+:keywords: Unicon, Unicode, UTF-8, strings, runtime, technical report.
 :docclass: report
 
 .. _sec-intro:
@@ -28,8 +28,12 @@ This report records the as-built native Unicode support in the Unicon
 runtime: how a string is tagged, how literals and I/O become tagged,
 which operations interpret positions as codepoints, and what is still
 byte-oriented. It is formatted as a Unicon Technical Report
-:cite:`Jeffery:UTR15`. :ref:`section 8 <sec-examples>` collects short
-programs by operation. Automated tests live under ``tests/unicode/``.
+:cite:`Jeffery:UTR15`. Unlike UTRs 26--29
+:cite:`AlGharaibeh:UTR26`, there is not yet a language-facing chapter
+in *Programming with Unicon* (the experimental appendix still lists
+UTF-8 as a candidate). This report is the reference until that lands.
+:ref:`section 8 <sec-examples>` collects short programs by operation.
+Automated tests live under ``tests/unicode/``.
 
 The feature is optional. A 64-bit build without ``NoUniconUnicode``
 reports ``Unicode`` in ``&features``. On 32-bit, or with that switch,
@@ -178,7 +182,9 @@ the runtime:
 All three treat a malformed lead byte as a one-byte unit and continue,
 rather than raising an error; this lenient behavior is specific to
 internal scanning and is distinct from the strict validation applied
-by ``uord()`` (:ref:`section 4 <sec-uchar>`).
+by ``uord()`` (:ref:`section 4 <sec-uchar>`). I/O uses the same scan
+through ``UqMaybeTagRead(s, status)``, which tags a just-read string
+when ``Fs_Unicode`` is set on the handle (:ref:`section 6 <sec-io>`).
 
 .. _sec-strlen:
 
@@ -424,28 +430,33 @@ needed, rather than making it automatic:
   <sec-compile>`), the count is computed and cached. If ``s`` is pure
   ASCII, it is returned unchanged. ``string(s)`` is not the inverse;
   see :ref:`section 7 <sec-api>`.
-- **The ``i`` mode character to ``open()``**, which sets a per-file or
-  per-connection flag causing subsequent ``reads()`` calls on that
-  file or connection to scan and tag their results automatically. This
-  is implemented at all of the function's internal return points that
-  produce a taggable result -- the file, socket, and secure-shell
-  channel paths -- with the exception of pseudo-terminal reads, which
-  return through a different internal mechanism not yet adapted for
-  tagging (:ref:`section 9 <sec-status>`).
+- **The ``i`` mode character to ``open()``**, which sets
+  ``Fs_Unicode`` (file-status bit ``040``, the slot previously marked
+  available in ``src/h/rmacros.h``) on the handle. Subsequent
+  ``read()`` / ``reads()`` calls then run ``UqMaybeTagRead`` and tag
+  their results when the payload is multi-byte. This is implemented at
+  the file, socket, messaging, and SSH channel return points
+  :cite:`AlGharaibeh:UTR26`. Pseudo-terminal *reads* will tag if the
+  bit is set; ``open()`` itself still cannot carry ``i`` onto a pty
+  handle (:ref:`section 9 <sec-status>`). SFTP open rewrites the
+  status word and likewise drops the bit.
 - **A global default**, changing what ``open()`` assumes when a caller
   does not specify a mode explicitly, has been designed but not
   implemented.
 
 Adding a new file-status flag to ``open()``'s mode-character parsing
 is not sufficient by itself to make the flag usable on every
-connection type: socket and messaging connections are each
+connection type. Socket and messaging connections are each
 additionally validated against an explicit allowlist of permitted flag
 combinations (``src/runtime/fsys.r``,
 ``if (status & ~(...)) runerr(...)``), independent of the
 character-parsing switch, and a new flag must be added to each
 relevant allowlist as well or it will be silently rejected for that
 connection type despite being accepted by ``open()``'s general mode
-parsing.
+parsing. Paths that *assign* ``status`` rather than ``|=`` it -- SFTP
+and the pty identity check -- have the same requirement in a different
+form: they must preserve ``Fs_Unicode`` or the mode character is a
+no-op even though parsing accepted it.
 
 .. _sec-api:
 
@@ -910,14 +921,23 @@ of what this blocks: it correctly walks a tagged subject by
 codepoint, but has no character-set representation capable of
 matching a non-ASCII codepoint against, regardless.
 
-**Pseudo-terminal reads** do not currently support the ``i`` mode
-mechanism described in :ref:`section 6 <sec-io>`; the internal
-function handling them constructs its return value through a
-different mechanism than the paths that have been adapted, requiring
-restructuring rather than a direct extension of the existing
-approach.
+**Pseudo-terminal ``open()``** still cannot carry ``i``. A pty is
+recognized by an exact status match (``Fs_Pipe | Fs_Read | Fs_Write``);
+adding ``Fs_Unicode`` makes the match fail and the later pipe
+allowlist rejects the combination (error 209). Even if the match were
+widened, the pty branch then overwrites ``status`` with
+``Fs_Pty | Fs_Read | Fs_Write``, dropping the bit. The ``read()`` /
+``reads()`` pty paths already call ``UqMaybeTagRead``; the missing
+piece is preserving the flag through ``open()``, not adapting the
+return value.
 
-**Existing UTF-8 support in the standard library.**
+**SFTP ``open()``** :cite:`AlGharaibeh:UTR26` has the same overwrite
+shape: after a successful SFTP open it assigns ``status = Fs_SSH |
+...``, which drops ``Fs_Unicode``. Ordinary SSH channels use ``|=``
+and keep the bit, so ``open(..., "hi")`` tags channel reads but
+``open(..., "hsi")`` currently cannot.
+
+**Existing UTF-8 support in the standard library and tools.**
 ``uni/lib/utf8.icn`` :cite:`Unicon:utf8lib`, a pre-existing class-based UTF-8 implementation
 predating this work, manages UTF-8 content by walking strings
 byte-by-byte under the assumption that string indexing is always
@@ -932,6 +952,16 @@ operations and several scanning primitives -- and remains usable by
 programs that do not enable native tagging; reconciling the two,
 either by adapting the library to native tagging or by extending
 native support to cover what it currently provides, is unresolved.
+uscribe hit the same assumption in its LaTeX Unicode map: keys written
+as UTF-8 literals became tagged, so ``move(*fromStr)`` skipped one
+codepoint and left leftover bytes for ``pdflatex``. That map is now
+built from ``char()`` bytes so the keys stay untagged; other
+byte-oriented scanners in the tree may need the same treatment.
+
+**A language-facing chapter** in *Programming with Unicon* has not
+been written. UTRs 26--29 already point at book chapters; this report
+does not. The experimental appendix still lists UTF-8 as a candidate
+for inclusion.
 
 .. _sec-coverage:
 
@@ -940,9 +970,10 @@ Appendix: test coverage
 
 Automated tests specific to this feature live under
 ``tests/unicode/``, one program per concern (``size``, ``subsc``,
-``concat``, ``convert``, ``scan``, ``section``, ``bang``, ``many``,
-``match``, ``find``, ``reverse``, ``file_i``, ``socket_i``, plus
-``ascii_*`` and ``languages``). ``tests/general/Makefile`` excludes
+``subsc_loop``, ``concat``, ``convert``, ``scan``, ``section``,
+``bang``, ``many``, ``match``, ``find``, ``reverse``, ``file_i``,
+``socket_i``, plus ``ascii_*`` and ``languages``).
+``tests/general/Makefile`` excludes
 the pre-existing ``utf8``/``utf8_ovld`` tests
 (:ref:`section 9 <sec-status>`) when the feature is enabled.
 

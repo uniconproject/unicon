@@ -1,0 +1,104 @@
+#
+# [ ] peek fields on crypto handles: material, hash, and key().
+#
+
+import crypto
+
+procedure main()
+   local ky, cert, hasher, enc, d1, d2, d3, n, k, snap
+
+   ky := open("data/aes.key", "e") | stop("open aes.key: ", &errortext)
+   write("key type=", ky["type"])
+   write("key size=", ky["keysize"])
+   if ky["subject"] then
+      write("key subject:fail")
+   else
+      write("key subject:unpopulated")
+   close(ky)
+
+   cert := open("data/client.crt", "e") | stop("open cert: ", &errortext)
+   write("cert type=", cert["type"])
+   write("cert expired=", image(cert["expired"]))
+   if \cert["notafter"] then
+      write("cert notafter:ok")
+   else
+      write("cert notafter:fail")
+   if \cert["fingerprint"] then
+      write("cert fingerprint:ok")
+   else
+      write("cert fingerprint:fail")
+   if cert["san"] then
+      write("cert san:fail")
+   else
+      write("cert san:unpopulated")
+
+   n := 0
+   snap := cert["*"] | stop("cert snapshot failed")
+   every k := key(cert) do {
+      n +:= 1
+      cert[k] | stop("key without value: ", k)
+      snap[k] | stop("snapshot missing: ", k)
+      if image(snap[k]) ~== image(cert[k]) then
+         stop("snapshot mismatch: ", k)
+      }
+   write("cert key count=", n)
+   if !cert then
+      write("bang:produced")
+   else
+      write("bang:empty")
+   close(cert)
+
+   cert := open("data/unicon-server.crt", "e") | stop("open server cert: ", &errortext)
+   n := 0
+   every k := !cert["san"] do {
+      n +:= 1
+      if k == "DNS:localhost" then
+         write("server san localhost:ok")
+      }
+   write("server san count=", n)
+   close(cert)
+
+   hasher := open("sha256", "eh") | stop("open eh: ", &errortext)
+   write("hash op=", hasher["op"])
+   write("hash alg=", map(hasher["alg"]))
+   write("hash digestsize=", hasher["digestsize"])
+   write("hash bytecount=", hasher["bytecount"])
+   if hasher["hash"] then
+      write("idle hash:fail")
+   else
+      write("idle hash:unpopulated")
+
+   write(hasher, "abc")
+   d1 := hasher["hash"] | stop("hash peek1 failed")
+   d2 := hasher["hash"] | stop("hash peek2 failed")
+   if d1 == d2 then
+      write("hash stable:ok")
+   else
+      write("hash stable:fail")
+   write("hash bytecount abc=", hasher["bytecount"])
+
+   write(hasher, "d")
+   d3 := hasher["hash"] | stop("hash peek3 failed")
+   if d1 == d3 then
+      write("hash advanced:fail")
+   else
+      write("hash advanced:ok")
+
+   if hexbytes(read(hasher), 1) == hexbytes(d3, 1) then
+      write("hash vs read:ok")
+   else
+      write("hash vs read:fail")
+   close(hasher)
+
+   ky := open("data/aes.key", "e") | stop("reopen aes.key: ", &errortext)
+   enc := open(ky, "e", "op=encrypt", "cipher=aes-256-gcm",
+               "iv=" || "0123456789ab") |
+      stop("open encrypt: ", &errortext)
+   write("enc op=", enc["op"])
+   if enc["iv"] == "0123456789ab" then
+      write("enc iv:ok")
+   else
+      write("enc iv:fail")
+   close(enc)
+   close(ky)
+end

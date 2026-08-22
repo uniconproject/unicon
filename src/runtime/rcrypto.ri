@@ -125,6 +125,79 @@ int set_ssl_connection_errortext(SSL *ssl, int err)
    return err;
 }
 
+void set_ssl_handshake_errortext(SSL *ssl, int err)
+{
+   long v;
+   unsigned long e;
+   int reason;
+
+   if (ssl != NULL) {
+      v = SSL_get_verify_result(ssl);
+      switch (v) {
+      case X509_V_ERR_CERT_HAS_EXPIRED:
+      case X509_V_ERR_CERT_NOT_YET_VALID:
+         set_errortext(1320);
+         return;
+      case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+      case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
+      case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
+      case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
+      case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
+      case X509_V_ERR_CERT_UNTRUSTED:
+         set_errortext(1321);
+         return;
+#ifdef X509_V_ERR_HOSTNAME_MISMATCH
+      case X509_V_ERR_HOSTNAME_MISMATCH:
+#endif
+#ifdef X509_V_ERR_IP_ADDRESS_MISMATCH
+      case X509_V_ERR_IP_ADDRESS_MISMATCH:
+#endif
+#if defined(X509_V_ERR_HOSTNAME_MISMATCH) || defined(X509_V_ERR_IP_ADDRESS_MISMATCH)
+         set_errortext(1322);
+         return;
+#endif
+      default:
+         break;
+      }
+      }
+
+   e = ERR_peek_error();
+   reason = ERR_GET_REASON(e);
+#ifdef SSL_R_NO_SHARED_CIPHER
+   if (reason == SSL_R_NO_SHARED_CIPHER) {
+      set_errortext(1323);
+      return;
+      }
+#endif
+#ifdef SSL_R_UNSUPPORTED_PROTOCOL
+   if (reason == SSL_R_UNSUPPORTED_PROTOCOL) {
+      set_errortext(1324);
+      return;
+      }
+#endif
+#ifdef SSL_R_VERSION_TOO_LOW
+   if (reason == SSL_R_VERSION_TOO_LOW) {
+      set_errortext(1324);
+      return;
+      }
+#endif
+#ifdef SSL_R_VERSION_TOO_HIGH
+   if (reason == SSL_R_VERSION_TOO_HIGH) {
+      set_errortext(1324);
+      return;
+      }
+#endif
+#ifdef SSL_R_WRONG_SSL_VERSION
+   if (reason == SSL_R_WRONG_SSL_VERSION) {
+      set_errortext(1324);
+      return;
+      }
+#endif
+   set_errortext(1325);
+   (void)err;
+   (void)ssl;
+}
+
 /*
  *  Create and initialize an SSL context
  *     attr: attribute array passed to open()
@@ -883,7 +956,7 @@ int crypto_borrow(struct CryptoFile *op, struct CryptoFile *src)
 
 /*
  * crypto_setattr -- idle-window reconfiguration.  vlen is the value
- * length (needed for binary sig=/iv=/state=); for text attributes it
+ * length (needed for binary sig=/iv=); for text attributes it
  * may be strlen(val).
  */
 /*
@@ -975,11 +1048,6 @@ int crypto_setattr(struct CryptoFile *cf, char *name, char *val, word vlen)
       }
    if (strcmp(name, "key") == 0)
       return crypto_load_key_path(cf, val, vlen);
-   if (strcmp(name, "state") == 0) {
-      /* Digest checkpoint unavailable: OpenSSL 3 dropped MD_CTX export. */
-      (void)val; (void)vlen;
-      return E_CryptoState;
-      }
    return E_CryptoState;
 }
 
@@ -1026,6 +1094,7 @@ static int lazy_init(struct CryptoFile *cf)
          if (cf->mdctx == NULL) return E_CryptoLoad;
          if (!EVP_DigestVerifyInit(cf->mdctx, NULL, cf->md, NULL, cf->pkey))
             return E_CryptoAlg;
+         cf->verified = 0;
          break;
 
       case CRYPTO_OP_ENCRYPT: {
@@ -1049,6 +1118,11 @@ static int lazy_init(struct CryptoFile *cf)
          if (!EVP_EncryptInit_ex(cf->cctx, cf->cipher, NULL,
                                  cf->symkey, ivlen ? ivbuf : NULL))
             return E_CryptoAlg;
+         if (ivlen > 0) {
+            int n = ivlen < 16 ? ivlen : 16;
+            memcpy(cf->used_iv, ivbuf, n);
+            cf->used_ivlen = n;
+            }
          if (cf->iv == NULL && ivlen > 0)
             if (!out_append(cf, ivbuf, ivlen)) return E_CryptoLoad;
          break;
@@ -1133,6 +1207,11 @@ static int xform_decrypt_init(struct CryptoFile *cf)
    if (!EVP_DecryptInit_ex(cf->cctx, cf->cipher, NULL,
                            cf->symkey, ivlen ? ivbuf : NULL))
       return E_CryptoAlg;
+   if (ivlen > 0) {
+      int n = ivlen < 16 ? ivlen : 16;
+      memcpy(cf->used_iv, ivbuf, n);
+      cf->used_ivlen = n;
+      }
    cf->iv_ready = 1;
    cf->initialized = 1;
    return 0;
@@ -1284,6 +1363,7 @@ int crypto_write(struct CryptoFile *cf, char *buf, word len)
             off += n;
             }
          }
+      cf->bytecount += len;
       return 0;
       }
 
@@ -1291,6 +1371,7 @@ int crypto_write(struct CryptoFile *cf, char *buf, word len)
       if ((rc = lazy_init(cf)) != 0) return rc;
       if (!in_append(cf, (unsigned char *)buf, (int)len))
          return E_CryptoLoad;
+      cf->bytecount += len;
       return 0;
       }
 
@@ -1326,6 +1407,7 @@ int crypto_write(struct CryptoFile *cf, char *buf, word len)
          break;
          }
       }
+   cf->bytecount += len;
    return 0;
 }
 
@@ -1336,6 +1418,7 @@ static void crypto_reset_ctx(struct CryptoFile *cf)
    if (cf->pkctx) { EVP_PKEY_CTX_free(cf->pkctx); cf->pkctx = NULL; }
    cf->initialized = 0;
    cf->inlen = 0;
+   cf->bytecount = 0;
 }
 
 int crypto_read(struct CryptoFile *cf, char **bufp, word *lenp)
@@ -1397,6 +1480,7 @@ int crypto_read(struct CryptoFile *cf, char **bufp, word *lenp)
          int v;
          if (cf->sig == NULL) { rc = E_CryptoState; break; }
          v = EVP_DigestVerifyFinal(cf->mdctx, cf->sig, cf->siglen);
+         cf->verified = (v == 1) ? 1 : -1;
          if (v != 1) rc = E_CryptoVerify;
          else {
             out_reset(cf);
@@ -1468,11 +1552,21 @@ int crypto_read(struct CryptoFile *cf, char **bufp, word *lenp)
                                     cf->symkey, cf->iv)) {
                rc = E_CryptoAlg; break;
                }
+            if (ivlen > 0) {
+               int n = ivlen < 16 ? ivlen : 16;
+               memcpy(cf->used_iv, cf->iv, n);
+               cf->used_ivlen = n;
+               }
             }
          else {
             if (!EVP_DecryptInit_ex(cf->cctx, cf->cipher, NULL,
                                     cf->symkey, ct)) {
                rc = E_CryptoAlg; break;
+               }
+            if (ivlen > 0) {
+               int n = ivlen < 16 ? ivlen : 16;
+               memcpy(cf->used_iv, ct, n);
+               cf->used_ivlen = n;
                }
             ct += ivlen;
             ctlen -= ivlen;
@@ -1605,12 +1699,6 @@ void cryptofile_free(struct CryptoFile *cf)
    free(cf);
 }
 
-int crypto_getstate(struct CryptoFile *cf, char **blobp, word *lenp)
-{
-   (void)cf; (void)blobp; (void)lenp;
-   return E_CryptoState;
-}
-
 char *crypto_rolename(struct CryptoFile *cf)
 {
    static char buf[64];
@@ -1622,6 +1710,861 @@ char *crypto_rolename(struct CryptoFile *cf)
    if (buf[0] == '\0') return "none";
    buf[strlen(buf)-1] = '\0';
    return buf;
+}
+
+static int crypto_peek_alcstr(char *s, dptr rv)
+{
+   word n;
+   if (s == NULL || s[0] == '\0')
+      return FILEPEEK_FAIL;
+   n = (word)strlen(s);
+   Protect(StrLoc(*rv) = alcstr(s, n), return FILEPEEK_ERR);
+   StrLen(*rv) = n;
+   return FILEPEEK_OK;
+}
+
+static int crypto_peek_bytes(unsigned char *p, int n, dptr rv)
+{
+   if (p == NULL || n <= 0)
+      return FILEPEEK_FAIL;
+   Protect(StrLoc(*rv) = alcstr((char *)p, n), return FILEPEEK_ERR);
+   StrLen(*rv) = n;
+   return FILEPEEK_OK;
+}
+
+static int crypto_peek_hex(unsigned char *p, int n, dptr rv)
+{
+   static char hex[] = "0123456789abcdef";
+   char *s;
+   int i;
+   if (p == NULL || n <= 0)
+      return FILEPEEK_FAIL;
+   Protect(s = alcstr(NULL, n * 2), return FILEPEEK_ERR);
+   for (i = 0; i < n; i++) {
+      s[2 * i] = hex[p[i] >> 4];
+      s[2 * i + 1] = hex[p[i] & 0xf];
+      }
+   StrLoc(*rv) = s;
+   StrLen(*rv) = n * 2;
+   return FILEPEEK_OK;
+}
+
+static int crypto_peek_x509_name(void *vnm, dptr rv)
+{
+   char buf[256];
+   if (vnm == NULL)
+      return FILEPEEK_FAIL;
+   if (X509_NAME_oneline(vnm, buf, sizeof(buf)) == NULL)
+      return FILEPEEK_FAIL;
+   return crypto_peek_alcstr(buf, rv);
+}
+
+static int crypto_peek_san_put(dptr lst, char *tag, const unsigned char *data, int len)
+{
+   tended struct descrip elem;
+   char *s;
+   int ntag;
+
+   if (tag == NULL || data == NULL || len < 0)
+      return FILEPEEK_FAIL;
+   ntag = (int)strlen(tag);
+   elem = emptystr;
+   Protect(s = alcstr(NULL, ntag + len), return FILEPEEK_ERR);
+   memcpy(s, tag, ntag);
+   memcpy(s + ntag, data, len);
+   StrLoc(elem) = s;
+   StrLen(elem) = ntag + len;
+   c_put(lst, &elem);
+   return FILEPEEK_OK;
+}
+
+/*
+ * Subject Alternative Names as a list of "DNS:…", "IP:…", "email:…",
+ * "URI:…" strings (openssl.cnf SAN syntax). Missing extension fails.
+ */
+static int crypto_peek_san(X509 *cert, dptr rv)
+{
+   tended struct descrip lst;
+   GENERAL_NAMES *gens;
+   GENERAL_NAME *gn;
+   const unsigned char *p;
+   char ip[64];
+   int i, n, len, rc, added;
+
+   if (cert == NULL)
+      return FILEPEEK_FAIL;
+   gens = X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
+   if (gens == NULL)
+      return FILEPEEK_FAIL;
+   n = sk_GENERAL_NAME_num(gens);
+   if (n <= 0) {
+      GENERAL_NAMES_free(gens);
+      return FILEPEEK_FAIL;
+      }
+   lst = nulldesc;
+   if (filepeek_alclist(&lst) != FILEPEEK_OK) {
+      GENERAL_NAMES_free(gens);
+      return FILEPEEK_ERR;
+      }
+   added = 0;
+   for (i = 0; i < n; i++) {
+      gn = sk_GENERAL_NAME_value(gens, i);
+      if (gn == NULL)
+         continue;
+      rc = FILEPEEK_FAIL;
+      switch (gn->type) {
+         case GEN_DNS:
+            p = ASN1_STRING_get0_data(gn->d.dNSName);
+            len = ASN1_STRING_length(gn->d.dNSName);
+            if (p != NULL && len > 0)
+               rc = crypto_peek_san_put(&lst, "DNS:", p, len);
+            break;
+         case GEN_EMAIL:
+            p = ASN1_STRING_get0_data(gn->d.rfc822Name);
+            len = ASN1_STRING_length(gn->d.rfc822Name);
+            if (p != NULL && len > 0)
+               rc = crypto_peek_san_put(&lst, "email:", p, len);
+            break;
+         case GEN_URI:
+            p = ASN1_STRING_get0_data(gn->d.uniformResourceIdentifier);
+            len = ASN1_STRING_length(gn->d.uniformResourceIdentifier);
+            if (p != NULL && len > 0)
+               rc = crypto_peek_san_put(&lst, "URI:", p, len);
+            break;
+         case GEN_IPADD:
+            p = ASN1_STRING_get0_data(gn->d.iPAddress);
+            len = ASN1_STRING_length(gn->d.iPAddress);
+            if (p == NULL)
+               break;
+            if (len == 4)
+               snprintf(ip, sizeof(ip), "%u.%u.%u.%u",
+                        p[0], p[1], p[2], p[3]);
+            else if (len == 16) {
+               if (inet_ntop(AF_INET6, p, ip, sizeof(ip)) == NULL)
+                  break;
+               }
+            else
+               break;
+            rc = crypto_peek_san_put(&lst, "IP:",
+                                     (unsigned char *)ip, (int)strlen(ip));
+            break;
+         default:
+            break;
+         }
+      if (rc == FILEPEEK_ERR) {
+         GENERAL_NAMES_free(gens);
+         return FILEPEEK_ERR;
+         }
+      if (rc == FILEPEEK_OK)
+         added++;
+      }
+   GENERAL_NAMES_free(gens);
+   if (added <= 0)
+      return FILEPEEK_FAIL;
+   *rv = lst;
+   return FILEPEEK_OK;
+}
+
+static int crypto_peek_asn1_time(void *vt, dptr rv)
+{
+   struct tm tm;
+   char buf[32];
+   if (vt == NULL)
+      return FILEPEEK_FAIL;
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+   if (!ASN1_TIME_to_tm(vt, &tm))
+      return FILEPEEK_FAIL;
+   snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+            tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+            tm.tm_hour, tm.tm_min, tm.tm_sec);
+   return crypto_peek_alcstr(buf, rv);
+#else
+   {
+      BIO *bio;
+      char *p;
+      long n;
+      bio = BIO_new(BIO_s_mem());
+      if (bio == NULL)
+         return FILEPEEK_ERR;
+      if (ASN1_TIME_print(bio, vt) != 1) {
+         BIO_free(bio);
+         return FILEPEEK_FAIL;
+         }
+      n = BIO_get_mem_data(bio, &p);
+      if (n <= 0) {
+         BIO_free(bio);
+         return FILEPEEK_FAIL;
+         }
+      Protect(StrLoc(*rv) = alcstr(p, n), { BIO_free(bio); return FILEPEEK_ERR; });
+      StrLen(*rv) = n;
+      BIO_free(bio);
+      return FILEPEEK_OK;
+      }
+#endif
+}
+
+static char *crypto_op_name(struct CryptoFile *cf)
+{
+   switch (cf->op) {
+      case CRYPTO_OP_HASH:    return "hash";
+      case CRYPTO_OP_HMAC:    return "hmac";
+      case CRYPTO_OP_SIGN:    return "sign";
+      case CRYPTO_OP_VERIFY:  return "verify";
+      case CRYPTO_OP_ENCRYPT: return "encrypt";
+      case CRYPTO_OP_DECRYPT: return "decrypt";
+      default:                return crypto_rolename(cf);
+      }
+}
+
+static int cg_type(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->op != CRYPTO_OP_MATERIAL)
+      return FILEPEEK_FAIL;
+   return crypto_peek_alcstr(crypto_rolename(cf), rv);
+}
+
+static int cg_op(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->op == CRYPTO_OP_MATERIAL)
+      return FILEPEEK_FAIL;
+   return crypto_peek_alcstr(crypto_op_name(cf), rv);
+}
+
+static int cg_alg(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->md != NULL)
+      return crypto_peek_alcstr((char *)EVP_MD_name(cf->md), rv);
+   if (cf->pkey != NULL)
+      return crypto_peek_alcstr((char *)OBJ_nid2sn(EVP_PKEY_base_id(cf->pkey)),
+                                rv);
+   if (cf->cert != NULL) {
+      EVP_PKEY *pk = X509_get_pubkey(cf->cert);
+      char *s;
+      int rc;
+      if (pk == NULL)
+         return FILEPEEK_FAIL;
+      s = (char *)OBJ_nid2sn(EVP_PKEY_base_id(pk));
+      rc = crypto_peek_alcstr(s, rv);
+      EVP_PKEY_free(pk);
+      return rc;
+      }
+   return FILEPEEK_FAIL;
+}
+
+static int cg_cipher(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->cipher == NULL)
+      return FILEPEEK_FAIL;
+   return crypto_peek_alcstr((char *)EVP_CIPHER_name(cf->cipher), rv);
+}
+
+static int cg_subject(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->cert == NULL)
+      return FILEPEEK_FAIL;
+   return crypto_peek_x509_name(X509_get_subject_name(cf->cert), rv);
+}
+
+static int cg_san(void *h, dptr rv)
+{
+   return crypto_peek_san(((struct CryptoFile *)h)->cert, rv);
+}
+
+static int cg_issuer(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->cert == NULL)
+      return FILEPEEK_FAIL;
+   return crypto_peek_x509_name(X509_get_issuer_name(cf->cert), rv);
+}
+
+static int cg_notbefore(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->cert == NULL)
+      return FILEPEEK_FAIL;
+   return crypto_peek_asn1_time((void *)X509_get0_notBefore(cf->cert), rv);
+}
+
+static int cg_notafter(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->cert == NULL)
+      return FILEPEEK_FAIL;
+   return crypto_peek_asn1_time((void *)X509_get0_notAfter(cf->cert), rv);
+}
+
+static int cg_expired(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->cert == NULL)
+      return FILEPEEK_FAIL;
+   return filepeek_yes(
+      X509_cmp_current_time(X509_get0_notAfter(cf->cert)) < 0, rv);
+}
+
+static int cg_fingerprint(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   unsigned char md[EVP_MAX_MD_SIZE];
+   unsigned int mdlen = 0;
+
+   if (cf->cert != NULL) {
+      if (!X509_digest(cf->cert, EVP_sha256(), md, &mdlen))
+         return FILEPEEK_FAIL;
+      return crypto_peek_hex(md, (int)mdlen, rv);
+      }
+   if (cf->pkey != NULL) {
+      unsigned char *der = NULL;
+      int derlen = i2d_PUBKEY(cf->pkey, &der);
+      unsigned int hlen = 0;
+      if (derlen <= 0)
+         return FILEPEEK_FAIL;
+      if (!EVP_Digest(der, (size_t)derlen, md, &hlen, EVP_sha256(), NULL)) {
+         OPENSSL_free(der);
+         return FILEPEEK_FAIL;
+         }
+      OPENSSL_free(der);
+      return crypto_peek_hex(md, (int)hlen, rv);
+      }
+   return FILEPEEK_FAIL;
+}
+
+static int cg_keysize(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->pkey != NULL) {
+      MakeInt(EVP_PKEY_bits(cf->pkey), rv);
+      return FILEPEEK_OK;
+      }
+   if (cf->cert != NULL) {
+      EVP_PKEY *pk = X509_get_pubkey(cf->cert);
+      int bits;
+      if (pk == NULL)
+         return FILEPEEK_FAIL;
+      bits = EVP_PKEY_bits(pk);
+      EVP_PKEY_free(pk);
+      MakeInt(bits, rv);
+      return FILEPEEK_OK;
+      }
+   if (cf->symkeylen > 0) {
+      MakeInt(cf->symkeylen * 8, rv);
+      return FILEPEEK_OK;
+      }
+   return FILEPEEK_FAIL;
+}
+
+static int cg_hash(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   EVP_MD_CTX *tmp;
+   unsigned char digest[EVP_MAX_MD_SIZE];
+   unsigned int dlen = 0;
+   unsigned char *sig;
+   size_t siglen;
+   int rc;
+
+   if (cf->mdctx == NULL || !cf->initialized)
+      return FILEPEEK_FAIL;
+   if (cf->op == CRYPTO_OP_HASH) {
+      tmp = EVP_MD_CTX_new();
+      if (tmp == NULL)
+         return FILEPEEK_ERR;
+      if (!EVP_MD_CTX_copy_ex(tmp, cf->mdctx) ||
+          !EVP_DigestFinal_ex(tmp, digest, &dlen)) {
+         EVP_MD_CTX_free(tmp);
+         return FILEPEEK_FAIL;
+         }
+      EVP_MD_CTX_free(tmp);
+      return crypto_peek_bytes(digest, (int)dlen, rv);
+      }
+   if (cf->op != CRYPTO_OP_HMAC && cf->op != CRYPTO_OP_SIGN)
+      return FILEPEEK_FAIL;
+   tmp = EVP_MD_CTX_new();
+   if (tmp == NULL)
+      return FILEPEEK_ERR;
+   siglen = 0;
+   if (!EVP_MD_CTX_copy_ex(tmp, cf->mdctx) ||
+       !EVP_DigestSignFinal(tmp, NULL, &siglen) || siglen == 0) {
+      EVP_MD_CTX_free(tmp);
+      return FILEPEEK_FAIL;
+      }
+   EVP_MD_CTX_free(tmp);
+   sig = malloc(siglen);
+   if (sig == NULL)
+      return FILEPEEK_ERR;
+   tmp = EVP_MD_CTX_new();
+   if (tmp == NULL) {
+      free(sig);
+      return FILEPEEK_ERR;
+      }
+   if (!EVP_MD_CTX_copy_ex(tmp, cf->mdctx) ||
+       !EVP_DigestSignFinal(tmp, sig, &siglen)) {
+      EVP_MD_CTX_free(tmp);
+      free(sig);
+      return FILEPEEK_FAIL;
+      }
+   EVP_MD_CTX_free(tmp);
+   rc = crypto_peek_bytes(sig, (int)siglen, rv);
+   free(sig);
+   return rc;
+}
+
+static int cg_bytecount(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->op == CRYPTO_OP_MATERIAL)
+      return FILEPEEK_FAIL;
+   MakeInt(cf->bytecount, rv);
+   return FILEPEEK_OK;
+}
+
+static int cg_blocksize(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->md == NULL)
+      return FILEPEEK_FAIL;
+   MakeInt(EVP_MD_block_size(cf->md), rv);
+   return FILEPEEK_OK;
+}
+
+static int cg_digestsize(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->md == NULL)
+      return FILEPEEK_FAIL;
+   MakeInt(EVP_MD_size(cf->md), rv);
+   return FILEPEEK_OK;
+}
+
+static int cg_verified(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->verified == 0)
+      return FILEPEEK_FAIL;
+   return filepeek_yes(cf->verified == 1, rv);
+}
+
+static int cg_iv(void *h, dptr rv)
+{
+   struct CryptoFile *cf = h;
+   if (cf->used_ivlen > 0)
+      return crypto_peek_bytes(cf->used_iv, cf->used_ivlen, rv);
+   if (cf->iv != NULL && cf->ivlen > 0)
+      return crypto_peek_bytes(cf->iv, cf->ivlen, rv);
+   return FILEPEEK_FAIL;
+}
+
+static const struct filepeek_field crypto_material_tab[] = {
+   {"type",        cg_type},
+   {"subject",     cg_subject},
+   {"san",         cg_san},
+   {"issuer",      cg_issuer},
+   {"notbefore",   cg_notbefore},
+   {"notafter",    cg_notafter},
+   {"expired",     cg_expired},
+   {"fingerprint", cg_fingerprint},
+   {"alg",         cg_alg},
+   {"keysize",     cg_keysize},
+   {NULL, NULL}
+};
+
+static const struct filepeek_field crypto_hash_tab[] = {
+   {"op",         cg_op},
+   {"alg",        cg_alg},
+   {"hash",       cg_hash},
+   {"bytecount",  cg_bytecount},
+   {"blocksize",  cg_blocksize},
+   {"digestsize", cg_digestsize},
+   {NULL, NULL}
+};
+
+static const struct filepeek_field crypto_mac_tab[] = {
+   {"op",        cg_op},
+   {"alg",       cg_alg},
+   {"hash",      cg_hash},
+   {"verified",  cg_verified},
+   {"bytecount", cg_bytecount},
+   {NULL, NULL}
+};
+
+static const struct filepeek_field crypto_verify_tab[] = {
+   {"op",        cg_op},
+   {"alg",       cg_alg},
+   {"verified",  cg_verified},
+   {"bytecount", cg_bytecount},
+   {NULL, NULL}
+};
+
+static const struct filepeek_field crypto_cipher_tab[] = {
+   {"op",        cg_op},
+   {"cipher",    cg_cipher},
+   {"iv",        cg_iv},
+   {"bytecount", cg_bytecount},
+   {NULL, NULL}
+};
+
+static const struct filepeek_field *crypto_fields(struct CryptoFile *cf)
+{
+   switch (cf->op) {
+      case CRYPTO_OP_MATERIAL: return crypto_material_tab;
+      case CRYPTO_OP_HASH:     return crypto_hash_tab;
+      case CRYPTO_OP_HMAC:
+      case CRYPTO_OP_SIGN:     return crypto_mac_tab;
+      case CRYPTO_OP_VERIFY:   return crypto_verify_tab;
+      default:                 return crypto_cipher_tab;
+      }
+}
+
+int crypto_peek(struct CryptoFile *cf, char *name, dptr rv)
+{
+   if (cf == NULL || name == NULL)
+      return FILEPEEK_ERR;
+   return filepeek_lookup(crypto_fields(cf), cf, name, rv, 1302);
+}
+
+char *crypto_peek_field(struct CryptoFile *cf, int i)
+{
+   return filepeek_field_tab(crypto_fields(cf), i);
+}
+
+int crypto_peek_key_nth(struct CryptoFile *cf, int i, dptr key)
+{
+   return filepeek_key_nth_tab(crypto_fields(cf), cf, i, key);
+}
+
+static int tls_peek_pem_cert(X509 *cert, dptr rv)
+{
+   BIO *bio;
+   char *p;
+   long n;
+   if (cert == NULL)
+      return FILEPEEK_FAIL;
+   bio = BIO_new(BIO_s_mem());
+   if (bio == NULL)
+      return FILEPEEK_ERR;
+   if (!PEM_write_bio_X509(bio, cert)) {
+      BIO_free(bio);
+      return FILEPEEK_FAIL;
+      }
+   n = BIO_get_mem_data(bio, &p);
+   if (n <= 0) {
+      BIO_free(bio);
+      return FILEPEEK_FAIL;
+      }
+   Protect(StrLoc(*rv) = alcstr(p, n), { BIO_free(bio); return FILEPEEK_ERR; });
+   StrLen(*rv) = n;
+   BIO_free(bio);
+   return FILEPEEK_OK;
+}
+
+static SSL *tls_ssl(void *h)
+{
+   return ((struct b_file *)h)->fd.ssl;
+}
+
+static int tls_fname_host(char *fname, char *host, size_t hostlen)
+{
+   char *p, *colon;
+   size_t n;
+
+   if (fname == NULL || hostlen < 2)
+      return 0;
+   if (fname[0] == '[') {
+      p = strchr(fname, ']');
+      if (p == NULL)
+         return 0;
+      n = (size_t)(p - fname - 1);
+      if (n == 0 || n >= hostlen)
+         return 0;
+      memcpy(host, fname + 1, n);
+      host[n] = '\0';
+      return 1;
+      }
+   colon = strrchr(fname, ':');
+   if (colon != NULL && colon != fname) {
+      p = colon + 1;
+      if (*p != '\0') {
+         while (*p && *p >= '0' && *p <= '9')
+            p++;
+         if (*p == '\0') {
+            n = (size_t)(colon - fname);
+            if (n == 0 || n >= hostlen)
+               return 0;
+            memcpy(host, fname, n);
+            host[n] = '\0';
+            return 1;
+            }
+         }
+      }
+   n = strlen(fname);
+   if (n == 0 || n >= hostlen)
+      return 0;
+   memcpy(host, fname, n + 1);
+   return 1;
+}
+
+static int tls_fname_host_n(char *fname, word flen, char *host, size_t hostlen)
+{
+   char buf[512];
+
+   if (fname == NULL)
+      return 0;
+   while (flen > 0 && fname[flen - 1] == '\0')
+      flen--;
+   if (flen <= 0 || flen >= (word)sizeof(buf))
+      return 0;
+   memcpy(buf, fname, (size_t)flen);
+   buf[flen] = '\0';
+   return tls_fname_host(buf, host, hostlen);
+}
+
+static int tls_host_is_ip(char *host)
+{
+   unsigned char buf[16];
+   return inet_pton(AF_INET, host, buf) == 1 ||
+          inet_pton(AF_INET6, host, buf) == 1;
+}
+
+static char *tls_verify_reason(long err)
+{
+   switch (err) {
+      case X509_V_OK:
+         return "ok";
+      case X509_V_ERR_CERT_HAS_EXPIRED:
+      case X509_V_ERR_CERT_NOT_YET_VALID:
+         return "expired";
+      case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+      case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
+         return "self-signed";
+      case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
+      case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
+      case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
+      case X509_V_ERR_CERT_UNTRUSTED:
+         return "untrusted-CA";
+#ifdef X509_V_ERR_HOSTNAME_MISMATCH
+      case X509_V_ERR_HOSTNAME_MISMATCH:
+         return "hostname-mismatch";
+#endif
+#ifdef X509_V_ERR_IP_ADDRESS_MISMATCH
+      case X509_V_ERR_IP_ADDRESS_MISMATCH:
+         return "hostname-mismatch";
+#endif
+      case X509_V_ERR_CERT_REVOKED:
+         return "revoked";
+      default:
+         return (char *)X509_verify_cert_error_string(err);
+      }
+}
+
+static int tlsg_cipher(void *h, dptr rv)
+{
+   return crypto_peek_alcstr((char *)SSL_get_cipher(tls_ssl(h)), rv);
+}
+
+static int tlsg_version(void *h, dptr rv)
+{
+   return crypto_peek_alcstr((char *)SSL_get_version(tls_ssl(h)), rv);
+}
+
+static int tlsg_alpn(void *h, dptr rv)
+{
+   const unsigned char *alpn = NULL;
+   unsigned int alpnlen = 0;
+   SSL_get0_alpn_selected(tls_ssl(h), &alpn, &alpnlen);
+   if (alpn == NULL || alpnlen == 0)
+      return FILEPEEK_FAIL;
+   Protect(StrLoc(*rv) = alcstr((char *)alpn, (word)alpnlen),
+           return FILEPEEK_ERR);
+   StrLen(*rv) = (word)alpnlen;
+   return FILEPEEK_OK;
+}
+
+static int tlsg_verifyresult(void *h, dptr rv)
+{
+   return crypto_peek_alcstr(
+      tls_verify_reason(SSL_get_verify_result(tls_ssl(h))), rv);
+}
+
+static int tlsg_certverified(void *h, dptr rv)
+{
+   return filepeek_yes(SSL_get_verify_result(tls_ssl(h)) == X509_V_OK, rv);
+}
+
+static int tlsg_peercert(void *h, dptr rv)
+{
+   X509 *cert = SSL_get_peer_certificate(tls_ssl(h));
+   int rc = tls_peek_pem_cert(cert, rv);
+   X509_free(cert);
+   return rc;
+}
+
+static int tlsg_certchain(void *h, dptr rv)
+{
+   tended struct descrip lst, pem;
+   struct stack_st_X509 *chain = SSL_get_peer_cert_chain(tls_ssl(h));
+   int i, count, rc;
+
+   if (chain == NULL || (count = sk_X509_num(chain)) <= 0)
+      return FILEPEEK_FAIL;
+   lst = nulldesc;
+   pem = emptystr;
+   if (filepeek_alclist(&lst) != FILEPEEK_OK)
+      return FILEPEEK_ERR;
+   for (i = 0; i < count; i++) {
+      rc = tls_peek_pem_cert(sk_X509_value(chain, i), &pem);
+      if (rc != FILEPEEK_OK)
+         return rc;
+      c_put(&lst, &pem);
+      }
+   *rv = lst;
+   return FILEPEEK_OK;
+}
+
+static int tlsg_subject(void *h, dptr rv)
+{
+   X509 *cert = SSL_get_peer_certificate(tls_ssl(h));
+   int rc;
+   if (cert == NULL)
+      return FILEPEEK_FAIL;
+   rc = crypto_peek_x509_name(X509_get_subject_name(cert), rv);
+   X509_free(cert);
+   return rc;
+}
+
+static int tlsg_san(void *h, dptr rv)
+{
+   X509 *cert = SSL_get_peer_certificate(tls_ssl(h));
+   int rc;
+   if (cert == NULL)
+      return FILEPEEK_FAIL;
+   rc = crypto_peek_san(cert, rv);
+   X509_free(cert);
+   return rc;
+}
+
+static int tlsg_issuer(void *h, dptr rv)
+{
+   X509 *cert = SSL_get_peer_certificate(tls_ssl(h));
+   int rc;
+   if (cert == NULL)
+      return FILEPEEK_FAIL;
+   rc = crypto_peek_x509_name(X509_get_issuer_name(cert), rv);
+   X509_free(cert);
+   return rc;
+}
+
+static int tlsg_notbefore(void *h, dptr rv)
+{
+   X509 *cert = SSL_get_peer_certificate(tls_ssl(h));
+   int rc;
+   if (cert == NULL)
+      return FILEPEEK_FAIL;
+   rc = crypto_peek_asn1_time((void *)X509_get0_notBefore(cert), rv);
+   X509_free(cert);
+   return rc;
+}
+
+static int tlsg_notafter(void *h, dptr rv)
+{
+   X509 *cert = SSL_get_peer_certificate(tls_ssl(h));
+   int rc;
+   if (cert == NULL)
+      return FILEPEEK_FAIL;
+   rc = crypto_peek_asn1_time((void *)X509_get0_notAfter(cert), rv);
+   X509_free(cert);
+   return rc;
+}
+
+static int tlsg_expired(void *h, dptr rv)
+{
+   X509 *cert = SSL_get_peer_certificate(tls_ssl(h));
+   int rc;
+   if (cert == NULL)
+      return FILEPEEK_FAIL;
+   rc = filepeek_yes(X509_cmp_current_time(X509_get0_notAfter(cert)) < 0, rv);
+   X509_free(cert);
+   return rc;
+}
+
+static int tlsg_hostnamematch(void *h, dptr rv)
+{
+   SSL *ssl = tls_ssl(h);
+   struct b_file *fl = h;
+   X509 *cert;
+   char *hint, host[256];
+   int parsed = 0;
+   int rc;
+
+   cert = SSL_get_peer_certificate(ssl);
+   if (cert == NULL)
+      return FILEPEEK_FAIL;
+   hint = (char *)SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+   if (hint != NULL && hint[0] != '\0')
+      parsed = tls_fname_host(hint, host, sizeof(host));
+   if (!parsed)
+      parsed = tls_fname_host_n(StrLoc(fl->fname), StrLen(fl->fname),
+                                host, sizeof(host));
+   if (!parsed) {
+      /*
+       * Peer cert is present but there is no usable name to check
+       * against.  That is a false match, not an unpopulated field.
+       */
+      X509_free(cert);
+      return filepeek_yes(0, rv);
+      }
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+   if (tls_host_is_ip(host))
+      rc = X509_check_ip_asc(cert, host, 0);
+   else
+      rc = X509_check_host(cert, host, 0, 0, NULL);
+   X509_free(cert);
+   return filepeek_yes(rc == 1, rv);
+#else
+   X509_free(cert);
+   return filepeek_yes(0, rv);
+#endif
+}
+
+static const struct filepeek_field tls_peek_tab[] = {
+   {"version",       tlsg_version},
+   {"cipher",        tlsg_cipher},
+   {"alpn",          tlsg_alpn},
+   {"peercert",      tlsg_peercert},
+   {"certchain",     tlsg_certchain},
+   {"subject",       tlsg_subject},
+   {"san",           tlsg_san},
+   {"issuer",        tlsg_issuer},
+   {"notbefore",     tlsg_notbefore},
+   {"notafter",      tlsg_notafter},
+   {"expired",       tlsg_expired},
+   {"certverified",  tlsg_certverified},
+   {"verifyresult",  tlsg_verifyresult},
+   {"hostnamematch", tlsg_hostnamematch},
+   {NULL, NULL}
+};
+
+int tls_peek(struct b_file *fl, char *name, dptr rv)
+{
+   if (fl == NULL || fl->fd.ssl == NULL || name == NULL)
+      return FILEPEEK_ERR;
+   return filepeek_lookup(tls_peek_tab, fl, name, rv, 1326);
+}
+
+char *tls_peek_field(struct b_file *fl, int i)
+{
+   (void)fl;
+   return filepeek_field_tab(tls_peek_tab, i);
+}
+
+int tls_peek_key_nth(struct b_file *fl, int i, dptr key)
+{
+   return filepeek_key_nth_tab(tls_peek_tab, fl, i, key);
 }
 
 #endif                                  /* HAVE_LIBSSL */

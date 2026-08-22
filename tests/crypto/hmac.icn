@@ -9,7 +9,7 @@ procedure main()
 
    # "er" treats the open target as raw key bytes (not a file path).
    ky := open("secret-key-bytes", "er") | stop("open er failed: ", &errortext)
-   write("type=", Attrib(ky, "type"))
+   write("type=", ky["type"])
 
    # write() feeds the message; read() returns the MAC bytes.
    hmac := open(ky, "e", "op=hmac", "alg=sha256") |

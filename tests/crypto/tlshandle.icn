@@ -1,5 +1,6 @@
 #
-# Reuse parsed cert/key handles across TLS client opens (UTR 27 §8.6).
+# Reuse parsed cert/key *material* handles across TLS client opens (UTR 27 §8.6).
+# certh["type"] / keyh["type"] are crypto-file peeks, not conn["cipher"].
 #
 
 procedure main()
@@ -7,8 +8,8 @@ procedure main()
 
    certh := open("data/client.crt", "e") | stop("open cert: ", &errortext)
    keyh := open("data/client.key", "e") | stop("open key: ", &errortext)
-   write("cert type=", Attrib(certh, "type"))
-   write("key type=", Attrib(keyh, "type"))
+   write("cert type=", certh["type"])
+   write("key type=", keyh["type"])
 
    # Handles accepted by create_ssl_context; handshake fails (no peer).
    f := open("127.0.0.1:1", "ne", certh, keyh, "verifyPeer=no")

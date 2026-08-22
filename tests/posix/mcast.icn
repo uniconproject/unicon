@@ -136,14 +136,14 @@ procedure main()
       write("broadcast: ok")
    close(s)
 
-   # Attrib() get/set after open, including a dynamic join/leave.
+   # Attrib() set after open, including a dynamic join/leave.
    # Mode "4" forces IPv4 so the join group matches the socket family.
    # Use an IPv4 address for iface (not a host-specific name like lo/lo0).
    group := "239.42.42.46"
    port := "5104"
    f := open(":" || port, "nua4") | stop("attrib open failed: ", &errortext)
    Attrib(f, "ttl=3") | stop("Attrib set ttl failed")
-   write("ttl=", Attrib(f, "ttl"))
+   write("ttl=", f["ttl"])
    Attrib(f, "iface=127.0.0.1", "join=" || group) |
       stop("Attrib join failed: ", &errortext)
    s := open(group || ":" || port, "nu", "iface=127.0.0.1") |

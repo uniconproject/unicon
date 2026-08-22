@@ -9,12 +9,12 @@ procedure main()
 
    # Private key signs; certificate verifies.
    ky := open("data/client.key", "e") | stop("load key failed: ", &errortext)
-   write("key=", Attrib(ky, "type"))
+   write("key=", ky["type"])
    signer := open(ky, "e", "op=sign", "alg=sha256") |
       stop("open sign failed: ", &errortext)
 
    cert := open("data/client.crt", "e") | stop("load cert failed: ", &errortext)
-   write("cert=", Attrib(cert, "type"))
+   write("cert=", cert["type"])
    verifier := open(cert, "e", "op=verify", "alg=sha256") |
       stop("open verify failed: ", &errortext)
 

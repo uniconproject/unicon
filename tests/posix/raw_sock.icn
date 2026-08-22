@@ -34,7 +34,7 @@ procedure check_raw_open(label, proto)
 end
 
 procedure main()
-   local f, tmp
+   local f, tmp, n, k, rawf
 
    if open("127.0.0.1", "nr") then
       write("oops: missing proto accepted")
@@ -74,4 +74,32 @@ procedure main()
       write("read-mode-r: unexpected")
    close(f)
    remove(tmp)
+
+   # Peek proto= (and key()) when SOCK_RAW is allowed; privilege
+   # denial is the same pass as plumbing-ok (no handle to peek).
+   # Use a fresh variable: a failed open() does not assign, so reusing
+   # f would still be the temp file from the read-mode check.
+   rawf := open("127.0.0.1", "nr", "proto=icmp")
+   if \rawf then {
+      if rawf["proto"] = 1 then
+         write("raw-peek:ok")
+      else
+         write("raw-peek: proto=", image(rawf["proto"]))
+      n := 0
+      every k := key(rawf) do {
+         n +:= 1
+         rawf[k] | stop("key without value: ", k)
+         }
+      if n <= 0 then
+         write("raw-key:fail")
+      else
+         write("raw-key:ok")
+      close(rawf)
+      }
+   else if raw_denied() then {
+      write("raw-peek:ok")
+      write("raw-key:ok")
+      }
+   else
+      write("raw-peek: ", image(&errortext))
 end

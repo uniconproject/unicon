@@ -54,11 +54,17 @@ function{0,1} close(f)
 #if HAVE_LIBSSL
       if (status & Fs_Crypto) {
          int rc = 0;
+#ifdef Concurrent
+         MUTEX_LOCKID_CONTROLLED(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
          if (BlkD(f,File)->fd.cf != NULL) {
             rc = crypto_close(BlkD(f,File)->fd.cf);
             BlkLoc(f)->File.fd.cf = NULL;
             }
          BlkLoc(f)->File.status = 0;
+#ifdef Concurrent
+         MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
          if (rc != 0) { set_errortext(rc); fail; }
          return f;
          }
@@ -82,35 +88,45 @@ function{0,1} close(f)
          MUTEX_LOCKID_CONTROLLED(BlkD(f,File)->mutexid);
 #endif                                  /* Concurrent */
          ssh_close_file(BlkD(f,File)->fd.sshf);
-#ifdef Concurrent
-         MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
-#endif                                  /* Concurrent */
          BlkLoc(f)->File.fd.sshf = NULL;
          BlkLoc(f)->File.status = 0;
          BlkLoc(f)->File.sock_gen = 0;
-         StrLoc(BlkLoc(f)->File.fname) = "closed ssh";
-         StrLen(BlkLoc(f)->File.fname) = 10;
+#ifdef Concurrent
+         MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
          return C_integer 0;
          }
 #endif                                  /* HAVE_LIBSSH */
       if (BlkD(f,File)->status & Fs_Socket) {
+         int s;
+#ifdef Concurrent
+         MUTEX_LOCKID_CONTROLLED(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+         if ((BlkD(f,File)->status & Fs_Socket) == 0) {
+#ifdef Concurrent
+            MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+            return C_integer 0;
+            }
 #if HAVE_LIBSSL
-        if(status & Fs_Encrypt) {
-           int fd;
-           fd = SSL_get_fd(BlkD(f,File)->fd.ssl);
+        if (BlkD(f,File)->status & Fs_Encrypt) {
+           s = SSL_get_fd(BlkD(f,File)->fd.ssl);
            SSL_shutdown(BlkLoc(f)->File.fd.ssl);
            SSL_CTX_free(SSL_get_SSL_CTX(BlkLoc(f)->File.fd.ssl));
            SSL_free(BlkLoc(f)->File.fd.ssl);
-           BlkLoc(f)->File.fd.fd = fd;
+           BlkLoc(f)->File.fd.ssl = NULL;
            }
+        else
 #endif                                  /* LIBSSL */
+         s = BlkLoc(f)->File.fd.fd;
          BlkLoc(f)->File.status = 0;
          BlkLoc(f)->File.sock_gen = 0;
-         StrLoc(BlkLoc(f)->File.fname) = "closed socket";
-         StrLen(BlkLoc(f)->File.fname) = 13;
+#ifdef Concurrent
+         MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
          /* drop any listener-cache entries pointing at this fd */
-         if (sock_purge(BlkLoc(f)->File.fd.fd))
-            sock_close(BlkLoc(f)->File.fd.fd);
+         if (sock_purge(s))
+            sock_close(s);
          return C_integer 0;
          }
 #endif                                  /* PosixFns */
@@ -479,11 +495,11 @@ function{0,1} open(fname, spec)
                }
             }
          if (want_cmd && want_sftp) {
-            set_errortext_with_val(1321, "c");
+            set_errortext_with_val(1331, "c");
             fail;
             }
          if (!want_cmd && !want_sftp) {
-            set_errortext(1321);
+            set_errortext(1331);
             fail;
             }
          if (!(chanstatus & (Fs_Read|Fs_Write)))
@@ -1499,7 +1515,7 @@ Deliberate Syntax Error
              * new session in one step (the returned handle owns it).
              */
             if (ssh_cmd && ssh_sftp) {
-               set_errortext_with_val(1321, "c");
+               set_errortext_with_val(1331, "c");
                fail;
                }
             sshf = create_ssh_session(fnamestr, attr, n, do_verify,
@@ -1605,7 +1621,7 @@ Deliberate Syntax Error
                   }
                   if (sock_type == SOCK_T_DGRAM) {
                      if (!ssl_dtls_accept(ssl, fd)) {
-                        set_ssl_connection_errortext(ssl, -1);
+                        set_ssl_handshake_errortext(ssl, -1);
                         if (sock_purge(fd))
                            sock_close(fd);
                         SSL_free(ssl);
@@ -1621,7 +1637,7 @@ Deliberate Syntax Error
 
                   /*Check for error in accept.*/
                   if (err<1) {
-                    set_ssl_connection_errortext(ssl, err);
+                    set_ssl_handshake_errortext(ssl, err);
                     if (sock_purge(fd))      /* fd may be a cached listener */
                        sock_close(fd);
                     SSL_free(ssl);
@@ -1675,7 +1691,7 @@ Deliberate Syntax Error
                   }
                   if (sock_type == SOCK_T_DGRAM) {
                      if (!ssl_dtls_connect(ssl, fd)) {
-                        set_ssl_connection_errortext(ssl, -1);
+                        set_ssl_handshake_errortext(ssl, -1);
                         sock_close(fd);
                         SSL_free(ssl);
                         SSL_CTX_free(ctx);
@@ -1688,7 +1704,7 @@ Deliberate Syntax Error
 
                   /*Check for error in connect.*/
                   if (err<1) {
-                    set_ssl_connection_errortext(ssl, err);
+                    set_ssl_handshake_errortext(ssl, err);
                     sock_close(fd);
                     SSL_free(ssl);
                     SSL_CTX_free(ctx);
@@ -1742,8 +1758,9 @@ Deliberate Syntax Error
             Protect(fl = alcfile(0, status, &filename), runerr(0));
 
 #if HAVE_LIBSSL
-            if (status & Fs_Encrypt)
+            if (status & Fs_Encrypt) {
                fl->fd.ssl = ssl;
+               }
             else
 #endif                                  /* HAVE_LIBSSL */
               fl->fd.fd = fd;
@@ -1755,7 +1772,7 @@ Deliberate Syntax Error
             if (status & Fs_Listen)
                fl->sock_gen = sock_listener_gen(fd);
             else
-               fl->sock_gen = 0;
+               fl->sock_gen = sock_file_gen();
 #endif                                  /* PosixFns */
 
             return file(fl);
@@ -2008,7 +2025,7 @@ function{0,1} read(f)
                 MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
 #endif                                  /* Concurrent */
                 set_ssh_errortext(BlkD(f,File)->fd.sshf->sess,
-                                  BlkD(f,File)->fd.sshf->sfile ? 1325 : 1324);
+                                  BlkD(f,File)->fd.sshf->sfile ? 1335 : 1334);
                 fail;
                 }
              if (slen == 1 && *sbuf == '\n')
@@ -2048,7 +2065,7 @@ function{0,1} read(f)
              if (slen == -3) {
 #if HAVE_LIBSSH
                if (status & Fs_SSH)
-                  set_ssh_errortext(BlkD(f,File)->fd.sshf->sess, 1324);
+                  set_ssh_errortext(BlkD(f,File)->fd.sshf->sess, 1334);
 #endif                                  /* HAVE_LIBSSH */
                 /* else sock_getstrg already set errornumber/text */
                 fail;
@@ -2446,7 +2463,7 @@ function{0,1} reads(f,i)
 #ifdef Concurrent
                   MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
 #endif                                  /* Concurrent */
-                  set_ssh_errortext(BlkD(f,File)->fd.sshf->sess, 1325);
+                  set_ssh_errortext(BlkD(f,File)->fd.sshf->sess, 1335);
                   fail;
                   }
                if (got == 0) {
@@ -2564,7 +2581,7 @@ function{0,1} reads(f,i)
 #ifdef Concurrent
                        MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
 #endif                                  /* Concurrent */
-                       set_ssh_errortext(BlkD(f,File)->fd.sshf->sess, 1324);
+                       set_ssh_errortext(BlkD(f,File)->fd.sshf->sess, 1334);
                        }
 #endif                                  /* HAVE_LIBSSH */
                     /* else sock_getstrg sets errortext */

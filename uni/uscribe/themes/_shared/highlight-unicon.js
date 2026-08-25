@@ -131,6 +131,82 @@
     return out;
   }
 
+  function highlightJson(src) {
+    var out = "";
+    var i = 0;
+    var n = src.length;
+
+    function peek() { return src.charAt(i); }
+
+    while (i < n) {
+      // Line comment (JSONC / many config samples)
+      if (peek() === "/" && src.charAt(i + 1) === "/") {
+        var c0 = i;
+        while (i < n && src.charAt(i) !== "\n") i++;
+        out += '<span class="tok-comment">' + escapeHtml(src.slice(c0, i)) + "</span>";
+        continue;
+      }
+      if (peek() === "/" && src.charAt(i + 1) === "*") {
+        var b0 = i;
+        i += 2;
+        while (i < n && !(src.charAt(i) === "*" && src.charAt(i + 1) === "/")) i++;
+        if (i < n) i += 2;
+        out += '<span class="tok-comment">' + escapeHtml(src.slice(b0, i)) + "</span>";
+        continue;
+      }
+
+      if (peek() === '"') {
+        var s0 = i;
+        i++;
+        while (i < n) {
+          if (src.charAt(i) === "\\") { i += 2; continue; }
+          if (src.charAt(i) === '"') { i++; break; }
+          i++;
+        }
+        out += '<span class="tok-string">' + escapeHtml(src.slice(s0, i)) + "</span>";
+        continue;
+      }
+
+      if (/[0-9\-]/.test(peek()) && (peek() !== "-" || /[0-9]/.test(src.charAt(i + 1)))) {
+        var n0 = i;
+        if (peek() === "-") i++;
+        while (i < n && /[0-9]/.test(src.charAt(i))) i++;
+        if (src.charAt(i) === ".") {
+          i++;
+          while (i < n && /[0-9]/.test(src.charAt(i))) i++;
+        }
+        if (src.charAt(i) === "e" || src.charAt(i) === "E") {
+          i++;
+          if (src.charAt(i) === "+" || src.charAt(i) === "-") i++;
+          while (i < n && /[0-9]/.test(src.charAt(i))) i++;
+        }
+        out += '<span class="tok-number">' + escapeHtml(src.slice(n0, i)) + "</span>";
+        continue;
+      }
+
+      if (/[A-Za-z_]/.test(peek())) {
+        var i0 = i;
+        while (i < n && /[A-Za-z0-9_]/.test(src.charAt(i))) i++;
+        var word = src.slice(i0, i);
+        if (word === "true" || word === "false" || word === "null")
+          out += '<span class="tok-keyword">' + escapeHtml(word) + "</span>";
+        else
+          out += escapeHtml(word);
+        continue;
+      }
+
+      if ("{}[]:,".indexOf(peek()) !== -1) {
+        out += '<span class="tok-op">' + escapeHtml(src.charAt(i)) + "</span>";
+        i++;
+        continue;
+      }
+
+      out += escapeHtml(src.charAt(i));
+      i++;
+    }
+    return out;
+  }
+
   function ready(fn) {
     if (document.readyState !== "loading") fn();
     else document.addEventListener("DOMContentLoaded", fn);
@@ -142,9 +218,14 @@
     );
     for (var b = 0; b < blocks.length; b++) {
       var el = blocks[b];
-      // textContent is already decoded; re-highlight into HTML
       el.innerHTML = highlightUnicon(el.textContent);
       el.parentElement.classList.add("highlight");
+    }
+    var jsonBlocks = document.querySelectorAll("pre code.language-json");
+    for (var j = 0; j < jsonBlocks.length; j++) {
+      var jel = jsonBlocks[j];
+      jel.innerHTML = highlightJson(jel.textContent);
+      jel.parentElement.classList.add("highlight");
     }
   });
 })();

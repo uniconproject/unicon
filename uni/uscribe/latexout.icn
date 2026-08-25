@@ -242,6 +242,11 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         write(outFile, "\\usepackage{hyperref}")
         write(outFile, "\\usepackage{xcolor}")
         write(outFile, "\\usepackage{fancyvrb}")
+        # fvextra wraps long Verbatim lines; without it, CLI/JSON overflows the frame.
+        write(outFile, "\\IfFileExists{fvextra.sty}{%")
+        write(outFile, "  \\usepackage{fvextra}%")
+        write(outFile, "  \\fvset{breaklines=true,breakanywhere=true}%")
+        write(outFile, "}{}")
         write(outFile, "\\usepackage{booktabs}")
         write(outFile, "\\usepackage{longtable}")
         write(outFile, "\\usepackage{array}")
@@ -500,7 +505,7 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         if s > n then
             s := n
         # (textwidth - 2*tabcolsep*n) * s/n + 2*tabcolsep*(s-1)
-        return ">{\\raggedright\\arraybackslash}p{\\dimexpr(" ||
+        return ">{\\raggedright\\sloppy\\arraybackslash}p{\\dimexpr(" ||
                "\\textwidth-2\\tabcolsep*" || n || ")*" || s || "/" || n ||
                "+2\\tabcolsep*(" || s || "-1)\\relax}"
     end
@@ -992,7 +997,8 @@ end
 # <tt>escapeLatex</tt>, plus spaces become <tt>~</tt>. Underscores
 # and commas get <tt>\\allowbreak{}</tt> so long identifiers and
 # comma-separated name lists can wrap inside table <tt>p</tt>
-# columns without overflowing the page. The empty group stops TeX
+# columns without overflowing the page. Slashes, hyphens, dots,
+# and <tt>@</tt> get the same break. The empty group stops TeX
 # from gluing the next letter into the control-word name.
 # <[param s input string, or null treated as empty]>
 # <[returns escaped string]>
@@ -1013,6 +1019,10 @@ procedure escapeLatexTT(s)
             "^": "\\textasciicircum{}"
             "_": "\\_\\allowbreak{}"
             ",": ",\\allowbreak{}"
+            "/": "/\\allowbreak{}"
+            "-": "-\\allowbreak{}"
+            ".": ".\\allowbreak{}"
+            "@": "@\\allowbreak{}"
             "~": "\\textasciitilde{}"
             " ": "~"
             default: c

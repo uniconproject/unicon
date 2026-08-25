@@ -15,7 +15,8 @@ What uscribe is for
 - Multi-chapter books and manuals (ordered by a manifest file)
 - Standalone reports (UTR-style): one HTML page per report, section
   navigation in the sidebar, and a catalog ``index.html`` of links
-- HTML output with sidebar navigation, search, and selectable themes
+- HTML output with sidebar navigation (chapters, plus the current
+  chapter's sections), search, and selectable themes
 - Unicon code samples with syntax highlighting
 - Images and simple admonitions
 

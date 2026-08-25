@@ -54,7 +54,10 @@ Options
 
   - ``html`` — one page per chapter plus index/search/themes.
     Report manifests get a catalog table on ``index.html``. Each
-    report page's sidebar lists that report's sections.
+    report page's sidebar lists that report's sections. Book
+    chapter pages list every chapter and expand the current
+    chapter with a numbered local TOC (``1.1``, ``2.3.1``, …).
+    Tree lines are off unless ``toctree: true`` in ``book.conf``.
     See :doc:`reports`.
   - ``latex`` — for books, a single ``STEM.tex`` (default
     ``book.tex``); for report manifests (every chapter is a

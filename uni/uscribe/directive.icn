@@ -301,6 +301,8 @@ procedure handleListTable(raw, parser)
     tbl := TableNode()
     if l := parser.takePendingLabel() then
         tbl.setLabel(l)
+    if *(trim(\raw.getArg() | "", ' ', 0)) > 0 then
+        tbl.setCaption(trim(raw.getArg(), ' ', 0))
     i := 1
     every cells := !rows do {
         if headerN > 0 & i = 1 then

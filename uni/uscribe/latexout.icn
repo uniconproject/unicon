@@ -28,7 +28,7 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
                                   chapterBase, chapterIndex, figureNo,
                                   docClass, reportDoc, citationTable,
                                   footnoteList, logoFile, currentDoc,
-                                  wroteByline)
+                                  wroteByline, tableNcols)
 
     #<p>
     # Set the open file to which LaTeX is written.
@@ -141,8 +141,25 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
             }
         else
             write(outFile, "\\maketitle")
+        return
+    end
+
+    #<p>
+    # Switch to unnumbered front-matter chapters (preface).
+    #</p>
+    method writeFrontMatter()
+        write(outFile, "\\frontmatter")
+        return
+    end
+
+    #<p>
+    # Book TOC, then numbered main matter. Call after any front-matter
+    # chapters so the contents list follows the preface, as in Word.
+    #</p>
+    method writeContentsAndMain()
         write(outFile, "\\tableofcontents")
         write(outFile, "\\clearpage")
+        write(outFile, "\\mainmatter")
         return
     end
 
@@ -227,7 +244,16 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         write(outFile, "\\usepackage{fancyvrb}")
         write(outFile, "\\usepackage{booktabs}")
         write(outFile, "\\usepackage{longtable}")
+        write(outFile, "\\usepackage{array}")
         write(outFile, "\\IfFileExists{multirow.sty}{\\usepackage{multirow}}{}")
+        # caption* needs caption.sty; without it define a centered fallback.
+        # Use ##1 inside \IfFileExists so #1 is the newcommand parameter.
+        write(outFile, "\\IfFileExists{caption.sty}{%")
+        write(outFile, "  \\usepackage{caption}%")
+        write(outFile, "  \\newcommand{\\uscribecaptionstar}[1]{\\caption*{##1}}%")
+        write(outFile, "}{%")
+        write(outFile, "  \\newcommand{\\uscribecaptionstar}[1]{{\\centering\\small ##1\\par}}%")
+        write(outFile, "}")
         write(outFile, "\\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}")
         return
     end
@@ -282,7 +308,8 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
                 1: "chapter"
                 2: "section"
                 3: "subsection"
-                default: "subsubsection"
+                4: "subsubsection"
+                default: "paragraph"
                 }
         writes(outFile, "\\", cmd, "{")
         writeInlineTitle(n.getTitle())
@@ -406,16 +433,27 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
 
     #<p>
     # Emit a <tt>longtable</tt> (page-breakable) for a table, using
-    # <tt>\\multicolumn</tt> / <tt>\\multirow</tt> when cells span.
+    # wrapping <tt>p</tt> columns sized to <tt>\\textwidth</tt> so
+    # long <tt>\\texttt</tt> identifiers and prose do not overflow the
+    # page. Spans use <tt>\\multicolumn</tt> / <tt>\\multirow</tt>.
     # <[param n a Table node]>
     #</p>
     method visitTable(n)
-        local ncols, row
+        local ncols, row, i
         ncols := tableColumnCount(n)
+        tableNcols := ncols
         writes(outFile, "\\begin{longtable}{")
-        every 1 to ncols do
-            writes(outFile, "l")
+        every i := 1 to ncols do
+            writes(outFile, latexTableColSpec(1, ncols))
         write(outFile, "}")
+        if \n.getCaption() then {
+            if numberedCaption(n.getCaption()) then
+                write(outFile, "\\uscribecaptionstar{", escapeLatex(n.getCaption()),
+                      "} \\\\")
+            else
+                write(outFile, "\\caption{", escapeLatex(n.getCaption()),
+                      "} \\\\")
+            }
         write(outFile, "\\hline")
         if \n.getHeaderRow() then {
             writeLatexTableRow(n.getHeaderRow())
@@ -435,10 +473,36 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         if /n.getHeaderRow() then
             write(outFile, "\\hline")
         write(outFile, "\\end{longtable}")
+        tableNcols := &null
         if \n.getLabel() then
             write(outFile, "\\label{", latexLabelId(n.getLabel()), "}")
         write(outFile)
         return
+    end
+
+    #<p>
+    # One ragged-right paragraph column covering <tt>span</tt> of
+    # <tt>ncols</tt> equal shares of the text width after subtracting
+    # <tt>2\\tabcolsep</tt> per column (and restoring inter-column
+    # padding for multi-column spans).
+    # <[param span column span (&gt;= 1)]>
+    # <[param ncols total logical columns (&gt;= 1)]>
+    # <[returns a LaTeX column-spec fragment]>
+    #</p>
+    method latexTableColSpec(span, ncols)
+        local n, s
+        n := \ncols | 1
+        if n < 1 then
+            n := 1
+        s := \span | 1
+        if s < 1 then
+            s := 1
+        if s > n then
+            s := n
+        # (textwidth - 2*tabcolsep*n) * s/n + 2*tabcolsep*(s-1)
+        return ">{\\raggedright\\arraybackslash}p{\\dimexpr(" ||
+               "\\textwidth-2\\tabcolsep*" || n || ")*" || s || "/" || n ||
+               "+2\\tabcolsep*(" || s || "-1)\\relax}"
     end
 
     #<p>
@@ -507,10 +571,13 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
     #<p>
     # Write one table row as <tt>cell & cell \\\\</tt>, wrapping
     # spans with <tt>\\multicolumn</tt> / <tt>\\multirow</tt>.
+    # Multicolumn specs use the same wrapping <tt>p</tt> widths as
+    # <tt>visitTable</tt>.
     # <[param row a TableRow node]>
     #</p>
     method writeLatexTableRow(row)
-        local cell, first, cs, rs
+        local cell, first, cs, rs, ncols, colspec
+        ncols := \tableNcols | 1
         first := 1
         every cell := !row.getChildren() do {
             if \first then
@@ -519,11 +586,12 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
                 writes(outFile, " & ")
             cs := cell.getColSpan()
             rs := cell.getRowSpan()
+            colspec := latexTableColSpec(cs, ncols)
             if cs > 1 & rs > 1 then
-                writes(outFile, "\\multicolumn{", cs, "}{l}{\\multirow{",
-                       rs, "}{*}{")
+                writes(outFile, "\\multicolumn{", cs, "}{", colspec,
+                       "}{\\multirow{", rs, "}{*}{")
             else if cs > 1 then
-                writes(outFile, "\\multicolumn{", cs, "}{l}{")
+                writes(outFile, "\\multicolumn{", cs, "}{", colspec, "}{")
             else if rs > 1 then
                 writes(outFile, "\\multirow{", rs, "}{*}{")
             every (!cell.getChildren()).accept(self)
@@ -545,7 +613,7 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         local uri, alt, cap
         uri := n.getURI()
         alt := \n.getAlt() | ""
-        cap := \n.getCaption() | alt
+        cap := \n.getCaption() | ""
         # pdflatex/xelatex need PDF/PNG/JPEG; SVG is noted as a placeholder
         if *uri >= 4 & map(uri[*uri-3:0], &ucase, &lcase) == ".svg" then {
             write(outFile, "\\begin{center}\\fbox{\\parbox{0.9\\linewidth}{")
@@ -558,19 +626,28 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
                 write(outFile, "\\label{", latexLabelId(n.getLabel()), "}")
             write(&errout, "warning: SVG not embedded in LaTeX: ", uri)
             }
-        else {
+        else if n.isFigureNode() | *cap > 0 then {
             write(outFile, "\\begin{figure}[htbp]")
             write(outFile, "\\centering")
-            # escapeLatexPath (not raw \\detokenize): '%' would comment out
-            # the rest of the .tex line before detokenize runs, and raw
-            # braces can unbalance the \\includegraphics argument.
             write(outFile, "\\includegraphics[width=0.9\\linewidth]{",
                   escapeLatexPath(uri), "}")
-            if *cap > 0 then
-                write(outFile, "\\caption{", escapeLatex(cap), "}")
+            if *cap > 0 then {
+                if numberedCaption(cap) then
+                    write(outFile, "\\uscribecaptionstar{", escapeLatex(cap), "}")
+                else
+                    write(outFile, "\\caption{", escapeLatex(cap), "}")
+                }
             if \n.getLabel() then
                 write(outFile, "\\label{", latexLabelId(n.getLabel()), "}")
             write(outFile, "\\end{figure}")
+            }
+        else {
+            write(outFile, "\\begin{center}")
+            write(outFile, "\\includegraphics[width=0.9\\linewidth]{",
+                  escapeLatexPath(uri), "}")
+            write(outFile, "\\end{center}")
+            if \n.getLabel() then
+                write(outFile, "\\label{", latexLabelId(n.getLabel()), "}")
             }
         write(outFile)
         return
@@ -912,7 +989,11 @@ end
 
 #<p>
 # Escape for <tt>\\texttt{...}</tt>: same specials as
-# <tt>escapeLatex</tt>, plus spaces become <tt>~</tt>.
+# <tt>escapeLatex</tt>, plus spaces become <tt>~</tt>. Underscores
+# and commas get <tt>\\allowbreak{}</tt> so long identifiers and
+# comma-separated name lists can wrap inside table <tt>p</tt>
+# columns without overflowing the page. The empty group stops TeX
+# from gluing the next letter into the control-word name.
 # <[param s input string, or null treated as empty]>
 # <[returns escaped string]>
 #</p>
@@ -930,7 +1011,8 @@ procedure escapeLatexTT(s)
             "%": "\\%"
             "#": "\\#"
             "^": "\\textasciicircum{}"
-            "_": "\\_"
+            "_": "\\_\\allowbreak{}"
+            ",": ",\\allowbreak{}"
             "~": "\\textasciitilde{}"
             " ": "~"
             default: c

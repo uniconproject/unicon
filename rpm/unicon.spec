@@ -64,6 +64,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/udb
 %{_bindir}/unidep
 %{_bindir}/uprof
+%{_bindir}/uscribe
 %{_bindir}/iyacc
 %{_bindir}/patchstr
 %{_libdir}/unicon/ipl/lib/*.u

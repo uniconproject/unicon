@@ -18,9 +18,10 @@ Headings
    Subsection
    ~~~~~~~~~~
 
-Characters ``= - ~ ^`` are recognized as underline styles. Heading
-level follows the underline character. The underline length must be
-greater than or equal to the title length.
+Characters ``= - ~ ^ "`` are recognized as underline styles
+(chapter through heading 5). Heading level follows the underline
+character. The underline length must be greater than or equal to
+the title length.
 
 Document fields
 ---------------
@@ -51,6 +52,9 @@ Paragraphs and lists
 Blank lines separate paragraphs. Bullet lists use ``-`` or ``*`` with
 a following space. Numbered lists use ``1. `` / ``1) `` or auto-number
 ``#. ``. Indented continuation lines belong to the current item.
+Nested lists, ``.. note::``, and ``.. code-block::`` indented under an
+item are parsed as that item's body (a blank line between items is
+allowed).
 
 Source:
 
@@ -61,6 +65,14 @@ Source:
 Rendered:
 
 .. include:: includes/ex-lists.rst
+
+A list item can also hold a nested listing:
+
+.. literalinclude:: includes/ex-nested-list.rst
+
+   :language: rst
+
+.. include:: includes/ex-nested-list.rst
 
 Definition lists
 ----------------
@@ -82,7 +94,8 @@ Tables
 ------
 
 **Simple** tables use ``=`` column separators. The first row is the
-header. PDF output uses ``longtable`` so tables can break across pages.
+header. PDF output uses ``longtable`` with wrapping paragraph
+columns so long identifiers and prose stay within the page.
 
 Source:
 
@@ -119,7 +132,10 @@ Rendered:
 
 .. include:: includes/ex-grid-table.rst
 
-**List tables** use the ``list-table`` directive:
+**List tables** use the ``list-table`` directive. The optional
+argument is the table caption (shown under the table in HTML, and
+as a LaTeX caption). Word-style labels such as ``Figure 6: …`` are
+kept as written:
 
 Source:
 
@@ -180,8 +196,9 @@ directives). Source then rendered:
 Also: ``warning``, ``tip``, ``important``, ``caution``, ``attention``,
 ``danger``, ``error``, ``hint``.
 
-Figures take a caption (numbered in HTML/LaTeX) and optional
-``:name:`` / preceding ``.. _label:``:
+Figures take a caption. If the caption already starts with
+``Figure N`` or ``Table N``, HTML and LaTeX keep that label instead
+of adding another number. Uncaptioned ``.. image::`` is not numbered.
 
 .. code-block:: rst
 
@@ -265,11 +282,13 @@ Unicon listings
 ---------------
 
 ``code-block`` languages ``unicon``, ``icon``, and ``icn`` get Unicon
-syntax highlighting in HTML (via ``highlight-unicon.js``). Other
-languages are emitted as plain
-``<pre><code class="language-…">`` without Unicon highlighting —
+syntax highlighting in HTML (via ``highlight-unicon.js``).
+``json`` is highlighted the same way (strings, numbers,
+``true`` / ``false`` / ``null``, and ``//`` comments in JSONC
+samples). Other languages are emitted as plain
+``<pre><code class="language-…">`` without extra highlighting —
 use ``sh`` for shell, ``rst`` or ``text`` for markup samples.
-``literalinclude`` of ``.icn`` files uses the same highlighting.
+``literalinclude`` of ``.icn`` files uses the same Unicon highlighting.
 
 Example Unicon program as it appears in the built book:
 

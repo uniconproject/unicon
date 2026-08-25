@@ -100,6 +100,23 @@ A report is one HTML page and one PDF. The sidebar on that page is
 the report's sections. ``index.html`` is a catalog of links.
 Workflow and live examples: :doc:`reports`.
 
+frontmatter
+-----------
+
+How many leading chapters are unnumbered front matter (a preface
+before chapter 1). Default ``0``. When set, the HTML sidebar numbers
+sections as ``1.1``, ``2.3.1``, … matching the Word outline, and the
+PDF uses ``\\frontmatter`` for those chapters, then the table of
+contents, then ``\\mainmatter``.
+
+toctree
+-------
+
+Sidebar tree lines (vertical spine and ticks) on the current
+chapter's section list. Default off: numbers and indentation
+only. Set ``toctree: true`` (also ``yes`` / ``on`` / ``1``;
+aliases ``toc-tree``, ``toc_tree``) to draw the lines.
+
 Not in book.conf
 ----------------
 

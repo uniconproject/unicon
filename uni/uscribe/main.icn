@@ -186,6 +186,9 @@ procedure renderHtml(docs, labels, cites)
             }
         else
             outp.setNav(bookTitle, catalogNav, i, themeName)
+        outp.setFrontMatter(parseFrontMatter())
+        if parseTocTree() then
+            outp.setTocTree(1)
         outp.setCopyright(copyrightNotice)
         outp.setLogo(logoHref)
         outp.setOutDir(targetDir)
@@ -243,7 +246,7 @@ end
 # <[param cites CitationTable]>
 #</p>
 procedure renderBookLatex(docs, labels, wantPdf, cites)
-    local outPath, f, outp, doc, engine, rc, logoFile
+    local outPath, f, outp, doc, engine, rc, logoFile, fm, i
 
     outPath := targetDir || "/" || bookOutputName || ".tex"
     f := open(outPath, "w") | stop("uscribe: could not write '", outPath, "'")
@@ -256,10 +259,21 @@ procedure renderBookLatex(docs, labels, wantPdf, cites)
     if logoFile := copyLogoForLatex() then
         outp.setLogo(logoFile)
     outp.writePreamble()
+    fm := parseFrontMatter()
+    if fm > 0 then
+        outp.writeFrontMatter()
+    else
+        outp.writeContentsAndMain()
+    i := 0
     every doc := !docs do {
+        i +:= 1
+        if fm > 0 & i = fm + 1 then
+            outp.writeContentsAndMain()
         labels.resolve(doc)
         doc.accept(outp)
         }
+    if fm > 0 & *docs <= fm then
+        outp.writeContentsAndMain()
     outp.writeEpilogue()
     close(f)
     write("wrote ", outPath)
@@ -1152,6 +1166,34 @@ procedure loadBookConfig(manifestPath)
         write("config: ", path)
         return cfg
         }
+    fail
+end
+
+#<p>
+# Count of leading unnumbered chapters from <tt>book.conf</tt>
+# <tt>frontmatter</tt> (default 0).
+# <[returns a non-negative integer]>
+#</p>
+procedure parseFrontMatter()
+    local s, n
+    s := (\bookConfig).get("frontmatter") | "0"
+    n := integer(s) | 0
+    if n < 0 then
+        n := 0
+    return n
+end
+
+#<p>
+# Sidebar tree spine from <tt>book.conf</tt> <tt>toctree</tt>.
+# Default off (indent and numbers only). Succeeds for
+# <tt>true</tt> / <tt>yes</tt> / <tt>on</tt> / <tt>1</tt>.
+# <[fails if unset or disabled]>
+#</p>
+procedure parseTocTree()
+    local s
+    s := map((\bookConfig).get("toctree") | "no", &ucase, &lcase)
+    if member(set(["1","true","yes","on"]), s) then
+        return
     fail
 end
 

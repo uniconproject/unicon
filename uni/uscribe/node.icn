@@ -639,9 +639,10 @@ end
 #<p>
 # A simple table: optional <tt>headerRow</tt> (<tt>TableRow</tt>) and
 # body rows as <tt>TableRow</tt> children. Optional <tt>label</tt> from
-# a preceding <tt>.. _label:</tt> target.
+# a preceding <tt>.. _label:</tt> target. Optional <tt>caption</tt>
+# from the <tt>list-table</tt> directive argument.
 #</p>
-class TableNode : Block (children, headerRow, label)
+class TableNode : Block (children, headerRow, label, caption)
 
     #<p>
     # Set the header row.
@@ -677,6 +678,24 @@ class TableNode : Block (children, headerRow, label)
     #</p>
     method getLabel()
         return \label
+    end
+
+    #<p>
+    # Set the table caption (plain text).
+    # <[param c caption string]>
+    #</p>
+    method setCaption(c)
+        caption := c
+        return
+    end
+
+    #<p>
+    # Return the caption, if any.
+    # <[returns the caption string]>
+    # <[fails if unset]>
+    #</p>
+    method getCaption()
+        return \caption
     end
 
     #<p>

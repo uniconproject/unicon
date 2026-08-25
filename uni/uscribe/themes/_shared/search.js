@@ -14,11 +14,32 @@
     input.addEventListener("input", function () {
       var q = (input.value || "").toLowerCase().trim();
       var items = list.querySelectorAll("li");
-      for (var i = 0; i < items.length; i++) {
-        var li = items[i];
-        var text = (li.textContent || "").toLowerCase();
-        if (!q || text.indexOf(q) !== -1) li.classList.remove("hidden");
-        else li.classList.add("hidden");
+      var shown = [];
+      var i, j;
+      for (i = 0; i < items.length; i++) {
+        var text = (items[i].textContent || "").toLowerCase();
+        shown[i] = !q || text.indexOf(q) !== -1;
+      }
+      if (q) {
+        for (i = 0; i < items.length; i++) {
+          if (!shown[i]) continue;
+          var p = items[i].parentElement;
+          while (p && p.id !== "nav-toc") {
+            if (p.tagName === "LI") {
+              for (j = 0; j < items.length; j++) {
+                if (items[j] === p) {
+                  shown[j] = true;
+                  break;
+                }
+              }
+            }
+            p = p.parentElement;
+          }
+        }
+      }
+      for (i = 0; i < items.length; i++) {
+        if (shown[i]) items[i].classList.remove("hidden");
+        else items[i].classList.add("hidden");
       }
     });
 

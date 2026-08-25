@@ -201,7 +201,7 @@ end
 # Shared CSS/JS come from <tt>--theme</tt>
 # (see <tt>uni/uscribe/themes/</tt>).
 #</p>
-class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo, citationTable, footnoteList, outDir, bookPdfHref, currentDoc, wroteByline, pageKind)
+class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo, citationTable, footnoteList, outDir, bookPdfHref, currentDoc, wroteByline, pageKind, frontMatter, tocTree)
 
     #<p>
     # Set the open file to which HTML is written.
@@ -257,6 +257,29 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     #</p>
     method setPageKind(kind)
         pageKind := kind
+        return
+    end
+
+    #<p>
+    # How many leading chapters are unnumbered front matter
+    # (preface, etc.). Sidebar section numbers then start at 1
+    # with the next chapter. 0 (default) numbers from the first
+    # chapter.
+    # <[param n integer count]>
+    #</p>
+    method setFrontMatter(n)
+        frontMatter := n
+        return
+    end
+
+    #<p>
+    # When non-null, the sidebar local TOC draws a tree spine
+    # (vertical line plus ticks). Off by default: numbered and
+    # indented, no lines. <tt>book.conf</tt> <tt>toctree: true</tt>.
+    # <[param on non-null to enable the tree]>
+    #</p>
+    method setTocTree(on)
+        tocTree := on
         return
     end
 
@@ -319,11 +342,11 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
         write(outFile, "<script defer src=\"_static/theme-switcher.js\"></script>")
         write(outFile, "</head><body>")
         write(outFile, "<div class=\"layout\">")
+        currentDoc := n
+        wroteByline := &null
         writeSidebar()
         write(outFile, "<div class=\"main\">")
         footnoteList := []
-        currentDoc := n
-        wroteByline := &null
         writePrevNext()
         if n.isReport() then
             writeReportMasthead(n)
@@ -450,18 +473,25 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     # Emit the left sidebar: optional logo, book/collection title
     # (links to <tt>index.html</tt>), theme picker, filter box, TOC,
     # and a link to the full search page. Report pages list this
-    # document's sections; book pages list chapters.
+    # document's sections. Book chapter pages list every chapter and,
+    # under the current chapter, a numbered local TOC. A tree spine
+    # is optional (<tt>toctree</tt> in <tt>book.conf</tt>).
     #</p>
     method writeSidebar()
-        local i, e, report
+        local i, e, report, cls
         /navEntries := []
         /navIndex := 0
         if (\pageKind | "book") == "report" then
             report := 1
+        cls := "sidebar"
+        if \tocTree then
+            cls := cls || " toc-tree"
         if \report then
-            write(outFile, "<nav class=\"sidebar\" aria-label=\"Report contents\">")
+            write(outFile, "<nav class=\"", cls,
+                  "\" aria-label=\"Report contents\">")
         else
-            write(outFile, "<nav class=\"sidebar\" aria-label=\"Book contents\">")
+            write(outFile, "<nav class=\"", cls,
+                  "\" aria-label=\"Book contents\">")
         if \logoHref & *logoHref > 0 then
             write(outFile, "<a class=\"sidebar-logo\" href=\"index.html\">",
                   "<img src=\"", escapeHtml(logoHref),
@@ -472,12 +502,12 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
         if \report then
             write(outFile, "<p class=\"search-hint\">Filter sections; Enter for full search</p>")
         else
-            write(outFile, "<p class=\"search-hint\">Filter chapters; Enter for full search</p>")
+            write(outFile, "<p class=\"search-hint\">Filter chapters and sections; Enter for full search</p>")
         write(outFile, "<input class=\"search-box\" id=\"nav-search\" type=\"search\" ")
         if \report then
             write(outFile, "placeholder=\"Search...\" aria-label=\"Filter section list\">")
         else
-            write(outFile, "placeholder=\"Search...\" aria-label=\"Filter chapter list\">")
+            write(outFile, "placeholder=\"Search...\" aria-label=\"Filter chapter and section list\">")
         write(outFile, "<ol id=\"nav-toc\">")
         every i := 1 to *navEntries do {
             e := navEntries[i]
@@ -487,16 +517,115 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
                 writeInlineTitle(e[2])
                 write(outFile, "</a></li>")
                 }
-            else if i = navIndex then
-                write(outFile, "<li class=\"current\">", escapeHtml(e[2]), "</li>")
+            else if i = navIndex then {
+                writes(outFile, "<li class=\"current toc-l1\"><a href=\"",
+                       escapeHtml(e[1]), "\">")
+                writeInlineTitle(e[2])
+                write(outFile, "</a>")
+                writeLocalToc(chapterSectionNavEntries(currentDoc))
+                write(outFile, "</li>")
+                }
             else
-                write(outFile, "<li><a href=\"", escapeHtml(e[1]), "\">",
+                write(outFile, "<li class=\"toc-l1\"><a href=\"",
+                      escapeHtml(e[1]), "\">",
                       escapeHtml(e[2]), "</a></li>")
             }
         write(outFile, "</ol>")
         write(outFile, "<p class=\"search-hint\"><a href=\"search.html\">Search page</a></p>")
         write(outFile, "</nav>")
         return
+    end
+
+    #<p>
+    # Nested, numbered TOC for the current chapter. Section numbers
+    # match the Word outline when <tt>frontmatter</tt> is set:
+    # chapter N, section <tt>N.1</tt>, subsection <tt>N.1.1</tt>.
+    # <[param entries list of <tt>[#anchor, title, level]</tt>]>
+    #</p>
+    method writeLocalToc(entries)
+        local se, sec, sub, secOpen, innerOpen, num
+        /entries := []
+        if *entries = 0 then
+            return
+        write(outFile, "<ol class=\"toc-local\">")
+        sec := 0
+        sub := 0
+        secOpen := &null
+        innerOpen := &null
+        every se := !entries do {
+            if se[3] = 2 then {
+                if \innerOpen then {
+                    write(outFile, "</ol>")
+                    innerOpen := &null
+                    }
+                if \secOpen then
+                    write(outFile, "</li>")
+                sec +:= 1
+                sub := 0
+                writes(outFile, "<li class=\"toc-sec\"><a href=\"",
+                       escapeHtml(se[1]),
+                       "\"><span class=\"toc-num\">",
+                       formatTocNum(sec), "</span>")
+                writeInlineTitle(se[2])
+                write(outFile, "</a>")
+                secOpen := 1
+                }
+            else if se[3] >= 3 then {
+                if /secOpen then {
+                    # Subsection before any section (Word H3 ahead
+                    # of H2): treat it as a section, not an empty parent.
+                    sec +:= 1
+                    sub := 0
+                    writes(outFile, "<li class=\"toc-sec\"><a href=\"",
+                           escapeHtml(se[1]),
+                           "\"><span class=\"toc-num\">",
+                           formatTocNum(sec), "</span>")
+                    writeInlineTitle(se[2])
+                    write(outFile, "</a>")
+                    secOpen := 1
+                    }
+                else {
+                    sub +:= 1
+                    if /innerOpen then {
+                        write(outFile, "<ol class=\"toc-local\">")
+                        innerOpen := 1
+                        }
+                    writes(outFile, "<li class=\"toc-sub\"><a href=\"",
+                           escapeHtml(se[1]),
+                           "\"><span class=\"toc-num\">",
+                           formatTocNum(sec, sub), "</span>")
+                    writeInlineTitle(se[2])
+                    write(outFile, "</a></li>")
+                    }
+                }
+            }
+        if \innerOpen then
+            write(outFile, "</ol>")
+        if \secOpen then
+            write(outFile, "</li>")
+        write(outFile, "</ol>")
+        return
+    end
+
+    #<p>
+    # Sidebar number for a section (<tt>ch.sec</tt>) or subsection
+    # (<tt>ch.sec.sub</tt>). <tt>ch</tt> is the 1-based chapter
+    # after skipping <tt>frontMatter</tt> chapters.
+    # <[param sec section number]>
+    # <[param sub subsection number, or null]>
+    # <[returns a display string]>
+    #</p>
+    method formatTocNum(sec, sub)
+        local ch
+        ch := (\navIndex | 1) - (\frontMatter | 0)
+        if \sub then {
+            if ch >= 1 then
+                return ch || "." || sec || "." || sub
+            return sec || "." || sub
+            }
+        if ch >= 1 then
+            return ch || "." || sec
+        return string(sec)
     end
 
     #<p>
@@ -588,7 +717,10 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     #</p>
     method visitSection(n)
         local h
-        h := "h" || (n.getLevel() + 1)  # h2 for level 1, h3 for level 2, ...
+        h := n.getLevel() + 1  # h2 for level 1, h3 for level 2, ...
+        if h > 6 then
+            h := 6
+        h := "h" || h
         write(outFile, "<", h, " id=\"", escapeHtml(anchorFor(n)), "\">")
         writeInlineTitle(n.getTitle())
         write(outFile, "</", h, ">")
@@ -676,7 +808,8 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     #<p>
     # Emit a <tt>&lt;pre&gt;&lt;code class="language-…"&gt;</tt> block.
     # Languages <tt>icon</tt> / <tt>icn</tt> are normalized to
-    # <tt>unicon</tt> for highlighting.
+    # <tt>unicon</tt> for highlighting; <tt>json</tt> is highlighted
+    # client-side as well.
     # <[param n a CodeBlock node]>
     #</p>
     method visitCodeBlock(n)
@@ -717,6 +850,9 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
             write(outFile, "<table id=\"", escapeHtml(n.getLabel()), "\">")
         else
             write(outFile, "<table>")
+        if \n.getCaption() then
+            write(outFile, "<caption>", escapeHtml(n.getCaption()),
+                  "</caption>")
         if \n.getHeaderRow() then {
             write(outFile, "<thead>")
             n.getHeaderRow().accept(self)
@@ -808,20 +944,25 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
         cls := "figure"
         if find("logo", map(uri, &ucase, &lcase)) then
             cls := "figure logo"
-        if n.isFigureNode() | \n.getCaption() then {
-            /figureNo := 0
-            figureNo +:= 1
-            num := figureNo
-            id := \n.getLabel() | ("figure-" || num)
+        cap := \n.getCaption() | ""
+        if n.isFigureNode() | *cap > 0 then {
+            if *cap = 0 then {
+                /figureNo := 0
+                figureNo +:= 1
+                cap := "Figure " || figureNo
+                }
+            else if not numberedCaption(cap) then {
+                /figureNo := 0
+                figureNo +:= 1
+                cap := "Figure " || figureNo || ": " || cap
+                }
+            id := \n.getLabel() | ("figure-" || slugify(cap))
             write(outFile, "<figure class=\"", cls, "\" id=\"",
                   escapeHtml(id), "\">")
             write(outFile, "<img src=\"", escapeHtml(uri),
                   "\" alt=\"", alt, "\">")
-            cap := \n.getCaption() | \n.getAlt() | ""
-            write(outFile, "<figcaption>Figure ", num)
-            if *cap > 0 then
-                write(outFile, ": ", escapeHtml(cap))
-            write(outFile, "</figcaption>")
+            write(outFile, "<figcaption>", escapeHtml(cap),
+                  "</figcaption>")
             write(outFile, "</figure>")
             }
         else {
@@ -1071,6 +1212,33 @@ procedure sectionAnchor(sectionNode)
 end
 
 #<p>
+# In-chapter section TOC for a book page: headings after the chapter
+# title (levels 2–3, i.e. <tt>---</tt> and <tt>~~~</tt>). The level-1
+# heading is the chapter itself and is already the parent sidebar
+# entry. Each item is <tt>[#anchor, title, level]</tt>.
+# <[param doc a Document node, or null]>
+# <[returns a list of nav triples; empty if <tt>doc</tt> is null]>
+#</p>
+procedure chapterSectionNavEntries(doc)
+    local nav, n, skipH1
+    nav := []
+    if /doc then
+        return nav
+    skipH1 := 1
+    every n := !doc.getChildren() do
+        if n.nodeType() == "Section" then {
+            if \skipH1 & n.getLevel() = 1 then {
+                skipH1 := &null
+                next
+                }
+            if n.getLevel() >= 2 & n.getLevel() <= 3 then
+                put(nav, ["#" || sectionAnchor(n), n.getTitle(),
+                          n.getLevel()])
+            }
+    return nav
+end
+
+#<p>
 # Sidebar class for a 1-based section level (<tt>toc-l1</tt> ..
 # <tt>toc-l4</tt>).
 # <[param level section level, or null]>
@@ -1137,6 +1305,23 @@ procedure formatDocAuthors(doc)
         first := &null
         }
     return out
+end
+
+#<p>
+# True when <tt>s</tt> already starts with a Word-style
+# <tt>Figure N</tt> / <tt>Table N</tt> label, so HTML/LaTeX should
+# not prepend another auto-number.
+# <[param s caption string, or null]>
+# <[fails if the caption is not pre-numbered]>
+#</p>
+procedure numberedCaption(s)
+    /s := ""
+    s := trim(s, ' ', 0)
+    return s ? {
+        (="Figure" | ="Table" | ="figure" | ="table")
+        =" "
+        tab(many(&digits))
+        }
 end
 
 #<p>

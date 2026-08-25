@@ -106,11 +106,87 @@ body {
   margin-left: -0.4rem;
 }
 
+.sidebar li.current a { color: inherit; }
+
 .sidebar li.hidden { display: none; }
 
-.sidebar li.toc-l2 { padding-left: 0.75rem; }
-.sidebar li.toc-l3 { padding-left: 1.4rem; }
-.sidebar li.toc-l4 { padding-left: 2rem; }
+.sidebar li.toc-l2 { padding-left: 0.75rem; font-size: 0.92em; }
+.sidebar li.toc-l3 { padding-left: 1.4rem; font-size: 0.88em; }
+.sidebar li.toc-l4 { padding-left: 2rem; font-size: 0.88em; }
+
+/* Current-chapter local TOC: numbered, indented. Tree lines are
+   opt-in via nav.sidebar.toc-tree (book.conf toctree: true). */
+.sidebar ol.toc-local {
+  list-style: none;
+  margin: 0.25rem 0 0.45rem 0.15rem;
+  padding: 0.15rem 0 0.2rem 0.85rem;
+  font-size: 0.92em;
+}
+.sidebar ol.toc-local ol.toc-local {
+  margin: 0.08rem 0 0.12rem 0.15rem;
+  padding-left: 0.85rem;
+  font-size: 1em;
+}
+.sidebar .toc-sec,
+.sidebar .toc-sub {
+  margin: 0.14rem 0;
+}
+.sidebar .toc-sec > a,
+.sidebar .toc-sub > a {
+  display: grid;
+  grid-template-columns: 2.5em 1fr;
+  column-gap: 0.35rem;
+  align-items: start;
+}
+.sidebar.toc-tree ol.toc-local {
+  border-left: 2px solid var(--accent);
+  padding-left: 0.75rem;
+}
+.sidebar.toc-tree ol.toc-local ol.toc-local {
+  border-left: 1px solid var(--border);
+  padding-left: 0.7rem;
+}
+.sidebar.toc-tree .toc-sec,
+.sidebar.toc-tree .toc-sub {
+  position: relative;
+}
+.sidebar.toc-tree .toc-sec > a,
+.sidebar.toc-tree .toc-sub > a {
+  position: relative;
+}
+.sidebar.toc-tree .toc-sec > a::before,
+.sidebar.toc-tree .toc-sub > a::before {
+  content: "";
+  position: absolute;
+  left: -0.75rem;
+  top: 0.7em;
+  width: 0.5rem;
+  border-top: 1px solid var(--accent);
+}
+.sidebar.toc-tree ol.toc-local ol.toc-local .toc-sub > a::before {
+  left: -0.7rem;
+  border-top-color: var(--border);
+}
+.sidebar .toc-num {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.55;
+  text-align: center;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 3px;
+  padding: 0.08em 0.28em;
+  justify-self: end;
+  white-space: nowrap;
+}
+.sidebar .toc-sub .toc-num {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  font-weight: 650;
+}
 
 .sidebar .search-hint {
   font-size: 0.75rem;
@@ -164,6 +240,15 @@ figure.figure figcaption {
   font-size: 0.95em;
   color: #555;
   margin-top: 0.35rem;
+}
+
+table caption {
+  caption-side: bottom;
+  font-style: italic;
+  font-size: 0.95em;
+  color: #555;
+  text-align: left;
+  padding-top: 0.35rem;
 }
 
 img.figure.logo, figure.figure.logo img {

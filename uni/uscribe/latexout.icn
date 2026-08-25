@@ -141,8 +141,25 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
             }
         else
             write(outFile, "\\maketitle")
+        return
+    end
+
+    #<p>
+    # Switch to unnumbered front-matter chapters (preface).
+    #</p>
+    method writeFrontMatter()
+        write(outFile, "\\frontmatter")
+        return
+    end
+
+    #<p>
+    # Book TOC, then numbered main matter. Call after any front-matter
+    # chapters so the contents list follows the preface, as in Word.
+    #</p>
+    method writeContentsAndMain()
         write(outFile, "\\tableofcontents")
         write(outFile, "\\clearpage")
+        write(outFile, "\\mainmatter")
         return
     end
 
@@ -228,6 +245,7 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         write(outFile, "\\usepackage{booktabs}")
         write(outFile, "\\usepackage{longtable}")
         write(outFile, "\\IfFileExists{multirow.sty}{\\usepackage{multirow}}{}")
+        write(outFile, "\\IfFileExists{caption.sty}{\\usepackage{caption}}{}")
         write(outFile, "\\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}")
         return
     end
@@ -282,7 +300,8 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
                 1: "chapter"
                 2: "section"
                 3: "subsection"
-                default: "subsubsection"
+                4: "subsubsection"
+                default: "paragraph"
                 }
         writes(outFile, "\\", cmd, "{")
         writeInlineTitle(n.getTitle())
@@ -416,6 +435,14 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         every 1 to ncols do
             writes(outFile, "l")
         write(outFile, "}")
+        if \n.getCaption() then {
+            if numberedCaption(n.getCaption()) then
+                write(outFile, "\\caption*{", escapeLatex(n.getCaption()),
+                      "} \\\\")
+            else
+                write(outFile, "\\caption{", escapeLatex(n.getCaption()),
+                      "} \\\\")
+            }
         write(outFile, "\\hline")
         if \n.getHeaderRow() then {
             writeLatexTableRow(n.getHeaderRow())
@@ -545,7 +572,7 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         local uri, alt, cap
         uri := n.getURI()
         alt := \n.getAlt() | ""
-        cap := \n.getCaption() | alt
+        cap := \n.getCaption() | ""
         # pdflatex/xelatex need PDF/PNG/JPEG; SVG is noted as a placeholder
         if *uri >= 4 & map(uri[*uri-3:0], &ucase, &lcase) == ".svg" then {
             write(outFile, "\\begin{center}\\fbox{\\parbox{0.9\\linewidth}{")
@@ -558,19 +585,28 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
                 write(outFile, "\\label{", latexLabelId(n.getLabel()), "}")
             write(&errout, "warning: SVG not embedded in LaTeX: ", uri)
             }
-        else {
+        else if n.isFigureNode() | *cap > 0 then {
             write(outFile, "\\begin{figure}[htbp]")
             write(outFile, "\\centering")
-            # escapeLatexPath (not raw \\detokenize): '%' would comment out
-            # the rest of the .tex line before detokenize runs, and raw
-            # braces can unbalance the \\includegraphics argument.
             write(outFile, "\\includegraphics[width=0.9\\linewidth]{",
                   escapeLatexPath(uri), "}")
-            if *cap > 0 then
-                write(outFile, "\\caption{", escapeLatex(cap), "}")
+            if *cap > 0 then {
+                if numberedCaption(cap) then
+                    write(outFile, "\\caption*{", escapeLatex(cap), "}")
+                else
+                    write(outFile, "\\caption{", escapeLatex(cap), "}")
+                }
             if \n.getLabel() then
                 write(outFile, "\\label{", latexLabelId(n.getLabel()), "}")
             write(outFile, "\\end{figure}")
+            }
+        else {
+            write(outFile, "\\begin{center}")
+            write(outFile, "\\includegraphics[width=0.9\\linewidth]{",
+                  escapeLatexPath(uri), "}")
+            write(outFile, "\\end{center}")
+            if \n.getLabel() then
+                write(outFile, "\\label{", latexLabelId(n.getLabel()), "}")
             }
         write(outFile)
         return

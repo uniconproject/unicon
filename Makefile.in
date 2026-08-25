@@ -220,7 +220,7 @@ F=*.{u,icn}
 
 # runtime binaries, variants of iconx, icont, and iconc
 RTbins=$(UNICONX)$(EXE) $(UNICONWX)$(EXE) $(UNICONT)$(EXE) $(UNICONWT)$(EXE) $(UNICONC)$(EXE)
-ADDONbins=udb$(EXE) uprof$(EXE) unidep$(EXE) unidoc$(EXE) ui$(EXE) ivib$(EXE) ulsp$(EXE)
+ADDONbins=udb$(EXE) uprof$(EXE) unidep$(EXE) unidoc$(EXE) ui$(EXE) ivib$(EXE) ulsp$(EXE) uscribe$(EXE)
 UTILbins=patchstr$(EXE) iyacc$(EXE)
 ALLbins=$(RTbins) unicon$(EXE) $(ADDONbins) $(UTILbins) rt.a rt.h
 # binaries that should be signed after install, only needed on arm macOS for now

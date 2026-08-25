@@ -267,15 +267,16 @@ procedure parseBlocks(parser, lines, i, limit, container, level)
             next
             }
 
-        # Bullet list: a run of consecutive "- "/"* " lines.
+        # Bullet list: a run of "- "/"* " items at this indent.
+        # Nested lists, code, and directives belong to the item body.
         if isBulletLine(lines[i]) then {
-            i := parseBulletList(lines, i, limit, curSection)
+            i := parseBulletList(parser, lines, i, limit, curSection)
             next
             }
 
-        # Numbered list: "1. "/"1) "/"#. " items.
+        # Numbered list: "1. "/"1) "/"#. " items at this indent.
         if isEnumLine(lines[i]) then {
-            i := parseEnumList(lines, i, limit, curSection)
+            i := parseEnumList(parser, lines, i, limit, curSection)
             next
             }
 
@@ -536,63 +537,186 @@ procedure literalMinIndent(body)
 end
 
 # <p>
-# Parse a run of consecutive bullet lines (<tt>"- "</tt> /
-# <tt>"* "</tt>), including indented continuation lines, into a
-# <tt>BulletList</tt> of <tt>ListItem</tt>s.
+# Parse a run of bullet items at one indent into a
+# <tt>BulletList</tt>. A blank line between items is allowed.
+# Indented nested lists, <tt>.. code-block::</tt>, and admonitions
+# are parsed as the current item's body (via
+# <tt>Parser.parseBodyLines</tt>).
+# <[param parser the owning <tt>Parser</tt>]>
 # <[param lines list of source lines]>
 # <[param i index of the first bullet line]>
 # <[param limit last index (inclusive)]>
 # <[param container parent to receive the new <tt>BulletList</tt>]>
 # <[returns the index just past the last line consumed]>
 # </p>
-procedure parseBulletList(lines, i, limit, container)
-    local blist, item, buf
+procedure parseBulletList(parser, lines, i, limit, container)
+    local blist, listInd, j
     blist := BulletList()
     container.addChild(blist)
-    while i <= limit & isBulletLine(lines[i]) do {
-        buf := [stripBulletMarker(lines[i])]
-        i +:= 1
-        # Continuation lines: indented, non-blank, not a new bullet.
-        while i <= limit & not isBlank(lines[i]) & not isBulletLine(lines[i]) &
-              not isEnumLine(lines[i]) & isIndented(lines[i]) do {
-            put(buf, trim(lines[i], ' ', 1))
-            i +:= 1
+    listInd := leadingSpaceCount(lines[i])
+    while i <= limit do {
+        if isBlank(lines[i]) then {
+            j := i
+            while j <= limit & isBlank(lines[j]) do
+                j +:= 1
+            if j <= limit & isBulletLine(lines[j]) &
+               leadingSpaceCount(lines[j]) = listInd then {
+                i := j
+                next
+                }
+            break
             }
-        item := ListItem()
-        every put(item.getChildren(), !parseInline(joinLines(buf)))
-        blist.addChild(item)
+        if not isBulletLine(lines[i]) then
+            break
+        if leadingSpaceCount(lines[i]) ~= listInd then
+            break
+        i := consumeListItem(parser, lines, i, limit, blist, listInd, "bullet")
         }
     return i
 end
 
 # <p>
-# Parse a run of consecutive numbered-list lines into an
-# <tt>EnumList</tt> of <tt>ListItem</tt>s. The first item's number
-# (when not <tt>"#"</tt>) becomes <tt>startAt</tt>.
+# Parse a run of numbered-list items at one indent into an
+# <tt>EnumList</tt>. Same nesting rules as <tt>parseBulletList</tt>.
+# The first item's number (when not <tt>"#"</tt>) becomes
+# <tt>startAt</tt>.
+# <[param parser the owning <tt>Parser</tt>]>
 # <[param lines list of source lines]>
 # <[param i index of the first enum line]>
 # <[param limit last index (inclusive)]>
 # <[param container parent to receive the new <tt>EnumList</tt>]>
 # <[returns the index just past the last line consumed]>
 # </p>
-procedure parseEnumList(lines, i, limit, container)
-    local elist, item, buf, startAt
+procedure parseEnumList(parser, lines, i, limit, container)
+    local elist, listInd, j, startAt
     elist := EnumList()
     startAt := enumStartNumber(lines[i])
     elist.setStartAt(startAt)
     container.addChild(elist)
-    while i <= limit & isEnumLine(lines[i]) do {
-        buf := [stripEnumMarker(lines[i])]
-        i +:= 1
-        while i <= limit & not isBlank(lines[i]) & not isEnumLine(lines[i]) &
-              not isBulletLine(lines[i]) & isIndented(lines[i]) do {
-            put(buf, trim(lines[i], ' ', 1))
-            i +:= 1
+    listInd := leadingSpaceCount(lines[i])
+    while i <= limit do {
+        if isBlank(lines[i]) then {
+            j := i
+            while j <= limit & isBlank(lines[j]) do
+                j +:= 1
+            if j <= limit & isEnumLine(lines[j]) &
+               leadingSpaceCount(lines[j]) = listInd then {
+                i := j
+                next
+                }
+            break
             }
-        item := ListItem()
-        every put(item.getChildren(), !parseInline(joinLines(buf)))
-        elist.addChild(item)
+        if not isEnumLine(lines[i]) then
+            break
+        if leadingSpaceCount(lines[i]) ~= listInd then
+            break
+        i := consumeListItem(parser, lines, i, limit, elist, listInd, "enum")
         }
+    return i
+end
+
+# <p>
+# Column where item text starts after the bullet marker
+# (<tt>"- "</tt> / <tt>"* "</tt> and any leading indent).
+# <[param s a bullet line]>
+# <[returns the 0-based content column]>
+# </p>
+procedure bulletContentCol(s)
+    s ? {
+        tab(many(' ')) | &pos
+        move(1)
+        =" "
+        return &pos - 1
+        }
+    return leadingSpaceCount(s) + 2
+end
+
+# <p>
+# Column where item text starts after an enum marker
+# (<tt>"1. "</tt> / <tt>"1) "</tt> / <tt>"#. "</tt>).
+# <[param s an enum line]>
+# <[returns the 0-based content column]>
+# </p>
+procedure enumContentCol(s)
+    s ? {
+        tab(many(' ')) | &pos
+        tab(many(&digits)) | ="#"
+        tab(any('.)'))
+        =" "
+        return &pos - 1
+        }
+    return leadingSpaceCount(s) + 3
+end
+
+# <p>
+# Consume one list item and its indented body. The first line's
+# marker is stripped; following lines indented past <tt>listInd</tt>
+# (including nested lists and directives) are stripped to the
+# content column and parsed as nested blocks.
+# <[param parser the owning <tt>Parser</tt>]>
+# <[param lines list of source lines]>
+# <[param i index of the item's marker line]>
+# <[param limit last index (inclusive)]>
+# <[param listNode the <tt>BulletList</tt> or <tt>EnumList</tt>]>
+# <[param listInd indent of this list's markers]>
+# <[param kind <tt>"bullet"</tt> or <tt>"enum"</tt>]>
+# <[returns the index just past this item]>
+# </p>
+procedure consumeListItem(parser, lines, i, limit, listNode, listInd, kind)
+    local item, body, contentCol, first, nodes, n, j
+
+    if kind == "bullet" then
+        contentCol := bulletContentCol(lines[i])
+    else
+        contentCol := enumContentCol(lines[i])
+    if kind == "bullet" then
+        first := stripBulletMarker(lines[i])
+    else
+        first := stripEnumMarker(lines[i])
+    i +:= 1
+    body := []
+    if *trim(first, ' ', 0) > 0 then
+        put(body, first)
+
+    while i <= limit do {
+        if isBlank(lines[i]) then {
+            j := i + 1
+            while j <= limit & isBlank(lines[j]) do
+                j +:= 1
+            if j > limit then
+                break
+            if kind == "bullet" & isBulletLine(lines[j]) &
+               leadingSpaceCount(lines[j]) = listInd then
+                break
+            if kind == "enum" & isEnumLine(lines[j]) &
+               leadingSpaceCount(lines[j]) = listInd then
+                break
+            if leadingSpaceCount(lines[j]) > listInd then {
+                put(body, "")
+                i +:= 1
+                next
+                }
+            break
+            }
+        if kind == "bullet" & isBulletLine(lines[i]) &
+           leadingSpaceCount(lines[i]) = listInd then
+            break
+        if kind == "enum" & isEnumLine(lines[i]) &
+           leadingSpaceCount(lines[i]) = listInd then
+            break
+        if leadingSpaceCount(lines[i]) > listInd then {
+            put(body, stripIndent(lines[i], contentCol))
+            i +:= 1
+            next
+            }
+        break
+        }
+
+    item := ListItem()
+    nodes := parser.parseBodyLines(body)
+    every n := !nodes do
+        item.addChild(n)
+    listNode.addChild(item)
     return i
 end
 
@@ -610,6 +734,7 @@ end
 # </p>
 procedure parseDirective(parser, lines, i, limit, container)
     local head, dname, arg, body, raw, expanded, indentCol, nSpaces, j
+    local codeBody, minInd, k, stripped
 
     head := lines[i]
     head ? {
@@ -621,14 +746,15 @@ procedure parseDirective(parser, lines, i, limit, container)
         }
     i +:= 1
     body := []
-    # Body indent comes from the first non-blank indented line (not a
-    # fixed width). Later lines must be at least that deep; shallower
-    # content ends the directive.
+    # code-block: any indented line is body (ASCII art often has a
+    # first line deeper than later ones). Other directives still use
+    # the first content line as the indent floor.
+    codeBody := &null
+    if dname == "code-block" then
+        codeBody := 1
     indentCol := &null
     while i <= limit do {
         if isBlank(lines[i]) then {
-            # Keep the blank only when more body content follows at
-            # the established (or still-to-be-measured) indent.
             j := i + 1
             while j <= limit & isBlank(lines[j]) do
                 j +:= 1
@@ -636,7 +762,7 @@ procedure parseDirective(parser, lines, i, limit, container)
                 break
             if not isIndented(lines[j]) then
                 break
-            if \indentCol & leadingSpaceCount(lines[j]) < indentCol then
+            if /codeBody & \indentCol & leadingSpaceCount(lines[j]) < indentCol then
                 break
             put(body, "")
             i +:= 1
@@ -645,17 +771,26 @@ procedure parseDirective(parser, lines, i, limit, container)
         if not isIndented(lines[i]) then
             break
         nSpaces := leadingSpaceCount(lines[i])
-        if /indentCol then
-            indentCol := nSpaces
-        if nSpaces < indentCol then
-            break
-        put(body, stripIndent(lines[i], indentCol))
+        if /codeBody then {
+            if /indentCol then
+                indentCol := nSpaces
+            if nSpaces < indentCol then
+                break
+            put(body, stripIndent(lines[i], indentCol))
+            }
+        else
+            put(body, lines[i])
         i +:= 1
         }
-    # Trim trailing blank lines collected as part of the body. pull()
-    # removes from the back of the list; pop() (front-removal) would
-    # silently trim the wrong end.
     while *body > 0 & body[-1] == "" do pull(body) | break
+
+    if \codeBody then {
+        minInd := literalMinIndent(body)
+        stripped := []
+        every k := !body do
+            put(stripped, stripIndent(k, minInd))
+        body := stripped
+        }
 
     raw := RawDirective()
     raw.setName(dname)
@@ -715,14 +850,14 @@ end
 
 # <p>
 # Map an underline character to a 1-based section level
-# (<tt>=</tt>=1, <tt>-</tt>=2, <tt>~</tt>=3, <tt>^</tt>=4; anything
-# else defaults to 4).
+# (<tt>=</tt>=1, <tt>-</tt>=2, <tt>~</tt>=3, <tt>^</tt>=4,
+# <tt>"</tt>=5; anything else defaults to 4).
 # <[param ch the first character of an underline line]>
 # <[returns an integer section level]>
 # </p>
 procedure headingLevelFor(ch)
     static order
-    initial order := "=-~^"
+    initial order := "=-~^" || char(34)
     return (find(ch, order) | 4)
 end
 

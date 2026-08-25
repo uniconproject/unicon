@@ -35,9 +35,9 @@ language reference (``open`` mode ``nr``, attributes ``proto``
 and ``hdrincl``, subscript peek). Automated plumbing and peek tests live in
 ``tests/posix/raw_sock.icn``.
 
-Raw sockets are part of the POSIX network facility, not an
-optional library bind. A build without POSIX networking has no
-``n`` modes at all. Opening ``SOCK_RAW`` usually needs elevated
+Raw sockets are part of the POSIX network facility.
+A build without POSIX networking has no ``n`` modes at all.
+Opening ``SOCK_RAW`` usually needs elevated
 privileges (root or administrator); that is an operating-system
 restriction, not a Unicon one.
 
@@ -211,22 +211,25 @@ multicast-only knobs.
 ``Attrib(f, "ttl=4")`` sets hop limits after ``open()``.
 Status uses the same ``[ ]`` / ``key()`` get as UDP
 :cite:`AlGharaibeh:UTR28`: unknown names raise 1310, unpopulated
-fields fail, ``Attrib()`` only assigns. Peeking a closed handle
-is error 174. ``key(f)`` that has not yet produced a name also
-raises 174 if the handle is already closed; after the first
-suspend, ``close()`` makes the generator fail instead of raising.
-Raw sockets add ``proto`` (fixed at ``socket()``) and ``hdrincl``.
+fields fail. Boolean peek fields that answered succeed with
+``"yes"`` or ``&null`` (never ``"no"``); that is output only --
+``open()`` and ``Attrib()`` still take ``yes`` or ``no``.
+Peeking a closed handle is error 174. ``key(f)`` that has not
+yet produced a name also raises 174 if the handle is already
+closed; after the first suspend, ``close()`` makes the generator
+fail instead of raising. Raw sockets add ``proto`` (fixed at
+``socket()``) and ``hdrincl``.
 
 .. list-table::
    :header-rows: 1
 
    * - Name
-     - Value
+     - Peek value
    * - ``proto``
      - IP protocol number from ``proto=``: ``1`` (``icmp``),
        ``2`` (``igmp``), ``89`` (``ospf``)
    * - ``hdrincl``
-     - ``"yes"`` or ``&null``
+     - ``"yes"`` or ``&null`` (not ``"no"``)
    * - ``ttl``
      - Hop limit (integer), e.g. ``64``
    * - ``iface``
@@ -236,7 +239,7 @@ Raw sockets add ``proto`` (fixed at ``socket()``) and ``hdrincl``.
        until ``join=``
    * - ``mcastloop`` / ``reuseaddr`` / ``reuseport`` /
        ``broadcast``
-     - ``"yes"`` or ``&null``
+     - ``"yes"`` or ``&null`` (not ``"no"``)
    * - ``rcvbuf`` / ``sndbuf``
      - Buffer sizes in bytes (integers)
 
@@ -404,8 +407,7 @@ default wait. ``echo()`` sends a request (56 zero bytes unless a
 payload is given), waits with ``select()``, and succeeds with a
 decode table plus ``rtt`` (milliseconds, real), ``rtt_us``,
 ``ttl`` (from the IPv4 header), and ``addr``. Round-trip time
-uses ``gettimeofday()``, not ``&time``, because CPU time barely
-advances while blocked in ``select()``.
+uses ``gettimeofday()``.
 
 .. code-block:: unicon
 

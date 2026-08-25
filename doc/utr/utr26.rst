@@ -100,9 +100,8 @@ requirement, only relocate it. SSH's request/channel model
 (``exec`` / ``shell`` / ``sftp`` as concurrent channels) also
 does not map onto Messaging's request/response verb model
 (``GET`` / ``POST`` / ``RETR``).
-SSH does not route through ``ssh://`` URIs or ``Mopen()``. It
-uses the ``h`` mode character and plain ``user@host`` string
-parsing, independent of the Messaging/URI subsystem.
+Instead, SSH uses the ``h`` mode character and plain ``user@host``
+string form, independent of the Messaging/URI subsystem.
 
 .. _sec-arch:
 
@@ -119,8 +118,8 @@ runtime. SSH does **not** embed libssh objects directly in the
 union. It adds a pointer, ``struct SSHfile *sshf``, matching the
 Messaging ``MFile *`` precedent. ``SSHfile`` is allocated with
 ``malloc`` so pointers to it are stable across garbage collection,
-and is freed by the close hook, never by the collector. A
-malloc'd block is required once the session must hold a list of
+and is freed by the close hook.
+A malloc'd block is required once the session must hold a list of
 child channels whose addresses survive compaction
 (:ref:`section 10.2 <sec-close>`).
 
@@ -146,9 +145,8 @@ dispatch (``reads()``, ``read()``, and so on) needs its own SSH
 case, except where a line-oriented helper must not wait for a
 newline that will never arrive (:ref:`section 9.2 <sec-partial>`).
 
-Close is **explicit, not GC-driven**. The close hook in ``fsys.r``
-frees SSL resources directly; there is no finalizer during garbage
-collection. SSH files follow the same convention -- leaking a
+The close hook in ``fsys.r`` frees SSL resources directly.
+SSH files follow the same convention -- leaking a
 channel or session means not calling ``close()``, the same as any
 other file.
 
@@ -203,7 +201,7 @@ fails with a bad-attribute error.
 .. code-block:: unicon
 
    s := open("jafar@" || host, "h", "key=" || keypath)
-   write(s, "show version\n")
+   write(s, "ls -l\n")
    while line := reads(s) do write(line)
    close(s)
 
@@ -220,13 +218,10 @@ The first argument is ``host``, ``user@host``, or either with
 ``:port``. The port uses the same ``host:port`` form as socket
 ``open()``; IPv6 uses ``[addr]:port``. A bare IPv6 literal is not
 misparsed: an unbracketed host is split on ``:`` only when there
-is a single colon. There is no ``port=`` attribute.
+is a single colon.
 
 ``user@host`` wins over a ``user=`` attribute. If neither is
 given, libssh's default user (the local login name) is used.
-
-``ssh://user@host`` URI syntax is not used
-(:ref:`section 2.3 <sec-messaging>`).
 
 .. _sec-default:
 
@@ -248,7 +243,7 @@ status:
 
 .. code-block:: unicon
 
-   c := open(s, "hc", "cmd=show version")
+   c := open(s, "hc", "cmd=ls -l")
 
 .. _sec-attrs:
 
@@ -256,10 +251,8 @@ status:
 ================================
 
 Trailing ``open()`` arguments are ``name=value`` strings. Empty
-values and unknown names fail (error 1331). Boolean-style
-attributes without a value are not accepted -- every attribute
-must contain ``=``. SFTP is selected by mode character ``s`` after
-``h`` (``"hs"``), not by a valueless attribute.
+values and unknown names fail (error 1331). Every attribute
+must contain ``=``.
 
 .. list-table::
    :header-rows: 1
@@ -278,7 +271,6 @@ must contain ``=``. SFTP is selected by mode character ``s`` after
      - Same name as TLS/crypto; distinct from SSH ``password=``
    * - ``password=``
      - Remote login password
-     - Not a TLS attribute; crypto still accepts it as an alias for ``keypass=``
    * - ``verifyPeer=``
      - ``yes`` (default) or ``no``
      - Same spelling as TLS; overrides mode ``-``
@@ -300,8 +292,7 @@ must contain ``=``. SFTP is selected by mode character ``s`` after
 
 ``keypass=`` is the shared name for a key-file passphrase on TLS,
 crypto, and SSH. SSH ``password=`` remains the remote login
-password and is not accepted on TLS. Crypto still accepts
-``password=`` as an alias for ``keypass=``.
+password.
 
 The ``-`` mode-character flag disables peer verification on TLS
 (``ne-``) and SSH (``h-``), the same as ``verifyPeer=no``. An
@@ -354,16 +345,15 @@ scan, alongside ``r`` / ``w`` / ``n`` / ``e`` / ``m``. After
 ``h``, ``c`` selects a command/channel and ``s`` selects SFTP --
 the same "facility letter, then modifier" order as ``nu`` (UDP)
 and ``ms`` (Messaging short-request). ``n`` alone is TCP.
-Without a preceding ``h``, ``c`` is still create+write and ``s``
-is still ignored (or Messaging short-request after ``m``). Trailing
-``"name=value"`` arguments are attributes, not modes -- the same
-slot SSL uses for ``key=`` and friends.
+Without a preceding ``h``, ``c`` is still create+write. Trailing
+``"name=value"`` arguments are attributes, the same as
+SSL uses for ``key=`` and friends.
 
 Mode characters combine. ``"h-"`` is SSH plus skip host-key
 verification (the ``-`` flag also disables SSL peer checks).
 ``"hc"`` is a channel (exec when ``cmd=`` is given, else a shell).
 ``"hs"`` is SFTP; ``r`` / ``w`` / ``a`` / ``b`` set transfer
-intent (``"hsw"``, or ``open(..., "hs", ..., "w")``).
+intent (``"hsw"``).
 
 .. list-table::
    :header-rows: 1
@@ -389,10 +379,10 @@ intent (``"hsw"``, or ``open(..., "hs", ..., "w")``).
    * - ``open(s, "hc", "cmd=...")``
      - mode ``hc``, attribute ``cmd=``
      - Extra exec channel on that session
-   * - ``open(s, "hs", "path=...", "w")``
+   * - ``open(s, "hsw", "path=...")``
      - mode ``hs`` plus access chars
      - SFTP file or directory
-   * - ``open(host, "hs", "path=...", "w")``
+   * - ``open(host, "hsw", "path=...")``
      - mode ``hs`` on a host string
      - New session plus SFTP (one handle)
    * - leading integer
@@ -570,8 +560,8 @@ Channels that share a session serialize on the session mutex
 =================
 
 Connection and channel failures **fail**, they do not ``runerr``.
-This matches the SSL connect path: set ``&errortext``, tear down
-what was allocated, and fail, so callers write
+This matches the general ``open()`` pattern: set ``&errortext``, 
+tear down what was allocated, and fail, so callers write
 ``if s := open(...) then ... else ...``. Runtime errors are
 reserved for type mistakes (passing a non-SSH file to
 ``open(s, "hc")``, a bad peek name on an SSH file).
@@ -637,19 +627,16 @@ writes. Writes to a transport-only session (no channel) fail with
 8.2 Peek fields (``[ ]`` and ``key()``)
 ---------------------------------------
 
-Status on SSH files is a non-destructive peek through ``[ ]``,
-not ``Attrib()``. ``Attrib()`` has no SSH setters. Unknown names
-raise 1331. An unpopulated field fails. Boolean fields that
-answered succeed with ``"yes"`` or ``&null`` (never ``"no"``).
+Status on SSH files is a non-destructive peek through ``[ ]``.
+Unknown names raise 1331. An unpopulated field fails.
+Boolean fields that answered succeed with ``"yes"`` or ``&null``.
 ``key(c)`` generates every answerable field, including false
 booleans. ``c["*"]`` snapshots those fields under one lock.
 Peeking a closed handle is error 174; ``close()`` keeps the
 original name so ``image(c)`` remains ``file(user@host)``.
 ``key(c)`` that has not yet produced a name also raises 174 if
 the handle is already closed. After the first suspend,
-``close()`` makes the generator fail instead of raising, so a
-walk does not turn a mid-generation close into an error.
-The same split as messaging: ``!`` generates content,
+Similar to messaging: ``!`` generates content,
 ``key()`` generates names. Channels keep line-generating
 ``!`` (they carry ``Fs_Socket``). Transport-only sessions
 (``channel=no``) are not line streams; ``!s`` fails.

@@ -9,7 +9,8 @@
    the facilities that close that gap: cryptographic operations
    reached through the same open(), read(), write(), and close()
    interface already used for files and sockets, with ``[ ]`` for
-   status and Attrib() for idle-window mutation. Mode letter e is reused as a modifier; op= selects
+   status and Attrib() for idle-window mutation.
+   Mode letter ``e`` is reused as a modifier; ``op=`` selects
    the operation; keys and certificates are loaded as file-typed
    handles and passed as attributes. Encrypted TCP is unchanged;
    encrypted UDP uses DTLS. The implementation is the OpenSSL EVP
@@ -37,9 +38,7 @@ Automated tests live under ``tests/crypto/``.
 The feature is optional in the same sense as TLS. A build with
 OpenSSL reports ``secure sockets layer encryption`` in
 ``&features`` (the ``_SSL`` flag). Without the library, the
-crypto paths are compiled out. There is no separate
-``--disable-crypto`` switch; ``--disable-ssl`` turns off both
-encrypted sockets and these facilities.
+crypto paths are compiled out. 
 
 .. _sec-motivation:
 
@@ -48,13 +47,11 @@ encrypted sockets and these facilities.
 
 Unicon already links OpenSSL :cite:`OpenSSL` for mode ``n`` with
 ``e`` -- encrypted TCP. Programs that needed a SHA-256 digest, an
-HMAC, a signature, or a file encrypted at rest had to leave the
-language. The facilities here expose those primitives without a
+HMAC, a signature, or a file encrypted at rest had to use external
+tools. The facilities here expose those primitives without a
 second API: hashing a stream is opening a handle and writing to
 it; reading an encrypted file is opening the file with a
-transform on the way through; loading a key once and signing many
-messages is the same pattern as opening an SSH session once and
-deriving channels :cite:`AlGharaibeh:UTR26`.
+transform on the way through.
 
 No new external dependency is introduced. The implementation uses
 OpenSSL's EVP interface, which the encrypted-socket support
@@ -103,9 +100,7 @@ costs nothing. ``read()`` finalizes and resets, so the next
 **``Attrib()`` reconfigures only in the idle window** -- before
 the first ``write()``, or after a ``read()`` and before the next
 ``write()``. Changing ``op=``, ``alg=``, ``cipher=``, or
-``iv=`` mid-operation fails. Handles are accepted by ``open()``
-only, not by ``Attrib()``: ``Attrib()`` already treats a file
-argument as a retarget.
+``iv=`` mid-operation fails. Handles are accepted by ``open()``.
 
 .. _sec-modes:
 
@@ -150,7 +145,7 @@ that also carry ``Fs_Encrypt``.
 
 ``e`` / ``er`` are the **data-pipe** shape: write payload in,
 read the result out. ``eh`` is separate because its target is an
-algorithm name, never material. ``re`` / ``we`` are the
+algorithm name, not material. ``re`` / ``we`` are the
 **file-transform** shape: the target is the data file, so key
 material arrives via ``key=`` or a handle attribute.
 
@@ -296,7 +291,7 @@ Live-session status is :ref:`section 6.4 <sec-peek>`.
 ``key=`` on a crypto handle is typed by content and by the
 operation: PEM / DER private keys for ``sign`` and TLS; raw
 bytes for ``encrypt``, ``decrypt``, and ``hmac``. A role
-mismatch fails rather than guessing.
+mismatch fails.
 
 Without ``iv=``, ``encrypt`` generates a fresh random IV per
 operation and prepends it to the ciphertext; ``decrypt`` reads
@@ -313,9 +308,6 @@ Status peeks are :ref:`section 6.4 <sec-peek>`.
 
 ``key=`` is a private-key path on TLS, crypto, and SSH.
 ``keypass=`` is the shared name for a key-file passphrase. SSH
-``password=`` is the remote login password and is not accepted
-on TLS. Crypto still accepts ``password=`` as an alias for
-``keypass=``.
 
 ``verifyPeer=yes|no`` and mode ``-`` mean the same thing on TLS
 and SSH. An explicit ``verifyPeer=`` overrides the mode flag.
@@ -329,11 +321,11 @@ SSH uses ``hostkeyfile=`` (OpenSSH ``known_hosts``).
 
 ``h["name"]`` / ``conn["name"]`` is a non-destructive get.
 ``Attrib()`` only assigns in the idle window (``op=``, ``alg=``,
-``sig=``, ...); a bare name is not a query. Unknown names raise
+``sig=``, ...). Unknown names raise
 1302 on a crypto handle and 1326 on a TLS socket. An unpopulated
 field fails. A boolean field that *did* answer succeeds:
-``"yes"`` for true, ``&null`` for false -- never ``"no"``, which
-would make ``if h["expired"]`` succeed on a valid certificate.
+``"yes"`` for true, ``&null`` for false , which
+would make things like ``if \h["expired"]`` succeed on a valid certificate.
 ``key(h)`` generates every *answerable* field, including false
 booleans, so any ``k`` from ``key(h)`` makes ``h[k]`` succeed.
 Dump with ``image(h[k])`` so ``&null`` is visible.
@@ -484,8 +476,7 @@ attributes.
 Handshake failure means ``open()`` failed; there is no handle to
 subscript. Distinguish expired / untrusted CA / hostname
 mismatch / no shared cipher / protocol version via
-``&errornumber`` 1320--1325. ``alert`` and ``handshakestate``
-are not peek fields.
+``&errornumber`` 1320--1325.
 
 .. code-block:: unicon
 
@@ -556,7 +547,7 @@ Material split across files can be merged:
 A handle is a file value (``type(h)`` is ``"file"``) carrying
 ``Fs_Crypto``, the same way a window or socket is a file that
 does not support every file operation. The underlying
-``CryptoFile`` is malloc'd, like ``SSHfile``, so pointers stay
+``CryptoFile`` is malloc'd so pointers stay
 stable across garbage collection and are freed by ``close()``.
 
 Consumers ask a handle for the roles they need. An encrypted
@@ -564,18 +555,7 @@ socket wants a cert and a private key: one merged handle
 satisfies both, or two handles each contribute what they have.
 ``op=sign`` wants a private key; ``op=hmac`` wants symmetric
 bytes. A missing role, or two handles supplying the same role,
-fails at ``open()`` rather than later at ``write()``.
-
-Handles appear only among ``open()`` attributes, not
-``Attrib()``. Binding material is an open-time concern;
-``Attrib()`` already uses a file argument to retarget which
-socket the following names apply to.
-
-``open(k, "e", "op=sign")`` derives an operation from a
-material handle. A graphics-style ``clone()`` would give that
-verb a single meaning, but would be a second mechanism next to
-the handle attributes that TLS and ``re`` / ``we`` need
-anyway.
+fails at ``open()``.
 
 .. _sec-examples:
 

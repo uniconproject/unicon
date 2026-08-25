@@ -551,8 +551,7 @@ int interp_x(int fsig,dptr cargp)
        */
       if (curpstate->signal > 0) {
          struct descrip val;
-         StrLoc(val) = si_i2s(signalnames, curpstate->signal);
-         SetStrLen(val, strlen(StrLoc(val)));
+         MakeStr(si_i2s(signalnames, curpstate->signal), strlen(StrLoc(val)), &val);
          InterpEVValD(&val,E_Signal);
          curpstate->signal = 0;
          }
@@ -2667,8 +2666,7 @@ void actparent(int event)
    struct progstate *parent = curpstate->parent;
 
    curpstate->eventcount.vword.integr++;
-   SetStrLen(parent->eventcode, 1);
-   StrLoc(parent->eventcode) = (char *)&allchars[FromAscii(event)&0xFF];
+   MakeStr((char *)&allchars[FromAscii(event)&0xFF], 1, &parent->eventcode);
    mt_activate(&(parent->eventcode), NULL,
                (struct b_coexpr *)curpstate->parent->Mainhead);
    }

@@ -72,8 +72,7 @@ operator{1} || cater(x, y)
        *   adjacent in memory; no allocation is required.
        */
       if (StrLoc(x) + StrLen(x) == StrLoc(y)) {
-         StrLoc(result) = StrLoc(x);
-         SetStrLen(result, StrLen(x) + StrLen(y));
+         MakeStr(StrLoc(x), StrLen(x) + StrLen(y), &result);
          if (IsUniQual(x) || IsUniQual(y)) {
             SetUniQual(result);
             /*

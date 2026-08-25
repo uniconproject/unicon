@@ -3404,14 +3404,12 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
       abuf[lenattr] = '\0';
 
       if (lenval > 255) {
-         SetStrLen(d, lenval);
-         StrLoc(d) = mid;
+         MakeStr(mid, lenval, &d);
          }
       else {
          strncpy(val, mid, lenval);
          val[lenval] = '\0';
-         SetStrLen(d, strlen(val));
-         StrLoc(d) = val;
+         MakeStr(val, strlen(val), &d);
          }
 
       switch (a = si_s2i(attribs, abuf)) {

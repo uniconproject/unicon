@@ -973,8 +973,7 @@ static int crypto_load_key_path(struct CryptoFile *cf, char *path, word pathlen)
    if (pathlen <= 0 || pathlen >= MaxPath) return E_CryptoLoad;
    memcpy(pathbuf, path, pathlen);
    pathbuf[pathlen] = '\0';
-   StrLoc(td) = pathbuf;
-   SetStrLen(td, pathlen);
+   MakeStr(pathbuf, pathlen, &td);
    m = crypto_open_material(&td, 0, NULL, 0, &rc);
    if (m == NULL) return rc ? rc : E_CryptoLoad;
 
@@ -1744,8 +1743,7 @@ static int crypto_peek_hex(unsigned char *p, int n, dptr rv)
       s[2 * i] = hex[p[i] >> 4];
       s[2 * i + 1] = hex[p[i] & 0xf];
       }
-   StrLoc(*rv) = s;
-   SetStrLen(*rv, n * 2);
+   MakeStr(s, n * 2, rv);
    return FILEPEEK_OK;
 }
 
@@ -1772,8 +1770,7 @@ static int crypto_peek_san_put(dptr lst, char *tag, const unsigned char *data, i
    Protect(s = alcstr(NULL, ntag + len), return FILEPEEK_ERR);
    memcpy(s, tag, ntag);
    memcpy(s + ntag, data, len);
-   StrLoc(elem) = s;
-   SetStrLen(elem, ntag + len);
+   MakeStr(s, ntag + len, &elem);
    c_put(lst, &elem);
    return FILEPEEK_OK;
 }

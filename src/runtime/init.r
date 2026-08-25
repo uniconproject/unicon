@@ -623,8 +623,7 @@ void init_threadstate( struct threadstate *ts)
 #endif                                  /* !COMPILER */
 
    MakeInt(1, &(ts->Kywd_pos));
-   SetStrLen(ts->ksub, 0);
-   StrLoc(ts->ksub) = "";
+   MakeStr("", 0, &ts->ksub);
 
    ts->Kywd_ran = zerodesc;
    IntVal(ts->Kywd_ran) = unicon_getrandom();
@@ -737,8 +736,7 @@ void init_progstate(struct progstate *pstate);
 #endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
 
 #ifdef MultiProgram
-   SetStrLen(rootpstate.Kywd_prog, strlen(prog_name));
-   StrLoc(rootpstate.Kywd_prog) = prog_name;
+   MakeStr(prog_name, strlen(prog_name), &rootpstate.Kywd_prog);
 
    rootpstate.Kywd_time_elsewhere = 0;
    rootpstate.Kywd_time_out = 0;
@@ -1745,8 +1743,7 @@ void datainit()
    else
 #endif                                  /* MSWindows */
    k_errout.fd.fp = stderr;
-   SetStrLen(k_errout.fname, 7);
-   StrLoc(k_errout.fname) = "&errout";
+   MakeStr("&errout", 7, &k_errout.fname);
 #ifdef ConsoleWindow
    if (!(ConsoleFlags & StdErrRedirect))
       k_errout.status = Fs_Write | Fs_Window;
@@ -1761,8 +1758,7 @@ void datainit()
 #endif                                  /* MSWindows */
    if (k_input.fd.fp == NULL)
       k_input.fd.fp = stdin;
-   SetStrLen(k_input.fname, 6);
-   StrLoc(k_input.fname) = "&input";
+   MakeStr("&input", 6, &k_input.fname);
 #ifdef ConsoleWindow
    if (!(ConsoleFlags & StdInRedirect))
       k_input.status = Fs_Read | Fs_Window;
@@ -1777,8 +1773,7 @@ void datainit()
 #endif                                  /* MSWindows */
    if (k_output.fd.fp == NULL)
       k_output.fd.fp = stdout;
-   SetStrLen(k_output.fname, 7);
-   StrLoc(k_output.fname) = "&output";
+   MakeStr("&output", 7, &k_output.fname);
 #ifdef ConsoleWindow
    if (!(ConsoleFlags & StdOutRedirect))
       k_output.status = Fs_Write | Fs_Window;
@@ -1789,25 +1784,18 @@ void datainit()
    IntVal(kywd_pos) = 1;
    IntVal(kywd_ran) = unicon_getrandom();
 
-   SetStrLen(kywd_prog, strlen(prog_name));
-   StrLoc(kywd_prog) = prog_name;
-   SetStrLen(k_subject, 0);
-   StrLoc(k_subject) = "";
+   MakeStr(prog_name, strlen(prog_name), &kywd_prog);
+   MakeStr("", 0, &k_subject);
 
-   SetStrLen(blank, 1);
-   StrLoc(blank) = " ";
-   SetStrLen(emptystr, 0);
-   StrLoc(emptystr) = "";
+   MakeStr(" ", 1, &blank);
+   MakeStr("", 0, &emptystr);
    BlkLoc(nullptr) = (union block *)NULL;
-   SetStrLen(lcase, 26);
-   StrLoc(lcase) = "abcdefghijklmnopqrstuvwxyz";
-   SetStrLen(letr, 1);
-   StrLoc(letr) = "r";
+   MakeStr("abcdefghijklmnopqrstuvwxyz", 26, &lcase);
+   MakeStr("r", 1, &letr);
    IntVal(nulldesc) = 0;
    k_errorvalue = nulldesc;
    IntVal(onedesc) = 1;
-   SetStrLen(ucase, 26);
-   StrLoc(ucase) = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+   MakeStr("ABCDEFGHIJKLMNOPQRSTUVWXYZ", 26, &ucase);
    IntVal(zerodesc) = 0;
 
 #ifdef MultiProgram
@@ -2120,8 +2108,7 @@ struct b_coexpr
    pstate = coexp->program;
    pstate->tstate->K_current.dword = D_Coexpr;
 
-   SetStrLen(pstate->Kywd_prog, strlen(prog_name));
-   StrLoc(pstate->Kywd_prog) = prog_name;
+   MakeStr(prog_name, strlen(prog_name), &pstate->Kywd_prog);
    MakeInt(hdr.trace, &(pstate->Kywd_trc));
 
    /*

@@ -1121,8 +1121,7 @@ Deliberate Syntax Error
             else
                status |= Fs_Write;
 
-            SetStrLen(filename, strlen(fnamestr));
-            StrLoc(filename) = fnamestr;
+            MakeStr(fnamestr, strlen(fnamestr), &filename);
             Protect(fl = alcfile(NULL, status, &filename), runerr(0));
             fl->fd.cf = cf;
             return file(fl);
@@ -1224,8 +1223,7 @@ Deliberate Syntax Error
                }
             }
 
-         SetStrLen(filename, strlen(fnamestr));
-         StrLoc(filename) = fnamestr;
+         MakeStr(fnamestr, strlen(fnamestr), &filename);
          Protect(fl = alcfile(NULL, status, &filename), runerr(0));
          fl->fd.cf = cf;
          return file(fl);
@@ -1577,8 +1575,7 @@ Deliberate Syntax Error
                }
             else if (sshf->chan != NULL)
                status |= Fs_Socket | Fs_Read | Fs_Write;
-            SetStrLen(filename, strlen(fnamestr));
-            StrLoc(filename) = fnamestr;
+            MakeStr(fnamestr, strlen(fnamestr), &filename);
             Protect(fl = alcfile(0, status, &filename), runerr(0));
             fl->fd.sshf = sshf;
             fl->sock_gen = 0;
@@ -1768,8 +1765,7 @@ Deliberate Syntax Error
              * image, which in the case of a socket means sock_name, which
              * assumes it is a C string. Preserve its C string-ness.
              */
-            SetStrLen(filename, strlen(fnamestr)+1);
-            StrLoc(filename) = fnamestr;
+            MakeStr(fnamestr, strlen(fnamestr)+1, &filename);
             Protect(fl = alcfile(0, status, &filename), runerr(0));
 
 #if HAVE_LIBSSL
@@ -1843,8 +1839,7 @@ Deliberate Syntax Error
                     * yet another special case: the tmpfile must be linked
                     * in to a list in order to be closed/deleted.
                     */
-                   SetStrLen(filename, strlen(fnamestr));
-                   StrLoc(filename) = fnamestr;
+                   MakeStr(fnamestr, strlen(fnamestr), &filename);
                    Protect(fl = alcfile(f, status, &filename), runerr(0));
                    Protect(flnk = alccons((union block *)fl), runerr(0));
                    flnk->next = (union block *)LstTmpFiles;
@@ -1860,8 +1855,7 @@ Deliberate Syntax Error
                    set_syserrortext(errno);
                    fail;
                    }
-                SetStrLen(filename, strlen(fnamestr));
-                StrLoc(filename) = fnamestr;
+                MakeStr(fnamestr, strlen(fnamestr), &filename);
                 Protect(fl = alcfile(f, status, &filename), runerr(0));
 #ifdef Graphics
                 /*
@@ -1940,8 +1934,7 @@ Deliberate Syntax Error
       /*
        * Return the resulting file value.
        */
-      SetStrLen(filename, strlen(fnamestr));
-      StrLoc(filename) = fnamestr;
+      MakeStr(fnamestr, strlen(fnamestr), &filename);
 
       Protect(fl = alcfile(f, status, &filename), runerr(0));
 
@@ -2156,8 +2149,7 @@ function{0,1} read(f)
        * Use getstrg to read a line from the file, failing if getstrg
        *  encounters end of file. [[ What about -2?]]
        */
-      SetStrLen(s, 0);
-      StrLoc(s) = "";
+      MakeStr("", 0, &s);
       do {
 
 #ifdef Graphics
@@ -2386,8 +2378,7 @@ function{0,1} reads(f,i)
 
          Maxread = (unsigned)i <= MaxReadStr ? i : MaxReadStr;
 
-         StrLoc(s) = NULL;
-         SetStrLen(s, 0);
+         MakeStr(NULL, 0, &s);
          if (!MFIN(mf, READING)) {
             Mstartreading(mf);
             }
@@ -2454,8 +2445,7 @@ function{0,1} reads(f,i)
             a separate temporary to tag rather than risk string(...)'s
             expression-vs-return-position semantics */
          tended struct descrip uq_result;
-         StrLoc(uq_result) = s;
-         SetStrLen(uq_result, slen);
+         MakeStr(s, slen, &uq_result);
          UqMaybeTagRead(uq_result, status);
          return uq_result;
          }
@@ -2478,8 +2468,7 @@ function{0,1} reads(f,i)
 #endif                                  /* Concurrent */
             /* Casting to unsigned lets us use reads(f, -1) */
             Maxread = (unsigned)i <= MaxReadStr ? i : MaxReadStr;
-            StrLoc(s) = NULL;
-            SetStrLen(s, 0);
+            MakeStr(NULL, 0, &s);
             do {
                if (bytesread > 0) {
                   if (i >= 0 && i - bytesread <= MaxReadStr)
@@ -2543,8 +2532,7 @@ function{0,1} reads(f,i)
                if (i < 0) {
                   /* reads(f, -1): concatenate until EOF */
                   tended struct descrip chunk;
-                  SetStrLen(s, 0);
-                  StrLoc(s) = "";
+                  MakeStr("", 0, &s);
                   for (;;) {
                      DEC_NARTHREADS;
                      if (u_read(&f, MaxReadStr, status, &chunk) == 0) {
@@ -2699,8 +2687,7 @@ function{0,1} reads(f,i)
             Protect(sptr = alcstr(dbuf, dlen), runerr(0));
             {
             tended struct descrip uq_result;
-            StrLoc(uq_result) = sptr;
-            SetStrLen(uq_result, dlen);
+            MakeStr(sptr, dlen, &uq_result);
             UqMaybeTagRead(uq_result, status);
             return uq_result;
             }
@@ -2722,8 +2709,7 @@ function{0,1} reads(f,i)
             filesystems -- worth tagging on request the same as any
             other text content */
          tended struct descrip uq_result;
-         StrLoc(uq_result) = sptr;
-         SetStrLen(uq_result, nbytes);
+         MakeStr(sptr, nbytes, &uq_result);
          UqMaybeTagRead(uq_result, status);
          return uq_result;
          }

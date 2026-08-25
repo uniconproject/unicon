@@ -47,8 +47,7 @@ DefConvert(def_c_int, C_integer, C_integer *, cnv_c_int, C_IntAsgn)
  */
 
 #begdef C_StrAsgn
-   SetStrLen(*d, strlen(df));
-   StrLoc(*d) = (char *)df;
+   MakeStr((char *)df, strlen(df), d);
 #enddef
 
 DefConvert(def_c_str, char *, dptr, cnv_c_str, C_StrAsgn)

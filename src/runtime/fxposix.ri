@@ -32,8 +32,9 @@ extern int errno;
 
 #define String(d, s) do {                               \
       int len = strlen(s);                              \
-      Protect(StrLoc(d) = alcstr((s), len), runerr(0)); \
-      SetStrLen(d, len);                                  \
+      char *_str;                                       \
+      Protect(_str = alcstr((s), len), runerr(0));      \
+      MakeStr(_str, len, &(d));                         \
 } while (0)
 
 /*
@@ -69,8 +70,7 @@ char *alc_strerror(int n)
          }
       if (rv != 0) {
          k_errornumber = errno; /* EINVAL, don't call recursively to get text */
-         StrLoc(k_errortext) = "invalid error number";
-         SetStrLen(k_errortext, strlen(StrLoc(k_errortext)));
+         MakeStr("invalid error number", strlen(StrLoc(k_errortext)), &k_errortext);
          return NULL;
          }
       }
@@ -1082,8 +1082,7 @@ function{0,1} filepair()
       ep = lp->listhead;
 
       /* Create the two file objects and put them into the list */
-      StrLoc(fname) = "filepair";
-      SetStrLen(fname, 8);
+      MakeStr("filepair", 8, &fname);
       for(i = 0; i < 2; i++) {
          Protect(fl = alcfile(0, Fs_Write|Fs_Read|Fs_Socket, &fname),
                  runerr(0));
@@ -1125,8 +1124,7 @@ function{0,1} pipe()
       ep = lp->listhead;
 
       /* Create the two file objects and put them into the list */
-      StrLoc(fname) = "pipe";
-      SetStrLen(fname, 4);
+      MakeStr("pipe", 4, &fname);
       for(i = 0; i < 2; i++) {
          fps[i] = fdopen(fds[i], i? "w":"r");
          Protect(fl = alcfile(fps[i], ((i? Fs_Write:Fs_Read))|Fs_BPipe, &fname),
@@ -2258,8 +2256,7 @@ function{0,1} receive(f)
             case SSH_CHUNK_STDERR: tag = "stderr"; break;
             default:               tag = "exit";   break;
             }
-         StrLoc(rp->fields[0]) = tag;
-         SetStrLen(rp->fields[0], strlen(tag));
+         MakeStr(tag, strlen(tag), &rp->fields[0]);
          len = ck->len - ck->off;
          Protect(StrLoc(rp->fields[1]) = alcstr(ck->data + ck->off, len),
                  {
@@ -3460,8 +3457,7 @@ function{0, 1} ready(f, i)
             status = (tb != -1);
 #endif                                  /* NT */
             if (!status) fail;
-            StrLoc(desc) = sbuf;
-            SetStrLen(desc, tb);
+            MakeStr(sbuf, tb, &desc);
             return desc;
          }
         else fail;

@@ -676,8 +676,7 @@ void f(dptr s, dptr d)
           * Make a descriptor for the substring by getting the
           *  length and pointing into the string.
           */
-         SetStrLen(*d, Blk(bp,Tvsubs)->sslen);
-         StrLoc(*d) = StrLoc(v) + Blk(bp,Tvsubs)->sspos - 1;
+         MakeStr(StrLoc(v) + Blk(bp,Tvsubs)->sspos - 1, Blk(bp,Tvsubs)->sslen, d);
          /*
           * Unicon Phase 0: this is the far more common path for a
           * Unicode-aware sect/subsc result than oref.r's own tagging
@@ -842,8 +841,7 @@ int
 dp_pnmcmp (struct pstrnm *pne, struct descrip *dp)
 {
    struct descrip d;
-   SetStrLen(d, strlen(pne->pstrep));
-   StrLoc(d) = pne->pstrep;
+   MakeStr(pne->pstrep, strlen(pne->pstrep), &d);
    return lexcmp(&d,dp);
 }
 
@@ -948,8 +946,7 @@ static void itos(C_integer num, dptr dp, char *s)
         }
       }
 
-   SetStrLen(*dp, s + MaxCvtLen - 1 - p);
-   StrLoc(*dp) = p;
+   MakeStr(p, s + MaxCvtLen - 1 - p, dp);
    }
 
 
@@ -1390,8 +1387,7 @@ void rtos(double n, dptr dp, char *s)
          strcat(s, ".0");               /* if no decimal point or exp. */
    if (s[strlen(s) - 1] == '.')         /* if decimal point is at end ... */
       strcat(s, "0");
-   SetStrLen(*dp, strlen(s));
-   StrLoc(*dp) = s;
+   MakeStr(s, strlen(s), dp);
    }
 
 /*
@@ -1414,8 +1410,7 @@ static void cstos(unsigned int *cs, dptr dp, char *s)
       }
    *p = '\0';
 
-   SetStrLen(*dp, p - s);
-   StrLoc(*dp) = s;
+   MakeStr(s, p - s, dp);
    }
 
 /*

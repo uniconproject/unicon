@@ -816,8 +816,7 @@ operator{0,1} <@ rcv(x,y)
 #endif
             INC_NARTHREADS_CONTROLLED;
             if (!status) fail;
-            StrLoc(desc) = sbuf;
-            SetStrLen(desc, tb);
+            MakeStr(sbuf, tb, &desc);
             return desc;
          }
         else fail;

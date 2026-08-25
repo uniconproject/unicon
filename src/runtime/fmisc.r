@@ -166,8 +166,7 @@ function{1} uchar(i)
       tended struct descrip uq_result;
       char *uq_sptr;
       Protect(uq_sptr = alcstr((char *)uq_buf, uq_w), runerr(0));
-      StrLoc(uq_result) = uq_sptr;
-      SetStrLen(uq_result, uq_w);
+      MakeStr(uq_sptr, uq_w, &uq_result);
       if (uq_w > 1) {
          /* genuinely multi-byte by construction -- tag it, and the
             codepoint count is trivially 1, no scan needed */
@@ -2388,13 +2387,11 @@ static stringint siKeywords[] = {
          if (i > 0){
             ipc_opnd = findoldipc(BlkD(d,Coexpr),i);
             ENTERPSTATE(p);
-            StrLoc(s) = findfile(ipc_opnd);
-            SetStrLen(s, strlen(StrLoc(s)));
+            MakeStr(findfile(ipc_opnd), strlen(StrLoc(s)), &s);
             }
          else{
             ENTERPSTATE(p);
-            StrLoc(s) = findfile(BlkD(d,Coexpr)->es_ipc.opnd);
-            SetStrLen(s, strlen(StrLoc(s)));
+            MakeStr(findfile(BlkD(d,Coexpr)->es_ipc.opnd), strlen(StrLoc(s)), &s);
             }
          ENTERPSTATE(savedp);
          if (!strcmp(StrLoc(s),"?")) fail;

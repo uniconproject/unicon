@@ -157,8 +157,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
             return Failed;
             }
          if (colsize >= MAX_COL_NAME-1) printf("column name size exceeded\n");
-         StrLoc(fieldname[p]) = alcstr((char *) colname, colsize);
-         SetStrLen(fieldname[p], colsize);
+         MakeStr(alcstr((char *) colname, colsize), colsize, &fieldname[p]);
          }
       /* allocate record */
       fp->proc = dynrecord(&rectypename, fieldname, numcols);
@@ -313,8 +312,7 @@ void odbcerror(struct ISQLFile *fp, int errornum)
    if (fp && (SQLError(ISQLEnv, fp->hdbc, fp->hstmt, SQLState, &NativeErr,
                        (SQLCHAR *) ErrMsg, SQL_MAX_MESSAGE_LENGTH-1, &ErrMsgLen) !=
               SQL_NO_DATA_FOUND)) {
-      StrLoc(k_errortext) = alcstr(ErrMsg, ErrMsgLen);
-      SetStrLen(k_errortext, ErrMsgLen);
+      MakeStr(alcstr(ErrMsg, ErrMsgLen), ErrMsgLen, &k_errortext);
       }
    else {
       if (errornum - NOT_ODBC_FILE_ERR < sizeof(errmsg)/sizeof(char *))

@@ -632,8 +632,7 @@ function{1} repl(s,n)
        */
       Protect(resloc = alcstr(NULL, size), runerr(0));
 
-      StrLoc(result) = resloc;
-      SetStrLen(result, size);
+      MakeStr(resloc, size, &result);
 
       /*
        * Fill the allocated area with copies of s.

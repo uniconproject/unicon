@@ -544,8 +544,7 @@ void handle_child(wbp wb, UINT msg, WPARAM wp, LPARAM lp)
    s = ws->child[LOWORD(wp) - 1].id;
    len = strlen(s);
    d = nulldesc;
-   StrLoc(d) = alcstr(s, len);
-   SetStrLen(d, len);
+   MakeStr(alcstr(s, len), len, &d);
    switch (HIWORD(wp)) {
    case BN_CLICKED: {
       dw = GetMessagePos();
@@ -584,8 +583,7 @@ void handle_menu(wbp wb, UINT msg, WPARAM wp, LPARAM lp)
    int flags = 0;
 
    d = nulldesc;
-   StrLoc(d) = alcstr(s, len);
-   SetStrLen(d, len);
+   MakeStr(alcstr(s, len), len, &d);
    dw = GetMessagePos();
    x = LOWORD(dw);
    y = HIWORD(dw);
@@ -602,8 +600,7 @@ void handle_keypress(wbp wb, UINT msg, WPARAM wp, LPARAM lp, int meta)
    struct descrip d;
    int flags = 0;
    if (msg == WM_CHAR || msg == WM_SYSCHAR) {
-      SetStrLen(d, 1);
-      StrLoc(d) = (char *)&allchars[FromAscii(wp) & 0xFF];
+      MakeStr((char *)&allchars[FromAscii(wp) & 0xFF], 1, &d);
       }
    else if (msg == WM_KEYUP) {
       MakeInt(-wp-128, &d); /* keyups are negative outside mouse event range */
@@ -4677,8 +4674,7 @@ void geteditregion(childcontrol *cc, dptr d)
    int y = GetWindowTextLength(cc->win);
    char *s2 = alcstr(NULL, y + 1);
    GetWindowText(cc->win, s2, y+1);
-   StrLoc(*d) = s2;
-   SetStrLen(*d, y);
+   MakeStr(s2, y, d);
 }
 
 void seteditregion(childcontrol *cc, char *s2)

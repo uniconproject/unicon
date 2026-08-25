@@ -498,8 +498,7 @@ int subs_asgn(dptr dest, const dptr src)
     */
    len = prelen + StrLen(srcstr) + StrLen(deststr) - poststrt;
    Protect(s = alcstr(NULL, len), return RunError);
-   StrLoc(rsltstr) = s;
-   SetStrLen(rsltstr, len);
+   MakeStr(s, len, &rsltstr);
    /*
     * First, copy the portion of the substring string to the left of
     *  the substring into the string space.

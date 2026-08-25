@@ -263,8 +263,7 @@ operator{*} ! bang(underef x -> dx)
                      tp_freeresp(mf->tp, mf->resp);
 
                      Protect(reserve(Strings, msglen), runerr(0));
-                     SetStrLen(result, msglen);
-                     StrLoc(result) = alcstr(NULL, msglen);
+                     MakeStr(alcstr(NULL, msglen), msglen, &result);
 
                      req.type = RETR;
                      mf->resp = tp_sendreq(mf->tp, &req);
@@ -999,8 +998,7 @@ operator{0,1} [:] sect(underef x -> dx, i, j)
                tended struct descrip uq_result;
                word uq_ncps;
                int uq_tagged = uq_scan(uq_bytes+uq_bstart, uq_blen, &uq_ncps);
-               StrLoc(uq_result) = (char *)(uq_bytes+uq_bstart);
-               SetStrLen(uq_result, uq_blen);
+               MakeStr((char *)(uq_bytes+uq_bstart), uq_blen, &uq_result);
                if (uq_tagged) {
                   SetUniQual(uq_result);
                   if ((uword)uq_ncps <= CpCountMax)
@@ -1073,8 +1071,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
                       * if the user called close() so, just allocate a string and return it.
                       */
 
-                     SetStrLen(result, msglen);
-                     StrLoc(result) = alcstr(mf->resp->msg, msglen);
+                     MakeStr(alcstr(mf->resp->msg, msglen), msglen, &result);
                      return result;
                      }
                   else {
@@ -1099,8 +1096,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
                   tp_freeresp(mf->tp, mf->resp);
 
                   Protect(reserve(Strings, msglen), runerr(0));
-                  SetStrLen(result, msglen);
-                  StrLoc(result) = alcstr(NULL, msglen);
+                  MakeStr(alcstr(NULL, msglen), msglen, &result);
 
                   req.type = RETR;
                   mf->resp = tp_sendreq(mf->tp, &req);

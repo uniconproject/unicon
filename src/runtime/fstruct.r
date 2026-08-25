@@ -269,8 +269,7 @@ function{0,1} get_or_pop(x,i)
             tp_freeresp(mf->tp, mf->resp);
 
             Protect(reserve(Strings, msglen), runerr(0));
-            SetStrLen(result, msglen);
-            StrLoc(result) = alcstr(NULL, msglen);
+            MakeStr(alcstr(NULL, msglen), msglen, &result);
 
             req.type = RETR;
             mf->resp = tp_sendreq(mf->tp, &req);
@@ -905,8 +904,7 @@ function{0,1} classname(r)
          fail;
       recnm_end = strstr(recnm_bgn, ClsInstSuffix);
       if (recnm_end > recnm_bgn) {
-         SetStrLen(result, recnm_end - recnm_bgn);
-         StrLoc(result) = recnm_bgn;
+         MakeStr(recnm_bgn, recnm_end - recnm_bgn, &result);
          return result;
          }
       else

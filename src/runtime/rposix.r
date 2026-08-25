@@ -874,8 +874,7 @@ dptr rec_structor(char *name)
    /*
     * called rec_structor on something else ?! try globals...
     */
-   StrLoc(s) = name;
-   SetStrLen(s, strlen(name));
+   MakeStr(name, strlen(name), &s);
    for (i = 0; i < n_globals; ++i)
       if (eq(&s, &gnames[i])) {
          if (is:proc(globals[i]))
@@ -6008,8 +6007,7 @@ void signal_dispatcher(int sig)
      struct descrip val;
      /* Invoke proc */
      p = si_i2s(signalnames, sig);
-     SetStrLen(val, strlen(p));
-     StrLoc(val) = p;
+     MakeStr(p, strlen(p), &val);
 
      (void) calliconproc(proc, &val, 1);
    }
@@ -6037,8 +6035,7 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
 
    if (n > 0) {
       /* Allocate n bytes of char space */
-      StrLoc(*d) = alcstr(NULL, n);
-      SetStrLen(*d, 0);
+      MakeStr(alcstr(NULL, n), 0, d);
 #if HAVE_LIBSSH
       if (fstatus & Fs_SSH) {
          struct SSHfile *sshf = BlkD(*f,File)->fd.sshf;
@@ -6104,8 +6101,7 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
       word ssh_mtx = 0;
       int ssh_have_mtx = 0;
 #endif                                  /* HAVE_LIBSSH && Concurrent */
-      StrLoc(*d) = strfree;
-      SetStrLen(*d, 0);
+      MakeStr(strfree, 0, d);
 #if HAVE_LIBSSH && defined(Concurrent)
       if (fstatus & Fs_SSH) {
          ssh_mtx = BlkD(*f,File)->mutexid;

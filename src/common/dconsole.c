@@ -256,8 +256,7 @@ void initalloc(word codesize)
    {
    static char dummy[1];        /* dummy static region */
 
-   StrLoc(kywd_prog) = "wicont";
-   SetStrLen(kywd_prog, strlen(StrLoc(kywd_prog)));
+   MakeStr("wicont", strlen(StrLoc(kywd_prog)), &kywd_prog);
    /*
     * Set up allocated memory.  The regions are:
     *   Allocated string region
@@ -493,8 +492,7 @@ char *s;
         }
       }
 
-   SetStrLen(*dp, s + MaxCvtLen - 1 - p);
-   StrLoc(*dp) = p;
+   MakeStr(p, s + MaxCvtLen - 1 - p, dp);
    }
 /*
  * tmp_str - Convert to temporary string.
@@ -596,8 +594,7 @@ char *s;
          strcat(s, ".0");               /* if no decimal point or exp. */
    if (s[strlen(s) - 1] == '.')         /* if decimal point is at end ... */
       strcat(s, "0");
-   SetStrLen(*dp, strlen(s));
-   StrLoc(*dp) = s;
+   MakeStr(s, strlen(s), dp);
    }
 /*
  * ston - convert a string to a numeric quantity if possible.

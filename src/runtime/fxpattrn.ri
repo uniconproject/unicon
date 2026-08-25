@@ -2065,8 +2065,7 @@ Match_Succeed:
    *Start = StackCursor(Stack_Init);
    *Stop = k_pos - 1;
 #if e_patmatch
-   SetStrLen(evalue, *Stop - *Start);
-   StrLoc(evalue) = pat_sub + *Start;
+   MakeStr(pat_sub + *Start, *Stop - *Start, &evalue);
    EVValD(&evalue, e_patmatch);
 #endif                                  /* e_patmatch */
    DEBUGF(2,(stdout, "first matched character index =%d\n", *Start));
@@ -2091,8 +2090,7 @@ Match_Succeed:
                   }
                else {
                   EVVar(&varref, e_assign);
-                  SetStrLen(*pvar, Stop - Start);
-                  StrLoc(*pvar) = pat_sub + Start;
+                  MakeStr(pat_sub + Start, Stop - Start, pvar);
                   EVValD(pvar, e_value);
                   }
                }
@@ -2379,8 +2377,7 @@ Node_Succeed:
          }
       else {
          EVVar(&varref, E_Assign);
-         SetStrLen(*pvar, (k_pos - 1) - StackCursor(Stack_Base - 1));
-         StrLoc(*pvar) = pat_sub + StackCursor(Stack_Base - 1);
+         MakeStr(pat_sub + StackCursor(Stack_Base - 1), (k_pos - 1) - StackCursor(Stack_Base - 1), pvar);
          EVValD(pvar, E_Value);
          }
       Pop_Region();

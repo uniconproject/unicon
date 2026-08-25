@@ -100,12 +100,14 @@ What uscribe LaTeX output needs
 
 Generated ``STEM.tex`` uses a small set of packages
 (``graphicx``, ``hyperref``, ``xcolor``, ``fancyvrb``, ``booktabs``,
-``longtable``). ``multirow`` is loaded when the ``.sty`` is installed
-(needed for grid-table row spans). A latex recommended install is
-usually enough; GitHub Pages installs ``texlive-latex-extra`` so the
-user-guide PDF build has the full set. If ``pdflatex`` stops with
-``File …sty not found``, install the matching TeX Live or MiKTeX
-package (or a larger scheme) and retry.
+``longtable``, ``array``). ``multirow`` is loaded when the ``.sty`` is
+installed (needed for grid-table row spans). ``caption`` is loaded when
+present so Word-style ``Figure N`` / ``Table N`` captions can use
+``\\caption*``; without it uscribe falls back to a centered paragraph.
+A latex recommended install is usually enough; GitHub Pages installs
+``texlive-latex-extra`` so the user-guide PDF build has the full set.
+If ``pdflatex`` stops with ``File …sty not found``, install the matching
+TeX Live or MiKTeX package (or a larger scheme) and retry.
 
 SVG figures are not embedded in PDF; convert them to PDF or PNG, or
 accept the boxed placeholder uscribe emits for ``.svg`` paths.

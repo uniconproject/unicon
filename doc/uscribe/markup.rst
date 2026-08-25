@@ -94,7 +94,8 @@ Tables
 ------
 
 **Simple** tables use ``=`` column separators. The first row is the
-header. PDF output uses ``longtable`` so tables can break across pages.
+header. PDF output uses ``longtable`` with wrapping paragraph
+columns so long identifiers and prose stay within the page.
 
 Source:
 

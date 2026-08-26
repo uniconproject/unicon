@@ -1,6 +1,7 @@
 /*
  * Grammar for RTL. The C portion of the grammar is based on
- *  the ANSI Draft Standard - 3rd review.
+ *  the ANSI Draft Standard - 3rd review, with selected C11 additions
+ *  (e.g. _Atomic(type), _Atomic as type qualifier, thread-local and atomic).
  */
 
 %{
@@ -60,7 +61,7 @@
 %token <t> Type_case 361 Of 362 Len_case 363 Constant 364 Errorfail 365
 %token <t> Declspec 366 B_IProc_Type 367
 /* 368 is reserved by Bison 3.8.2 as YYUNDEF; do not assign a token here. */
-%token <t> Offsetof 369 Thread_local 370
+%token <t> Offsetof 369 Thread_local 370 Atomic 371
 
 %type <t> unary_op assign_op struct_or_union typedefname
 %type <t> identifier op_name key_const union attrb_name
@@ -383,6 +384,9 @@ stnd_type
    | Doubl               {$$ = node0(PrimryNd, $1);}
    | Signed              {$$ = node0(PrimryNd, $1);}
    | Unsigned            {$$ = node0(PrimryNd, $1);}
+   | Atomic '(' type_name ')'
+                           {$$ = node1(PrefxNd, $1, $3);
+                            free_t($2); free_t($4);}
    | struct_or_union_spec
    | enum_spec
    | B_IProc_Type '(' constant_expr ')' {$$ = node2(BinryNd, $4,
@@ -481,6 +485,7 @@ enumerator
 type_qual
    : Const    {$$ = node0(PrimryNd, $1);}
    | Volatile {$$ = node0(PrimryNd, $1);}
+   | Atomic   {$$ = node0(PrimryNd, $1);}
    ;
 
 
@@ -892,6 +897,7 @@ op_name
    | Short
    | Signed
    | Sizeof
+   | Atomic
    | Static
    | Struct
    | Suspend

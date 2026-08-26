@@ -301,8 +301,10 @@ function{1} display(i,f,c)
       struct progstate *savedprog;
 #ifdef Concurrent
        /* rtt doesn't like CURTSTATE() in declare clause */
+#ifndef HAVE_KEYWORD__THREAD
        struct threadstate *curtstate =
                    (struct threadstate *) pthread_getspecific(tstate_key);
+#endif                                  /* !HAVE_KEYWORD__THREAD */
        struct b_coexpr *curtstate_ce = curtstate->c;
 #endif                                  /* Concurrent */
       }
@@ -2969,7 +2971,7 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
                 * OR: another thread is in a critical region and locked
                 * MTX_THREADCONTROL.
                 */
-               if (thread_call) {
+               if (UNICON_THREAD_CALL_LOAD()) {
                   /* I'm part of the GC party now! Sleeping!!*/
                   thread_control(TC_ANSWERCALL);
                   }

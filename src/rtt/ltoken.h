@@ -35,8 +35,8 @@
    especially those whose name start with YY_ or yy_.  They are
    private implementation details that can be changed or removed.  */
 
-#ifndef YY_YY_RTTGRAM_TAB_H_INCLUDED
-# define YY_YY_RTTGRAM_TAB_H_INCLUDED
+#ifndef YY_YY_LTOKEN_H_INCLUDED
+# define YY_YY_LTOKEN_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -53,7 +53,7 @@ extern int yydebug;
     YYEMPTY = -2,
     YYEOF = 0,                     /* "end of file"  */
     YYerror = 256,                 /* error  */
-    YYUNDEF = 368,                 /* "invalid token"  */
+    YYUNDEF = 372,                 /* "invalid token"  */
     Identifier = 257,              /* Identifier  */
     StrLit = 258,                  /* StrLit  */
     LStrLit = 259,                 /* LStrLit  */
@@ -167,7 +167,8 @@ extern int yydebug;
     B_IProc_Type = 367,            /* B_IProc_Type  */
     Offsetof = 369,                /* Offsetof  */
     Thread_local = 370,            /* Thread_local  */
-    IfStmt = 371                   /* IfStmt  */
+    Atomic = 371,                  /* Atomic  */
+    IfStmt = 373                   /* IfStmt  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -176,14 +177,14 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 12 "rttgram.y"
+#line 13 "rttgram.y"
 
    struct token *t;
    struct node *n;
    long i;
    
 
-#line 187 "rttgram.tab.h"
+#line 188 "ltoken.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -226,4 +227,5 @@ int yyparse (void);
 #define TokType Type
 #endif
 
-#endif /* !YY_YY_RTTGRAM_TAB_H_INCLUDED  */
+
+#endif /* !YY_YY_LTOKEN_H_INCLUDED  */

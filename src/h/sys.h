@@ -21,6 +21,10 @@
 #include <string.h>
 #include <time.h>
 
+#if defined(Concurrent) && !defined(NoConcurrent)
+#include <stdatomic.h>
+#endif
+
    /* not sure whether this one should always be in effect. Maybe it should.
     * moved from config.h so that it does not knock out exit's prototype.
     */

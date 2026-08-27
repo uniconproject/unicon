@@ -1766,11 +1766,12 @@ arbitrary keys, and records may be subscripted by either string
 fieldname or 1-based integer index. Message connections may be
 subscripted by string header to obtain server responses; POP
 connections may also be subscripted by 1-based integer message numbers.
-Cryptographic handles, SSH files, TLS sockets, and network sockets may
+Cryptographic handles, SSH files, TLS sockets, network sockets, and
+network-namespace handles may
 be subscripted by a status field name for a non-destructive peek
 (\texttt{h["type"]}, \texttt{c["exitstatus"]}, \texttt{f["ttl"]},
-\texttt{conn["cipher"]}); an unknown name is a runtime error
-(1302 crypto, 1326 TLS, 1331 SSH, 1310 sockets) and an
+\texttt{conn["cipher"]}, \texttt{ns["name"]}); an unknown name is a runtime error
+(1302 crypto, 1326 TLS, 1331 SSH, 1310 sockets, 1336 netns) and an
 unpopulated field fails. Boolean peeks succeed with \texttt{"yes"} or
 \texttt{\&null}. \texttt{f["*"]} is a table snapshot of the answerable
 fields. Peeking a closed handle is error 174.
@@ -1937,6 +1938,9 @@ feature.
 SSH status (\texttt{exitstatus}, \texttt{stderr}, \texttt{eof}, and
 session fields such as \texttt{fingerprint}) is peeked with
 \texttt{c["\textit{name}"]}; \texttt{Attrib()} has no SSH setters.
+Network-namespace status (\texttt{name}, \texttt{persist},
+\texttt{userns}, \texttt{refcount}) is peeked with
+\texttt{ns["\textit{name}"]}; \texttt{Attrib()} has no netns setters.
 For a cryptographic handle, assignments such as \texttt{op=}, \texttt{alg=},
 \texttt{cipher=}, \texttt{iv=}, and \texttt{sig=} are allowed only in
 the idle window between operations. Status including \texttt{type}
@@ -2635,7 +2639,8 @@ field names of record \texttt{R}.
 \texttt{key(M)} generates header names on a messaging connection
 \texttt{M} (including \texttt{Status-Code} and \texttt{Reason-Phrase}).
 \texttt{key(f)} generates answerable status-field names on a cryptographic
-handle, SSH file, TLS socket, or network socket; \texttt{f[k]} peeks
+handle, SSH file, TLS socket, network socket, or network-namespace
+handle; \texttt{f[k]} peeks
 the corresponding value.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -2906,6 +2911,8 @@ file and open it\\
 graphics window\\
  \ \ \ \ \texttt{"gl"\ \ \ \ }create a 3D
 graphics window\\
+ \ \ \ \ \texttt{"j"\ \ \ \ }create a
+Linux network namespace handle\\
  \ \ \ \ \texttt{"n"\ \ \ \ }connect to a
 remote TCP network socket\\
  \ \ \ \ \texttt{"na"\ \ \ \ }accept a
@@ -2985,6 +2992,13 @@ changed after \texttt{open()} with \texttt{Attrib()} (except
 \texttt{proto}, which is fixed at \texttt{socket()} time); status is
 peeked with \texttt{f["\textit{name}"]} (see
 Chapter~5 for examples).
+Mode \texttt{"j"} (Linux, feature \texttt{Network namespaces})
+creates a network namespace named \texttt{s1}; trailing attributes may
+include \texttt{persist=yes}, \texttt{bridge=yes}, and
+\texttt{userns=yes}. Status is peeked with \texttt{ns["name"]},
+\texttt{ns["persist"]}, \texttt{ns["userns"]}, and
+\texttt{ns["refcount"]}; \texttt{key(ns)} generates those names.
+See Chapter~5.
 
 For a UDP socket, there is not really a connection, but any writes to
 that file will send a datagram to that address, so that the address
@@ -3469,9 +3483,13 @@ come before those that do have an \texttt{i}'th field.
 \noindent
 \index{spawn()}\texttt{spawn(ce)} launches co-expression \texttt{ce} as an
 asynchronous thread that will execute concurrently with the current
-co-expression. The three optional integers specify the memory in bytes
-allocated for the thread's block and string regions and stack size.
-The defaults are 10\% of the corresponding sizes for the main thread.
+co-expression. \texttt{ce} must be a co-expression; a procedure is
+not launched. An optional leading network-namespace file
+(\texttt{spawn(ns, ce, ...)}) joins that namespace on the new OS
+thread before any Icon code runs. The three optional integers specify
+the memory in bytes allocated for the thread's block and string
+regions and stack size. The defaults are 10\% of the corresponding
+sizes for the main thread.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{sql}
@@ -3561,7 +3579,9 @@ cannot be converted.
 
 \noindent
 \index{system command}\texttt{system(x, f1, f2, f3, waitflag)} launches
-execution of a program in a separate process. \texttt{x} can be either
+execution of a program in a separate process. An optional leading
+network-namespace file (\texttt{system(ns, x, ...)}) runs the child
+inside that namespace. \texttt{x} can be either
 a string or a list of strings. In the former case, whitespace is used
 to separate the arguments and the command is processed by the
 platform's command interpreter. In the second case,

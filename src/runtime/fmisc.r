@@ -2879,22 +2879,44 @@ int improbable = 0;
 #endif                                   /* ConcurrentCOMPILER */
 
 "spawn(x,blocksize,stringsize, stacksize) - evaluate co-expression"
-" or procedure x concurrently"
-function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
-   declare {
-      C_integer _bs_, _ss_, _stks_, isoft;
-      }
-   if !def:C_integer(blocksize,0,_bs_) then
-      runerr(101,blocksize)
-   if !def:C_integer(stringsize,0,_ss_) then
-      runerr(101,stringsize)
-   if !def:C_integer(stacksize,0,_stks_) then
-      runerr(101,stacksize)
-   if !def:C_integer(soft,0,isoft) then
-      runerr(101,soft)
-   if is:coexpr(x) then {
-      abstract { return coexpr }
-      body {
+" or procedure x concurrently.  Optional leading netns File joins that"
+" network namespace on the new OS thread before any Icon code runs."
+function{0,1} spawn(argv[argc])
+   abstract { return coexpr }
+   body {
+      tended struct descrip x;
+      C_integer _bs_ = 0, _ss_ = 0, _stks_ = 0, isoft = 0;
+      int warg = 0;
+      struct b_file *ns = NULL;
+
+      OptNetns(ns);
+
+      if (argc <= warg)
+         runerr(106, nulldesc);
+      x = argv[warg++];
+
+      if (argc > warg) {
+         if (!cnv:C_integer(argv[warg], _bs_))
+            runerr(101, argv[warg]);
+         warg++;
+         }
+      if (argc > warg) {
+         if (!cnv:C_integer(argv[warg], _ss_))
+            runerr(101, argv[warg]);
+         warg++;
+         }
+      if (argc > warg) {
+         if (!cnv:C_integer(argv[warg], _stks_))
+            runerr(101, argv[warg]);
+         warg++;
+         }
+      if (argc > warg) {
+         if (!cnv:C_integer(argv[warg], isoft))
+            runerr(101, argv[warg]);
+         warg++;
+         }
+
+      if (is:coexpr(x)) {
          struct b_coexpr *cp = BlkD(x, Coexpr);
          int i;
 
@@ -2959,6 +2981,16 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
          cp->ini_ssize = _ss_;
 
          /*
+          * Activator stack before hold/thread create: alcactiv can fail,
+          * and a held pending_ns would otherwise leak on runerr.
+          */
+         if (cp->es_actstk == NULL)
+            Protect(cp->es_actstk = alcactiv(),runerr(0,x));
+
+         if (pushact(cp, (struct b_coexpr *)BlkLoc(k_current)) == RunError)
+            runerr(0,x);
+
+         /*
           * Loop until I aquire the mutex.
           */
          do {
@@ -2978,12 +3010,43 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
                }
          } while (i);
 
-         if (cp->alive == 0) {
+         if (IS_TS_THREAD(cp->status) || cp->alive != 0) {
+            MUTEX_UNLOCKID(MTX_THREADCONTROL);
             /*
-             * Activate thread x for the first time.
+             * Another thread won first-spawn; drop the activator we
+             * pushed before the lock so the stack stays matched.
              */
-            CREATE_CE_THREAD(cp, _stks_, "spawn()");
+            (void)popact(cp);
+            return x;
             }
+
+#if HAVE_NETNS
+         /* Hold under THREADCONTROL so concurrent spawn(ce) cannot clobber. */
+         cp->pending_ns = NULL;
+         if (ns != NULL) {
+#ifdef Concurrent
+            MUTEX_LOCKID_CONTROLLED(ns->mutexid);
+#endif                                  /* Concurrent */
+            if ((ns->status & Fs_NETNS) == 0 || ns->fd.netns == NULL) {
+#ifdef Concurrent
+               MUTEX_UNLOCKID(ns->mutexid);
+#endif                                  /* Concurrent */
+               MUTEX_UNLOCKID(MTX_THREADCONTROL);
+               (void)popact(cp);
+               runerr(174, argv[0]);
+               }
+            netns_hold(ns->fd.netns);
+            cp->pending_ns = ns->fd.netns;
+#ifdef Concurrent
+            MUTEX_UNLOCKID(ns->mutexid);
+#endif                                  /* Concurrent */
+            }
+#endif                                  /* HAVE_NETNS */
+
+         /*
+          * Activate thread x for the first time.
+          */
+         CREATE_CE_THREAD(cp, _stks_, "spawn()");
 
          /*
           * Turn on Thread, Async... flags
@@ -2992,29 +3055,16 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
          SET_FLAG(cp->status, Ts_Async);
 
          /*
-          * assign the correct "call" level to the new thread.
+          * Count the thread before waking it so nctramp (including a
+          * failed netns join) can DEC_NARTHREADS from coclean.
           */
-         /* cp->tstate->K_level = k_level+1;*/
-
-         /*
-          * Activate co-expression x, having changed it to Asynchronous.
-          *  but firt Set the activator/parent of the new thread.
-          */
-          if (cp->es_actstk == NULL)
-             Protect(cp->es_actstk = alcactiv(),runerr(0,x));
-
-          if (pushact(cp, (struct b_coexpr *)BlkLoc(k_current)) == RunError)
-             runerr(0,x);
+         INC_LOCKID(NARthreads, MTX_NARTHREADS);
 
          /*
           * wake the new thread up.
           */
          sem_post(cp->semp);
 
-         /*
-          * Increment the counter of the Async running threads.
-          */
-         INC_LOCKID(NARthreads, MTX_NARTHREADS);
          MUTEX_UNLOCKID(MTX_THREADCONTROL);
 
 #if ConcurrentCOMPILER
@@ -3022,10 +3072,7 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
 #endif                                  /* ConcurrentCOMPILER*/
          return x;
          }
-      }
-   else if is:proc(x) then {
-     abstract { return coexpr }
-     body {
+      else if (is:proc(x)) {
         tended struct descrip d;
         d = nulldesc;
         TURN_ON_CONCURRENT();
@@ -3036,9 +3083,9 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
          */
         return d;
         }
-     }
-  else { runerr(106,x)
-     }
+      else
+         runerr(106, x);
+      }
 end
 
 #else                                   /* Concurrent */
@@ -3158,6 +3205,16 @@ function{*} Attrib(argv[argc])
 #endif                                  /* HAVE_LIBSSH */
 
 #ifdef PosixFns
+#if HAVE_NETNS
+      /*
+       * Network-namespace status is peeked with ns["name"] / key(ns).
+       * Attrib() has no netns setters.
+       */
+      if (is:file(argv[0]) && (BlkD(argv[0],File)->status & Fs_NETNS)) {
+         fail;
+         }
+#endif                                  /* HAVE_NETNS */
+
       /*
        * TTY mode on a file (&input, etc.): Attrib(f, "tty=raw") /
        * Attrib(f, "tty=sane").  Entered only when the first attribute

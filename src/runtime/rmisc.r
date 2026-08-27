@@ -621,6 +621,21 @@ uword hash(dptr dp)
           * Check for distinguished files by looking at the address of
           *  of the object to image.  If one is found, print its name.
           */
+#if HAVE_NETNS
+         /*
+          * Netns handles store a NetnsFile* in the fd union, not a FILE*.
+          * Check before comparing fd.fp to stdin/stdout/stderr.
+          */
+         if (BlkD(*dp,File)->status & Fs_NETNS) {
+            i = StrLen(BlkD(*dp,File)->fname);
+            s = StrLoc(BlkLoc(*dp)->File.fname);
+            fprintf(f, "netns(");
+            while (i-- > 0)
+               printimage(f, *s++, '\0');
+            putc(')', f);
+            }
+         else
+#endif                                  /* HAVE_NETNS */
          if ((fd = BlkD(*dp,File)->fd.fp) == stdin)
             fprintf(f, "&input");
          else if (fd == stdout)
@@ -643,7 +658,7 @@ uword hash(dptr dp)
                fprintf(f, "directory(");
                }
             else
-#endif
+#endif                                  /* PosixFns */
 #ifdef Dbm
             if(BlkLoc(*dp)->File.status & Fs_Dbm) {
                fprintf(f, "dbmfile(");
@@ -2608,6 +2623,25 @@ int getimage(dptr dp1, dptr dp2)
           *  of the object to image.  If one is found, make a string
           *  naming it and return.
           */
+#if HAVE_NETNS
+         /*
+          * Netns handles store a NetnsFile* in the fd union, not a FILE*.
+          * Check before comparing fd.fp to stdin/stdout/stderr.
+          */
+         if (BlkD(source,File)->status & Fs_NETNS) {
+            s = StrLoc(BlkD(source,File)->fname);
+            len = StrLen(BlkD(source,File)->fname);
+            Protect(reserve(Strings, (len << 2) + 12), return RunError);
+            Protect(t = alcstr("netns(", (word)(6)), return RunError);
+            StrLoc(*dp2) = t;
+            StrLen(*dp2) = 6;
+            while (len-- > 0)
+               StrLen(*dp2) += doimage(*s++, '\0');
+            Protect(alcstr(")", (word)(1)), return RunError);
+            ++StrLen(*dp2);
+            }
+         else
+#endif                                  /* HAVE_NETNS */
          if ((fd = BlkD(source,File)->fd.fp) == stdin) {
             StrLen(*dp2) = 6;
             StrLoc(*dp2) = "&input";

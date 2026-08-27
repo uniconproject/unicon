@@ -46,6 +46,29 @@ function{0,1} close(f)
       int status = BlkD(f,File)->status;
       CURTSTATE();
 
+#if HAVE_NETNS
+      if (status & Fs_NETNS) {
+         struct NetnsFile *nsf;
+#ifdef Concurrent
+         MUTEX_LOCKID_CONTROLLED(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+         if ((BlkD(f,File)->status & Fs_NETNS) == 0) {
+#ifdef Concurrent
+            MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+            return C_integer 0;
+            }
+         nsf = BlkD(f,File)->fd.netns;
+         BlkLoc(f)->File.status = 0;
+         BlkLoc(f)->File.fd.netns = NULL;
+#ifdef Concurrent
+         MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
+#endif                                  /* Concurrent */
+         netns_release(nsf);
+         return C_integer 0;
+         }
+#endif                                  /* HAVE_NETNS */
+
       if ((status & (Fs_Read|Fs_Write)) == 0) return f;
 
       /*
@@ -312,7 +335,7 @@ function{0,1} getenv(s)
 end
 
 
-#if defined(Graphics) || defined(Messaging) || defined(ISQL)
+#if defined(Graphics) || defined(Messaging) || defined(ISQL) || HAVE_NETNS
 "open(s1, s2, ...) - open file named s1 with options s2"
 " and attributes given in trailing arguments."
 function{0,1} open(fname, spec, attr[n])
@@ -904,6 +927,16 @@ Deliberate Syntax Error
                fail;
 #endif                                  /* HAVE_LIBZ */
 
+            case 'j':
+            case 'J':
+#if HAVE_NETNS
+               status |= Fs_NETNS;
+               continue;
+#else                                   /* HAVE_NETNS */
+               set_errortext(1045);
+               fail;
+#endif                                  /* HAVE_NETNS */
+
             default:
                runerr(209, spec);
             }
@@ -947,6 +980,10 @@ Deliberate Syntax Error
       /* If we're opening a sql database, modes are not used */
       if (!(status & Fs_ODBC))
 #endif                                  /* ISQL */
+#if HAVE_NETNS
+      /* Network-namespace handles are not read/write files */
+      if (!(status & Fs_NETNS))
+#endif                                  /* HAVE_NETNS */
 
       if ((status & (Fs_Read|Fs_Write)) == 0)   /* default: read only */
          status |= Fs_Read;
@@ -994,6 +1031,83 @@ Deliberate Syntax Error
 /*
  * End of operating-system specific code.
  */
+
+#if HAVE_NETNS
+      /*
+       * Network namespace: open(name, "j" [, "persist=yes"] [, "bridge=yes"]
+       *                                     [, "userns=yes"|"userns=no"])
+       *
+       * If userns= is omitted and the privileged create fails with
+       * EPERM/EACCES, retry once after userns bootstrap.  Explicit
+       * userns=yes|no disables that fallback.
+       */
+      if (status & Fs_NETNS) {
+         int persist = 0, bridge = 0, userns = 0, userns_explicit = 0;
+         int a;
+         struct NetnsFile *nsf;
+         tended char *tmps;
+
+         if (status & ~(Fs_NETNS)) {
+            runerr(209, spec);
+            }
+#if defined(Graphics) || defined(Messaging) || defined(ISQL) || HAVE_NETNS
+         for (a = 0; a < n; a++) {
+            if (is:null(attr[a]))
+               continue;
+            if (!is:string(attr[a]))
+               runerr(109, attr[a]);
+            if (!cnv:C_string(attr[a], tmps))
+               runerr(103, attr[a]);
+            if (strncmp(tmps, "persist=", 8) == 0) {
+               if (strcmp(tmps + 8, "yes") == 0) persist = 1;
+               else if (strcmp(tmps + 8, "no") == 0) persist = 0;
+               else runerr(205, attr[a]);
+               }
+            else if (strncmp(tmps, "bridge=", 7) == 0) {
+               if (strcmp(tmps + 7, "yes") == 0) bridge = 1;
+               else if (strcmp(tmps + 7, "no") == 0) bridge = 0;
+               else runerr(205, attr[a]);
+               }
+            else if (strncmp(tmps, "userns=", 7) == 0) {
+               userns_explicit = 1;
+               if (strcmp(tmps + 7, "yes") == 0) userns = 1;
+               else if (strcmp(tmps + 7, "no") == 0) userns = 0;
+               else runerr(205, attr[a]);
+               }
+            else
+               runerr(205, attr[a]);
+            }
+#endif
+         nsf = netns_create(fnamestr, persist, bridge, userns);
+         if (nsf == NULL && !userns_explicit &&
+             (errno == EPERM || errno == EACCES)) {
+            /* Implicit unprivileged fallback — only when userns= omitted. */
+            userns = 1;
+            nsf = netns_create(fnamestr, persist, bridge, 1);
+            }
+         if (nsf == NULL) {
+            if (userns && errno == EINVAL)
+               set_errortext_with_val(209,
+                  "userns=yes requires unshare(CLONE_NEWUSER) before any "
+                  "other threads exist (spawn() creates OS threads)");
+            else
+               set_syserrortext(errno);
+            fail;
+            }
+         StrLen(filename) = strlen(fnamestr);
+         StrLoc(filename) = fnamestr;
+         Protect(fl = alcfile(0, Fs_NETNS, &filename), {
+            netns_release(nsf);
+            runerr(0);
+            });
+         fl->fd.netns = nsf;
+#ifdef PosixFns
+         fl->sock_gen = 0;
+#endif
+         return file(fl);
+         }
+      else
+#endif                                  /* HAVE_NETNS */
 
       /*
        * Open the file with fopen or popen.
@@ -1501,7 +1615,7 @@ Deliberate Syntax Error
 #ifdef PosixFns
       {
 #if HAVE_LIBSSL
-        SSL *ssl;
+        SSL *ssl = NULL;
 #endif                                  /* HAVE_LIBSSL */
 #if HAVE_LIBSSH
          if (status & Fs_SSH) {
@@ -1590,7 +1704,7 @@ Deliberate Syntax Error
                runerr(209, spec);
             if (status & Fs_Append) {
 #if HAVE_LIBSSL
-               SSL_CTX *ctx;
+               SSL_CTX *ctx = NULL;
                if(status & Fs_Encrypt) {
                   int ssl_type = (sock_type == SOCK_T_DGRAM)
                      ? DTLS_SERVER : TLS_SERVER;
@@ -1611,6 +1725,11 @@ Deliberate Syntax Error
 #if HAVE_LIBSSL
                if(fd > 0 && status & Fs_Encrypt) {
                  int err;
+                 if (ctx == NULL) {
+                    if (sock_purge(fd))
+                       sock_close(fd);
+                    fail;
+                    }
                  ssl = SSL_new(ctx);
                   if (ssl == NULL) {
                     set_ssl_context_errortext(0, NULL);
@@ -1652,7 +1771,7 @@ Deliberate Syntax Error
             else {
                C_integer timeout = 0;
 #if HAVE_LIBSSL
-               SSL_CTX *ctx;
+               SSL_CTX *ctx = NULL;
                if(status & Fs_Encrypt) {
                   int ssl_type = (sock_type == SOCK_T_DGRAM)
                      ? DTLS_CLIENT : TLS_CLIENT;
@@ -1682,6 +1801,10 @@ Deliberate Syntax Error
 #if HAVE_LIBSSL
                if(fd > 0 && status & Fs_Encrypt){
                   int err;
+                  if (ctx == NULL) {
+                    sock_close(fd);
+                    fail;
+                    }
                   ssl = SSL_new(ctx);
                   if (ssl == NULL) {
                     set_ssl_context_errortext(0, NULL);
@@ -3040,28 +3163,9 @@ end
 #ifdef PosixFns
 
 "system() - create a new process, optionally mapping its stdin/stdout/stderr."
+" Optional leading netns File selects the network namespace for the child."
 
-function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
-   if !is:file(d_stdin) then
-      if !is:string(d_stdin) then
-         if !is:null(d_stdin) then
-            runerr(105, d_stdin)
-   if !is:file(d_stdout) then
-      if !is:string(d_stdout) then
-         if !is:null(d_stdout) then
-            runerr(105, d_stdout)
-   if !is:file(d_stderr) then
-      if !is:string(d_stderr) then
-         if !is:null(d_stderr) then
-            runerr(105, d_stderr)
-   if !is:list(argv) then
-      if !is:string(argv) then
-         runerr(110, argv)
-   if !is:string(mode) then
-      if !is:integer(mode) then
-         if !is:file(mode) then
-            if !is:null(mode) then
-               runerr(170, mode)
+function{0,1} system(argv[argc])
    abstract {
       return null ++ integer
       }
@@ -3070,8 +3174,14 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       int pid;
 #endif
       int i, j, n, is_argv_str=0;
+      int warg = 0;
       C_integer i_mode=0;
       tended union block *ep;
+      tended struct descrip argv_arg, d_stdin, d_stdout, d_stderr, mode;
+      struct b_file *ns = NULL;
+#if HAVE_NETNS
+      struct NetnsFile *held_ns = NULL;
+#endif                                  /* HAVE_NETNS */
 
       /*
        * We are subverting the RTT type system here w.r.t. garbage
@@ -3081,6 +3191,38 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       tended char *cmdline;
       char **margv=NULL;
       IntVal(amperErrno) = 0;
+
+      OptNetns(ns);
+
+      if (argc <= warg)
+         runerr(103, nulldesc);
+
+      argv_arg = argv[warg++];
+      d_stdin = (argc > warg) ? argv[warg++] : nulldesc;
+      d_stdout = (argc > warg) ? argv[warg++] : nulldesc;
+      d_stderr = (argc > warg) ? argv[warg++] : nulldesc;
+      mode = (argc > warg) ? argv[warg++] : nulldesc;
+
+      if (!is:file(d_stdin))
+         if (!is:string(d_stdin))
+            if (!is:null(d_stdin))
+               runerr(105, d_stdin);
+      if (!is:file(d_stdout))
+         if (!is:string(d_stdout))
+            if (!is:null(d_stdout))
+               runerr(105, d_stdout);
+      if (!is:file(d_stderr))
+         if (!is:string(d_stderr))
+            if (!is:null(d_stderr))
+               runerr(105, d_stderr);
+      if (!is:list(argv_arg))
+         if (!is:string(argv_arg))
+            runerr(110, argv_arg);
+      if (!is:string(mode))
+         if (!is:integer(mode))
+            if (!is:file(mode))
+               if (!is:null(mode))
+                  runerr(170, mode);
 
       /* Decode the mode */
       if (is:integer(mode)) {
@@ -3092,12 +3234,12 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
          i_mode = (strcmp(s_mode, "nowait") == 0);
          }
 
-      if (is:list(argv)) {
-         margv = (char **)malloc((BlkD(argv,List)->size+3) * sizeof(char *));
+      if (is:list(argv_arg)) {
+         margv = (char **)malloc((BlkD(argv_arg,List)->size+3) * sizeof(char *));
          if (margv == NULL) runerr(305);
          n = 0;
          /* Traverse the list */
-         for (ep = BlkD(argv,List)->listhead; BlkType(ep) == T_Lelem;
+         for (ep = BlkD(argv_arg,List)->listhead; BlkType(ep) == T_Lelem;
               ep = Blk(ep,Lelem)->listnext) {
             for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
                dptr f;
@@ -3125,9 +3267,9 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
             }
          margv[n] = 0;
          }
-      else if (is:string(argv)) {
+      else if (is:string(argv_arg)) {
          is_argv_str = 1;
-         cnv:C_string(argv, cmdline);
+         cnv:C_string(argv_arg, cmdline);
 #if !NT
         {
          char *s = cmdline;
@@ -3287,12 +3429,38 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
        * We don't use system(3) any more since the program is allowed to
        * re-map the files even for foreground execution
        */
+#if HAVE_NETNS
+      if (ns != NULL) {
+#ifdef Concurrent
+         MUTEX_LOCKID_CONTROLLED(ns->mutexid);
+#endif                                  /* Concurrent */
+         if ((ns->status & Fs_NETNS) == 0 || ns->fd.netns == NULL) {
+#ifdef Concurrent
+            MUTEX_UNLOCKID(ns->mutexid);
+#endif                                  /* Concurrent */
+            runerr(174, argv[0]);
+            }
+         held_ns = ns->fd.netns;
+         netns_hold(held_ns);
+#ifdef Concurrent
+         MUTEX_UNLOCKID(ns->mutexid);
+#endif                                  /* Concurrent */
+         }
+#endif                                  /* HAVE_NETNS */
+
 #ifdef HAVE_WORKING_VFORK
       switch (pid = vfork()) {
 #else                                   /* HAVE_WORKING_VFORK */
       switch (pid = fork()) {
 #endif                                  /* HAVE_WORKING_VFORK */
       case 0:
+
+#if HAVE_NETNS
+         if (held_ns != NULL) {
+            if (netns_join(held_ns) != 0)
+               _exit(126);
+            }
+#endif                                  /* HAVE_NETNS */
 
          dup_fds(&d_stdin, &d_stdout, &d_stderr);
 
@@ -3312,11 +3480,17 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
            */
           _exit(127);
       case -1:
+#if HAVE_NETNS
+         netns_release(held_ns);
+#endif                                  /* HAVE_NETNS */
          if (margv) free(margv);
          set_syserrortext(errno);
          fail;
          break;
       default:
+#if HAVE_NETNS
+         netns_release(held_ns);
+#endif                                  /* HAVE_NETNS */
 
 #if UNIX && defined(HAVE_WORKING_VFORK)
         if (!is:null(d_stdin) && is:file(d_stdin)){
@@ -3357,7 +3531,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       */
       if (i_mode) {
          _flushall();
-         if (is:string(argv)) {
+         if (is_argv_str) {
             int argc;
             char **garbage;
             argc = CmdParamToArgv(cmdline, &garbage, 0);

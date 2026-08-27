@@ -1558,6 +1558,14 @@ static void cofree()
 #endif
             } /* for abp */
 
+#if HAVE_NETNS && defined(PthreadCoswitch)
+         /* Thread never started (or died before nctramp); drop the hold. */
+         if (xep->pending_ns != NULL && !xep->have_thread) {
+            netns_release(xep->pending_ns);
+            xep->pending_ns = NULL;
+            }
+#endif                                  /* HAVE_NETNS && PthreadCoswitch */
+
          #ifdef CoClean
             coclean(xep);
          #endif                         /* CoClean */

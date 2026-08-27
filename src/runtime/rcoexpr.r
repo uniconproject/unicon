@@ -828,6 +828,27 @@ void *nctramp(void *arg)
 
 #endif                                  /* Concurrent */
    SEM_WAIT(ce->semp);                  /* wait for signal */
+#if HAVE_NETNS
+   /*
+    * Join after SEM_WAIT so spawn() has already INC_NARTHREADS and
+    * set Ts_Thread.  Failure then goes through coclean instead of
+    * pthread_exit with a live thread count.
+    */
+   if (ce->pending_ns != NULL) {
+      if (netns_join(ce->pending_ns) != 0) {
+         fprintf(stderr, "spawn: setns() failed: %s\n", strerror(errno));
+         netns_release(ce->pending_ns);
+         ce->pending_ns = NULL;
+#ifdef Concurrent
+         if (IS_TS_THREAD(ce->status) && ce->alive == 1)
+            coclean(ce);
+#endif                                  /* Concurrent */
+         pthread_exit(NULL);
+         }
+      netns_release(ce->pending_ns);
+      ce->pending_ns = NULL;
+      }
+#endif                                  /* HAVE_NETNS */
    new_context(0, 0);                   /* call new_context; will not return */
    syserr("new_context returned to nctramp");
    return NULL;

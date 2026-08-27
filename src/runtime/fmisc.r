@@ -3012,6 +3012,11 @@ function{0,1} spawn(argv[argc])
 
          if (IS_TS_THREAD(cp->status) || cp->alive != 0) {
             MUTEX_UNLOCKID(MTX_THREADCONTROL);
+            /*
+             * Another thread won first-spawn; drop the activator we
+             * pushed before the lock so the stack stays matched.
+             */
+            (void)popact(cp);
             return x;
             }
 
@@ -3027,6 +3032,7 @@ function{0,1} spawn(argv[argc])
                MUTEX_UNLOCKID(ns->mutexid);
 #endif                                  /* Concurrent */
                MUTEX_UNLOCKID(MTX_THREADCONTROL);
+               (void)popact(cp);
                runerr(174, argv[0]);
                }
             netns_hold(ns->fd.netns);
@@ -3049,14 +3055,16 @@ function{0,1} spawn(argv[argc])
          SET_FLAG(cp->status, Ts_Async);
 
          /*
+          * Count the thread before waking it so nctramp (including a
+          * failed netns join) can DEC_NARTHREADS from coclean.
+          */
+         INC_LOCKID(NARthreads, MTX_NARTHREADS);
+
+         /*
           * wake the new thread up.
           */
          sem_post(cp->semp);
 
-         /*
-          * Increment the counter of the Async running threads.
-          */
-         INC_LOCKID(NARthreads, MTX_NARTHREADS);
          MUTEX_UNLOCKID(MTX_THREADCONTROL);
 
 #if ConcurrentCOMPILER

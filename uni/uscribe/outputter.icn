@@ -1347,7 +1347,8 @@ end
 procedure safeCssIdent(s)
     local out, c, ok
     /s := ""
-    ok := &letters ++ &digits ++ '_-'
+    # Hyphen is its own cset so it is not a range.
+    ok := &lcase ++ &ucase ++ &digits ++ '_' ++ '-'
     out := ""
     every c := !s do
         if any(ok, c) then
@@ -1388,10 +1389,11 @@ end
 #</p>
 procedure safeThemeName(s)
     local t
-    t := safeCssIdent(\s | "basic")
-    if t == "text" & (\s | "basic") ~== "text" then
+    if /s | *s = 0 then
         return "basic"
-    if *(\s | "") = 0 then
+    t := safeCssIdent(s)
+    # "text" is safeCssIdent's placeholder for a fully stripped name.
+    if t == "text" & s ~== "text" then
         return "basic"
     return t
 end

@@ -449,6 +449,22 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
     end
 
     #<p>
+    # Emit a CLI command signature in <tt>texttt</tt>, then the body.
+    # <[param n a CliCmd node]>
+    #</p>
+    method visitCliCmd(n)
+        write(outFile, "\\par\\noindent\\texttt{",
+              escapeLatexTT(n.getSignature()), "}\\par")
+        write(outFile)
+        if *n.getChildren() > 0 then {
+            write(outFile, "\\begin{quote}")
+            every (!n.getChildren()).accept(self)
+            write(outFile, "\\end{quote}")
+            }
+        return
+    end
+
+    #<p>
     # Emit a <tt>longtable</tt> (page-breakable) for a table, using
     # wrapping <tt>p</tt> columns sized to <tt>\\textwidth</tt> so
     # long <tt>\\texttt</tt> identifiers and prose do not overflow the

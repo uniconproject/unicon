@@ -74,6 +74,12 @@ class Outputter : Object ()
     abstract method visitAdmonition(n)
 
     #<p>
+    # Render a CLI command signature (<tt>.. clicmd::</tt>).
+    # <[param n a CliCmd node]>
+    #</p>
+    abstract method visitCliCmd(n)
+
+    #<p>
     # Render a table.
     # <[param n a Table node]>
     #</p>
@@ -850,6 +856,33 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
               escapeHtml(capitalize(n.getKind())), "</p>")
         every (!n.getChildren()).accept(self)
         write(outFile, "</div>")
+        return
+    end
+
+    #<p>
+    # Emit a command signature as a definition term with a permalink,
+    # then the optional description body.
+    # <[param n a CliCmd node]>
+    #</p>
+    method visitCliCmd(n)
+        local id, slug
+        slug := slugify(n.getSignature())
+        id := "clicmd"
+        if *slug > 0 then
+            id := "clicmd-" || slug
+        write(outFile, "<dl class=\"clicmd\">")
+        write(outFile, "<dt id=\"", escapeHtml(id), "\">")
+        write(outFile, "<span class=\"sig\">", escapeHtml(n.getSignature()),
+              "</span>")
+        write(outFile, "<a class=\"headerlink\" href=\"#", escapeHtml(id),
+              "\" title=\"Link to this definition\">&para;</a>")
+        write(outFile, "</dt>")
+        if *n.getChildren() > 0 then {
+            write(outFile, "<dd>")
+            every (!n.getChildren()).accept(self)
+            write(outFile, "</dd>")
+            }
+        write(outFile, "</dl>")
         return
     end
 

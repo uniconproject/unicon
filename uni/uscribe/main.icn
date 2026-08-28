@@ -837,10 +837,12 @@ procedure collectSearchWalk(nodeList, buf)
                 put(buf, n.getTitle())
                 collectSearchWalk(n.getChildren(), buf)
                 }
-            "Paragraph" | "ListItem" | "Admonition" | "Emphasis" | "Strong" |
+            "Paragraph" | "ListItem" | "Admonition" | "CliCmd" | "Emphasis" | "Strong" |
             "TableCell" | "DefinitionItem": {
                 if n.nodeType() == "DefinitionItem" then
                     put(buf, n.getTerm())
+                if n.nodeType() == "CliCmd" then
+                    put(buf, n.getSignature())
                 collectSearchWalk(n.getChildren(), buf)
                 }
             "BulletList" | "EnumList" | "Document" | "Table" | "TableRow" |

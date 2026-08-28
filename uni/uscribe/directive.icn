@@ -75,7 +75,7 @@ end
 #<p>
 # The handful of directives the book format needs out of the box:
 # <tt>code-block</tt>, admonitions (<tt>note</tt>/<tt>warning</tt>/
-# <tt>tip</tt> plus common aliases), <tt>image</tt>/<tt>figure</tt>,
+# <tt>tip</tt> plus common aliases), <tt>clicmd</tt>, <tt>image</tt>/<tt>figure</tt>,
 # and <tt>include</tt>/<tt>literalinclude</tt>.
 # <tt>toctree</tt> is deliberately <i>not</i> here -- chapter order is
 # <tt>Manifest</tt>'s job (<tt>manifest.icn</tt>), read once up front,
@@ -90,6 +90,7 @@ procedure registerBuiltins(reg)
     every name := !["note", "warning", "tip", "important", "caution",
                     "attention", "danger", "error", "hint"] do
         reg.register(name, handleAdmonition)
+    reg.register("clicmd", handleClicmd)
     reg.register("image", handleImage)
     reg.register("figure", handleFigure)
     reg.register("include", handleInclude)
@@ -195,6 +196,22 @@ procedure handleAdmonition(raw, parser)
         adm.addChild(para)
         }
     return adm
+end
+
+#<p>
+# Expand <tt>.. clicmd::</tt> into a <tt>CliCmd</tt>: the argument is
+# the command signature; the body (optional) is parsed as nested blocks.
+# <[param raw a <tt>RawDirective</tt>]>
+# <[param parser owning Parser]>
+# <[returns a <tt>CliCmd</tt>]>
+#</p>
+procedure handleClicmd(raw, parser)
+    local cmd, kids
+    cmd := CliCmd()
+    cmd.setSignature(trim(\raw.getArg() | "", ' ', 0))
+    kids := parser.parseBodyLines(raw.getBodyLines())
+    every cmd.addChild(!kids)
+    return cmd
 end
 
 #<p>

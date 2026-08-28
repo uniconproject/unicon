@@ -637,6 +637,49 @@ class Admonition : Block (children, kind)
 end
 
 #<p>
+# A CLI command signature plus optional description, from
+# <tt>.. clicmd::</tt> (FRR-style command reference).
+#</p>
+class CliCmd : Block (children, signature)
+
+    #<p>
+    # Set the command signature shown as the term.
+    # <[param s signature string]>
+    #</p>
+    method setSignature(s)
+        signature := s
+        return
+    end
+
+    #<p>
+    # Return the command signature.
+    # <[returns the signature string]>
+    #</p>
+    method getSignature()
+        return \signature | ""
+    end
+
+    #<p>
+    # Dispatch to <tt>outp.visitCliCmd()</tt>.
+    # <[param outp an <tt>Outputter</tt> instance]>
+    #</p>
+    method accept(outp)
+        outp.visitCliCmd(self)
+        return
+    end
+
+    #<p>
+    # <[returns <tt>"CliCmd"</tt>]>
+    #</p>
+    method nodeType()
+        return "CliCmd"
+    end
+
+    initially
+        children := []
+end
+
+#<p>
 # A simple table: optional <tt>headerRow</tt> (<tt>TableRow</tt>) and
 # body rows as <tt>TableRow</tt> children. Optional <tt>label</tt> from
 # a preceding <tt>.. _label:</tt> target. Optional <tt>caption</tt>

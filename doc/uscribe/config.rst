@@ -86,7 +86,9 @@ themePath
 Directory that contains theme subdirectories
 (``DIR/basic/static``, …). Also accepted as ``themepath`` or
 ``theme_path``. If omitted, uscribe searches ``./themes``,
-``../themes``, and ``themes``. CLI: ``--themePath``.
+``../themes``, ``themes``, then Unicon's ``uni/uscribe/themes``
+via ``&features`` (``Binaries at`` / ``Libraries at``). CLI:
+``--themePath``.
 
 docclass
 --------
@@ -116,6 +118,18 @@ Sidebar tree lines (vertical spine and ticks) on the current
 chapter's section list. Default off: numbers and indentation
 only. Set ``toctree: true`` (also ``yes`` / ``on`` / ``1``;
 aliases ``toc-tree``, ``toc_tree``) to draw the lines.
+
+sources
+-------
+
+Copy each chapter's RST into ``targetDir/_sources/`` (as ``.txt``)
+and add a **source** (or report **txt**) footer link. Default on.
+Set ``sources: false`` (also ``no`` / ``off`` / ``0``; alias
+``source``) so the published HTML tree does not include RST.
+A rebuild in the same ``--targetDir`` also deletes a leftover
+``_sources/`` from a previous build. LaTeX/PDF builds still write
+``.tex`` next to the PDF; they are a different ``--format`` from
+HTML. CLI: ``--sources=no``.
 
 Not in book.conf
 ----------------

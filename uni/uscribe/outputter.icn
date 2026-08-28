@@ -74,6 +74,12 @@ class Outputter : Object ()
     abstract method visitAdmonition(n)
 
     #<p>
+    # Render a CLI command signature (<tt>.. clicmd::</tt>).
+    # <[param n a CliCmd node]>
+    #</p>
+    abstract method visitCliCmd(n)
+
+    #<p>
     # Render a table.
     # <[param n a Table node]>
     #</p>
@@ -201,7 +207,7 @@ end
 # Shared CSS/JS come from <tt>--theme</tt>
 # (see <tt>uni/uscribe/themes/</tt>).
 #</p>
-class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo, citationTable, footnoteList, outDir, bookPdfHref, currentDoc, wroteByline, pageKind, frontMatter, tocTree)
+class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo, citationTable, footnoteList, outDir, bookPdfHref, currentDoc, wroteByline, pageKind, frontMatter, tocTree, pageSources)
 
     #<p>
     # Set the open file to which HTML is written.
@@ -280,6 +286,17 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     #</p>
     method setTocTree(on)
         tocTree := on
+        return
+    end
+
+    #<p>
+    # When non-null, copy chapter RST to <tt>_sources/</tt> and link
+    # <tt>source</tt> / <tt>txt</tt> in the footer. Off with
+    # <tt>book.conf</tt> <tt>sources: false</tt>.
+    # <[param on non-null to publish page sources]>
+    #</p>
+    method setPageSources(on)
+        pageSources := on
         return
     end
 
@@ -420,7 +437,7 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
                 bits := 1
                 }
             }
-        if \n.getSrcName() then {
+        if \n.getSrcName() & \pageSources then {
             if \bits then
                 writes(outFile, " | ")
             else
@@ -701,9 +718,11 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
                     pdfName := pdfName || ".pdf"
                 }
             writes(outFile, " | <a href=\"", escapeHtml(pdfName), "\">pdf</a>")
-            base := basename(srcPath) || ".txt"
-            writes(outFile, " | <a href=\"_sources/", escapeHtml(base),
-                   "\" rel=\"nofollow\">source</a>")
+            if \pageSources then {
+                base := basename(srcPath) || ".txt"
+                writes(outFile, " | <a href=\"_sources/", escapeHtml(base),
+                       "\" rel=\"nofollow\">source</a>")
+                }
             }
         write(outFile)
         write(outFile, "</footer>")
@@ -837,6 +856,33 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
               escapeHtml(capitalize(n.getKind())), "</p>")
         every (!n.getChildren()).accept(self)
         write(outFile, "</div>")
+        return
+    end
+
+    #<p>
+    # Emit a command signature as a definition term with a permalink,
+    # then the optional description body.
+    # <[param n a CliCmd node]>
+    #</p>
+    method visitCliCmd(n)
+        local id, slug
+        slug := slugify(n.getSignature())
+        id := "clicmd"
+        if *slug > 0 then
+            id := "clicmd-" || slug
+        write(outFile, "<dl class=\"clicmd\">")
+        write(outFile, "<dt id=\"", escapeHtml(id), "\">")
+        write(outFile, "<span class=\"sig\">", escapeHtml(n.getSignature()),
+              "</span>")
+        write(outFile, "<a class=\"headerlink\" href=\"#", escapeHtml(id),
+              "\" title=\"Link to this definition\">&para;</a>")
+        write(outFile, "</dt>")
+        if *n.getChildren() > 0 then {
+            write(outFile, "<dd>")
+            every (!n.getChildren()).accept(self)
+            write(outFile, "</dd>")
+            }
+        write(outFile, "</dl>")
         return
     end
 
@@ -1334,7 +1380,8 @@ end
 procedure safeCssIdent(s)
     local out, c, ok
     /s := ""
-    ok := &letters ++ &digits ++ '_-'
+    # Hyphen is its own cset so it is not a range.
+    ok := &lcase ++ &ucase ++ &digits ++ '_' ++ '-'
     out := ""
     every c := !s do
         if any(ok, c) then
@@ -1375,10 +1422,11 @@ end
 #</p>
 procedure safeThemeName(s)
     local t
-    t := safeCssIdent(\s | "basic")
-    if t == "text" & (\s | "basic") ~== "text" then
+    if /s | *s = 0 then
         return "basic"
-    if *(\s | "") = 0 then
+    t := safeCssIdent(s)
+    # "text" is safeCssIdent's placeholder for a fully stripped name.
+    if t == "text" & s ~== "text" then
         return "basic"
     return t
 end

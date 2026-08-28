@@ -196,6 +196,16 @@ directives). Source then rendered:
 Also: ``warning``, ``tip``, ``important``, ``caution``, ``attention``,
 ``danger``, ``error``, ``hint``.
 
+CLI command signatures use ``.. clicmd::``, like FRR’s command
+reference: the argument is the syntax line; an indented body hangs
+under the command as its description.
+
+.. code-block:: rst
+
+   .. clicmd:: pki gen <key-name> <key-type> <key-length>
+
+      Generate a private key.
+
 Figures take a caption. If the caption already starts with
 ``Figure N`` or ``Table N``, HTML and LaTeX keep that label instead
 of adding another number. Uncaptioned ``.. image::`` is not numbered.

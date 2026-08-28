@@ -8,13 +8,10 @@ include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 SRCS   := $(wildcard ./*.icn)
 UFILES := $(patsubst %.icn, %.u, $(SRCS))
 
-.PHONY: all clean deps depends
+.PHONY: all clean deps depends install
 
 default: uscribe$(EXE)
 all: uscribe$(EXE)
-
-%.u: %.icn
-	$(UNICON) $(UFLAGS) -c $?
 
 # import json — rebuild if uni/lib/json.icn changed
 ../lib/json.u: ../lib/json.icn
@@ -23,6 +20,8 @@ all: uscribe$(EXE)
 uscribe$(EXE): $(UFILES) ../lib/json.u
 	$(UNICON) -o uscribe $(UFILES)
 	$(CP) uscribe$(EXE) $(BIN)
+
+install: uscribe$(EXE)
 
 deps depends:
 	unidep $(SRCS)

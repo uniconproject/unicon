@@ -29,11 +29,11 @@ global bookConfig, logoSrc
 # <[param args command-line argument list]>
 #</p>
 procedure main(args)
-    local manifestPath, mf, parser, registry, labels, cites, chapterPath, doc
+    local manifestPath, mf, parser, registry, labels, chapterPath, doc
     local docs, format, cliDocClass, explicitTitle
 
     Args(args, set("manifest","title","targetDir","theme","themePath","format",
-                   "copyright","logo","docclass","name","config"),
+                   "copyright","logo","docclass","name","config","sources"),
          helpMesg)
 
     manifestPath := Args().getOpt("manifest") | "book.manifest"
@@ -107,37 +107,33 @@ procedure main(args)
             bookTitle := doc.getTitle()
         }
 
-    cites := CitationTable()
-    every doc := !docs do
-        cites.collect(doc)
-    cites.loadAll()
-
     ensureDir(targetDir)
     copyDocumentImages(docs)
 
     if format == "html" then
-        renderHtml(docs, labels, cites)
+        renderHtml(docs, labels)
     else if format == "pdf" then
-        renderLatex(docs, labels, 1, cites)
+        renderLatex(docs, labels, 1)
     else
-        renderLatex(docs, labels, &null, cites)
+        renderLatex(docs, labels, &null)
 end
 
 #<p>
 # HTML builder: install themes, write search/index pages, then one
-# <tt>.html</tt> per chapter with resolved xrefs.
+# <tt>.html</tt> per chapter with resolved xrefs. Each page gets its
+# own citation table so report catalogs do not merge <tt>.bib</tt>
+# files.
 # <[param docs ordered list of Document nodes]>
 # <[param labels LabelTable after collect()]>
-# <[param cites CitationTable after collect/loadAll]>
 #</p>
-procedure renderHtml(docs, labels, cites)
+procedure renderHtml(docs, labels)
     local themePath, themeDir, catalogNav, indexDocs, doc, outp, outPath, f, i
     local logoBase, bookPdf, reports
 
     themePath := Args().getOpt("themePath") | (\bookConfig).getPath("themepath")
     themeDir := resolveThemeDir(themeName, themePath) |
         stop("uscribe: theme '", themeName, "' not found",
-             " (tried --themePath, ./themes/, and built-in themes/)")
+             " (tried --themePath, ./themes/, and Unicon uni/uscribe/themes)")
 
     ensureDir(targetDir || "/_static")
     installThemeAssets(dirname(themeDir), themeName, targetDir || "/_static")
@@ -169,7 +165,10 @@ procedure renderHtml(docs, labels, cites)
     writeSearchIndex(targetDir, indexDocs)
     writeSearchPage(targetDir, bookTitle, catalogNav, bookPdf, reports)
     writeIndexPage(targetDir, bookTitle, catalogNav, docs)
-    ensureDir(targetDir || "/_sources")
+    if parseSources() then
+        ensureDir(targetDir || "/_sources")
+    else
+        removePageSources()
 
     every i := 1 to *docs do {
         doc := docs[i]
@@ -179,7 +178,7 @@ procedure renderHtml(docs, labels, cites)
         outp := HtmlOutputter()
         outp.setOutFile(f)
         outp.setLabelTable(labels)
-        outp.setCitationTable(cites)
+        outp.setCitationTable(citationTableFor(doc))
         if doc.isReport() then {
             outp.setNav(bookTitle, buildSectionNavEntries(doc), 0, themeName)
             outp.setPageKind("report")
@@ -189,6 +188,8 @@ procedure renderHtml(docs, labels, cites)
         outp.setFrontMatter(parseFrontMatter())
         if parseTocTree() then
             outp.setTocTree(1)
+        if parseSources() then
+            outp.setPageSources(1)
         outp.setCopyright(copyrightNotice)
         outp.setLogo(logoHref)
         outp.setOutDir(targetDir)
@@ -196,11 +197,12 @@ procedure renderHtml(docs, labels, cites)
         doc.accept(outp)
         close(f)
         write("wrote ", outPath)
-        copyFile(doc.getSrcName(),
-                 targetDir || "/_sources/" || basename(doc.getSrcName()) ||
-                 ".txt") |
-            write(&errout, "warning: could not copy page source '",
-                  doc.getSrcName(), "'")
+        if parseSources() then
+            copyFile(doc.getSrcName(),
+                     targetDir || "/_sources/" || basename(doc.getSrcName()) ||
+                     ".txt") |
+                write(&errout, "warning: could not copy page source '",
+                      doc.getSrcName(), "'")
         }
     return
 end
@@ -213,13 +215,17 @@ end
 # <[param docs ordered list of Document nodes]>
 # <[param labels LabelTable after collect()]>
 # <[param wantPdf non-null to run pdflatex/xelatex/lualatex]>
-# <[param cites CitationTable after collect/loadAll]>
 #</p>
-procedure renderLatex(docs, labels, wantPdf, cites)
+procedure renderLatex(docs, labels, wantPdf)
+    local cites, doc
     if allDocsAreReports(docs) then {
-        renderReportLatex(docs, labels, wantPdf, cites)
+        renderReportLatex(docs, labels, wantPdf)
         return
         }
+    cites := CitationTable()
+    every doc := !docs do
+        cites.collect(doc)
+    cites.loadAll()
     renderBookLatex(docs, labels, wantPdf, cites)
     return
 end
@@ -298,12 +304,12 @@ end
 #<p>
 # One LaTeX / PDF file per report document. Basename matches the
 # HTML stem (<tt>ex-report.tex</tt> alongside <tt>ex-report.html</tt>).
+# Each report has its own citation table.
 # <[param docs ordered report Documents]>
 # <[param labels LabelTable]>
 # <[param wantPdf non-null to run a TeX engine]>
-# <[param cites CitationTable]>
 #</p>
-procedure renderReportLatex(docs, labels, wantPdf, cites)
+procedure renderReportLatex(docs, labels, wantPdf)
     local doc, base, outPath, f, outp, engine, rc, logoFile
 
     logoFile := copyLogoForLatex()
@@ -316,7 +322,7 @@ procedure renderReportLatex(docs, labels, wantPdf, cites)
         outp := LatexOutputter()
         outp.setOutFile(f)
         outp.setLabelTable(labels)
-        outp.setCitationTable(cites)
+        outp.setCitationTable(citationTableFor(doc))
         outp.setBookTitle(\doc.getTitle() | bookTitle)
         outp.setDocClass("report")
         outp.setReportDoc(doc)
@@ -397,8 +403,9 @@ end
 
 #<p>
 # Locate <tt>themes/NAME</tt>. Order: explicit <tt>--themePath</tt>,
-# <tt>./themes/NAME</tt>, then <tt>themes/</tt> next to this source
-# tree (<tt>../themes</tt> or <tt>./themes</tt>).
+# a <tt>themes/</tt> directory in the current tree, then the copy
+# shipped with Unicon (<tt>&features</tt> <tt>Binaries at</tt> /
+# <tt>Libraries at</tt>, same trick as the rest of the toolchain).
 # <[param name theme subdirectory name]>
 # <[param themePath optional root from --themePath]>
 # <[returns path to a valid theme directory]>
@@ -410,11 +417,42 @@ procedure resolveThemeDir(name, themePath)
         cand := themePath || "/" || name
         if themeLooksValid(cand) then return cand
         }
-    every root := !["./themes", "../themes", "themes"] do {
+    every root := themeSearchRoots() do {
         cand := root || "/" || name
         if themeLooksValid(cand) then return cand
         }
     fail
+end
+
+#<p>
+# Candidate theme roots when <tt>--themePath</tt> is omitted:
+# <tt>./themes</tt>, <tt>../themes</tt>, <tt>themes</tt>, then
+# <tt>uni/uscribe/themes</tt> under the Unicon tree from
+# <tt>Binaries at</tt> (parent of <tt>bin/</tt>) or
+# <tt>Libraries at</tt> (install prefix, e.g. <tt>lib/unicon</tt>).
+#</p>
+procedure themeSearchRoots()
+    local bin, lib
+    suspend "./themes"
+    suspend "../themes"
+    suspend "themes"
+    if bin := (&features ? (="Binaries at " & tab(0))) then
+        suspend dirname(trimDirSep(bin)) || "/uni/uscribe/themes"
+    if lib := (&features ? (="Libraries at " & tab(upto(';') | 0))) then {
+        suspend trimDirSep(lib) || "/uni/uscribe/themes"
+        suspend trimDirSep(lib) || "/uscribe/themes"
+        }
+end
+
+#<p>
+# Drop trailing <tt>/</tt> or <tt>\\</tt> from a directory path.
+# <[param s a filesystem path]>
+# <[returns s without a trailing directory separator]>
+#</p>
+procedure trimDirSep(s)
+    while *s > 0 & (s[-1] == "/" | s[-1] == "\\") do
+        s := s[1:-1]
+    return s
 end
 
 #<p>
@@ -622,10 +660,48 @@ procedure copyDirFiles(srcDir, destDir)
     local d, name
     d := open(srcDir) | fail
     while name := read(d) do {
-        if name == "." | name == ".." then next
+        if name == ("." | "..") then next
         copyFile(srcDir || "/" || name, destDir || "/" || name) | &null
         }
     close(d)
+    return
+end
+
+#<p>
+# Delete leftover <tt>targetDir/_sources/</tt> (files, then the
+# directory) from a previous HTML build. Used when
+# <tt>parseSources()</tt> is off so disabled publication does not
+# leave RST reachable. Nested directories are removed recursively.
+# Missing <tt>_sources/</tt> is a no-op.
+#</p>
+procedure removePageSources()
+    removeTree(targetDir || "/_sources") | &null
+    return
+end
+
+#<p>
+# Remove directory <tt>d</tt> and its contents. Files are
+# <tt>remove()</tt>d; subdirectories are visited then
+# <tt>rmdir()</tt>d. Listing uses <tt>open(d)</tt> like
+# <tt>copyDirFiles()</tt>.
+# <[param d directory path]>
+# <[fails if <tt>d</tt> cannot be opened as a directory]>
+#</p>
+procedure removeTree(d)
+    local dir, name, path, names
+    dir := open(d) | fail
+    names := []
+    while name := read(dir) do {
+        if name == ("." | "..") then next
+        put(names, name)
+        }
+    close(dir)
+    every name := !names do {
+        path := d || "/" || name
+        remove(path) | removeTree(path) | &null
+        }
+    rmdir(d) |
+        write(&errout, "warning: could not remove '", d, "'")
     return
 end
 
@@ -761,10 +837,12 @@ procedure collectSearchWalk(nodeList, buf)
                 put(buf, n.getTitle())
                 collectSearchWalk(n.getChildren(), buf)
                 }
-            "Paragraph" | "ListItem" | "Admonition" | "Emphasis" | "Strong" |
+            "Paragraph" | "ListItem" | "Admonition" | "CliCmd" | "Emphasis" | "Strong" |
             "TableCell" | "DefinitionItem": {
                 if n.nodeType() == "DefinitionItem" then
                     put(buf, n.getTerm())
+                if n.nodeType() == "CliCmd" then
+                    put(buf, n.getSignature())
                 collectSearchWalk(n.getChildren(), buf)
                 }
             "BulletList" | "EnumList" | "Document" | "Table" | "TableRow" |
@@ -1007,11 +1085,12 @@ procedure writeReportIndex(f, docs)
               escapeHtml(date), "</td>")
         write(f, "<td class=\"report-index-fmt\">")
         if reportPdfExists(pdfHref) then
-            writes(f, "<a href=\"", escapeHtml(pdfHref), "\">pdf</a> | ")
+            writes(f, "<a href=\"", escapeHtml(pdfHref), "\">pdf</a>")
         else
-            writes(f, "<span class=\"report-pdf-missing\">pdf</span> | ")
-        write(f, "<a href=\"_sources/", escapeHtml(srcTxt),
-              "\">txt</a>")
+            writes(f, "<span class=\"report-pdf-missing\">pdf</span>")
+        if parseSources() then
+            write(f, " | <a href=\"_sources/", escapeHtml(srcTxt),
+                  "\">txt</a>")
         write(f, "</td>")
         write(f, "</tr>")
         }
@@ -1198,6 +1277,25 @@ procedure parseTocTree()
 end
 
 #<p>
+# Publish chapter RST under <tt>_sources/</tt> and link it from
+# HTML footers. Default on. <tt>book.conf</tt> <tt>sources: false</tt>
+# (also <tt>no</tt> / <tt>off</tt> / <tt>0</tt>) or
+# <tt>--sources=no</tt> turns it off so the site has no RST copies.
+# A rebuild with sources off also removes a leftover
+# <tt>_sources/</tt> from a previous HTML build in the same
+# <tt>--targetDir</tt>.
+# <[fails if sources are disabled]>
+#</p>
+procedure parseSources()
+    local s
+    s := map(Args().getOpt("sources") | (\bookConfig).get("sources") |
+             "yes", &ucase, &lcase)
+    if member(set(["0","false","no","off"]), s) then
+        fail
+    return
+end
+
+#<p>
 # Copy <tt>--logo</tt> into <tt>targetDir</tt> for
 # <tt>\\includegraphics</tt> on the title page.
 # <[returns image basename]>
@@ -1255,8 +1353,11 @@ procedure helpMesg()
     write("  --targetDir=DIR     Output directory (default: ./htmlBook or")
     write("                      ./latexBook for latex/pdf)")
     write("  --theme=NAME        HTML theme: basic, classic, dark (default: basic)")
-    write("  --themePath=DIR     Directory containing theme subdirs (optional)")
+    write("  --themePath=DIR     Theme root (optional; default is Unicon's")
+    write("                      uni/uscribe/themes via Binaries at / Libraries at)")
     write("  --docclass=CLASS    book (default) or report (UTR/article cover)")
+    write("  --sources=yes|no    Copy chapter RST to _sources/ and link it")
+    write("                      (default yes; no keeps RST/TeX off the site)")
     write()
     write("  Report mode is also selected by a leading RST field list with")
     write("  :docclass: report and/or :trnumber: (plus :title:, :author:,")

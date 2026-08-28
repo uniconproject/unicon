@@ -76,8 +76,10 @@ Options
 
 **--themePath=DIR**
   Directory that contains theme subdirectories (``DIR/basic/static``,
-  …). If omitted, uscribe searches ``./themes``, ``../themes``, and
-  ``themes``. HTML only.
+  …). If omitted, uscribe searches ``./themes``, ``../themes``,
+  ``themes``, then Unicon's ``uni/uscribe/themes`` using the
+  ``Binaries at`` / ``Libraries at`` strings in ``&features``.
+  HTML only.
 
 Outputs
 -------
@@ -90,7 +92,8 @@ writes ``targetDir/name.html``, plus:
 - ``search.html`` + ``searchindex.js`` — full-text search
 - ``_static/`` — theme CSS, search JS, highlighter, theme switcher
 - ``_sources/`` — chapter sources as ``name.rst.txt`` (browser-viewable
-  text; linked as **txt** / **source**)
+  text; linked as **txt** / **source**). Omitted when ``sources`` is
+  off; a rebuild then deletes a leftover ``_sources/``
 
 **LaTeX / PDF**: book manifests write ``targetDir/STEM.tex`` (and
 ``STEM.pdf`` with ``--format=pdf``; default stem ``book``). Report manifests write one

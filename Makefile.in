@@ -227,7 +227,7 @@ ALLbins=$(RTbins) unicon$(EXE) $(ADDONbins) $(UTILbins) rt.a rt.h
 SIGNbins=$(RTbins) $(UTILbins)
 
 Tdirs=$(DESTDIR)$(ULB) $(DESTDIR)$(UIPL) $(DESTDIR)$(UPLUGINS)
-Udirs=lib 3d gui unidoc unidep xml parser ulsp
+Udirs=lib 3d gui unidoc unidep xml parser ulsp uscribe
 IPLdirs=lib incl gincl mincl procs
 RTdirs=lib include include/uri
 
@@ -292,6 +292,15 @@ install Install:
 	@for d in $(Udirs); do \
 	  echo "Installing uni/$$d to $(DESTDIR)$(ULB)/$$d ..."; \
 	  $(INST) -m 644 $(TOPDIR)/uni/$$d/*.* $(DESTDIR)$(ULB)/$$d; \
+	done
+	@echo "Installing uni/uscribe/themes to $(DESTDIR)$(ULB)/uscribe/themes ..."
+	@mkdir -p $(DESTDIR)$(ULB)/uscribe/themes/_shared
+	@$(INST) -m 644 $(TOPDIR)/uni/uscribe/themes/_shared/*.* $(DESTDIR)$(ULB)/uscribe/themes/_shared
+	@$(INST) -m 644 $(TOPDIR)/uni/uscribe/themes/README.md $(DESTDIR)$(ULB)/uscribe/themes
+	@for t in basic classic dark; do \
+	  mkdir -p $(DESTDIR)$(ULB)/uscribe/themes/$$t/static; \
+	  $(INST) -m 644 $(TOPDIR)/uni/uscribe/themes/$$t/theme.conf $(DESTDIR)$(ULB)/uscribe/themes/$$t; \
+	  $(INST) -m 644 $(TOPDIR)/uni/uscribe/themes/$$t/static/*.* $(DESTDIR)$(ULB)/uscribe/themes/$$t/static; \
 	done
 #       plugins
 	@$(INST) -m 644 $(TOPDIR)/plugins/lib/*.* $(DESTDIR)$(UPLUGINS)/ || true

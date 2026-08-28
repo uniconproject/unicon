@@ -10,10 +10,13 @@
 #   themes/_shared/search.js     # copied into every build's _static/
 #
 # Resolution order for --theme=NAME (see main.icn):
-#   1. <themePath>/NAME   (--themePath, if given)
+#   1. <themePath>/NAME   (--themePath or book.conf themepath)
 #   2. ./themes, ../themes, themes  (cwd, so a book can ship overrides)
 #   3. Unicon tree: $(Binaries at)/../uni/uscribe/themes
 #      or $(Libraries at)/uni/uscribe/themes
+#
+# A book-local themepath may contain only the skins it overrides.
+# Missing _shared/ and basic/classic/dark are filled from Unicon.
 #
 # Built-in themes:
 #   basic   -- default light sidebar (current look)

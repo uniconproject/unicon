@@ -461,15 +461,51 @@ end
 # <[fails if book.css cannot be opened]>
 #</p>
 procedure themeLooksValid(dir)
+    return fileReadable(dir || "/static/book.css")
+end
+
+#<p>
+# Succeed if <tt>path</tt> can be opened for reading.
+# <[param path filesystem path]>
+# <[fails if the file cannot be opened]>
+#</p>
+procedure fileReadable(path)
     local f
-    f := open(dir || "/static/book.css", "r") | fail
+    f := open(path, "r") | fail
     close(f)
     return
 end
 
 #<p>
+# Unicon’s shipped theme root (<tt>uni/uscribe/themes</tt>), used to
+# fill <tt>_shared</tt> and missing builtin skins when a book’s
+# <tt>themepath</tt> is CSS-only.
+# <[returns a directory that contains <tt>_shared/search.js</tt>]>
+# <[fails if none of the Unicon search roots look valid]>
+#</p>
+procedure uniconThemesRoot()
+    local bin, lib, root
+    if bin := (&features ? (="Binaries at " & tab(0))) then {
+        root := dirname(trimDirSep(bin)) || "/uni/uscribe/themes"
+        if fileReadable(root || "/_shared/search.js") then
+            return root
+        }
+    if lib := (&features ? (="Libraries at " & tab(upto(';') | 0))) then {
+        root := trimDirSep(lib) || "/uni/uscribe/themes"
+        if fileReadable(root || "/_shared/search.js") then
+            return root
+        root := trimDirSep(lib) || "/uscribe/themes"
+        if fileReadable(root || "/_shared/search.js") then
+            return root
+        }
+    fail
+end
+
+#<p>
 # Install shared JS/CSS plus every built-in theme as
 # <tt>theme-NAME.css</tt> so the browser switcher can change skins live.
+# Files in <tt>themesRoot</tt> win; Unicon’s copy fills gaps
+# (<tt>_shared</tt> and any of basic/classic/dark the book omitted).
 # <tt>defaultTheme</tt> is still used as the initial/fallback choice
 # (also copied to <tt>book.css</tt>).
 # <[param themesRoot parent of _shared and theme dirs]>
@@ -477,23 +513,28 @@ end
 # <[param destStatic destination _static directory]>
 #</p>
 procedure installThemeAssets(themesRoot, defaultTheme, destStatic)
-    local shared, name, src, f
+    local shared, name, src, builtin, r
     ensureDir(destStatic)
     shared := themesRoot || "/_shared"
-    f := open(shared || "/search.js", "r")
-    if \f then {
-        close(f)
-        copyDirFiles(shared, destStatic)
+    if not fileReadable(shared || "/search.js") then {
+        if r := uniconThemesRoot() then
+            shared := r || "/_shared"
         }
+    if fileReadable(shared || "/search.js") then
+        copyDirFiles(shared, destStatic)
+    builtin := uniconThemesRoot() | &null
     every name := !["basic", "classic", "dark"] do {
         src := themesRoot || "/" || name || "/static/book.css"
-        f := open(src, "r")
-        if \f then {
-            close(f)
+        if not fileReadable(src) & \builtin then
+            src := builtin || "/" || name || "/static/book.css"
+        if fileReadable(src) then
             copyFile(src, destStatic || "/theme-" || name || ".css") |
                 write(&errout, "uscribe: could not copy theme ", name)
-            }
         }
+    src := themesRoot || "/" || defaultTheme || "/static/book.css"
+    if fileReadable(src) then
+        copyFile(src, destStatic || "/theme-" || defaultTheme || ".css") |
+            write(&errout, "uscribe: could not copy theme ", defaultTheme)
     # Convenience alias for tools that still look for book.css
     copyFile(destStatic || "/theme-" || defaultTheme || ".css",
              destStatic || "/book.css") |

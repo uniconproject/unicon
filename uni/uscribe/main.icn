@@ -133,7 +133,7 @@ procedure renderHtml(docs, labels)
     themePath := Args().getOpt("themePath") | (\bookConfig).getPath("themepath")
     themeDir := resolveThemeDir(themeName, themePath) |
         stop("uscribe: theme '", themeName, "' not found",
-             " (tried --themePath, ./themes/, and built-in themes/)")
+             " (tried --themePath, ./themes/, and Unicon uni/uscribe/themes)")
 
     ensureDir(targetDir || "/_static")
     installThemeAssets(dirname(themeDir), themeName, targetDir || "/_static")
@@ -403,8 +403,9 @@ end
 
 #<p>
 # Locate <tt>themes/NAME</tt>. Order: explicit <tt>--themePath</tt>,
-# <tt>./themes/NAME</tt>, then <tt>themes/</tt> next to this source
-# tree (<tt>../themes</tt> or <tt>./themes</tt>).
+# a <tt>themes/</tt> directory in the current tree, then the copy
+# shipped with Unicon (<tt>&features</tt> <tt>Binaries at</tt> /
+# <tt>Libraries at</tt>, same trick as the rest of the toolchain).
 # <[param name theme subdirectory name]>
 # <[param themePath optional root from --themePath]>
 # <[returns path to a valid theme directory]>
@@ -416,11 +417,42 @@ procedure resolveThemeDir(name, themePath)
         cand := themePath || "/" || name
         if themeLooksValid(cand) then return cand
         }
-    every root := !["./themes", "../themes", "themes"] do {
+    every root := themeSearchRoots() do {
         cand := root || "/" || name
         if themeLooksValid(cand) then return cand
         }
     fail
+end
+
+#<p>
+# Candidate theme roots when <tt>--themePath</tt> is omitted:
+# <tt>./themes</tt>, <tt>../themes</tt>, <tt>themes</tt>, then
+# <tt>uni/uscribe/themes</tt> under the Unicon tree from
+# <tt>Binaries at</tt> (parent of <tt>bin/</tt>) or
+# <tt>Libraries at</tt> (install prefix, e.g. <tt>lib/unicon</tt>).
+#</p>
+procedure themeSearchRoots()
+    local bin, lib
+    suspend "./themes"
+    suspend "../themes"
+    suspend "themes"
+    if bin := (&features ? (="Binaries at " & tab(0))) then
+        suspend dirname(trimDirSep(bin)) || "/uni/uscribe/themes"
+    if lib := (&features ? (="Libraries at " & tab(upto(';') | 0))) then {
+        suspend trimDirSep(lib) || "/uni/uscribe/themes"
+        suspend trimDirSep(lib) || "/uscribe/themes"
+        }
+end
+
+#<p>
+# Drop trailing <tt>/</tt> or <tt>\\</tt> from a directory path.
+# <[param s a filesystem path]>
+# <[returns s without a trailing directory separator]>
+#</p>
+procedure trimDirSep(s)
+    while *s > 0 & (s[-1] == "/" | s[-1] == "\\") do
+        s := s[1:-1]
+    return s
 end
 
 #<p>
@@ -1319,7 +1351,8 @@ procedure helpMesg()
     write("  --targetDir=DIR     Output directory (default: ./htmlBook or")
     write("                      ./latexBook for latex/pdf)")
     write("  --theme=NAME        HTML theme: basic, classic, dark (default: basic)")
-    write("  --themePath=DIR     Directory containing theme subdirs (optional)")
+    write("  --themePath=DIR     Theme root (optional; default is Unicon's")
+    write("                      uni/uscribe/themes via Binaries at / Libraries at)")
     write("  --docclass=CLASS    book (default) or report (UTR/article cover)")
     write("  --sources=yes|no    Copy chapter RST to _sources/ and link it")
     write("                      (default yes; no keeps RST/TeX off the site)")

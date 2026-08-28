@@ -21,7 +21,7 @@ Build-time default
 
 .. code-block:: sh
 
-   uscribe ... --theme=classic --themePath=../themes
+   uscribe ... --theme=classic
 
 ``theme`` and ``themePath`` may also be set in ``book.conf``
 (see :doc:`config`).

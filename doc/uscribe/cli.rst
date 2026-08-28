@@ -76,8 +76,10 @@ Options
 
 **--themePath=DIR**
   Directory that contains theme subdirectories (``DIR/basic/static``,
-  …). If omitted, uscribe searches ``./themes``, ``../themes``, and
-  ``themes``. HTML only.
+  …). If omitted, uscribe searches ``./themes``, ``../themes``,
+  ``themes``, then Unicon's ``uni/uscribe/themes`` using the
+  ``Binaries at`` / ``Libraries at`` strings in ``&features``.
+  HTML only.
 
 Outputs
 -------

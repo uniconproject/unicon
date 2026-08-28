@@ -71,7 +71,6 @@ Full key list: :doc:`config`.
    logo: images/logo.png
    name: my-book
    theme: basic
-   themePath: /path/to/uni/uscribe/themes
 
 4. Build HTML
 -------------

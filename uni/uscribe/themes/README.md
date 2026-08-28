@@ -10,8 +10,10 @@
 #   themes/_shared/search.js     # copied into every build's _static/
 #
 # Resolution order for --theme=NAME (see main.icn):
-#   1. <themePath>/NAME   (--themePath, default: themes next to uscribe)
-#   2. ./themes/NAME      (cwd, so a book can ship overrides)
+#   1. <themePath>/NAME   (--themePath, if given)
+#   2. ./themes, ../themes, themes  (cwd, so a book can ship overrides)
+#   3. Unicon tree: $(Binaries at)/../uni/uscribe/themes
+#      or $(Libraries at)/uni/uscribe/themes
 #
 # Built-in themes:
 #   basic   -- default light sidebar (current look)

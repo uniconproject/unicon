@@ -86,7 +86,9 @@ themePath
 Directory that contains theme subdirectories
 (``DIR/basic/static``, …). Also accepted as ``themepath`` or
 ``theme_path``. If omitted, uscribe searches ``./themes``,
-``../themes``, and ``themes``. CLI: ``--themePath``.
+``../themes``, ``themes``, then Unicon's ``uni/uscribe/themes``
+via ``&features`` (``Binaries at`` / ``Libraries at``). CLI:
+``--themePath``.
 
 docclass
 --------

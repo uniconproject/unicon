@@ -18,7 +18,6 @@
 TOPDIR=../..
 USCRIBE_DIR = $(TOPDIR)/uni/uscribe
 USCRIBE ?= $(USCRIBE_DIR)/uscribe
-THEMES = $(USCRIBE_DIR)/themes
 HTMLDIR = html
 TEXDIR = latex
 MANIFEST = utr.manifest
@@ -35,7 +34,7 @@ html: $(USCRIBE)
 	mkdir -p $(HTMLDIR)
 	-cp -f *.pdf $(HTMLDIR)/ 2>/dev/null || true
 	$(USCRIBE) --manifest=$(MANIFEST) --title="$(TITLE)" \
-		--themePath=$(THEMES) --targetDir=$(HTMLDIR) --format=html
+		--targetDir=$(HTMLDIR) --format=html
 
 latex: $(USCRIBE)
 	mkdir -p $(TEXDIR)

@@ -13,9 +13,6 @@ UFILES := $(patsubst %.icn, %.u, $(SRCS))
 default: uscribe$(EXE)
 all: uscribe$(EXE)
 
-%.u: %.icn
-	$(UNICON) $(UFLAGS) -c $?
-
 # import json — rebuild if uni/lib/json.icn changed
 ../lib/json.u: ../lib/json.icn
 	$(MAKE) -C ../lib json.u

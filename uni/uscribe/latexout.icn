@@ -247,6 +247,16 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
         write(outFile, "  \\usepackage{fvextra}%")
         write(outFile, "  \\fvset{breaklines=true,breakanywhere=true}%")
         write(outFile, "}{}")
+        # Full-width shaded samples (Word CodeBlock is often left-indented).
+        # framed.sty is in some extra TeX schemes; without it, keep
+        # resetmargins Verbatim and skip the gray box.
+        write(outFile, "\\IfFileExists{framed.sty}{%")
+        write(outFile, "  \\usepackage{framed}%")
+        write(outFile, "  \\definecolor{shadecolor}{RGB}{240,243,246}%")
+        write(outFile, "  \\newenvironment{uscribeshaded}{\\shaded}{\\endshaded}%")
+        write(outFile, "}{%")
+        write(outFile, "  \\newenvironment{uscribeshaded}{}{}%")
+        write(outFile, "}")
         write(outFile, "\\usepackage{booktabs}")
         write(outFile, "\\usepackage{longtable}")
         write(outFile, "\\usepackage{array}")
@@ -405,19 +415,21 @@ class LatexOutputter : Outputter (outFile, labelTable, bookTitle,
     end
 
     #<p>
-    # Emit a <tt>Verbatim</tt> block. Lines are escaped for fancyvrb
-    # <tt>commandchars</tt> so a document line equal to
-    # <tt>\end{Verbatim}</tt> cannot close the environment early.
+    # Emit a full-width shaded <tt>Verbatim</tt> sample. Word often
+    # left-indents CodeBlock; <tt>resetmargins</tt> plus
+    # <tt>uscribeshaded</tt> (framed <tt>shaded</tt> when present)
+    # keep the box on the text block, including inside lists.
     # <[param n a CodeBlock node]>
     #</p>
     method visitCodeBlock(n)
         local ln
-        # commandchars=\\\{\} so \, {, } are fancyvrb escapes inside the block
-        write(outFile, "\\begin{Verbatim}[fontsize=\\small,frame=single,",
-              "commandchars=", "\\\\", "\\{", "\\}", "]")
+        write(outFile, "\\begin{uscribeshaded}")
+        write(outFile, "\\begin{Verbatim}[fontsize=\\small,frame=none,",
+              "resetmargins=true,commandchars=", "\\\\", "\\{", "\\}", "]")
         every ln := !n.getLines() do
             write(outFile, escapeVerbatimLine(ln))
         write(outFile, "\\end{Verbatim}")
+        write(outFile, "\\end{uscribeshaded}")
         write(outFile)
         return
     end

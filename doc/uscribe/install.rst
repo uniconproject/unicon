@@ -104,6 +104,8 @@ Generated ``STEM.tex`` uses a small set of packages
 installed (needed for grid-table row spans). ``caption`` is loaded when
 present so Word-style ``Figure N`` / ``Table N`` captions can use
 ``\\caption*``; without it uscribe falls back to a centered paragraph.
+``framed`` is loaded when present so code samples get a shaded box;
+without it the listing is still full-width ``Verbatim``.
 A latex recommended install is usually enough; GitHub Pages installs
 ``texlive-latex-extra`` so the user-guide PDF build has the full set.
 If ``pdflatex`` stops with ``File …sty not found``, install the matching

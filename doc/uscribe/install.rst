@@ -125,9 +125,11 @@ From the unicon tree:
    make
 
 That compiles the ``uscribe`` package, links ``./uscribe``, and
-installs a copy to ``../../bin/uscribe``. A top-level
-``make install`` also installs ``uscribe`` into ``$(bindir)``
-alongside ``unicon``, ``udb``, and the other addon tools.
+installs a copy to ``../../bin/uscribe``. ``make install`` in this
+directory does the same. A top-level ``make install`` also installs
+``uscribe`` into ``$(bindir)`` alongside ``unicon``, ``udb``, and the
+other addon tools, and copies themes to
+``$(libdir)/unicon/uni/uscribe/themes``.
 
 Regenerate Make dependencies after adding ``.icn`` files:
 

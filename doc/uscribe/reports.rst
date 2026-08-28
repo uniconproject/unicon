@@ -100,7 +100,9 @@ catalog (and the link back from each paper's sidebar).
 
 Open **``index.html``** for the table (number, title, author, date,
 pdf/txt). Open a row to read that paper; its sidebar is that
-paper's sections.
+paper's sections. Each paper's ``:cite:`` numbers start at 1, and
+``.. bibliography::`` lists only that paper's cited works from its
+own ``.bib``.
 
 The Unicon Technical Reports tree is this pattern:
 ``doc/utr/utr.manifest`` and ``doc/utr/book.conf``, via

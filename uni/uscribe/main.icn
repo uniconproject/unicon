@@ -29,7 +29,7 @@ global bookConfig, logoSrc
 # <[param args command-line argument list]>
 #</p>
 procedure main(args)
-    local manifestPath, mf, parser, registry, labels, cites, chapterPath, doc
+    local manifestPath, mf, parser, registry, labels, chapterPath, doc
     local docs, format, cliDocClass, explicitTitle
 
     Args(args, set("manifest","title","targetDir","theme","themePath","format",
@@ -107,30 +107,26 @@ procedure main(args)
             bookTitle := doc.getTitle()
         }
 
-    cites := CitationTable()
-    every doc := !docs do
-        cites.collect(doc)
-    cites.loadAll()
-
     ensureDir(targetDir)
     copyDocumentImages(docs)
 
     if format == "html" then
-        renderHtml(docs, labels, cites)
+        renderHtml(docs, labels)
     else if format == "pdf" then
-        renderLatex(docs, labels, 1, cites)
+        renderLatex(docs, labels, 1)
     else
-        renderLatex(docs, labels, &null, cites)
+        renderLatex(docs, labels, &null)
 end
 
 #<p>
 # HTML builder: install themes, write search/index pages, then one
-# <tt>.html</tt> per chapter with resolved xrefs.
+# <tt>.html</tt> per chapter with resolved xrefs. Each page gets its
+# own citation table so report catalogs do not merge <tt>.bib</tt>
+# files.
 # <[param docs ordered list of Document nodes]>
 # <[param labels LabelTable after collect()]>
-# <[param cites CitationTable after collect/loadAll]>
 #</p>
-procedure renderHtml(docs, labels, cites)
+procedure renderHtml(docs, labels)
     local themePath, themeDir, catalogNav, indexDocs, doc, outp, outPath, f, i
     local logoBase, bookPdf, reports
 
@@ -182,7 +178,7 @@ procedure renderHtml(docs, labels, cites)
         outp := HtmlOutputter()
         outp.setOutFile(f)
         outp.setLabelTable(labels)
-        outp.setCitationTable(cites)
+        outp.setCitationTable(citationTableFor(doc))
         if doc.isReport() then {
             outp.setNav(bookTitle, buildSectionNavEntries(doc), 0, themeName)
             outp.setPageKind("report")
@@ -219,13 +215,17 @@ end
 # <[param docs ordered list of Document nodes]>
 # <[param labels LabelTable after collect()]>
 # <[param wantPdf non-null to run pdflatex/xelatex/lualatex]>
-# <[param cites CitationTable after collect/loadAll]>
 #</p>
-procedure renderLatex(docs, labels, wantPdf, cites)
+procedure renderLatex(docs, labels, wantPdf)
+    local cites, doc
     if allDocsAreReports(docs) then {
-        renderReportLatex(docs, labels, wantPdf, cites)
+        renderReportLatex(docs, labels, wantPdf)
         return
         }
+    cites := CitationTable()
+    every doc := !docs do
+        cites.collect(doc)
+    cites.loadAll()
     renderBookLatex(docs, labels, wantPdf, cites)
     return
 end
@@ -304,12 +304,12 @@ end
 #<p>
 # One LaTeX / PDF file per report document. Basename matches the
 # HTML stem (<tt>ex-report.tex</tt> alongside <tt>ex-report.html</tt>).
+# Each report has its own citation table.
 # <[param docs ordered report Documents]>
 # <[param labels LabelTable]>
 # <[param wantPdf non-null to run a TeX engine]>
-# <[param cites CitationTable]>
 #</p>
-procedure renderReportLatex(docs, labels, wantPdf, cites)
+procedure renderReportLatex(docs, labels, wantPdf)
     local doc, base, outPath, f, outp, engine, rc, logoFile
 
     logoFile := copyLogoForLatex()
@@ -322,7 +322,7 @@ procedure renderReportLatex(docs, labels, wantPdf, cites)
         outp := LatexOutputter()
         outp.setOutFile(f)
         outp.setLabelTable(labels)
-        outp.setCitationTable(cites)
+        outp.setCitationTable(citationTableFor(doc))
         outp.setBookTitle(\doc.getTitle() | bookTitle)
         outp.setDocClass("report")
         outp.setReportDoc(doc)

@@ -15,6 +15,9 @@ package uscribe
 
 #<p>
 # Tracks bib databases, first-seen cite order, and numeric ids.
+# HTML pages and report PDFs use one table per document so catalog
+# <tt>.bib</tt> files are not merged. A combined book PDF may share
+# one table across chapters.
 # </p>
 class CitationTable (entries, order, numbers, bibPaths)
 
@@ -115,6 +118,20 @@ class CitationTable (entries, order, numbers, bibPaths)
         order := []
         numbers := table()
         bibPaths := []
+end
+
+#<p>
+# Citation table for one document: that file's <tt>:cite:</tt> keys
+# and <tt>.. bibliography::</tt> paths only.
+# <[param doc a Document]>
+# <[returns a loaded CitationTable]>
+#</p>
+procedure citationTableFor(doc)
+    local ct
+    ct := CitationTable()
+    ct.collect(doc)
+    ct.loadAll()
+    return ct
 end
 
 #<p>

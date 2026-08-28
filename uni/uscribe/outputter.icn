@@ -201,7 +201,7 @@ end
 # Shared CSS/JS come from <tt>--theme</tt>
 # (see <tt>uni/uscribe/themes/</tt>).
 #</p>
-class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo, citationTable, footnoteList, outDir, bookPdfHref, currentDoc, wroteByline, pageKind, frontMatter, tocTree)
+class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, navIndex, defaultTheme, copyrightNotice, logoHref, figureNo, citationTable, footnoteList, outDir, bookPdfHref, currentDoc, wroteByline, pageKind, frontMatter, tocTree, pageSources)
 
     #<p>
     # Set the open file to which HTML is written.
@@ -280,6 +280,17 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
     #</p>
     method setTocTree(on)
         tocTree := on
+        return
+    end
+
+    #<p>
+    # When non-null, copy chapter RST to <tt>_sources/</tt> and link
+    # <tt>source</tt> / <tt>txt</tt> in the footer. Off with
+    # <tt>book.conf</tt> <tt>sources: false</tt>.
+    # <[param on non-null to publish page sources]>
+    #</p>
+    method setPageSources(on)
+        pageSources := on
         return
     end
 
@@ -420,7 +431,7 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
                 bits := 1
                 }
             }
-        if \n.getSrcName() then {
+        if \n.getSrcName() & \pageSources then {
             if \bits then
                 writes(outFile, " | ")
             else
@@ -701,9 +712,11 @@ class HtmlOutputter : Outputter (outFile, labelTable, bookTitle, navEntries, nav
                     pdfName := pdfName || ".pdf"
                 }
             writes(outFile, " | <a href=\"", escapeHtml(pdfName), "\">pdf</a>")
-            base := basename(srcPath) || ".txt"
-            writes(outFile, " | <a href=\"_sources/", escapeHtml(base),
-                   "\" rel=\"nofollow\">source</a>")
+            if \pageSources then {
+                base := basename(srcPath) || ".txt"
+                writes(outFile, " | <a href=\"_sources/", escapeHtml(base),
+                       "\" rel=\"nofollow\">source</a>")
+                }
             }
         write(outFile)
         write(outFile, "</footer>")

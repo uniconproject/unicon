@@ -193,13 +193,13 @@ int cnv_c_str(dptr s, dptr d)
     */
    if ((StrLoc(*d) + StrLen(*d) == strfree) && (strfree != strend)) {
       Protect(alcstr("\0", 1), fatalerr(0,NULL));
-      ++StrLen(*d);
+      SetStrLen(*d, StrLen(*d)+1);
       }
    else {
       register word slen = StrLen(*d);
       register char *sptr, *dp;
       Protect(dp = alcstr(NULL,slen+1), fatalerr(0,NULL));
-      StrLen(*d) = StrLen(*d)+1;
+      SetStrLen(*d, StrLen(*d)+1);
       sptr = StrLoc(*d);
       StrLoc(*d) = dp;
       while (slen-- > 0)
@@ -676,8 +676,28 @@ void f(dptr s, dptr d)
           * Make a descriptor for the substring by getting the
           *  length and pointing into the string.
           */
-         StrLen(*d) = Blk(bp,Tvsubs)->sslen;
-         StrLoc(*d) = StrLoc(v) + Blk(bp,Tvsubs)->sspos - 1;
+         MakeStr(StrLoc(v) + Blk(bp,Tvsubs)->sspos - 1, Blk(bp,Tvsubs)->sslen, d);
+         /*
+          * Unicon Phase 0: this is the far more common path for a
+          * Unicode-aware sect/subsc result than oref.r's own tagging
+          * logic ever reaches -- sspos/sslen are already byte-based
+          * (matching what tvsubs() is always called with), so this is
+          * the same "scan the actual extracted range" approach already
+          * used in oasgn.r's subs_asgn and oref.r's sect, applied at
+          * the point a trapped substring variable actually gets
+          * dereferenced into a real value, which turns out to be where
+          * slicing a named variable -- the common case -- really ends
+          * up, not oref.r's own body block (see design doc §8/§5 for
+          * why that surprised the first version of this fix).
+          */
+         if (IsUniQual(v)) {
+            word uq_ncps;
+            if (uq_scan((unsigned char *)StrLoc(*d), StrLen(*d), &uq_ncps)) {
+               SetUniQual(*d);
+               if ((uword)uq_ncps <= CpCountMax)
+                  SetCpCount(*d, uq_ncps);
+               }
+            }
         }
 
       tvtbl: {
@@ -702,7 +722,7 @@ void f(dptr s, dptr d)
                else {
                   StrLoc(*d) = alcstr(content.dptr, content.dsize);
                   Protect(StrLoc(*d),fatalerr(103, s));
-                  StrLen(*d) = content.dsize;
+                  SetStrLen(*d, content.dsize);
                   }
                return;
                }
@@ -821,8 +841,7 @@ int
 dp_pnmcmp (struct pstrnm *pne, struct descrip *dp)
 {
    struct descrip d;
-   StrLen(d) = strlen(pne->pstrep);
-   StrLoc(d) = pne->pstrep;
+   MakeStr(pne->pstrep, strlen(pne->pstrep), &d);
    return lexcmp(&d,dp);
 }
 
@@ -927,8 +946,7 @@ static void itos(C_integer num, dptr dp, char *s)
         }
       }
 
-   StrLen(*dp) = s + MaxCvtLen - 1 - p;
-   StrLoc(*dp) = p;
+   MakeStr(p, s + MaxCvtLen - 1 - p, dp);
    }
 
 
@@ -1369,8 +1387,7 @@ void rtos(double n, dptr dp, char *s)
          strcat(s, ".0");               /* if no decimal point or exp. */
    if (s[strlen(s) - 1] == '.')         /* if decimal point is at end ... */
       strcat(s, "0");
-   StrLen(*dp) = strlen(s);
-   StrLoc(*dp) = s;
+   MakeStr(s, strlen(s), dp);
    }
 
 /*
@@ -1393,8 +1410,7 @@ static void cstos(unsigned int *cs, dptr dp, char *s)
       }
    *p = '\0';
 
-   StrLen(*dp) = p - s;
-   StrLoc(*dp) = s;
+   MakeStr(s, p - s, dp);
    }
 
 /*

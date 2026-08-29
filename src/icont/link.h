@@ -100,6 +100,40 @@ struct rentry {                 /* field table record list entry */
 #define F_RealLit        04000  /* literal is a real */
 #define F_StrLit        010000  /* literal is a string */
 #define F_CsetLit       020000  /* literal is a cset */
+#define F_UniQualLit    040000  /* Unicon Phase 0: string literal contains
+                                    non-ASCII bytes -- set once at translate
+                                    time (tsym.c putlit), round-trips through
+                                    the .u1 intermediate file via the existing
+                                    flag mechanism unchanged, read here to
+                                    bake F_UniQual directly into the emitted
+                                    Op_Str length word (lcode.c) instead of
+                                    leaving it to interp.r's runtime scan. */
+
+/*
+ * Unicon Phase 0: mirrors the runtime's F_UniQual bit (src/h/cpuconf.h),
+ * bit 62 of a 64-bit qualifier's dword. Deliberately a self-contained
+ * constant rather than #include "../h/cpuconf.h" -- confirmed empirically
+ * (gcc -E) that cpuconf.h itself is NOT transitively reachable from this
+ * file the way config.h is, so F_UniQual's real definition genuinely
+ * isn't visible here; dragging in the runtime's full header chain risks
+ * unrelated symbol collisions in a previously self-contained compiler.
+ * If cpuconf.h's F_UniQual value or bit position ever changes, this
+ * needs to change with it -- there is no automatic link between the two
+ * definitions.
+ *
+ * Gated on the exact same condition the runtime uses for F_UniQual
+ * itself (WordBits==64 && UniconUnicode) -- confirmed empirically that
+ * config.h, where UniconUnicode lives, IS transitively visible here.
+ * This isn't cosmetic: icont and iconx are normally built together from
+ * the same configure run, but if that ever weren't true, unconditionally
+ * baking in bit 62 for a runtime that isn't built to expect it would
+ * silently corrupt every tagged literal's length -- StrLen's mask
+ * degrades to a no-op when the feature is off, so the tag bit would
+ * just become part of the numeric length.
+ */
+#if WordBits == 64 && defined(UniconUnicode)
+#define ICONT_F_UniQual  0x4000000000000000ULL
+#endif
 
 /*
  * Symbol table region pointers.

@@ -551,8 +551,7 @@ int interp_x(int fsig,dptr cargp)
        */
       if (curpstate->signal > 0) {
          struct descrip val;
-         StrLoc(val) = si_i2s(signalnames, curpstate->signal);
-         StrLen(val) = strlen(StrLoc(val));
+         MakeStr(si_i2s(signalnames, curpstate->signal), strlen(StrLoc(val)), &val);
          InterpEVValD(&val,E_Signal);
          curpstate->signal = 0;
          }
@@ -823,6 +822,28 @@ L_areal:
 #endif                                  /* MultiProgram */
           opnd = (word)strcons + GetWord;
 
+            /*
+             * Unicon: literal tagging is a compile-time concern only.
+             * icont (uniquallen(), lcode.c) encodes F_UniQual directly
+             * into this literal's length word for every string literal
+             * it compiles, tagged or not -- *rsp already carries the
+             * correct bit straight from the bytecode file, so there is
+             * nothing to scan or classify here. A runtime scan-on-first-
+             * use was tried in an earlier iteration of this work and
+             * removed: since an untagged (pure-ASCII) literal is just
+             * as untagged as a tagged one is tagged, a scan keyed on
+             * "not yet tagged" would fire for every ASCII literal from
+             * even a fully Unicode-aware compiler, on its first
+             * execution -- exactly the per-literal cost compile-time
+             * tagging exists to eliminate, not a fallback that only
+             * matters for old icode. Icode compiled by a version of
+             * icont that predates this feature simply carries F_UniQual
+             * as 0 for every literal, which is indistinguishable from,
+             * and behaves identically to, this feature being absent --
+             * correct, unsurprising behavior requiring no special case
+             * here, with recompilation being the path to picking up
+             * Unicode-aware literals for such a program.
+             */
 #ifdef Concurrent
             PutInstr(Op_Astr, opnd, 2);
 #else                                   /*Concurrent*/
@@ -2645,8 +2666,7 @@ void actparent(int event)
    struct progstate *parent = curpstate->parent;
 
    curpstate->eventcount.vword.integr++;
-   StrLen(parent->eventcode) = 1;
-   StrLoc(parent->eventcode) = (char *)&allchars[FromAscii(event)&0xFF];
+   MakeStr((char *)&allchars[FromAscii(event)&0xFF], 1, &parent->eventcode);
    mt_activate(&(parent->eventcode), NULL,
                (struct b_coexpr *)curpstate->parent->Mainhead);
    }

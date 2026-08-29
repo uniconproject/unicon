@@ -16,7 +16,7 @@
 #define String(d, s) do {           \
       int len = strlen(s);          \
       StrLoc(d) = alcstr((s), len); \
-      StrLen(d) = len;              \
+      SetStrLen(d, len);              \
 } while (0)
 
 /*
@@ -648,7 +648,7 @@ void stat2rec(
 #endif                                  /* NT */
 
    StrLoc((*rp)->fields[2]) = alcstr(mode, 10);
-   StrLen((*rp)->fields[2]) = 10;
+   SetStrLen((*rp)->fields[2], 10);
 
 #if NT
    (*rp)->fields[4] = (*rp)->fields[5] = emptystr;
@@ -668,7 +668,7 @@ void stat2rec(
       user = pw->pw_name;
       }
    StrLoc((*rp)->fields[4]) = alcstr(user, strlen(user));
-   StrLen((*rp)->fields[4]) = strlen(user);
+   SetStrLen((*rp)->fields[4], strlen(user));
 
    getgrgid_r(st->st_gid, &grbuf, buf, 4096, &gr);
    if (gr == 0){
@@ -679,7 +679,7 @@ void stat2rec(
       group = gr->gr_name;
       }
    StrLoc((*rp)->fields[5]) = alcstr(group, strlen(group));
-   StrLen((*rp)->fields[5]) = strlen(group);
+   SetStrLen((*rp)->fields[5], strlen(group));
 #endif                                  /* NT */
 
 }
@@ -874,8 +874,7 @@ dptr rec_structor(char *name)
    /*
     * called rec_structor on something else ?! try globals...
     */
-   StrLoc(s) = name;
-   StrLen(s) = strlen(name);
+   MakeStr(name, strlen(name), &s);
    for (i = 0; i < n_globals; ++i)
       if (eq(&s, &gnames[i])) {
          if (is:proc(globals[i]))
@@ -1129,7 +1128,7 @@ int filepeek_yes(int truth, dptr rv)
       return FILEPEEK_OK;
       }
    Protect(StrLoc(*rv) = alcstr("yes", 3), return FILEPEEK_ERR);
-   StrLen(*rv) = 3;
+   SetStrLen(*rv, 3);
    return FILEPEEK_OK;
 }
 
@@ -1190,7 +1189,7 @@ int filepeek_snapshot(const struct filepeek_field *tab, void *h, dptr rv)
          continue;
       n = (word)strlen(tab[i].name);
       Protect(StrLoc(key) = alcstr(tab[i].name, n), return FILEPEEK_ERR);
-      StrLen(key) = n;
+      SetStrLen(key, n);
       if (filepeek_tblput(&BlkLoc(tbl), &key, &val) != FILEPEEK_OK)
          return FILEPEEK_ERR;
       }
@@ -1237,7 +1236,7 @@ int filepeek_key_nth_tab(const struct filepeek_field *tab, void *h,
       if (rc == FILEPEEK_OK) {
          n = (word)strlen(name);
          Protect(StrLoc(*key) = alcstr(name, n), return -1);
-         StrLen(*key) = n;
+         SetStrLen(*key, n);
          return i;
          }
       if (rc == FILEPEEK_ERR)
@@ -1267,7 +1266,7 @@ int filepeek_key_nth(void *h, int i,
       if (rc == FILEPEEK_OK) {
          n = (word)strlen(name);
          Protect(StrLoc(*key) = alcstr(name, n), return -1);
-         StrLen(*key) = n;
+         SetStrLen(*key, n);
          return i;
          }
       if (rc == FILEPEEK_ERR)
@@ -1292,7 +1291,7 @@ int filepeek_list_putstr(dptr lst, char *s, word n)
       return FILEPEEK_FAIL;
    elem = emptystr;
    Protect(StrLoc(elem) = alcstr(s, n), return FILEPEEK_ERR);
-   StrLen(elem) = n;
+   SetStrLen(elem, n);
    c_put(lst, &elem);
    return FILEPEEK_OK;
 }
@@ -3588,7 +3587,7 @@ int sock_recv(int s, struct b_record **rp)
       return 0;
       }
 
-   StrLen((*rp)->fields[1]) = msglen;
+   SetStrLen((*rp)->fields[1], msglen);
    StrLoc((*rp)->fields[1]) = alcstr(buf, msglen);
 
    (*rp)->fields[2] = nulldesc;          /* saddr */
@@ -4214,7 +4213,7 @@ void ssh_drain_stderr(struct SSHfile *sshf, dptr d)
       if (ck->tag == SSH_CHUNK_STDERR)
          total += ck->len;
 
-   StrLen(*d) = total;
+   SetStrLen(*d, total);
    if (total == 0) {
       StrLoc(*d) = "";
       return;
@@ -4259,7 +4258,7 @@ static int ssh_peek_stderr(struct SSHfile *sshf, dptr d)
    if (total == 0)
       return FILEPEEK_FAIL;
    Protect(StrLoc(*d) = alcstr(NULL, total), return FILEPEEK_ERR);
-   StrLen(*d) = total;
+   SetStrLen(*d, total);
    p = StrLoc(*d);
    for (ck = sshf->qhead; ck != NULL; ck = ck->next)
       if (ck->tag == SSH_CHUNK_STDERR) {
@@ -4291,7 +4290,7 @@ static int ssh_peek_alcstr(char *s, dptr rv)
       return FILEPEEK_FAIL;
    n = (word)strlen(s);
    Protect(StrLoc(*rv) = alcstr(s, n), return FILEPEEK_ERR);
-   StrLen(*rv) = n;
+   SetStrLen(*rv, n);
    return FILEPEEK_OK;
 }
 
@@ -5378,24 +5377,24 @@ static void sftp2rec(sftp_attributes at, struct descrip *dp,
       if (at->owner != NULL) {
          Protect(StrLoc((*rp)->fields[4]) = alcstr(at->owner, strlen(at->owner)),
                  fatalerr(0,NULL));
-         StrLen((*rp)->fields[4]) = strlen(at->owner);
+         SetStrLen((*rp)->fields[4], strlen(at->owner));
          }
       else {
          char b[32];
          snprintf(b, sizeof(b), "%lu", (unsigned long)at->uid);
          Protect(StrLoc((*rp)->fields[4]) = alcstr(b, strlen(b)), fatalerr(0,NULL));
-         StrLen((*rp)->fields[4]) = strlen(b);
+         SetStrLen((*rp)->fields[4], strlen(b));
          }
       if (at->group != NULL) {
          Protect(StrLoc((*rp)->fields[5]) = alcstr(at->group, strlen(at->group)),
                  fatalerr(0,NULL));
-         StrLen((*rp)->fields[5]) = strlen(at->group);
+         SetStrLen((*rp)->fields[5], strlen(at->group));
          }
       else {
          char b[32];
          snprintf(b, sizeof(b), "%lu", (unsigned long)at->gid);
          Protect(StrLoc((*rp)->fields[5]) = alcstr(b, strlen(b)), fatalerr(0,NULL));
-         StrLen((*rp)->fields[5]) = strlen(b);
+         SetStrLen((*rp)->fields[5], strlen(b));
          }
       }
    /* times (fields 8,9,10): SFTP carries atime/mtime; no ctime */
@@ -5425,7 +5424,7 @@ static void sftp2rec(sftp_attributes at, struct descrip *dp,
       if (m & 02)   mode[8] = 'w';
       if (m & 01)   mode[9] = 'x';
       Protect(StrLoc((*rp)->fields[2]) = alcstr(mode, 10), fatalerr(0,NULL));
-      StrLen((*rp)->fields[2]) = 10;
+      SetStrLen((*rp)->fields[2], 10);
       }
 }
 
@@ -5598,7 +5597,7 @@ void catstrs(char **ptrs, dptr d)
    if (nmem > 0)
       *--p = 0;
 
-   StrLen(*d) = DiffPtrs(p,StrLoc(*d));
+   SetStrLen(*d, DiffPtrs(p,StrLoc(*d)));
    n = DiffPtrs(p,strfree);             /* note the deallocation */
    EVStrAlc(n);
    strtotal += n;
@@ -5781,7 +5780,7 @@ dptr make_host_from_addrinfo(char *name, struct addrinfo *res0,  dptr result)
      }
 
    *--p = 0;
-   StrLen(rp->fields[2]) = DiffPtrs(p,StrLoc(rp->fields[2]));
+   SetStrLen(rp->fields[2], DiffPtrs(p,StrLoc(rp->fields[2])));
    n = DiffPtrs(p,strfree);             /* note the deallocation */
    EVStrAlc(n);
    strtotal += n;
@@ -5828,7 +5827,7 @@ dptr make_host(struct hostent *hs,  dptr result)
    }
    *--p = 0;
 
-   StrLen(rp->fields[2]) = DiffPtrs(p,StrLoc(rp->fields[2]));
+   SetStrLen(rp->fields[2], DiffPtrs(p,StrLoc(rp->fields[2])));
    n = DiffPtrs(p,strfree);             /* note the deallocation */
    EVStrAlc(n);
    strtotal += n;
@@ -6008,8 +6007,7 @@ void signal_dispatcher(int sig)
      struct descrip val;
      /* Invoke proc */
      p = si_i2s(signalnames, sig);
-     StrLen(val) = strlen(p);
-     StrLoc(val) = p;
+     MakeStr(p, strlen(p), &val);
 
      (void) calliconproc(proc, &val, 1);
    }
@@ -6037,8 +6035,7 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
 
    if (n > 0) {
       /* Allocate n bytes of char space */
-      StrLoc(*d) = alcstr(NULL, n);
-      StrLen(*d) = 0;
+      MakeStr(alcstr(NULL, n), 0, d);
 #if HAVE_LIBSSH
       if (fstatus & Fs_SSH) {
          struct SSHfile *sshf = BlkD(*f,File)->fd.sshf;
@@ -6088,7 +6085,7 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
          strfree = StrLoc(*d);
          return 0;
       }
-      StrLen(*d) = tally;
+      SetStrLen(*d, tally);
       /*
        * We may not have used the entire amount of storage we reserved.
        */
@@ -6104,8 +6101,7 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
       word ssh_mtx = 0;
       int ssh_have_mtx = 0;
 #endif                                  /* HAVE_LIBSSH && Concurrent */
-      StrLoc(*d) = strfree;
-      StrLen(*d) = 0;
+      MakeStr(strfree, 0, d);
 #if HAVE_LIBSSH && defined(Concurrent)
       if (fstatus & Fs_SSH) {
          ssh_mtx = BlkD(*f,File)->mutexid;
@@ -6288,7 +6284,7 @@ tryagain:
          }
 
          total += tally;
-         StrLen(*d) = total;
+         SetStrLen(*d, total);
          if (tally < bufsize) {
             /* We're done; return unused storage */
             nbytes = DiffPtrs(StrLoc(*d) + total, strfree);

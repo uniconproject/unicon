@@ -196,8 +196,7 @@ int get_name(dptr dp1,dptr dp0)
           */
          Protect(s = alcstr(NULL, k + j), return RunError);
          s2 = StrLoc(*dp0);
-         StrLoc(*dp0) = s;
-         StrLen(*dp0) = j + k;
+         MakeStr(s, j + k, dp0);
          for (i = 0; i < k; i++)
             *s++ = *s2++;
          s2 = sbuf;
@@ -213,55 +212,44 @@ int get_name(dptr dp1,dptr dp0)
 
       kywdint:
          if (VarLoc(*dp1) == &kywd_ran) {
-            StrLen(*dp0) = 7;
-            StrLoc(*dp0) = "&random";
+            MakeStr("&random", 7, dp0);
             }
          else if (VarLoc(*dp1) == &kywd_trc) {
-            StrLen(*dp0) = 6;
-            StrLoc(*dp0) = "&trace";
+            MakeStr("&trace", 6, dp0);
             }
 
 #ifdef FncTrace
          else if (VarLoc(*dp1) == &kywd_ftrc) {
-            StrLen(*dp0) = 7;
-            StrLoc(*dp0) = "&ftrace";
+            MakeStr("&ftrace", 7, dp0);
             }
 #endif                                  /* FncTrace */
 
          else if (VarLoc(*dp1) == &kywd_dmp) {
-            StrLen(*dp0) = 5;
-            StrLoc(*dp0) = "&dump";
+            MakeStr("&dump", 5, dp0);
             }
          else if (VarLoc(*dp1) == &kywd_err) {
-            StrLen(*dp0) = 6;
-            StrLoc(*dp0) = "&error";
+            MakeStr("&error", 6, dp0);
             }
 #ifdef PosixFns
          else if (VarLoc(*dp1) == &amperErrno) {
-            StrLen(*dp0) = 6;
-            StrLoc(*dp0) = "&errno";
+            MakeStr("&errno", 6, dp0);
             }
 #endif                                  /* PosixFns */
 #ifdef Graphics
          else if (VarLoc(*dp1) == &amperCol) {
-            StrLen(*dp0) = 4;
-            StrLoc(*dp0) = "&col";
+            MakeStr("&col", 4, dp0);
             }
          else if (VarLoc(*dp1) == &amperRow) {
-            StrLen(*dp0) = 4;
-            StrLoc(*dp0) = "&row";
+            MakeStr("&row", 4, dp0);
             }
          else if (VarLoc(*dp1) == &amperX) {
-            StrLen(*dp0) = 2;
-            StrLoc(*dp0) = "&x";
+            MakeStr("&x", 2, dp0);
             }
          else if (VarLoc(*dp1) == &amperY) {
-            StrLen(*dp0) = 2;
-            StrLoc(*dp0) = "&y";
+            MakeStr("&y", 2, dp0);
             }
          else if (VarLoc(*dp1) == &amperInterval) {
-            StrLen(*dp0) = 9;
-            StrLoc(*dp0) = "&interval";
+            MakeStr("&interval", 9, dp0);
             }
 #endif                                  /* Graphics */
          else
@@ -270,39 +258,32 @@ int get_name(dptr dp1,dptr dp0)
       kywdevent:
 #ifdef MultiProgram
          if (VarLoc(*dp1) == &curpstate->eventsource) {
-            StrLen(*dp0) = 12;
-            StrLoc(*dp0) = "&eventsource";
+            MakeStr("&eventsource", 12, dp0);
             }
          else if (VarLoc(*dp1) == &curpstate->eventval) {
-            StrLen(*dp0) = 11;
-            StrLoc(*dp0) = "&eventvalue";
+            MakeStr("&eventvalue", 11, dp0);
             }
          else if (VarLoc(*dp1) == &curpstate->eventcode) {
-            StrLen(*dp0) = 10;
-            StrLoc(*dp0) = "&eventcode";
+            MakeStr("&eventcode", 10, dp0);
             }
          else
 #endif                                  /* MultiProgram */
             syserr("name: unknown event keyword variable");
 
       kywdwin: {
-         StrLen(*dp0) = 7;
-         StrLoc(*dp0) = "&window";
+         MakeStr("&window", 7, dp0);
          }
 
       kywdstr: {
-         StrLen(*dp0) = 9;
-         StrLoc(*dp0) = "&progname";
+         MakeStr("&progname", 9, dp0);
          }
 
       kywdpos: {
-         StrLen(*dp0) = 4;
-         StrLoc(*dp0) = "&pos";
+         MakeStr("&pos", 4, dp0);
          }
 
       kywdsubj: {
-         StrLen(*dp0) = 8;
-         StrLoc(*dp0) = "&subject";
+         MakeStr("&subject", 8, dp0);
          }
 
       default:
@@ -334,16 +315,14 @@ int get_name(dptr dp1,dptr dp0)
                return LocalName;
                }
             else {
-               StrLen(*dp0) = 6;
-               StrLoc(*dp0) = "(temp)";
+               MakeStr("(temp)", 6, dp0);
                return Failed;
 /*               syserr("name: cannot determine variable name"); */
                }
             }
          else {
             if (is:string(*dp1) || (!is:variable(*dp1))) {  /* non-variable! */
-               StrLen(*dp0) = 14;
-               StrLoc(*dp0) = "(non-variable)";
+               MakeStr("(non-variable)", 14, dp0);
                return Failed;
                }
             /*
@@ -364,7 +343,7 @@ int get_name(dptr dp1,dptr dp0)
                           (long)Blk(Blk(blkptr,Lelem)->listprev,List)->id, (long)i);
                   i = strlen(sbuf);
                   Protect(StrLoc(*dp0) = alcstr(sbuf,i), return RunError);
-                  StrLen(*dp0) = i;
+                  SetStrLen(*dp0, i);
                   break;
                case T_Record:           /* record */
                   i = varptr - Blk(blkptr,Record)->fields;
@@ -376,7 +355,7 @@ int get_name(dptr dp1,dptr dp0)
 
                   i = strlen(sbuf);
                   Protect(StrLoc(*dp0) = alcstr(sbuf,i), return RunError);
-                  StrLen(*dp0) = i;
+                  SetStrLen(*dp0, i);
                   break;
                case T_Telem:            /* table */
                   t = keyref(blkptr,dp0);
@@ -385,8 +364,7 @@ int get_name(dptr dp1,dptr dp0)
                   break;
                default:         /* none of the above */
 #ifdef MultiProgram
-                  StrLen(*dp0) = 8;
-                  StrLoc(*dp0) = "(struct)";
+                  MakeStr("(struct)", 8, dp0);
                   return Failed;
 #else
                   syserr("name: invalid structure reference");
@@ -522,8 +500,7 @@ static int keyref(union block *bp, dptr dp)
    strcat(sbuf, "]");
    len = strlen(sbuf);
    Protect(s = alcstr(sbuf, len), return RunError);
-   StrLoc(*dp) = s;
-   StrLen(*dp) = len;
+   MakeStr(s, len, dp);
    return Succeeded;
    }
 

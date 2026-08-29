@@ -170,27 +170,23 @@ function{0,1} dbcolumns(f,table_name)
 
       /* populate list with column info */
       /* TABLE_CAT (varchar) */
-      StrLoc(r->fields[0])=cbCatalog>0?alcstr((char *) szCatalog, cbCatalog):"";
-      StrLen(r->fields[0])=cbCatalog>0?cbCatalog:0;
+      MakeStr(cbCatalog>0?alcstr((char *) szCatalog, cbCatalog):"", cbCatalog>0?cbCatalog:0, &r->fields[0]);
 
       /* TABLE_SCHEM (varchar) */
       StrLoc(r->fields[1])=cbSchema>0?alcstr((char *) szSchema, cbSchema):"";
-      StrLen(r->fields[1])=cbSchema>0?cbSchema:0;  /* cbSchema could be -1 */
+      SetStrLen(r->fields[1], cbSchema>0?cbSchema:0);  /* cbSchema could be -1 */
 
       /* TABLE_NAME (varchar not NULL) */
-      StrLoc(r->fields[2])=cbTableName>0?alcstr((char *) szTableName, cbTableName):"";
-      StrLen(r->fields[2])=cbTableName>0?cbTableName:0;
+      MakeStr(cbTableName>0?alcstr((char *) szTableName, cbTableName):"", cbTableName>0?cbTableName:0, &r->fields[2]);
 
       /* COLUMN_NAME (varchar not NULL) */
-      StrLoc(r->fields[3])=cbColumnName>0?alcstr((char *) szColumnName, cbColumnName):"";
-      StrLen(r->fields[3])=cbColumnName>0?cbColumnName:0;
+      MakeStr(cbColumnName>0?alcstr((char *) szColumnName, cbColumnName):"", cbColumnName>0?cbColumnName:0, &r->fields[3]);
 
       /* DATA_TYPE (Smallint not NULL) */
       MakeInt(DataType, &(r->fields[4]));
 
       /* TYPE_NAME (varchar not NULL) */
-      StrLoc(r->fields[5])=cbTypeName>0?alcstr((char *) szTypeName, cbTypeName):"";
-      StrLen(r->fields[5])=cbTypeName>0?cbTypeName:0;
+      MakeStr(cbTypeName>0?alcstr((char *) szTypeName, cbTypeName):"", cbTypeName>0?cbTypeName:0, &r->fields[5]);
 
       /* COLUMN_SIZE (Integer) */
       MakeInt(ColumnSize, &(r->fields[6]));
@@ -208,8 +204,7 @@ function{0,1} dbcolumns(f,table_name)
       MakeInt(Nullable, &(r->fields[10]));
 
       /* REMARKS (varchar) */
-      StrLoc(r->fields[11])=cbRemarks>0?alcstr((char *) szRemarks, cbRemarks):"";
-      StrLen(r->fields[11])=cbRemarks>0?cbRemarks:0;
+      MakeStr(cbRemarks>0?alcstr((char *) szRemarks, cbRemarks):"", cbRemarks>0?cbRemarks:0, &r->fields[11]);
       if (StrLoc(r->fields[11]) == NULL) {
          runerr(306);
          }
@@ -296,8 +291,7 @@ function {0,1} dbdriver(f)
     for (i=0; i<DBDRVNCOLS; i++) {
       if (is_str[i]) { /* result is a string */
         SQLGetInfo(fp->hdbc, (SQLUSMALLINT)sql_parm[i], sbuf, 255, &len);
-        StrLoc(r->fields[i])=alcstr(sbuf, len);
-        StrLen(r->fields[i])=len;
+        MakeStr(alcstr(sbuf, len), len, &r->fields[i]);
         if (StrLoc(r->fields[i]) == NULL)
            runerr(306);
       }
@@ -407,8 +401,7 @@ function{1} dbkeys(f, table_name)
       R.vword.bptr=(union block *) r;
 
       /* key column (varchar) */
-      StrLoc(r->fields[0])=cbPkCol>0?alcstr((char *) szPkCol, cbPkCol):"";
-      StrLen(r->fields[0])=cbPkCol>0?cbPkCol:0;
+      MakeStr(cbPkCol>0?alcstr((char *) szPkCol, cbPkCol):"", cbPkCol>0?cbPkCol:0, &r->fields[0]);
       if (StrLoc(r->fields[0]) == NULL) runerr(306);
 
       /* key sequence (integer) */
@@ -536,7 +529,7 @@ function {0,1} dblimits(f)
         SQLGetInfo(fp->hdbc, (SQLUSMALLINT)sql_parm[i], sbuf, 255, &len);
         StrLoc(r->fields[i])=alcstr(sbuf,len);
         if (StrLoc(r->fields[i]) == NULL) runerr(306);
-        StrLen(r->fields[i])=len;
+        SetStrLen(r->fields[i], len);
       }
       else {
         SQLGetInfo(fp->hdbc, (SQLUSMALLINT)sql_parm[i], (PTR)&result, sizeof(result), NULL);
@@ -601,7 +594,7 @@ function {0,1} dbproduct(f)
          SQLGetInfo(fp->hdbc, (SQLUSMALLINT)sql_parm[i], sbuf, 255, &len);
          StrLoc(r->fields[i])=alcstr(sbuf, len);
          if (StrLoc(r->fields[i]) == NULL) runerr(306);
-         StrLen(r->fields[i])=len;
+         SetStrLen(r->fields[i], len);
          }
       return R;
       }
@@ -750,19 +743,19 @@ function{0,1} dbtables(f)
       /* fill fields */
       StrLoc(r->fields[0])=cbQualif>0?alcstr((char *) szTblQualif,cbQualif):"";
       if (StrLoc(r->fields[0]) == NULL) runerr(306);
-      StrLen(r->fields[0])=cbQualif>0?cbQualif:0;
+      SetStrLen(r->fields[0], cbQualif>0?cbQualif:0);
       StrLoc(r->fields[1])=cbOwner>0?alcstr((char *) szTblOwner,cbOwner):"";
       if (StrLoc(r->fields[1]) == NULL) runerr(306);
-      StrLen(r->fields[1])=cbOwner>0?cbOwner:0;
+      SetStrLen(r->fields[1], cbOwner>0?cbOwner:0);
       StrLoc(r->fields[2])=cbName>0?alcstr((char *) szTblName,cbName):"";
       if (StrLoc(r->fields[2]) == NULL) runerr(306);
-      StrLen(r->fields[2])=cbName>0?cbName:0;
+      SetStrLen(r->fields[2], cbName>0?cbName:0);
       StrLoc(r->fields[3])=cbType>0?alcstr((char *) szTblType,cbType):"";
       if (StrLoc(r->fields[3]) == NULL) runerr(306);
-      StrLen(r->fields[3])=cbType>0?cbType:0;
+      SetStrLen(r->fields[3], cbType>0?cbType:0);
       StrLoc(r->fields[4])=cbRemarks>0?alcstr((char *) szRemarks,cbRemarks):"";
       if (StrLoc(r->fields[4]) == NULL) runerr(306);
-      StrLen(r->fields[4])=cbRemarks>0?cbRemarks:0;
+      SetStrLen(r->fields[4], cbRemarks>0?cbRemarks:0);
 
       c_put(&L, &R);
     }

@@ -1,0 +1,22 @@
+# open() "i" mode on a file: tagged reads(); default remains byte length.
+
+procedure main()
+   f := open("uio.dat", "wu") | stop("couldn't create test file")
+   writes(f, "café")
+   close(f)
+
+   # without 'i': byte length, untagged, unchanged default behavior
+   f := open("uio.dat", "r") | stop("couldn't open for plain read")
+   s := reads(f, 100)
+   close(f)
+   write(*s)                     # 5 bytes
+
+   # with 'i': scanned and tagged, codepoint-aware
+   f := open("uio.dat", "ri") | stop("couldn't open for tagged read")
+   s := reads(f, 100)
+   close(f)
+   write(*s)                     # 4 codepoints
+   write(s[4])                   # é
+
+   remove("uio.dat")
+end

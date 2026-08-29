@@ -961,13 +961,24 @@ procedure normalizeLatexUnicode(s)
     local rest, pair, fromStr, toStr
     static uMap
     initial {
+        # Keys are char() bytes, not UTF-8 source literals: a uniqual
+        # key makes *fromStr a codepoint count, and move(*fromStr) then
+        # leaves leftover UTF-8 bytes in the subject.
         uMap := [
-            ["—", "---"], ["–", "--"], ["−", "-"], ["∗", "*"],
-            ["̃", "~"],  # U+0303 combining tilde (seen as broken ~=)
-            ["“", "``"], ["”", "''"],
-            ["‘", "`"], ["’", "'"],
-            # UTF-8 encodings of C1 controls U+0091..U+0094 (byte-wise
-            # Unicon builds); do not map bare char(0x9x) — that splits
+            [char(226) || char(128) || char(148), "---"],  # U+2014 em dash
+            [char(226) || char(128) || char(147), "--"],   # U+2013 en dash
+            [char(226) || char(136) || char(146), "-"],    # U+2212 minus
+            [char(226) || char(136) || char(151), "*"],    # U+2217 asterisk
+            [char(204) || char(131), "~"],                 # U+0303 tilde
+            [char(226) || char(128) || char(156), "``"],   # U+201C
+            [char(226) || char(128) || char(157), "''"],   # U+201D
+            [char(226) || char(128) || char(152), "`"],    # U+2018
+            [char(226) || char(128) || char(153), "'"],    # U+2019
+            [char(226) || char(128) || char(166), "..."],  # U+2026 ellipsis
+            [char(226) || char(134) || char(146), "->"],   # U+2192 arrow
+            [char(194) || char(169), "(c)"],              # U+00A9 copyright
+            # C1 controls U+0091..U+0094 as UTF-8 (byte-wise Unicon
+            # builds). Do not map bare char(0x9x): that splits
             # multi-byte UTF-8 sequences.
             [char(194) || char(147), "``"],
             [char(194) || char(148), "''"],

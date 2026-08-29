@@ -154,7 +154,7 @@ function{1} detab(s,i[n])
        * Start out assuming the result will be the same size as the argument.
        */
       Protect(StrLoc(result) = alcstr(NULL, StrLen(s)), runerr(0));
-      StrLen(result) = StrLen(s);
+      SetStrLen(result, StrLen(s));
 
       /*
        * Copy the string, expanding tabs.
@@ -194,7 +194,7 @@ function{1} detab(s,i[n])
                expand = target - col - 1;
                if (expand > 0) {
                   Protect(alcstr(NULL, expand), runerr(0));
-                  StrLen(result) += expand;
+                  SetStrLen(result, StrLen(result) + (expand));
                   }
                while (col < target) {
                   *out++ = ' ';
@@ -256,7 +256,7 @@ function{1} entab(s,i[n])
        *  if not all needed, or all of it if no tabs can be inserted.
        */
       Protect(StrLoc(result) = alcstr(NULL, StrLen(s)), runerr(0));
-      StrLen(result) = StrLen(s);
+      SetStrLen(result, StrLen(s));
 
       /*
        * Copy the string, looking for runs of spaces.
@@ -333,7 +333,7 @@ function{1} entab(s,i[n])
        */
       if (inserted) {
          long n;
-         StrLen(result) = DiffPtrs(out,StrLoc(result));
+         SetStrLen(result, DiffPtrs(out,StrLoc(result)));
          n = DiffPtrs(out,strfree);             /* note the deallocation */
          EVStrAlc(n);
          strtotal += n;
@@ -553,7 +553,7 @@ function{1} map(s1,s2,s3)
        * The result is a string the size of s1; create the result
        *  string, but specify no value for it.
        */
-      StrLen(result) = slen;
+      SetStrLen(result, slen);
       Protect(StrLoc(result) = alcstr(NULL, slen), runerr(0));
       str1 = StrLoc(s1);
       str2 = StrLoc(result);
@@ -632,8 +632,7 @@ function{1} repl(s,n)
        */
       Protect(resloc = alcstr(NULL, size), runerr(0));
 
-      StrLoc(result) = resloc;
-      StrLen(result) = size;
+      MakeStr(resloc, size, &result);
 
       /*
        * Fill the allocated area with copies of s.
@@ -691,11 +690,54 @@ function{1} reverse(x)
       register word slen;
 
       /*
+       * Unicon: a naive byte-reversal breaks a multi-byte codepoint's
+       * lead-byte/continuation-byte structure -- reversing "café"
+       * (bytes c,a,f,0xC3,0xA9) byte-for-byte produces 0xA9,0xC3,f,a,c,
+       * which is not valid UTF-8 (0xA9 is a continuation byte and
+       * cannot begin a sequence). Confirmed directly, not assumed: this
+       * was the actual, verified behavior before this fix. Reversing
+       * codepoint *order* while leaving each codepoint's own bytes in
+       * their original internal order fixes this. The result is built
+       * by walking the source forward, one codepoint at a time, and
+       * writing each into the result buffer working backward from the
+       * end -- so the first codepoint encountered ends up last, and its
+       * own bytes are copied as a unit, not reversed themselves.
+       */
+      if (IsUniQual(x)) {
+         unsigned char *uq_src = (unsigned char *)StrLoc(x);
+         word uq_slen = StrLen(x);
+         word uq_ncps, uq_spos, uq_dend;
+
+         if (CpCount(x) != CpCountSentinel)
+            uq_ncps = CpCount(x);
+         else
+            uq_scan(uq_src, uq_slen, &uq_ncps);
+
+         Protect(StrLoc(result) = alcstr(NULL, uq_slen), runerr(0));
+         SetStrLen(result, uq_slen);
+         SetUniQual(result);
+         if ((uword)uq_ncps <= CpCountMax)
+            SetCpCount(result, uq_ncps);
+
+         uq_spos = 0;
+         uq_dend = uq_slen;
+         while (uq_spos < uq_slen) {
+            int uq_w = uq_lead_width(uq_src[uq_spos]);
+            word uq_k;
+            uq_dend -= uq_w;
+            for (uq_k = 0; uq_k < uq_w; uq_k++)
+               StrLoc(result)[uq_dend + uq_k] = uq_src[uq_spos + uq_k];
+            uq_spos += uq_w;
+            }
+         return result;
+         }
+
+      /*
        * Allocate a copy of x.
        */
       slen = StrLen(x);
       Protect(StrLoc(result) = alcstr(StrLoc(x), slen), runerr(0));
-      StrLen(result) = slen;
+      SetStrLen(result, slen);
 
       /*
        * Point floc at the start of s and lloc at the end of s.  Work floc

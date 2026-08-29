@@ -72,8 +72,24 @@ operator{1} || cater(x, y)
        *   adjacent in memory; no allocation is required.
        */
       if (StrLoc(x) + StrLen(x) == StrLoc(y)) {
-         StrLoc(result) = StrLoc(x);
-         StrLen(result) = StrLen(x) + StrLen(y);
+         MakeStr(StrLoc(x), StrLen(x) + StrLen(y), &result);
+         if (IsUniQual(x) || IsUniQual(y)) {
+            SetUniQual(result);
+            /*
+             * cp_count propagation: an untagged operand is pure ASCII,
+             * so its own StrLen IS its codepoint count -- no sentinel
+             * concern there. A tagged operand contributes its cached
+             * CpCount if known, else the sum can't be trusted either.
+             */
+            {
+            word uq_xcnt = IsUniQual(x) ? CpCount(x) : StrLen(x);
+            word uq_ycnt = IsUniQual(y) ? CpCount(y) : StrLen(y);
+            int  uq_xok  = !IsUniQual(x) || (uq_xcnt != CpCountSentinel);
+            int  uq_yok  = !IsUniQual(y) || (uq_ycnt != CpCountSentinel);
+            if (uq_xok && uq_yok && (uword)(uq_xcnt + uq_ycnt) <= CpCountMax)
+               SetCpCount(result, uq_xcnt + uq_ycnt);
+            }
+            }
          return result;
          }
       else if ((StrLoc(x) + StrLen(x) == strfree) &&
@@ -90,9 +106,25 @@ operator{1} || cater(x, y)
           */
          Protect(alcstr(StrLoc(y),StrLen(y)), runerr(0));
          /*
-          *  Set the length of the result and return.
+          *  Set the length of the result and return. result already
+          *  carried x's tag via the whole-descriptor copy above, but
+          *  SetStrLen's full-dword overwrite (by design -- see
+          *  rmacros.h) clears it along with everything else, so it
+          *  has to be re-set here just like the other two paths, not
+          *  assumed to have survived the copy.
           */
-         StrLen(result) = StrLen(x) + StrLen(y);
+         SetStrLen(result, StrLen(x) + StrLen(y));
+         if (IsUniQual(x) || IsUniQual(y)) {
+            SetUniQual(result);
+            {
+            word uq_xcnt = IsUniQual(x) ? CpCount(x) : StrLen(x);
+            word uq_ycnt = IsUniQual(y) ? CpCount(y) : StrLen(y);
+            int  uq_xok  = !IsUniQual(x) || (uq_xcnt != CpCountSentinel);
+            int  uq_yok  = !IsUniQual(y) || (uq_ycnt != CpCountSentinel);
+            if (uq_xok && uq_yok && (uword)(uq_xcnt + uq_ycnt) <= CpCountMax)
+               SetCpCount(result, uq_xcnt + uq_ycnt);
+            }
+            }
          return result;
          }
 
@@ -107,7 +139,18 @@ operator{1} || cater(x, y)
       /*
        *  Set the length of the result and return.
        */
-      StrLen(result) = StrLen(x) + StrLen(y);
+      SetStrLen(result, StrLen(x) + StrLen(y));
+      if (IsUniQual(x) || IsUniQual(y)) {
+         SetUniQual(result);
+         {
+         word uq_xcnt = IsUniQual(x) ? CpCount(x) : StrLen(x);
+         word uq_ycnt = IsUniQual(y) ? CpCount(y) : StrLen(y);
+         int  uq_xok  = !IsUniQual(x) || (uq_xcnt != CpCountSentinel);
+         int  uq_yok  = !IsUniQual(y) || (uq_ycnt != CpCountSentinel);
+         if (uq_xok && uq_yok && (uword)(uq_xcnt + uq_ycnt) <= CpCountMax)
+            SetCpCount(result, uq_xcnt + uq_ycnt);
+         }
+         }
       return result;
       }
 

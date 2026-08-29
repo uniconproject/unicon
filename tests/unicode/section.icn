@@ -1,0 +1,18 @@
+# s[i:j] extract and assignment use codepoint bounds on a tagged string.
+
+procedure main()
+   s := "café naïve résumé"
+   write(s[1:5])
+   write(*s[1:5])
+   ascii_slice := s[1:4]
+   write(*ascii_slice)
+   v := "café naïve"
+   v[1:5] := "XYZ"
+   write(v, " ", *v)
+   # !s is one codepoint per trap. Replacing every character, including
+   # é, must keep *s as a codepoint count of the spliced result.
+   s := "café"
+   every !s := "X"
+   write(*s)
+   write(s)
+end

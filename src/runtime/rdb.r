@@ -157,8 +157,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
             return Failed;
             }
          if (colsize >= MAX_COL_NAME-1) printf("column name size exceeded\n");
-         StrLoc(fieldname[p]) = alcstr((char *) colname, colsize);
-         StrLen(fieldname[p]) = colsize;
+         MakeStr(alcstr((char *) colname, colsize), colsize, &fieldname[p]);
          }
       /* allocate record */
       fp->proc = dynrecord(&rectypename, fieldname, numcols);
@@ -256,7 +255,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
              return RunError;
              /* used to return Failed for strange types */
              }
-          StrLen(r->fields[p])=colsz>0?colsz:0;
+          SetStrLen(r->fields[p], colsz>0?colsz:0);
 
           /* copy buffer to column */
 
@@ -313,14 +312,13 @@ void odbcerror(struct ISQLFile *fp, int errornum)
    if (fp && (SQLError(ISQLEnv, fp->hdbc, fp->hstmt, SQLState, &NativeErr,
                        (SQLCHAR *) ErrMsg, SQL_MAX_MESSAGE_LENGTH-1, &ErrMsgLen) !=
               SQL_NO_DATA_FOUND)) {
-      StrLoc(k_errortext) = alcstr(ErrMsg, ErrMsgLen);
-      StrLen(k_errortext) = ErrMsgLen;
+      MakeStr(alcstr(ErrMsg, ErrMsgLen), ErrMsgLen, &k_errortext);
       }
    else {
       if (errornum - NOT_ODBC_FILE_ERR < sizeof(errmsg)/sizeof(char *))
          StrLoc(k_errortext)=errmsg[errornum-NOT_ODBC_FILE_ERR];
       else StrLoc(k_errortext) = "unidentified odbc error";
-      StrLen(k_errortext)=strlen(StrLoc(k_errortext));
+      SetStrLen(k_errortext, strlen(StrLoc(k_errortext)));
       }
 }
 

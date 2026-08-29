@@ -172,10 +172,33 @@ static void putglob(char *id, int id_type, int n_args)
 /*
  * putlit makes a constant symbol table entry and returns the table "index"
  *  of the constant.  alclit does the work if there is a collision.
+ *
+ * Unicon Phase 0: for a string literal (idtype == F_StrLit), scan its
+ * bytes once, here, at translate time -- id/len are already the final,
+ * decoded byte content (confirmed empirically: literals like "caf\xc3\xa9"
+ * already produce byte-correct UTF-8 in the compiled icode's string
+ * constant data by the time this whole translator/linker pipeline is
+ * done with them, and nothing between here and the icode file transforms
+ * the bytes themselves -- only length/flag bookkeeping happens). Tagging
+ * it here means the runtime (interp.r's Op_Str) never needs to scan this
+ * literal at all, not even once -- versus today, where every literal
+ * pays a scan on its own first execution. F_UniQualLit round-trips
+ * through the .u1 intermediate file via the existing octal flag
+ * mechanism (constout/Op_Con's getoct()) with zero format changes
+ * needed; see link.h/tsym.h for where it's defined.
  */
 int putlit(char *id, int idtype, int len)
    {
    register struct tcentry *ptr;
+
+   if (idtype == F_StrLit) {
+      register int uq_i;
+      for (uq_i = 0; uq_i < len; uq_i++)
+         if (((unsigned char *)id)[uq_i] >= 0x80) {
+            idtype |= F_UniQualLit;
+            break;
+            }
+      }
 
    if ((ptr = clookup(id,idtype)) == NULL) {   /* add to head of hash chain */
       ptr = chash[chasher(id)];

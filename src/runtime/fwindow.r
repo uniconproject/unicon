@@ -2358,7 +2358,7 @@ function{3} Pixel(argv[argc])
                if (slen != StrLen(lastval) ||
                      strncmp(strout, StrLoc(lastval), slen)) {
                   Protect((StrLoc(lastval) = alcstr(strout, slen)), runerr(0));
-                  StrLen(lastval) = slen;
+                  SetStrLen(lastval, slen);
                   }
 #if COMPILER
                suspend lastval;                /* memory leak on vanquish */
@@ -2781,7 +2781,7 @@ function{*} WAttrib(argv[argc])
                       stmp2 = stmp + StrLen(sbuf); stmp < stmp2; stmp++)
                      if (*stmp == '=') break;
                   if (stmp < stmp2)
-                     StrLen(sbuf) = stmp - StrLoc(sbuf);
+                     SetStrLen(sbuf, stmp - StrLoc(sbuf));
 #ifdef Graphics3D
                   if (is_texture) {
 
@@ -3358,8 +3358,7 @@ function{0,1} WinColorDialog(argv[argc])
       if (parsecolor(w, s, &r, &g, &b, &a) == Failed) fail;
 
       if (nativecolordialog(w, r, g, b, buf) == NULL) fail;
-      StrLoc(result) = alcstr(buf, strlen(buf));
-      StrLen(result) = strlen(buf);
+      MakeStr(alcstr(buf, strlen(buf)), strlen(buf), &result);
       return result;
       }
 end
@@ -3387,11 +3386,9 @@ function{0,2} WinFontDialog(argv[argc])
       parsefont(s, buf, &flags, &fheight, &t);
 
       if (nativefontdialog(w, buf, flags, fheight, colr) == Failed) fail;
-      StrLoc(result) = alcstr(buf, strlen(buf));
-      StrLen(result) = strlen(buf);
+      MakeStr(alcstr(buf, strlen(buf)), strlen(buf), &result);
       suspend result;
-      StrLoc(result) = alcstr(colr, strlen(colr));
-      StrLen(result) = strlen(colr);
+      MakeStr(alcstr(colr, strlen(colr)), strlen(colr), &result);
       return result;
       }
 end
@@ -3479,8 +3476,7 @@ function{0,1} WinOpenDialog(argv[argc])
       if ((tmpstr = nativefiledialog(w, s1, s2, s3, s4, i, j, 0)) == NULL)
          fail;
       len = strlen(tmpstr);
-      StrLoc(result) = tmpstr;
-      StrLen(result) = len;
+      MakeStr(tmpstr, len, &result);
       return result;
       }
 end
@@ -3542,8 +3538,7 @@ function{0,1} WinSelectDialog(argv[argc])
       if (tmpstr == NULL) fail;
       free(s2);
       len = strlen(tmpstr);
-      StrLoc(result) = alcstr(tmpstr, len);
-      StrLen(result) = len;
+      MakeStr(alcstr(tmpstr, len), len, &result);
       return result;
       }
 end
@@ -3629,8 +3624,7 @@ function{0,1} WinSaveDialog(argv[argc])
       if ((tmpstr = nativefiledialog(w, s1, s2, s3, s4, i, j, 1)) == NULL)
          fail;
       len = strlen(tmpstr);
-      StrLoc(result) = alcstr(tmpstr, len);
-      StrLen(result) = len;
+      MakeStr(alcstr(tmpstr, len), len, &result);
       return result;
       }
 end
@@ -4116,8 +4110,7 @@ function{1} Eye(argv[argc])
               wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx,
               wc->eyediry, wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
       len = strlen(abuf);
-      StrLoc(result) = alcstr(abuf, len);
-      StrLen(result) = len;
+      MakeStr(alcstr(abuf, len), len, &result);
       return result;
       }
 end

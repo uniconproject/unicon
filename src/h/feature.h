@@ -179,6 +179,10 @@
    Feature(1, "_SSL", "secure sockets layer encryption")
 #endif                  /* HAVE_LIBSSL */
 
+#ifdef UniconUnicode
+   Feature(1, "_UNICODE", "Unicode")
+#endif                  /* UniconUnicode */
+
 #ifdef HAVE_LIBSSH
    Feature(1, "_SSH", "secure shell")
 #endif                  /* HAVE_LIBSSH */

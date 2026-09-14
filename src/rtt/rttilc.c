@@ -575,6 +575,13 @@ static void ilc_walk(struct node *n, int may_mod, int const_cast)
                ilc_walk(n->u[0].child, 0, 0);
                ilc_str(")");
                break;
+            case Atomic:
+               /* _Atomic ( type-name ) */
+               ilc_tok(t);
+               ilc_str("(");
+               ilc_walk(n->u[0].child, 0, 0);
+               ilc_str(")");
+               break;
             case '{':
                /*
                 * initializer: { ... }

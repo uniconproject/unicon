@@ -1,0 +1,15 @@
+# s[i:j] sections of a long untagged ASCII string.
+$include "common.icn"
+
+procedure main(argv)
+   local n, s, i, sink, t0
+   n := iters(argv, 20000000)
+   s := ascii(10000)
+   sink := 0
+   t0 := stamp()
+   every i := 1 to n do
+      sink +:= *s[(i % 9000 + 1)+:100]
+   report_elapsed("slice", n, t0)
+   if sink <= 0 then
+      stop("checksum failed")
+end

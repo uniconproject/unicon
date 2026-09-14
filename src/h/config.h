@@ -780,6 +780,11 @@ Deliberate Syntax Error
    #define DescriptorDouble 1
 #endif                                  /* DescriptorDouble */
 
+/* Opt-in: ./configure --enable-unicode, or -DUniconUnicode. 64-bit only. */
+#if defined(UniconUnicode) && (WordBits != 64)
+   #undef UniconUnicode
+#endif                                  /* UniconUnicode */
+
 
 #ifndef NoPattern
    #define PatternType 1

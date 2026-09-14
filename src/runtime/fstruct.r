@@ -269,8 +269,7 @@ function{0,1} get_or_pop(x,i)
             tp_freeresp(mf->tp, mf->resp);
 
             Protect(reserve(Strings, msglen), runerr(0));
-            StrLen(result) = msglen;
-            StrLoc(result) = alcstr(NULL, msglen);
+            MakeStr(alcstr(NULL, msglen), msglen, &result);
 
             req.type = RETR;
             mf->resp = tp_sendreq(mf->tp, &req);
@@ -367,7 +366,7 @@ function{*} key(t)
                for (key = dbm_firstkey(db); key.dptr != NULL;
                     key = dbm_nextkey(db)) {
                   Protect(StrLoc(result) = alcstr(key.dptr, key.dsize),runerr(0));
-                  StrLen(result) = key.dsize;
+                  SetStrLen(result, key.dsize);
                   suspend result;
                   }
                fail;
@@ -386,12 +385,12 @@ function{*} key(t)
                      fail;
 
                   Protect(StrLoc(result) = alcstr("Status-Code", 11),runerr(0));
-                  StrLen(result) = 11;
+                  SetStrLen(result, 11);
                   suspend result;
 
                   if (mf->resp->msg != NULL && strlen(mf->resp->msg) > 0){
                      Protect(StrLoc(result) = alcstr("Reason-Phrase", 13),runerr(0));
-                     StrLen(result) = 13;
+                     SetStrLen(result, 13);
                      suspend result;
                      }
 
@@ -409,7 +408,7 @@ function{*} key(t)
 
                      end = strchr(field, ':');
                      Protect(StrLoc(result) = alcstr(field, end - field),runerr(0));
-                     StrLen(result) = end - field;
+                     SetStrLen(result, end - field);
                      suspend result;
                      }
                   fail;
@@ -905,8 +904,7 @@ function{0,1} classname(r)
          fail;
       recnm_end = strstr(recnm_bgn, ClsInstSuffix);
       if (recnm_end > recnm_bgn) {
-         StrLen(result) = recnm_end - recnm_bgn;
-         StrLoc(result) = recnm_bgn;
+         MakeStr(recnm_bgn, recnm_end - recnm_bgn, &result);
          return result;
          }
       else

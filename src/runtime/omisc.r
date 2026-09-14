@@ -66,6 +66,22 @@ operator{1} * size(x)
       }
    type_case x of {
       string: inline {
+#ifdef UniconUnicode
+         /*
+          * A tagged qualifier's size means codepoints, not bytes.
+          * Cached CpCount is O(1); otherwise walk with uq_scan.
+          */
+         if (IsUniQual(x)) {
+            word uq_cnt = CpCount(x);
+            if (uq_cnt != CpCountSentinel)
+               return C_integer uq_cnt;
+            {
+            word uq_ncps;
+            uq_scan((unsigned char *)StrLoc(x), StrLen(x), &uq_ncps);
+            return C_integer uq_ncps;
+            }
+            }
+#endif                                  /* UniconUnicode */
          return C_integer StrLen(x);
          }
       list: inline {
@@ -148,6 +164,43 @@ operator{1} * size(x)
          }
       }
 end
+
+
+#ifdef UniconUnicode
+"unicode(s) - treat s as Unicode text: tag the descriptor and cache a"
+" codepoint count if the UTF-8 bytes are non-ASCII. Same bytes, new view."
+" Pure ASCII is left untagged. Already tagged: fill in a missing count."
+
+function{1} unicode(s)
+
+   if !cnv:string(s) then
+      runerr(103, s)
+
+   abstract {
+      return string
+      }
+
+   body {
+      if (IsUniQual(s)) {
+         if (CpCount(s) == CpCountSentinel) {
+            word uq_ncps;
+            uq_scan((unsigned char *)StrLoc(s), StrLen(s), &uq_ncps);
+            if ((uword)uq_ncps <= CpCountMax)
+               SetCpCount(s, uq_ncps);
+            }
+         }
+      else {
+         word uq_ncps;
+         if (uq_scan((unsigned char *)StrLoc(s), StrLen(s), &uq_ncps)) {
+            SetUniQual(s);
+            if ((uword)uq_ncps <= CpCountMax)
+               SetCpCount(s, uq_ncps);
+            }
+         }
+      return s;
+      }
+end
+#endif                                  /* UniconUnicode */
 
 
 "=x - tab(match(x)).  Reverses effects if resumed."

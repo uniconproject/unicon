@@ -31,6 +31,47 @@ struct descrip {                /* descriptor */
       } vword;
    };
 
+#ifdef UniconUnicode
+/*
+ * Concat count helpers. They need a complete struct descrip, which
+ * rmacros.h does not have yet (rt.h includes rmacros.h first).
+ */
+static inline int uq_known_cps(struct descrip *d, word *out)
+   {
+   if (!IsUniQual(*d)) {
+      *out = StrLen(*d);
+      return 1;
+      }
+   if (CpCount(*d) != CpCountSentinel) {
+      *out = CpCount(*d);
+      return 1;
+      }
+   return 0;
+   }
+
+static inline void uq_concat_propagate(struct descrip *x, struct descrip *y,
+                                       struct descrip *result)
+   {
+   word xcnt = 0, ycnt = 0;
+   int xok, yok;
+   if (!IsUniQual(*x) && !IsUniQual(*y))
+      return;
+   SetUniQual(*result);
+   xok = uq_known_cps(x, &xcnt);
+   yok = uq_known_cps(y, &ycnt);
+   if (!xok && yok && StrLen(*x) <= UqConcatScanMax) {
+      uq_scan((unsigned char *)(x)->vword.sptr, StrLen(*x), &xcnt);
+      xok = 1;
+      }
+   else if (!yok && xok && StrLen(*y) <= UqConcatScanMax) {
+      uq_scan((unsigned char *)(y)->vword.sptr, StrLen(*y), &ycnt);
+      yok = 1;
+      }
+   if (xok && yok && (uword)(xcnt + ycnt) <= CpCountMax)
+      SetCpCount(*result, xcnt + ycnt);
+   }
+#endif                                  /* UniconUnicode */
+
 struct sdescrip {
    word length;                 /*   length of string */
    char *string;                /*   pointer to string */

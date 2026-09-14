@@ -1,0 +1,71 @@
+ASCII string microbenchmarks
+============================
+
+Measure the cost of Unicon string operations on **pure ASCII** (untagged)
+strings, with Unicode compiled **off** vs **on**.
+
+These are not pass/fail tests. Each program times one operation and prints
+a single line:
+
+    strascii.size  unicode=off  n=2000000  cpu_ms=42  wall_ms=43
+
+``cpu_ms`` is ``&time`` (CPU milliseconds). ``wall_ms`` is elapsed
+time from ``gettimeofday()``, the same pairing as ``tests/bench``.
+``unicode=on`` means this interpreter was built with ``--enable-unicode``
+(``Unicode`` is in ``&features``). The strings themselves are still ASCII,
+so the tagged UTF-8 paths should not run -- this is the tax on the
+historic string representation.
+
+Programs
+--------
+
+- ``size``         ``*s``
+- ``index``        ``s[i]`` (every character)
+- ``concat``       ``a || b`` (fixed operands)
+- ``concat-grow``  ``s ||:= piece`` (growing)
+- ``slice``        ``s[i:j]``
+- ``bang``         ``!s``
+- ``scan``         ``move(1)`` over ``&subject``
+- ``tab``          ``tab(&pos+1)`` over ``&subject``
+- ``find``         ``find(needle, haystack)``
+- ``match``        ``match(prefix, s)``
+- ``reverse``      ``reverse(s)``
+
+Optional first argument is the iteration count. Defaults are sized so
+each program runs several seconds (the whole suite about a minute),
+long enough that a few milliseconds of noise is a fraction of a
+percent rather than tens of percent.
+
+How to compare two builds
+-------------------------
+
+Build Unicon twice, into two prefixes (or sequentially, saving ``bin/``):
+
+    ./configure && make
+    # save bin/unicon and bin/iconx, or install to prefix A
+
+    ./configure --enable-unicode && make
+    # prefix B
+
+From this directory, using each interpreter in turn:
+
+    make clean
+    make UC=/path/to/off/unicon
+    make run UC=/path/to/off/unicon
+
+    make clean
+    make UC=/path/to/on/unicon
+    make run UC=/path/to/on/unicon
+
+Or without make:
+
+    unicon -s size.icn && ./size
+    ...
+
+Compare the ``cpu_ms=`` and ``wall_ms=`` values for the same program and
+the same ``n=``. Do not treat a single run as gospel; noise of a few
+percent is normal. The interesting result is whether ASCII-only work is
+slower when Unicode support is compiled in.
+
+Compare the ``ms=`` columns in UTR 25 section 10.2 after both builds
+have been timed with these defaults.

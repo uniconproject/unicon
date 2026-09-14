@@ -1,0 +1,16 @@
+# !s generation over an untagged ASCII string.
+$include "common.icn"
+
+procedure main(argv)
+   local n, s, c, sink, t0
+   n := iters(argv, 7000)
+   s := ascii(10000)
+   sink := 0
+   t0 := stamp()
+   every 1 to n do
+      every c := !s do
+         sink +:= ord(c)
+   report_elapsed("bang", n, t0)
+   if sink <= 0 then
+      stop("checksum failed")
+end

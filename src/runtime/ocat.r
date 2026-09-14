@@ -72,8 +72,10 @@ operator{1} || cater(x, y)
        *   adjacent in memory; no allocation is required.
        */
       if (StrLoc(x) + StrLen(x) == StrLoc(y)) {
-         StrLoc(result) = StrLoc(x);
-         StrLen(result) = StrLen(x) + StrLen(y);
+         MakeStr(StrLoc(x), StrLen(x) + StrLen(y), &result);
+#ifdef UniconUnicode
+         uq_concat_propagate(&x, &y, &result);  /* no-op if both untagged */
+#endif                                  /* UniconUnicode */
          return result;
          }
       else if ((StrLoc(x) + StrLen(x) == strfree) &&
@@ -90,9 +92,17 @@ operator{1} || cater(x, y)
           */
          Protect(alcstr(StrLoc(y),StrLen(y)), runerr(0));
          /*
-          *  Set the length of the result and return.
+          *  Set the length of the result and return. result already
+          *  carried x's tag via the whole-descriptor copy above, but
+          *  SetStrLen's full-dword overwrite (by design -- see
+          *  rmacros.h) clears it along with everything else, so it
+          *  has to be re-set here just like the other two paths, not
+          *  assumed to have survived the copy.
           */
-         StrLen(result) = StrLen(x) + StrLen(y);
+         SetStrLen(result, StrLen(x) + StrLen(y));
+#ifdef UniconUnicode
+         uq_concat_propagate(&x, &y, &result);  /* no-op if both untagged */
+#endif                                  /* UniconUnicode */
          return result;
          }
 
@@ -107,7 +117,10 @@ operator{1} || cater(x, y)
       /*
        *  Set the length of the result and return.
        */
-      StrLen(result) = StrLen(x) + StrLen(y);
+      SetStrLen(result, StrLen(x) + StrLen(y));
+#ifdef UniconUnicode
+      uq_concat_propagate(&x, &y, &result);  /* no-op if both untagged */
+#endif                                  /* UniconUnicode */
       return result;
       }
 

@@ -42,7 +42,9 @@
 #define Fs_Pipe         020     /* reading or writing on a pipe */
                                 /* see also: BPipe down below */
 
-/*                      040        this bit is now available */
+#ifdef UniconUnicode
+#define Fs_Unicode      040     /* tagged UTF-8 reads via open() "i" mode */
+#endif                                  /* UniconUnicode */
 
 #define Fs_Reading     0100     /* last file operation was read */
 #define Fs_Writing     0200     /* last file operation was write */
@@ -278,9 +280,97 @@
 #define Qual(d)         (!((d).dword & F_Nqual))
 
 /*
- * Length of string.
+ * Length of string. With UniconUnicode, the qualifier dword also holds
+ * F_UniQual and a cached codepoint count, so StrLen masks to the low
+ * 32 bits and is not an lvalue -- use SetStrLen. SetStrLen overwrites
+ * dword (does not preserve tag / cp_count). To retag: SetStrLen, then
+ * SetUniQual, then SetCpCount if needed.
+ *
+ * Without UniconUnicode, StrLen is the historic dword lvalue and
+ * SetStrLen is a plain store -- no mask.
  */
+#ifdef UniconUnicode
+#define StrLen(q)       ((q).dword & ByteLenMask)
+#define SetStrLen(q,n)  ((q).dword = ((uword)(n) & ByteLenMask))
+
+/* UTF-8-tagged qualifier; no-ops when F_UniQual is 0. */
+#define IsUniQual(d)    ((d).dword & F_UniQual)
+#define SetUniQual(d)   ((d).dword |= F_UniQual)
+
+/*
+ * Cached codepoint count on a tagged qualifier. CpCountSentinel means
+ * uncached -- walk and count. Call after SetStrLen/SetUniQual.
+ */
+#define CpCount(q)      (((q).dword & CpCountMask) >> CpCountShift)
+#define SetCpCount(q,n) \
+   ((q).dword = ((q).dword & ~CpCountMask) | \
+                (((uword)(n) << CpCountShift) & CpCountMask))
+
+/* Width of the UTF-8 character starting at this lead byte. */
+static inline int uq_lead_width(unsigned char b)
+   {
+   if ((b & 0x80) == 0) return 1;
+   if ((b & 0xE0) == 0xC0) return 2;
+   if ((b & 0xF0) == 0xE0) return 3;
+   if ((b & 0xF8) == 0xF0) return 4;
+   return 1;  /* malformed: lenient 1-byte fallback */
+   }
+
+/*
+ * Walk the buffer. Returns 1 if any multi-byte character was found.
+ * If out_ncps is non-NULL, *out_ncps gets the codepoint count.
+ */
+static inline int uq_scan(const unsigned char *bytes, word blen, word *out_ncps)
+   {
+   word bpos = 0, ncps = 0;
+   int tagged = 0;
+   while (bpos < blen) {
+      int w = uq_lead_width(bytes[bpos]);
+      if (w > 1) tagged = 1;
+      bpos += w;
+      ncps++;
+      }
+   if (out_ncps) *out_ncps = ncps;
+   return tagged;
+   }
+
+/*
+ * Byte offset where 0-based codepoint index target_cp begins.
+ */
+static inline word uq_seek_cp(const unsigned char *bytes, word target_cp)
+   {
+   word bpos = 0, cp = 0;
+   while (cp < target_cp) {
+      bpos += uq_lead_width(bytes[bpos]);
+      cp++;
+      }
+   return bpos;
+   }
+
+/* If the unknown side of a concat is this short, walk it rather than drop the known count. */
+#define UqConcatScanMax 4096
+
+/*
+ * Opt-in tagging for a just-read string, gated on Fs_Unicode (open "i").
+ * s is a struct descrip; status is the file status word.
+ */
+#define UqMaybeTagRead(s, status) \
+   do { \
+      if ((status) & Fs_Unicode) { \
+         word uq_ncps; \
+         if (uq_scan((unsigned char *)StrLoc(s), StrLen(s), &uq_ncps)) { \
+            SetUniQual(s); \
+            if ((uword)uq_ncps <= CpCountMax) SetCpCount(s, uq_ncps); \
+            } \
+         } \
+      } while (0)
+
+#else                                   /* UniconUnicode */
 #define StrLen(q)       ((q).dword)
+#define SetStrLen(q,n)  ((q).dword = (uword)(n))
+#define IsUniQual(d)    0
+#define UqMaybeTagRead(s, status) do { } while (0)
+#endif                                  /* UniconUnicode */
 
 /*
  * Location of first character of string.
@@ -291,7 +381,7 @@
  * Assign a C string to a descriptor. Assume it is reasonable to use the
  *   descriptor expression more than once, but not the string expression.
  */
-#define AsgnCStr(d,s) (StrLoc(d) = (s), StrLen(d) = strlen(StrLoc(d)))
+#define AsgnCStr(d,s) (StrLoc(d) = (s), SetStrLen(d, strlen(StrLoc(d))))
 
 /*
  * Type of descriptor.
@@ -432,7 +522,7 @@
  */
 #define MakeStr(s,len,dp)      do { \
                          StrLoc(*dp) = (s); \
-                         StrLen(*dp) = (len); \
+                         SetStrLen(*dp, (len)); \
                          } while (0)
 
 /*

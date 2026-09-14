@@ -792,6 +792,7 @@ enable_iconc
 enable_stdc
 enable_iconcurrency
 enable_ovld
+enable_unicode
 enable_udbtools
 enable_progs
 enable_verbosebuild
@@ -1480,6 +1481,7 @@ Optional Features:
   --disable-stdc          Disable the default std C compiler option
   --enable-iconcurrency   Enable thread support in Unicon Compiler
   --enable-ovld           Enable operator overloading
+  --enable-unicode        Native Unicode string support (64-bit)
   --enable-udbtools       Enable Unicon debugger tools
   --enable-progs          Enable Unicon programs
   --enable-verbosebuild   Show full CC build lines with all compiler arguments
@@ -3730,6 +3732,14 @@ then :
   enableval=$enable_ovld; ovld=yes
 else $as_nop
   ovld=no
+fi
+
+# Check whether --enable-unicode was given.
+if test ${enable_unicode+y}
+then :
+  enableval=$enable_unicode; unicode=$enableval
+else $as_nop
+  unicode=no
 fi
 
 
@@ -10129,6 +10139,12 @@ fi
 if test "x$ovld" = "xyes"; then
 
 printf "%s\n" "#define OVLD 1" >>confdefs.h
+
+fi
+
+if test "x$unicode" = "xyes" || test "x$unicode" = "xon" ; then
+
+printf "%s\n" "#define UniconUnicode 1" >>confdefs.h
 
 fi
 #AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
@@ -19667,6 +19683,12 @@ if test "x$ovld" = "xyes"  ||  test "x$ovld" = "xon" ; then
   echo " + Overloading" >> unicon-config.log
 else
   echo " ! Overloading" >> unicon-config.log
+fi
+
+if test "x$unicode" = "xyes" || test "x$unicode" = "xon" ; then
+  echo " + Unicode" >> unicon-config.log
+else
+  echo " ! Unicode" >> unicon-config.log
 fi
 
 cat unicon-config.log

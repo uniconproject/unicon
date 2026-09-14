@@ -74,6 +74,10 @@ be turned on by doing `--enable-FEATURE`, for example, to enable operator overlo
 ```
 ./configure --enable-ovld
 ```
+Native Unicode string support is also off by default (64-bit only):
+```
+./configure --enable-unicode
+```
 One other aspect to consider is that the configure script is opportunistic when it comes to turning on features.
 Features that are enabled by default will be disabled automatically if they are missing dependencies. If you want
 to change the behavior to make the configure script stop with an error instead of skipping a feature when its

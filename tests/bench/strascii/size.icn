@@ -1,0 +1,15 @@
+# *s on a long untagged ASCII string.
+$include "common.icn"
+
+procedure main(argv)
+   local n, s, i, sink, t0
+   n := iters(argv, 100000000)
+   s := ascii(100000)
+   sink := 0
+   t0 := stamp()
+   every i := 1 to n do
+      sink +:= *s
+   report_elapsed("size", n, t0)
+   if sink <= 0 then
+      stop("checksum failed")
+end

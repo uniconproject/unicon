@@ -1,0 +1,18 @@
+# Scanning: tab(&pos+1) across an untagged ASCII &subject.
+$include "common.icn"
+
+procedure main(argv)
+   local n, s, sink, t0
+   n := iters(argv, 13000)
+   s := ascii(5000)
+   sink := 0
+   t0 := stamp()
+   every 1 to n do
+      s ? {
+         while tab(&pos + 1) do
+            sink +:= 1
+         }
+   report_elapsed("tab", n, t0)
+   if sink <= 0 then
+      stop("checksum failed")
+end

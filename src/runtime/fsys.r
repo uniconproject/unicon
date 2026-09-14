@@ -774,6 +774,13 @@ Deliberate Syntax Error
                status &= ~Fs_Untrans;
                continue;
 
+#ifdef UniconUnicode
+            case 'i':
+            case 'I':
+               status |= Fs_Unicode;
+               continue;
+#endif                                  /* UniconUnicode */
+
             case '6':
 #if defined(PosixFns) || defined(Messaging)
               is_ipv6 = 1;
@@ -1106,8 +1113,7 @@ Deliberate Syntax Error
             else
                status |= Fs_Write;
 
-            StrLen(filename) = strlen(fnamestr);
-            StrLoc(filename) = fnamestr;
+            MakeStr(fnamestr, strlen(fnamestr), &filename);
             Protect(fl = alcfile(NULL, status, &filename), runerr(0));
             fl->fd.cf = cf;
             return file(fl);
@@ -1209,8 +1215,7 @@ Deliberate Syntax Error
                }
             }
 
-         StrLen(filename) = strlen(fnamestr);
-         StrLoc(filename) = fnamestr;
+         MakeStr(fnamestr, strlen(fnamestr), &filename);
          Protect(fl = alcfile(NULL, status, &filename), runerr(0));
          fl->fd.cf = cf;
          return file(fl);
@@ -1257,7 +1262,11 @@ Deliberate Syntax Error
                extern int Merror;
                if (do_verify != 0)
                   status |= Fs_Verify;
-               if (status & ~(Fs_Messaging|Fs_Read|Fs_Write|Fs_Untrans|Fs_Verify)) {
+               if (status & ~(Fs_Messaging|Fs_Read|Fs_Write|Fs_Untrans|Fs_Verify
+#ifdef UniconUnicode
+                              |Fs_Unicode
+#endif
+                             )) {
                   runerr(209, spec);
                   }
                else {
@@ -1562,8 +1571,7 @@ Deliberate Syntax Error
                }
             else if (sshf->chan != NULL)
                status |= Fs_Socket | Fs_Read | Fs_Write;
-            StrLen(filename) = strlen(fnamestr);
-            StrLoc(filename) = fnamestr;
+            MakeStr(fnamestr, strlen(fnamestr), &filename);
             Protect(fl = alcfile(0, status, &filename), runerr(0));
             fl->fd.sshf = sshf;
             fl->sock_gen = 0;
@@ -1583,6 +1591,9 @@ Deliberate Syntax Error
 
             /* The only allowed values for flags are "n" and "na" */
             if (status & ~(Fs_Read|Fs_Write|Fs_Socket|Fs_Append|Fs_Unbuf|Fs_Listen
+#ifdef UniconUnicode
+                          |Fs_Unicode
+#endif
 #if HAVE_LIBSSL
                           |Fs_Encrypt
 #endif                                  /* HAVE_LIBSSL */
@@ -1753,8 +1764,7 @@ Deliberate Syntax Error
              * image, which in the case of a socket means sock_name, which
              * assumes it is a C string. Preserve its C string-ness.
              */
-            StrLen(filename) = strlen(fnamestr)+1;
-            StrLoc(filename) = fnamestr;
+            MakeStr(fnamestr, strlen(fnamestr)+1, &filename);
             Protect(fl = alcfile(0, status, &filename), runerr(0));
 
 #if HAVE_LIBSSL
@@ -1828,8 +1838,7 @@ Deliberate Syntax Error
                     * yet another special case: the tmpfile must be linked
                     * in to a list in order to be closed/deleted.
                     */
-                   StrLen(filename) = strlen(fnamestr);
-                   StrLoc(filename) = fnamestr;
+                   MakeStr(fnamestr, strlen(fnamestr), &filename);
                    Protect(fl = alcfile(f, status, &filename), runerr(0));
                    Protect(flnk = alccons((union block *)fl), runerr(0));
                    flnk->next = (union block *)LstTmpFiles;
@@ -1845,8 +1854,7 @@ Deliberate Syntax Error
                    set_syserrortext(errno);
                    fail;
                    }
-                StrLen(filename) = strlen(fnamestr);
-                StrLoc(filename) = fnamestr;
+                MakeStr(fnamestr, strlen(fnamestr), &filename);
                 Protect(fl = alcfile(f, status, &filename), runerr(0));
 #ifdef Graphics
                 /*
@@ -1925,8 +1933,7 @@ Deliberate Syntax Error
       /*
        * Return the resulting file value.
        */
-      StrLen(filename) = strlen(fnamestr);
-      StrLoc(filename) = fnamestr;
+      MakeStr(fnamestr, strlen(fnamestr), &filename);
 
       Protect(fl = alcfile(f, status, &filename), runerr(0));
 
@@ -1989,7 +1996,7 @@ function{0,1} read(f)
          if (rc != 0) { set_errortext(rc); fail; }
          if (len == 0) fail;
          Protect(StrLoc(s) = alcstr(buf, len), runerr(0));
-         StrLen(s) = len;
+         SetStrLen(s, len);
          return s;
          }
 #endif                                  /* HAVE_LIBSSL */
@@ -2009,7 +2016,7 @@ function{0,1} read(f)
 #ifdef Concurrent
           MUTEX_LOCKID_CONTROLLED(BlkD(f,File)->mutexid);
 #endif                                  /* Concurrent */
-          StrLen(s) = 0;
+          SetStrLen(s, 0);
           do {
              DEC_NARTHREADS;
              if ((slen = sock_getstrg(sbuf, MaxReadStr, &f)) == -1) {
@@ -2041,19 +2048,20 @@ function{0,1} read(f)
              Protect(sptr = alcstr(sbuf,rlen), runerr(0));
              if (StrLen(s) == 0)
                 StrLoc(s) = sptr;
-             StrLen(s) += rlen;
-             if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { StrLen(s)--; break; }
+             SetStrLen(s, StrLen(s) + (rlen));
+             if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { SetStrLen(s, StrLen(s) - 1); break; }
              }
           while (slen > 0);
 
 #ifdef Concurrent
           MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
 #endif                                  /* Concurrent */
+         UqMaybeTagRead(s, status);
          return s;
           }
 #endif                                  /* HAVE_LIBSSH */
        if (status & Fs_Socket) {
-          StrLen(s) = 0;
+          SetStrLen(s, 0);
           do {
              DEC_NARTHREADS;
              if ((slen = sock_getstrg(sbuf, MaxReadStr, &f)) == -1) {
@@ -2083,14 +2091,15 @@ function{0,1} read(f)
              Protect(sptr = alcstr(sbuf,rlen), runerr(0));
              if (StrLen(s) == 0)
                 StrLoc(s) = sptr;
-             StrLen(s) += rlen;
-             if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { StrLen(s)--; break; }
+             SetStrLen(s, StrLen(s) + (rlen));
+             if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { SetStrLen(s, StrLen(s) - 1); break; }
              else {
                 /* no newline to trim; EOF? */
                 }
              }
           while (slen > 0);
 
+         UqMaybeTagRead(s, status);
          return s;
           }
 
@@ -2139,8 +2148,7 @@ function{0,1} read(f)
        * Use getstrg to read a line from the file, failing if getstrg
        *  encounters end of file. [[ What about -2?]]
        */
-      StrLen(s) = 0;
-      StrLoc(s) = "";
+      MakeStr("", 0, &s);
       do {
 
 #ifdef Graphics
@@ -2279,8 +2287,9 @@ function{0,1} read(f)
 
          if (StrLen(s) == 0)
             StrLoc(s) = sptr;
-         StrLen(s) += rlen;
+         SetStrLen(s, StrLen(s) + (rlen));
          } while (slen < 0);
+      UqMaybeTagRead(s, status);
       return s;
       }
 end
@@ -2349,14 +2358,14 @@ function{0,1} reads(f,i)
             if (rc != 0) { set_errortext(rc); fail; }
             if (len == 0) fail;
             Protect(StrLoc(s) = alcstr(buf, len), runerr(0));
-            StrLen(s) = len;
+            SetStrLen(s, len);
             return s;
             }
          rc = crypto_read(BlkD(f,File)->fd.cf, &buf, &len);
          if (rc != 0) { set_errortext(rc); fail; }
          if (len == 0) fail;
          Protect(StrLoc(s) = alcstr(buf, len), runerr(0));
-         StrLen(s) = len;
+         SetStrLen(s, len);
          return s;
          }
 #endif                                  /* HAVE_LIBSSL */
@@ -2368,8 +2377,7 @@ function{0,1} reads(f,i)
 
          Maxread = (unsigned)i <= MaxReadStr ? i : MaxReadStr;
 
-         StrLoc(s) = NULL;
-         StrLen(s) = 0;
+         MakeStr(NULL, 0, &s);
          if (!MFIN(mf, READING)) {
             Mstartreading(mf);
             }
@@ -2392,7 +2400,10 @@ function{0,1} reads(f,i)
                   }
                if (bytesread == 0)
                   fail;
-               else return s;
+               else {
+                  UqMaybeTagRead(s, status);
+                  return s;
+                  }
                }
             bytesread += slen;
             rlen = slen < 0 ? (word)MaxReadStr : slen;
@@ -2406,10 +2417,11 @@ function{0,1} reads(f,i)
             Protect(sptr = alcstr(sbuf, rlen), runerr(0));
             if (StrLen(s) == 0)
                StrLoc(s) = sptr;
-            StrLen(s) += rlen;
+            SetStrLen(s, StrLen(s) + (rlen));
 
             } while ((i == -1) || (bytesread < i));
 
+         UqMaybeTagRead(s, status);
          return s;
          }
 
@@ -2427,7 +2439,20 @@ function{0,1} reads(f,i)
             fail;
             }
          INC_NARTHREADS_CONTROLLED;
-         return string(slen, s);
+         {
+         /*
+          * UqMaybeTagRead needs a descriptor it can mutate. return
+          * string(p, n) builds the qualifier at the return site, so
+          * there is no value to tag afterwards. MakeStr here points
+          * at bytes already in string space -- no extra allocation.
+          * The result is tended because it is a qualifier into string
+          * space; local char *s shadows the outer descrip s.
+          */
+         tended struct descrip uq_result;
+         MakeStr(s, slen, &uq_result);
+         UqMaybeTagRead(uq_result, status);
+         return uq_result;
+         }
          }
       else
 #endif                                  /* PseudoPty */
@@ -2447,8 +2472,7 @@ function{0,1} reads(f,i)
 #endif                                  /* Concurrent */
             /* Casting to unsigned lets us use reads(f, -1) */
             Maxread = (unsigned)i <= MaxReadStr ? i : MaxReadStr;
-            StrLoc(s) = NULL;
-            StrLen(s) = 0;
+            MakeStr(NULL, 0, &s);
             do {
                if (bytesread > 0) {
                   if (i >= 0 && i - bytesread <= MaxReadStr)
@@ -2472,8 +2496,10 @@ function{0,1} reads(f,i)
 #endif                                  /* Concurrent */
                   if (bytesread == 0)
                      fail;              /* EOF with nothing read */
-                  else
+                  else {
+                     UqMaybeTagRead(s, status);
                      return s;
+                     }
                   }
                bytesread += got;
                rlen = got;
@@ -2485,11 +2511,12 @@ function{0,1} reads(f,i)
                Protect(sptr = alcstr(sbuf, rlen), runerr(0));
                if (StrLen(s) == 0)
                   StrLoc(s) = sptr;
-               StrLen(s) += rlen;
+               SetStrLen(s, StrLen(s) + (rlen));
                } while ((i == -1) || (bytesread < i));
 #ifdef Concurrent
             MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
 #endif                                  /* Concurrent */
+            UqMaybeTagRead(s, status);
             return s;
             }
 #endif                                  /* HAVE_LIBSSH */
@@ -2509,14 +2536,14 @@ function{0,1} reads(f,i)
                if (i < 0) {
                   /* reads(f, -1): concatenate until EOF */
                   tended struct descrip chunk;
-                  StrLen(s) = 0;
-                  StrLoc(s) = "";
+                  MakeStr("", 0, &s);
                   for (;;) {
                      DEC_NARTHREADS;
                      if (u_read(&f, MaxReadStr, status, &chunk) == 0) {
                         INC_NARTHREADS_CONTROLLED;
                         if (StrLen(s) == 0)
                            fail;
+                        UqMaybeTagRead(s, status);
                         return s;
                         }
                      INC_NARTHREADS_CONTROLLED;
@@ -2532,7 +2559,7 @@ function{0,1} reads(f,i)
                      else {
                         Protect(sptr = alcstr(StrLoc(chunk), StrLen(chunk)),
                                 runerr(0));
-                        StrLen(s) += StrLen(chunk);
+                        SetStrLen(s, StrLen(s) + (StrLen(chunk)));
                         }
                      }
                   }
@@ -2545,6 +2572,7 @@ function{0,1} reads(f,i)
                /* reads(f, 0): nonblocking; fail if nothing available */
                if (i == 0 && StrLen(s) == 0)
                   fail;
+               UqMaybeTagRead(s, status);
                return s;
                }
 #endif                                  /* HAVE_LIBSSH */
@@ -2552,7 +2580,7 @@ function{0,1} reads(f,i)
             if (status & Fs_SSH)
                MUTEX_LOCKID_CONTROLLED(BlkD(f,File)->mutexid);
 #endif                                  /* HAVE_LIBSSH && Concurrent */
-            StrLen(s) = 0;
+            SetStrLen(s, 0);
             Maxread = (i <= MaxReadStr)? i : MaxReadStr;
             do {
                if (bytesread > 0) {
@@ -2571,8 +2599,10 @@ function{0,1} reads(f,i)
 #endif                                  /* HAVE_LIBSSH && Concurrent */
                     if (bytesread == 0)
                         fail;
-                    else
+                    else {
+                        UqMaybeTagRead(s, status);
                         return s;
+                        }
                 }
                 INC_NARTHREADS_CONTROLLED;
                 if (slen == -3) {
@@ -2602,12 +2632,13 @@ function{0,1} reads(f,i)
                 Protect(sptr = alcstr(sbuf, rlen), runerr(0));
                 if (StrLen(s) == 0)
                     StrLoc(s) = sptr;
-                StrLen(s) += rlen;
+                SetStrLen(s, StrLen(s) + (rlen));
             } while ((i == -1) || (bytesread < i));
 #if HAVE_LIBSSH && defined(Concurrent)
             if (status & Fs_SSH)
                MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
 #endif                                  /* HAVE_LIBSSH && Concurrent */
+            UqMaybeTagRead(s, status);
             return s;
         }
 
@@ -2658,7 +2689,13 @@ function{0,1} reads(f,i)
             if (dlen > i)
                dlen = i;
             Protect(sptr = alcstr(dbuf, dlen), runerr(0));
-            return string(dlen, sptr);
+            {
+            /* Same as the pty reads() path: tag a named descriptor. */
+            tended struct descrip uq_result;
+            MakeStr(sptr, dlen, &uq_result);
+            UqMaybeTagRead(uq_result, status);
+            return uq_result;
+            }
             }
 #endif                                  /* HAVE_LIBSSH */
          DEC_NARTHREADS;
@@ -2672,7 +2709,18 @@ function{0,1} reads(f,i)
          if (nbytes > i)
             nbytes = i;
          Protect(sptr = alcstr(de->d_name, nbytes), runerr(0));
-         return string(nbytes, sptr);
+         {
+         /*
+          * Directory names are UTF-8 on most filesystems; tag on
+          * request like any other text. Same tended-descriptor reason
+          * as the pty reads() path: return string() cannot be tagged
+          * after the fact.
+          */
+         tended struct descrip uq_result;
+         MakeStr(sptr, nbytes, &uq_result);
+         UqMaybeTagRead(uq_result, status);
+         return uq_result;
+         }
          }
 #endif                                  /* ReadDirectory */
 
@@ -2711,6 +2759,7 @@ function{0,1} reads(f,i)
             fail;
             }
          INC_NARTHREADS_CONTROLLED;
+         UqMaybeTagRead(s, status);
          return s;
       }
 #endif                                  /* PosixFns */
@@ -2719,7 +2768,7 @@ function{0,1} reads(f,i)
        * For now, assume we can read the full number of bytes.
        */
       Protect(StrLoc(s) = alcstr(NULL, i), runerr(0));
-      StrLen(s) = 0;
+      SetStrLen(s, 0);
 
 #if HAVE_LIBZ
       /*
@@ -2740,7 +2789,9 @@ function{0,1} reads(f,i)
             }
          else if (slen < 0)
             runerr(214);
-         return string(slen, StrLoc(s));
+         SetStrLen(s, slen);
+         UqMaybeTagRead(s, status);
+         return s;
          }
 #endif                                  /* HAVE_LIBZ */
 
@@ -2767,7 +2818,16 @@ function{0,1} reads(f,i)
 
       if (tally == 0) /* EOF */
          fail;
-      StrLen(s) = tally;
+      SetStrLen(s, tally);
+      /*
+       * Unicode: explicit per-file opt-in, set via open()'s
+       * "i" mode char (Fs_Unicode). Not automatic -- every read() call
+       * paying a scan, even ones that never touch non-ASCII content,
+       * was benchmarked and rejected (readbench.c, design doc). status
+       * was already fetched at the top of this function; no extra
+       * lookup needed here.
+       */
+      UqMaybeTagRead(s, status);
       /*
        * We may not have used the entire amount of storage we reserved.
        */
@@ -3167,7 +3227,8 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
                      }
                   s++;
                   }
-               StrLen(d_stdout) = StrLen(d_stderr) = strlen(StrLoc(d_stdout));
+               SetStrLen(d_stderr, strlen(StrLoc(d_stdout)));
+               SetStrLen(d_stdout, StrLen(d_stderr));
                }
             else if ((s - cmdline > 0) && s[-1] == '2') { /* 2> */
                s[-1] = '\0';
@@ -3181,7 +3242,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
                      }
                   s++;
                   }
-               StrLen(d_stderr) = strlen(StrLoc(d_stderr));
+               SetStrLen(d_stderr, strlen(StrLoc(d_stderr)));
                if (!strcmp(StrLoc(d_stderr), "&1")) {
                   d_stderr = d_stdout;
                   }
@@ -3198,7 +3259,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
                      }
                   s++;
                   }
-               StrLen(d_stdout) = strlen(StrLoc(d_stdout));
+               SetStrLen(d_stdout, strlen(StrLoc(d_stdout)));
 
                d_stdout.dword = D_Integer;
                d_stdout.vword.integr =
@@ -3221,7 +3282,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
                      }
                   s++;
                   }
-               StrLen(d_stdout) = strlen(StrLoc(d_stdout));
+               SetStrLen(d_stdout, strlen(StrLoc(d_stdout)));
                }
             }
         }
@@ -4263,7 +4324,7 @@ function{0,1} chdir(s)
 
       len = strlen(path);
       Protect(StrLoc(result) = alcstr(path, len), runerr(0));
-      StrLen(result) = len;
+      SetStrLen(result, len);
       return result;
 
 #endif

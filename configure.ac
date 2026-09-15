@@ -741,6 +741,23 @@ AC_SEARCH_LIBS([getaddrinfo],[socket],
 AC_SEARCH_LIBS([crypt],[crypt],
 	[AC_DEFINE([HAVE_CRYPT], [1], [crypt])])
 
+# Linux network namespaces (unshare/setns CLONE_NEWNET). Linux-only; non-Linux
+# hosts get a clean runerr at first use rather than a build failure.
+AC_MSG_CHECKING([for Linux network namespace support])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#define _GNU_SOURCE
+#include <sched.h>
+#include <sys/mount.h>
+]], [[
+  unshare(CLONE_NEWNET);
+  setns(-1, CLONE_NEWNET);
+]])], [
+  AC_DEFINE([HAVE_NETNS], [1], [Linux network namespaces (unshare/setns)])
+  AC_MSG_RESULT([yes])
+], [
+  AC_MSG_RESULT([no])
+])
+
 if test "x$multiprograms" = "xno"; then
   AC_DEFINE([NoMultiProgram], [1], [No MultiProgram])
 fi

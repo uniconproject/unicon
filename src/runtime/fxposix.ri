@@ -1139,17 +1139,30 @@ function{0,1} pipe()
 end
 
 "fork() - spawn a new identical process."
+" Optional ns File joins that network namespace in the child before return."
 
 #if NT
 function{0} fork()
 #else                                   /* NT */
+#if HAVE_NETNS
+function{0,1} fork(ns)
+#else                                   /* HAVE_NETNS */
 function{0,1} fork()
+#endif                                  /* HAVE_NETNS */
 #endif                                  /* NT */
    abstract {
       return integer
       }
+#if HAVE_NETNS && !NT
+   if !is:null(ns) then
+      if !is:file(ns) then
+         runerr(105, ns)
+#endif                                  /* HAVE_NETNS && !NT */
    inline {
       int pid;
+#if HAVE_NETNS && !NT
+      struct NetnsFile *held = NULL;
+#endif                                  /* HAVE_NETNS && !NT */
 #if !ConcurrentCOMPILER
       CURTSTATE();
 #endif                                  /* ConcurrentCOMPILER */
@@ -1157,10 +1170,40 @@ function{0,1} fork()
 #if NT
       fail;
 #else                                   /* NT */
+#if HAVE_NETNS
+      if (!is:null(ns)) {
+#ifdef Concurrent
+         MUTEX_LOCKID_CONTROLLED(BlkD(ns,File)->mutexid);
+#endif                                  /* Concurrent */
+         if (!(BlkD(ns,File)->status & Fs_NETNS) ||
+             BlkD(ns,File)->fd.netns == NULL) {
+#ifdef Concurrent
+            MUTEX_UNLOCKID(BlkD(ns,File)->mutexid);
+#endif                                  /* Concurrent */
+            runerr(174, ns);
+            }
+         held = BlkD(ns,File)->fd.netns;
+         netns_hold(held);
+#ifdef Concurrent
+         MUTEX_UNLOCKID(BlkD(ns,File)->mutexid);
+#endif                                  /* Concurrent */
+         }
+#endif                                  /* HAVE_NETNS */
       if ((pid = fork()) < 0) {
+#if HAVE_NETNS
+         netns_release(held);
+#endif                                  /* HAVE_NETNS */
          IntVal(amperErrno) = errno;
          fail;
          }
+#if HAVE_NETNS
+      if (pid == 0 && held != NULL) {
+         if (netns_join(held) != 0)
+            _exit(126);
+         }
+      if (pid > 0)
+         netns_release(held);
+#endif                                  /* HAVE_NETNS */
       return C_integer pid;
 #endif                                  /* NT */
       }

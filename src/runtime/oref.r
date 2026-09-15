@@ -1069,6 +1069,31 @@ operator{0,1} [] subsc(underef x -> dx,y)
                   return result;
                   }
 #endif                                  /* HAVE_LIBSSH */
+#if HAVE_NETNS
+               if (status & Fs_NETNS) {
+                  struct NetnsFile *nsf;
+#ifdef Concurrent
+                  MUTEX_LOCKID_CONTROLLED(peek_mtx);
+#endif                                  /* Concurrent */
+                  status = BlkD(dx,File)->status;
+                  nsf = BlkD(dx,File)->fd.netns;
+                  if (nsf == NULL || (status & Fs_NETNS) == 0) {
+#ifdef Concurrent
+                     MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                     runerr(174, dx);
+                     }
+                  peek_rc = netns_peek(nsf, c_y, &result);
+#ifdef Concurrent
+                  MUTEX_UNLOCKID(peek_mtx);
+#endif                                  /* Concurrent */
+                  if (peek_rc == FILEPEEK_ERR)
+                     runerr(1336, y);
+                  if (peek_rc == FILEPEEK_FAIL)
+                     fail;
+                  return result;
+                  }
+#endif                                  /* HAVE_NETNS */
 #if HAVE_LIBSSL
                if ((status & Fs_Encrypt) && (status & Fs_Socket)) {
                   SSL *ssl;

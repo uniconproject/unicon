@@ -10102,6 +10102,46 @@ printf "%s\n" "#define HAVE_CRYPT 1" >>confdefs.h
 fi
 
 
+# Linux network namespaces (unshare/setns CLONE_NEWNET). Linux-only; non-Linux
+# hosts get a clean runerr at first use rather than a build failure.
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for Linux network namespace support" >&5
+printf %s "checking for Linux network namespace support... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define _GNU_SOURCE
+#include <sched.h>
+#include <sys/mount.h>
+
+int
+main (void)
+{
+
+  unshare(CLONE_NEWNET);
+  setns(-1, CLONE_NEWNET);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+
+
+printf "%s\n" "#define HAVE_NETNS 1" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+else $as_nop
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+
 if test "x$multiprograms" = "xno"; then
 
 printf "%s\n" "#define NoMultiProgram 1" >>confdefs.h

@@ -482,6 +482,10 @@ struct errtab errtab[] = {
    1335, "SFTP error",
 #endif                                  /* HAVE_LIBSSH */
 
+#if HAVE_NETNS
+   1336, "bad netns status field",
+#endif                                  /* HAVE_NETNS */
+
 /*
  * End of operating-system specific code.
  */

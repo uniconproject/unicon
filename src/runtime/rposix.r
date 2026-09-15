@@ -3377,9 +3377,13 @@ again:
      }
 
    fromlen = sizeof(from);
-   DEC_NARTHREADS;
+   /*
+    * Callers (open()) already DEC_NARTHREADS around sock_listen().
+    * A second decrement here made NARthreads negative when another
+    * thread was also unregistered (e.g. delay() in the TLS harness),
+    * so GC ran during accept() and collected live open() strings.
+    */
    if ((fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0) fd = 0;
-   INC_NARTHREADS_CONTROLLED;
 #if NT
    if (fd == 0 && errno == 0) {
       int wsa = WSAGetLastError();
@@ -6396,4 +6400,64 @@ struct b_list *findactivewindow(struct b_list *lws)
    return BlkD(d, List);
 }
 #endif                                  /* Graphics */
+
+#if HAVE_NETNS
+/*
+ * Create/join/release live in ../common/rnetns.c.  Status peek is here
+ * so it shares the filepeek table helpers with sockets and SSH.
+ */
+static int netnsg_name(void *h, dptr rv)
+{
+   struct NetnsFile *ns = (struct NetnsFile *)h;
+   word n;
+
+   if (ns == NULL || ns->name == NULL)
+      return FILEPEEK_FAIL;
+   n = (word)strlen(ns->name);
+   Protect(StrLoc(*rv) = alcstr(ns->name, n), return FILEPEEK_ERR);
+   StrLen(*rv) = n;
+   return FILEPEEK_OK;
+}
+
+static int netnsg_persist(void *h, dptr rv)
+{
+   return filepeek_yes(((struct NetnsFile *)h)->persist, rv);
+}
+
+static int netnsg_userns(void *h, dptr rv)
+{
+   return filepeek_yes(((struct NetnsFile *)h)->userns, rv);
+}
+
+static int netnsg_refcount(void *h, dptr rv)
+{
+   MakeInt(((struct NetnsFile *)h)->refcount, rv);
+   return FILEPEEK_OK;
+}
+
+static const struct filepeek_field netns_peek_tab[] = {
+   {"name",     netnsg_name},
+   {"persist",  netnsg_persist},
+   {"userns",   netnsg_userns},
+   {"refcount", netnsg_refcount},
+   {NULL, NULL}
+};
+
+int netns_peek(struct NetnsFile *ns, char *name, dptr rv)
+{
+   return filepeek_lookup(netns_peek_tab, ns, name, rv, 1336);
+}
+
+char *netns_peek_field(struct NetnsFile *ns, int i)
+{
+   (void)ns;
+   return filepeek_field_tab(netns_peek_tab, i);
+}
+
+int netns_peek_key_nth(struct NetnsFile *ns, int i, dptr key)
+{
+   return filepeek_key_nth_tab(netns_peek_tab, ns, i, key);
+}
+#endif                                  /* HAVE_NETNS */
+
 #endif                                  /* PosixFns */

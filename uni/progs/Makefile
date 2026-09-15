@@ -4,7 +4,7 @@ include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
 BINPROGS=ie uprof  umake 
 PROGS= idxGen uget splitmail csv genAcc heap_demo mapStrings rpn \
-	uping uigmp ussh $(BINPROGS)
+	uping uigmp ussh unettopo $(BINPROGS)
 
 all: $(PROGS)
 	$(CP) $(BINPROGS) ../../bin
@@ -54,6 +54,8 @@ uigmp: uigmp.icn
 ussh: ussh.icn
 	$(UNICON) $(UFLAGS) ussh
 
+unettopo: unettopo.icn
+	$(UNICON) $(UFLAGS) unettopo
+
 clean Clean:
 	@$(RM) $(PROGS) *.exe uniclass.pag uniclass.dir uniclass.db
-

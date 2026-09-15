@@ -69,8 +69,8 @@ class Server(
    end
 
    method handle_unsupported(msg)
-      Logger.debug1_kind("jrpc", "Unsupported request: ", image(msg.get_method()))
-      Logger.debug5_kind("jrpc", "Unsupported request: ", image(msg.get_content()))
+      Logger.debug1_kind("jrpc", "Unsupported request: ", ::image(msg.get_method()))
+      Logger.debug5_kind("jrpc", "Unsupported request: ", ::image(msg.get_content()))
       msg.make_error_response(-32601, "Method not found")
       jrpc_handler.send_msg(msg)
    end
@@ -98,13 +98,13 @@ class Server(
       jrpc_handler := JRPC_HTTPSocket(sock)
       repeat {
          if msg := jrpc_handler.get_msg() then {
-            #Logger.info("msg= ", image(msg.get_content()))
+            #Logger.info("msg= ", ::image(msg.get_content()))
             case msg.get_kind() of {
                "request" : handle_request(msg)
                "notification" : handle_notification(msg)
                default:
                   # we shouldn't get anything else, maybe?
-                   Logger.debug2_kind("lsp:jrpc:msg:" || msg.get_kind(), image(msg.get_content()))
+                   Logger.debug2_kind("lsp:jrpc:msg:" || msg.get_kind(), ::image(msg.get_content()))
             }
          }
          if \stoploop then {
@@ -170,13 +170,13 @@ class Server(
       if \(uri := request_params["textDocument"]["uri"]) then {
          # uri: file://<PATH>
          uri ? {
-            ="file://" | write(&errout, "unexpected uri:", uri)
-            fname := tab(0)
+            ="file://" | ::write(&errout, "unexpected uri:", uri)
+            fname := ::tab(0)
          }
 
-         if f := open(fname) then {
-            initial_file_contents := reads(f, -1)
-            close(f)
+         if f := ::open(fname) then {
+            initial_file_contents := ::reads(f, -1)
+            ::close(f)
          }
       }
       # Get rid of root / and change unicode encoded "%3A" back to ":" on Windows machines
@@ -197,7 +197,7 @@ class Server(
    method didClose(request_params)
       local uri
       uri := request_params["textDocument"]["uri"]
-      delete(openFiles, \uri)
+      ::delete(openFiles, \uri)
    end
 
 ########################################################
@@ -209,13 +209,13 @@ class Server(
       if \(uri := request_params["textDocument"]["uri"]) then {
          # uri: file://<PATH>
          uri ? {
-            ="file://" | write(&errout, "unexpected uri:", uri)
-            fname := tab(0)
+            ="file://" | ::write(&errout, "unexpected uri:", uri)
+            fname := ::tab(0)
          }
 
-         if f := open(fname) then {
-            initial_file_contents := reads(f, -1)
-            close(f)
+         if f := ::open(fname) then {
+            initial_file_contents := ::reads(f, -1)
+            ::close(f)
          }
       }
       # Get rid of root / and change unicode encoded "%3A" back to ":" on Windows machines
@@ -365,7 +365,7 @@ class Server(
    end
 
    method loadDB()
-      openFiles := table()
+      openFiles := ::table()
       lsp_database := LSPDB()
       lsp_database.build()
       completionHandler := CompletionHandler()
@@ -396,23 +396,23 @@ class Server(
       Logger.info("Starting Unicon LSP in ", mstring, " mode at ", port)
       # Retry a few times in case client/server starts a little late.
       every 1 to 5 do {
-         if sock := open(port, openopt) then
+         if sock := ::open(port, openopt) then
             break
          else {
             Logger.error("open(",port,") ERROR: ", \&errortext | "Unknown")
-            delay(1000)
+            ::delay(1000)
          }
       }
 
       if /sock then {
          Logger.crit("Failed to establish connection on: ", port)
-         exit(1)
+         ::exit(1)
       }
    end
 
    initially
       renewSymbols := 1
-      cacheSymbols := table()
+      cacheSymbols := ::table()
       \Logger | Logger(7) # default to informational
       Logger.info("Loading Database...")
       loadDB()

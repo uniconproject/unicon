@@ -274,8 +274,10 @@ class LSIFIndexer(
          "id" : ranID;
          "type" : "vertex";
          "label" : "range";
-         "start" : table("line", lineNum, "character", startCharNum);
-         "end" : table("line", lineNum, "character", endCharNum)
+         "start" : ["line" : lineNum; 
+                    "character" : startCharNum];
+         "end" : ["line" : lineNum; 
+                  "character" : endCharNum]
       ]
       write(outFile, tojson(lsif_table))
       return ranID
@@ -294,7 +296,8 @@ class LSIFIndexer(
          "id" : hoverID;
          "type" : "vertex";
          "label" : "hoverResult";
-         "result" : table("contents", [table("language", "unicon", "value", value)])
+         "result" : ["contents" : [["language" : "unicon"; 
+                                   "value" : value]]]
       ]
       write(outFile, tojson(lsif_table))
       lsif_table := [

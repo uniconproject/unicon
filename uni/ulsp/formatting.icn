@@ -41,42 +41,42 @@ class FormattingHandler(filehandler, params)
 
       while _line := filehandler.temp_idoc.getUniFileLine(filehandler.uri, lineNum) do {
          # Ignore structured Ivib comments
-         if match("### Ivib-v2 layout ##", _line) then
+         if ::match("### Ivib-v2 layout ##", _line) then
             structuredComment := 1
          if structuredComment = 1 then {
-            if match("#", _line) then {
+            if ::match("#", _line) then {
                lineNum +:= 1
                next
             } else
                structuredComment := 0
          }
 
-         trimmedLine := trim(_line)
+         trimmedLine := ::trim(_line)
          ch := trimmedLine[-1]
 
          # Fix any curly bracket issues
          if ch == "{" then {
             trimmedLine ? {
-               tab(many(" "))
+               ::tab(::many(" "))
                if trimmedLine[&pos] == "{" then {
-                  move(1)
-                  if not move(1) then {
+                  ::move(1)
+                  if not ::move(1) then {
                      previousLine := filehandler.temp_idoc.getUniFileLine(filehandler.uri, lineNum - 1)
-                     put(results_list, createResult(lineNum - 1, *previousLine, lineNum, *trimmedLine, " {"))
+                     ::put(results_list, createResult(lineNum - 1, *previousLine, lineNum, *trimmedLine, " {"))
                      lineNum +:= 1
                      next
                   }
                }
             }
          }
-         every position := find("{", trimmedLine) do {
+         every position := ::find("{", trimmedLine) do {
             if withinQuotes(trimmedLine, position) ~== 1 & trimmedLine[position - 1] ~== " " then
-               put(results_list, createResult(lineNum, position - 1, lineNum, position - 1, " "))
+               ::put(results_list, createResult(lineNum, position - 1, lineNum, position - 1, " "))
          }
 
          # Clear whitespace in line
          if structuredComment = 0 & \(result := clearTrailingWhitespace(_line, lineNum)) then
-            put(results_list, result)
+            ::put(results_list, result)
 
          # Ignore if the trimmed line is empty
          if *trimmedLine = 0 then {
@@ -86,25 +86,25 @@ class FormattingHandler(filehandler, params)
 
          # Get rid of any extra spaces
          if \(result := clearExtraSpaces(trimmedLine, lineNum)) then
-            every put(results_list, !result)
+            every ::put(results_list, !result)
 
          # Find closing blocks
          if ch == ("]" | ")") | (ch == ";" & trimmedLine[-2] == ("]" | ")")) then {
-            if not find(("[" | "("), trimmedLine) then
-               pop(open_blocks)
+            if not ::find(("[" | "("), trimmedLine) then
+               ::pop(open_blocks)
          }
 
          # Fix indentation as needed
          tabLevel := 0 + addedTabs + nextLineTab
          nextLineTab := 0
-         if match(("link" | "import"), trimmedLine) then {
+         if ::match(("link" | "import"), trimmedLine) then {
             tabLevel := 0
          } else {
-            if position := find(("then" | "else" | "do"), trimmedLine) then {
+            if position := ::find(("then" | "else" | "do"), trimmedLine) then {
                if trimmedLine[position - 1] == " " then {
                   trimmedLine ? {
                      &pos := position
-                     if tab(many(&letters)) == ("then" | "else" | "do") then {
+                     if ::tab(::many(&letters)) == ("then" | "else" | "do") then {
                         if &pos > *trimmedLine then nextLineTab := 1
                      }
                   }
@@ -117,11 +117,11 @@ class FormattingHandler(filehandler, params)
             every entry := !open_blocks do tabLevel +:= 1
          }
          if \(result := fixIndentation(trimmedLine, lineNum, tabSize * tabLevel)) then
-            put(results_list, result)
+            ::put(results_list, result)
 
          # Find open blocks
          if ch == ("[" | "(") then {
-            push(open_blocks, ch)
+            ::push(open_blocks, ch)
          }
 
          # Add extra tabs to following line for multi-line variables and strings
@@ -130,7 +130,7 @@ class FormattingHandler(filehandler, params)
          } else if addedTabs = 2 & ch ~== "," then
             addedTabs := 0
 
-         every result := !insertSpaces(trimmedLine, lineNum) do put(results_list, result)
+         every result := !insertSpaces(trimmedLine, lineNum) do ::put(results_list, result)
 
          lineNum +:= 1
       }
@@ -147,7 +147,7 @@ class FormattingHandler(filehandler, params)
    method clearTrailingWhitespace(_line, lineNum)
       local position, ch, spaces := 0
       _line ? {
-         while ch := move(1) do {
+         while ch := ::move(1) do {
             if ch == " " then {
                if spaces == 0 then
                   position := &pos - 2
@@ -174,7 +174,7 @@ class FormattingHandler(filehandler, params)
       correctSpaces := repl(" ", tabAmount)
       actualSpaces := 0
       _line ? {
-         while ch := move(1) do {
+         while ch := ::move(1) do {
             if ch == "#" then
                return
             if ch ~== " " then
@@ -200,74 +200,74 @@ class FormattingHandler(filehandler, params)
       charOps := ':=+-/*^%~<>?|-@'
 
       _line ? {
-         while tab(upto(charOps)) do {
+         while ::tab(::upto(charOps)) do {
             if withinQuotes(_line, &pos) = 0 then {
                case _line[&pos] of {
                   ":" : {
                      if _line[&pos - 1] ~== " " then {
                         cpos := &pos - 1
-                        if *tab(many(charOps)) > 1 then {
-                           put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
+                        if *::tab(::many(charOps)) > 1 then {
+                           ::put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
                            if _line[&pos] ~== " " then {
                               cpos := &pos - 1
                               if _line[&pos - 1] == "-" & _line[&pos - 2] == "=" then
                                  cpos -:= 1
-                              put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
+                              ::put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
                            }
                         } else
-                           tab(many(charOps))
+                           ::tab(::many(charOps))
                      } else {
-                        tab(many(charOps))
+                        ::tab(::many(charOps))
                         if _line[&pos] ~== " " then {
                            cpos := &pos - 1
                            if _line[&pos - 1] == "-" & _line[&pos - 2] == "=" then
                               cpos -:= 1
-                           put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
+                           ::put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
                         }
                      }
                   }
                   "@" : {
                      if \_line[&pos + 1] & _line[&pos + 1] == ">" then {
-                        put(res, createResult(lineNum, &pos - 1, lineNum, &pos - 1, " "))
-                        tab(many(charOps))
+                        ::put(res, createResult(lineNum, &pos - 1, lineNum, &pos - 1, " "))
+                        ::tab(::many(charOps))
                         if _line[&pos] ~== " " then {
                            cpos := &pos - 1
                            if _line[&pos - 1] == "-" & _line[&pos - 2] == "=" then
                               cpos -:= 1
-                           put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
+                           ::put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
                         }
                      } else
-                        tab(many(charOps))
+                        ::tab(::many(charOps))
                   }
                   "-" | "*" | "/" : {
                      if not (_line[&pos - 1] == (" " | "(" | "[")) then {
-                        put(res, createResult(lineNum, &pos - 1, lineNum, &pos - 1, " "))
-                        tab(many(charOps))
+                        ::put(res, createResult(lineNum, &pos - 1, lineNum, &pos - 1, " "))
+                        ::tab(::many(charOps))
                         if _line[&pos] ~== " " then {
                            cpos := &pos - 1
                            if _line[&pos - 1] == "-" & _line[&pos - 2] == "=" then
                               cpos -:= 1
-                           put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
+                           ::put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
                         }
                      } else
-                        tab(many(charOps))
+                        ::tab(::many(charOps))
                   }
                   default : {
                      if _line[&pos - 1] ~== " " then {
-                        put(res, createResult(lineNum, &pos - 1, lineNum, &pos - 1, " "))
-                        tab(many(charOps))
+                        ::put(res, createResult(lineNum, &pos - 1, lineNum, &pos - 1, " "))
+                        ::tab(::many(charOps))
                         if _line[&pos] ~== " " then {
                            cpos := &pos - 1
                            if _line[&pos - 1] == "-" & _line[&pos - 2] == "=" then
                               cpos -:= 1
-                           put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
+                           ::put(res, createResult(lineNum, cpos, lineNum, cpos, " "))
                         }
                      } else
-                        tab(many(charOps))
+                        ::tab(::many(charOps))
                   }
                }
             } else
-               tab(many(charOps))
+               ::tab(::many(charOps))
          }
       }
       return res
@@ -285,27 +285,27 @@ class FormattingHandler(filehandler, params)
 
       open_blocks := []
       _line ? {
-         tab(many(' \t'))
+         ::tab(::many(' \t'))
          leadingWhitespaceCount := &pos
          newLine := _line[&pos:0]
       }
       newLine ? {
-         while tab(upto(" ")) do {
+         while ::tab(::upto(" ")) do {
             open_blocks := 0
             position := &pos - 2
             if newLine[&pos - 1] == "(" then {
                open_blocks := 1
             }
-            ch := tab(many(' '))
+            ch := ::tab(::many(' '))
             if newLine[&pos] == "#" | withinQuotes(newLine, &pos) = 1 then
                next
             if newLine[&pos] == ("(" | ")") then {
                open_blocks := 1
             }
             if open_blocks = 1 then
-               put(results_list, createResult(lineNum, position + leadingWhitespaceCount, lineNum, &pos - 2 + leadingWhitespaceCount, ""))
+               ::put(results_list, createResult(lineNum, position + leadingWhitespaceCount, lineNum, &pos - 2 + leadingWhitespaceCount, ""))
             else if *ch > 1 then
-               put(results_list, createResult(lineNum, position + leadingWhitespaceCount, lineNum, &pos - 2 + leadingWhitespaceCount, " "))
+               ::put(results_list, createResult(lineNum, position + leadingWhitespaceCount, lineNum, &pos - 2 + leadingWhitespaceCount, " "))
          }
       }
       return results_list
@@ -324,7 +324,7 @@ class FormattingHandler(filehandler, params)
          single_quote := 0
          double_quote := 0
          while (&pos < position) do {
-            ch := move(1) | break
+            ch := ::move(1) | break
             if (ch == "\'" & (_line[&pos - 2] ~== "\\")) then
                single_quote +:= 1
             if (ch == "\"" & (_line[&pos - 2] ~== "\\")) then

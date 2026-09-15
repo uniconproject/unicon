@@ -28,10 +28,10 @@ class SymbolHandler(filehandler)
             results_list
       results_list := []
       pos_table := filehandler.getInternalPositions()
-      entity_table := table()
+      entity_table := ::table()
 
       # Get procedures from filehandler
-      every procedure_name := key(filehandler.getInternalProcedures()) do {
+      every procedure_name := ::key(filehandler.getInternalProcedures()) do {
          if \(procedure_table := pos_table["procedures"][procedure_name]) then {
             procedure_range := procedure_table["range"]
             procedure_selectionRange := procedure_table["selectionRange"]
@@ -50,12 +50,12 @@ class SymbolHandler(filehandler)
                []
             )
             entity_table[procedure_name] := proc_symbol
-            put(results_list, proc_symbol)
+            ::put(results_list, proc_symbol)
          }
       }
 
       # Get classes and their methods from filehandler
-      every class_name := key(filehandler.getInternalClasses()) do {
+      every class_name := ::key(filehandler.getInternalClasses()) do {
          if \(class_table := pos_table["classes"][class_name]) then {
             class_range := class_table["range"]
             class_selectionRange := class_table["selectionRange"]
@@ -76,7 +76,7 @@ class SymbolHandler(filehandler)
          }
 
          # Get methods inside classes from filehandler
-         every method_name := key(filehandler.getInternalClasses()[class_name]["methods"]) do {
+         every method_name := ::key(filehandler.getInternalClasses()[class_name]["methods"]) do {
             if \(method_table := pos_table["methods"][method_name]) then {
                method_range := method_table["range"]
                method_selectionRange := method_table["selectionRange"]
@@ -95,7 +95,7 @@ class SymbolHandler(filehandler)
                   []
                )
                entity_table[method_name] := method_symbol
-               put(class_symbol["children"], method_symbol)
+               ::put(class_symbol["children"], method_symbol)
             }
          }
 
@@ -118,14 +118,14 @@ class SymbolHandler(filehandler)
                []
             )
             entity_table["initially" || class_name] := method_symbol
-            put(class_symbol["children"], method_symbol)
+            ::put(class_symbol["children"], method_symbol)
          }
 
-         put(results_list, class_symbol)
+         ::put(results_list, class_symbol)
       }
 
       # Get variables from filehandler
-      every variable_name := key(filehandler.getVariables()) do {
+      every variable_name := ::key(filehandler.getVariables()) do {
          if \(variable_selectionRange := pos_table["variables"][variable_name]["selectionRange"]) then {
             sl := variable_selectionRange["start"][1]
             sc := variable_selectionRange["start"][2]
@@ -134,9 +134,9 @@ class SymbolHandler(filehandler)
             var_symbol := constructResult(variable_name, 13, sl, sc, el, ec, sl, sc, el, ec, [])
             parent := find_parent_entity(sl, sc, el, ec, entity_table)
             if \parent then {
-               put(parent["children"], var_symbol)
+               ::put(parent["children"], var_symbol)
             } else {
-               put(results_list, var_symbol)
+               ::put(results_list, var_symbol)
             }
          }
       }

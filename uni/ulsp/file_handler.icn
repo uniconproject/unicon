@@ -96,7 +96,7 @@ class FileHandler(
    end
 
    method deleteTempFile()
-      remove(temp_file)
+      ::remove(temp_file)
    end
 
 # -------------------------------------------------------------------------------------------------
@@ -110,15 +110,15 @@ class FileHandler(
       getFile() | fail
       links_w_ext := getFile().getLinkNames() | fail
       every link_w_ext := !links_w_ext do {
-         temp := reverse(link_w_ext)
+         temp := ::reverse(link_w_ext)
          temp ? {
-            move(4)
-            _link := tab(0)
-            _link := reverse(_link)
+            ::move(4)
+            _link := ::tab(0)
+            _link := ::reverse(_link)
          }
-         every pack := key(lsp_database.package_db) do {
-            if member(lsp_database.package_db[pack]["files"], _link) then
-               put(links, _link)
+         every pack := ::key(lsp_database.package_db) do {
+            if ::member(lsp_database.package_db[pack]["files"], _link) then
+               ::put(links, _link)
          }
       }
    end
@@ -136,8 +136,8 @@ class FileHandler(
       imports := []
       getFile() | fail
       every _import := !getFile().getImportNames() do {
-         if member(lsp_database.package_db, _import) then
-            put(imports, _import)
+         if ::member(lsp_database.package_db, _import) then
+            ::put(imports, _import)
       }
    end
 
@@ -154,11 +154,11 @@ class FileHandler(
       getFile() | fail
       if \getFile().getPackageName() then {
          _package := getFile().getPackageName()
-         if not member(lsp_database.package_db, _package) then {
+         if not ::member(lsp_database.package_db, _package) then {
             uri ? {
                &pos := 0
-               until uri[&pos] == "\/" | &pos = 1 do move(-1)
-               file_loc := tab(1)
+               until uri[&pos] == "\/" | &pos = 1 do ::move(-1)
+               file_loc := ::tab(1)
             }
             lsp_database.build_by_path(file_loc)
          }
@@ -175,11 +175,11 @@ class FileHandler(
 
    method setInternalProcedures()
       local _procedure, _param, paramName, paramType, paramDef
-      internal_procedures := table()
+      internal_procedures := ::table()
       getFile() | fail
       every _procedure := getFile().getProcedures().get() do {
          _procedure.setSrcFile(uri)
-         internal_procedures[_procedure.getName()] := table()
+         internal_procedures[_procedure.getName()] := ::table()
          internal_procedures[_procedure.getName()]["comments"] := makeComment(_procedure)
 
          internal_procedures[_procedure.getName()]["params"] := []
@@ -187,10 +187,10 @@ class FileHandler(
             paramName := _param.getName()
             paramType := _param.getTypeValue() | &null
             paramDef := _param.getDefValue() | &null
-            put(internal_procedures[_procedure.getName()]["params"], table(
-               "name", paramName,
-               "type", paramType,
-               "default", paramDef))
+            ::put(internal_procedures[_procedure.getName()]["params"], 
+                  ["name" : paramName;
+                   "type" : paramType;
+                   "default" : paramDef])
          }
 
          internal_procedures[_procedure.getName()]["source"] := uri
@@ -208,13 +208,13 @@ class FileHandler(
 
    method setLinkedProcedures()
       local _link, _key, _package
-      linked_procedures := table()
+      linked_procedures := ::table()
       every _link := !links do {
          if _link ~=== "class" then {
-            every _package := key(lsp_database.package_db) do {
-               if member(lsp_database.package_db[_package]["files"], _link) then {
-                  if member(lsp_database.package_db[_package]["files"][_link], "procedures") then {
-                     every _key := key(lsp_database.package_db[_package]["files"][_link]["procedures"]) do {
+            every _package := ::key(lsp_database.package_db) do {
+               if ::member(lsp_database.package_db[_package]["files"], _link) then {
+                  if ::member(lsp_database.package_db[_package]["files"][_link], "procedures") then {
+                     every _key := ::key(lsp_database.package_db[_package]["files"][_link]["procedures"]) do {
                         linked_procedures[_key] := lsp_database.package_db[_package]["files"][_link]["procedures"][_key]
                      }
                   }
@@ -234,10 +234,10 @@ class FileHandler(
 
    method setImportedProcedures()
       local _import, file_in_pack, _key
-      imported_procedures := table()
+      imported_procedures := ::table()
       every _import := !imports do {
          every file_in_pack := !lsp_database.package_db[_import]["files"] do {
-            every _key := key(file_in_pack["procedures"]) do {
+            every _key := ::key(file_in_pack["procedures"]) do {
                imported_procedures[_key] := file_in_pack["procedures"][_key]
                }
             }
@@ -254,10 +254,10 @@ class FileHandler(
 
    method setPackageProcedures()
       local file_in_pack, _key
-      package_procedures := table()
-      if member(lsp_database.package_db, _package) then {
+      package_procedures := ::table()
+      if ::member(lsp_database.package_db, _package) then {
          every file_in_pack := !lsp_database.package_db[_package]["files"] do {
-            every _key := key(file_in_pack["procedures"]) do {
+            every _key := ::key(file_in_pack["procedures"]) do {
                package_procedures[_key] := file_in_pack["procedures"][_key]
             }
          }
@@ -274,17 +274,17 @@ class FileHandler(
 
    method setInternalClasses()
       local _class, _method, _param, paramName, paramType, paramDef, constructor_param
-      internal_classes := table()
+      internal_classes := ::table()
       getFile() | fail
       every _class := getFile().getClasses().get() do {
          _class.setSrcFile(uri)
-         internal_classes[_class.getName()] := table()
+         internal_classes[_class.getName()] := ::table()
          internal_classes[_class.getName()]["source"] := uri
 
-         internal_classes[_class.getName()]["methods"] := table()
+         internal_classes[_class.getName()]["methods"] := ::table()
          every _method := _class.getMethods().get() do {
             _method.setSrcFile(uri)
-            internal_classes[_class.getName()]["methods"][_method.getName()] := table()
+            internal_classes[_class.getName()]["methods"][_method.getName()] := ::table()
             internal_classes[_class.getName()]["methods"][_method.getName()]["comments"] := makeComment(_method)
 
             internal_classes[_class.getName()]["methods"][_method.getName()]["params"] := []
@@ -292,10 +292,10 @@ class FileHandler(
                paramName := _param.getName()
                paramType := _param.getTypeValue() | &null
                paramDef := _param.getDefValue() | &null
-               put(internal_classes[_class.getName()]["methods"][_method.getName()]["params"], table(
-                  "name", paramName,
-                  "type", paramType,
-                  "default", paramDef))
+               ::put(internal_classes[_class.getName()]["methods"][_method.getName()]["params"], 
+                     ["name" : paramName;
+                      "type" : paramType;
+                      "default" : paramDef])
             }
 
             internal_classes[_class.getName()]["methods"][_method.getName()]["source"] := uri
@@ -306,13 +306,13 @@ class FileHandler(
             paramName := _param.getName()
             paramType := _param.getTypeValue() | &null
             paramDef := _param.getDefValue() | &null
-            put(internal_classes[_class.getName()]["attributes"], table(
-               "name", paramName,
-               "type", paramType,
-               "default", paramDef))
+            ::put(internal_classes[_class.getName()]["attributes"], 
+                  ["name" : paramName;
+                   "type" : paramType;
+                   "default" : paramDef])
          }
 
-         internal_classes[_class.getName()]["constructor"] := table()
+         internal_classes[_class.getName()]["constructor"] := ::table()
          internal_classes[_class.getName()]["constructor"]["name"] := _class.getConstructor().getName()
          internal_classes[_class.getName()]["constructor"]["comments"] := makeComment(_class)
          internal_classes[_class.getName()]["constructor"]["params"] := []
@@ -320,10 +320,10 @@ class FileHandler(
             paramName := constructor_param.getName()
             paramType := constructor_param.getTypeValue() | &null
             paramDef := constructor_param.getDefValue() | &null
-            put(internal_classes[_class.getName()]["constructor"]["params"], table(
-               "name", paramName,
-               "type", paramType,
-               "default", paramDef))
+            ::put(internal_classes[_class.getName()]["constructor"]["params"], 
+                  ["name" : paramName;
+                   "type" : paramType;
+                   "default" : paramDef])
          }
       }
    end
@@ -338,13 +338,13 @@ class FileHandler(
 
    method setLinkedClasses()
       local _link, _key, _package
-      linked_classes := table()
+      linked_classes := ::table()
       every _link := !links do {
          if _link ~=== "class" then {
-            every _package := key(lsp_database.package_db) do {
-               if member(lsp_database.package_db[_package]["files"], _link) then {
-                  if member(lsp_database.package_db[_package]["files"][_link], "classes") then {
-                     every _key := key(lsp_database.package_db[_package]["files"][_link]["classes"]) do {
+            every _package := ::key(lsp_database.package_db) do {
+               if ::member(lsp_database.package_db[_package]["files"], _link) then {
+                  if ::member(lsp_database.package_db[_package]["files"][_link], "classes") then {
+                     every _key := ::key(lsp_database.package_db[_package]["files"][_link]["classes"]) do {
                         linked_procedures[_key] := lsp_database.package_db[_package]["files"][_link]["classes"][_key]
                      }
                   }
@@ -364,10 +364,10 @@ class FileHandler(
 
    method setImportedClasses()
       local _import, file_in_pack, _key
-      imported_classes := table()
+      imported_classes := ::table()
       every _import := !imports do {
          every file_in_pack := !lsp_database.package_db[_import]["files"] do {
-            every _key := key(file_in_pack["classes"]) do {
+            every _key := ::key(file_in_pack["classes"]) do {
                imported_classes[_key] := file_in_pack["classes"][_key]
             }
          }
@@ -384,10 +384,10 @@ class FileHandler(
 
    method setPackageClasses()
       local file_in_pack, _key
-      package_classes := table()
-      if member(lsp_database.package_db, _package) then {
+      package_classes := ::table()
+      if ::member(lsp_database.package_db, _package) then {
          every file_in_pack := !lsp_database.package_db[_package]["files"] do {
-            every _key := key(file_in_pack["classes"]) do {
+            every _key := ::key(file_in_pack["classes"]) do {
                package_classes[_key] := file_in_pack["classes"][_key]
             }
          }
@@ -403,18 +403,18 @@ class FileHandler(
 # -------------------------------------------------------------------------------------------------
    method setObjects()
       local lineNum, _line, objectName, className
-      objects := table()
+      objects := ::table()
       lineNum := 1
       while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
          if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=[\ \t]*[a-zA-Z0-9_]+[(][a-zA-Z0-9_]*[)][\ \t]*$", _line) then {
             _line ? {
-               tab(many(' \t'))
-               objectName := tab(many(&digits ++ &letters ++ '-' ++ '_'))
-               tab(many(' \t'))
-               move(2)
-               tab(many(' \t'))
-               className := tab(upto("\("))
-               if member(linked_classes, className) | member(imported_classes, className) | member(internal_classes, className) | member(package_classes, className) then {
+               ::tab(::many(' \t'))
+               objectName := ::tab(::many(&digits ++ &letters ++ '-' ++ '_'))
+               ::tab(::many(' \t'))
+               ::move(2)
+               ::tab(::many(' \t'))
+               className := ::tab(::upto("\("))
+               if ::member(linked_classes, className) | ::member(imported_classes, className) | ::member(internal_classes, className) | ::member(package_classes, className) then {
                   objects[objectName] := className
                }
             }
@@ -434,45 +434,45 @@ class FileHandler(
 
    method setVariables()
       local f, _line, variableName, _content, globalName, lineNum
-      variables := table()
-      global_variables := table()
+      variables := ::table()
+      global_variables := ::table()
       lineNum := 1
       while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
          if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=", _line) then {
             _line ? {
-               tab(many(' \t'))
-               variableName := tab(many(identifiers))
-               tab(many(' \t'))
-               move(2)
-               tab(many(' \t'))
-               _content := tab(*_line + 1)
-               if not member(objects, variableName) then {
+               ::tab(::many(' \t'))
+               variableName := ::tab(::many(identifiers))
+               ::tab(::many(' \t'))
+               ::move(2)
+               ::tab(::many(' \t'))
+               _content := ::tab(*_line + 1)
+               if not ::member(objects, variableName) then {
                   variables[variableName] := _content
                }
             }
          }
          #if ReMatch("^[\ \t]*local", _line) then {
          #   _line ? {
-         #      tab(many(' \t'))
-         #      move(5)
-         #      tab(many(' \t'))
+         #      ::tab(::many(' \t'))
+         #      ::move(5)
+         #      ::tab(::many(' \t'))
          #      until &pos >= *_line do {
          #         temp_pos := &pos
-         #         if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=", tab(upto(,))) then {
+         #         if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=", ::tab(::upto(,))) then {
          #            &pos := temp_pos
-         #            variableName := tab(many(identifiers))
+         #            variableName := ::tab(::many(identifiers))
          #            variables[variableName] := "local declare"
-         #            tab(upto(,))
+         #            ::tab(::upto(,))
          #         }
          #      }
          #   }
          #}
          if ReMatch("^[\ \t]*global[\ \t]+[a-zA-Z0-9_]+", _line) then {
             _line ? {
-               tab(many(' \t'))
-               move(6)
-               tab(many(' \t'))
-               globalName := tab(many(identifiers))
+               ::tab(::many(' \t'))
+               ::move(6)
+               ::tab(::many(' \t'))
+               globalName := ::tab(::many(identifiers))
                global_variables[globalName] := ""
             }
          }
@@ -497,20 +497,20 @@ class FileHandler(
             open_blocks, ending, currentClass
 
       internal_positions := [
-         "classes" : table();
-         "procedures" : table();
-         "methods" : table();
-         "variables" : table();
-         "initially" : table()
+         "classes" : ::table();
+         "procedures" : ::table();
+         "methods" : ::table();
+         "variables" : ::table();
+         "initially" : ::table()
       ]
       open_blocks := []
 
       lineNum := 1
       while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
          # Check for procedures
-         every procedureName := key(internal_procedures) do {
+         every procedureName := ::key(internal_procedures) do {
             if ReMatch("^\\s*procedure\\s+" || procedureName || "\\s*\\(", _line) then {
-               startPos := find(procedureName, _line)
+               startPos := ::find(procedureName, _line)
                endPos := startPos + *procedureName - 1
                push(open_blocks, ["procedures", procedureName])
                internal_positions["procedures"][procedureName] := [
@@ -528,10 +528,10 @@ class FileHandler(
          }
 
          # Check for classes
-         every className := key(internal_classes) do {
+         every className := ::key(internal_classes) do {
             if ReMatch("^\\s*class\\s+" || className || ".*\\(", _line) then {
                currentClass := className
-               startPos := find(className, _line)
+               startPos := ::find(className, _line)
                endPos := startPos + *className - 1
                push(open_blocks, ["classes", className])
                internal_positions["classes"][className] := [
@@ -548,9 +548,9 @@ class FileHandler(
             }
 
             # Check for methods
-            every methodName := key(internal_classes[className]["methods"]) do {
+            every methodName := ::key(internal_classes[className]["methods"]) do {
                if ReMatch("^\\s*method\\s+" || methodName || "\\s*\\(", _line) then {
-                  startPos := find(methodName, _line)
+                  startPos := ::find(methodName, _line)
                   endPos := startPos + *methodName - 1
                   push(open_blocks, ["methods", methodName])
                   internal_positions["methods"][methodName] := [
@@ -570,7 +570,7 @@ class FileHandler(
 
          # Check for "initially" sections
          if ReMatch("^\\s*initially\\s*(\\(.*\\))?$", _line) then {
-            startPos := find("initially", _line)
+            startPos := ::find("initially", _line)
             endPos := startPos + 9
             push(open_blocks, ["initially", currentClass])
             internal_positions["initially"][currentClass] := [
@@ -589,10 +589,10 @@ class FileHandler(
          # Check for keyword "end"
          if ReMatch("^\\s*end\\s*$", _line) then {
             if *open_blocks > 0 then {
-               ending := pop(open_blocks)
+               ending := ::pop(open_blocks)
                if ending[1] == "initially" then {
                   internal_positions[ending[1]][ending[2]]["range"]["end"] := [lineNum-2, *temp_idoc.getUniFileLine(uri, lineNum-1)]
-                  ending := pop(open_blocks)
+                  ending := ::pop(open_blocks)
                   internal_positions[ending[1]][ending[2]]["range"]["end"] := [lineNum-1, *_line]
                } else {
                   internal_positions[ending[1]][ending[2]]["range"]["end"] := [lineNum-1, *_line]
@@ -601,17 +601,17 @@ class FileHandler(
          }
 
          # Check for variables
-         every variableName := key(variables) do {
+         every variableName := ::key(variables) do {
             if ReMatch("^\\s*" || variableName || "\\s*\\:=", _line) then {
-               startPos := find(variableName, _line)
+               startPos := ::find(variableName, _line)
                endPos := startPos + *variableName - 1
-               internal_positions["variables"][variableName] := table(
-                  "type", "variable",
-                  "selectionRange", table(
-                     "start", [lineNum-1, startPos-1],
-                     "end", [lineNum-1, endPos]
-                     )
-                  )
+               internal_positions["variables"][variableName] := [
+                  "type" : "variable";
+                  "selectionRange" : [
+                     "start" : [lineNum-1, startPos-1];
+                     "end" : [lineNum-1, endPos]
+                     ]
+                  ]
             }
          }
          lineNum +:= 1
@@ -659,47 +659,56 @@ class FileHandler(
       local className, class_method, class_attribute
       className := objects[objectName]
 
-      if member(linked_classes, className) then {
-         every class_method := key(linked_classes[className]["methods"]) do {
-            put(results_table["items"], table("label", class_method, "kind", 2))
+      if ::member(linked_classes, className) then {
+         every class_method := ::key(linked_classes[className]["methods"]) do {
+            ::put(results_table["items"], ["label" : class_method;
+                                           "kind" : 2])
          }
          every class_attribute := linked_classes[className]["attributes"][1 to *linked_classes[className]["attributes"]] do {
-            put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
+            ::put(results_table["items"], ["label" : class_attribute["name"];
+                                           "kind" : 5])
          }
       }
-      if member(imported_classes, className) then {
-         every class_method := key(imported_classes[className]["methods"]) do {
-            put(results_table["items"], table("label", class_method, "kind", 2))
+      if ::member(imported_classes, className) then {
+         every class_method := ::key(imported_classes[className]["methods"]) do {
+            ::put(results_table["items"], ["label" : class_method;
+                                           "kind" : 2])
          }
          every class_attribute := imported_classes[className]["attributes"][1 to *imported_classes[className]["attributes"]] do {
-            put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
+            ::put(results_table["items"], ["label" : class_attribute["name"];
+                                           "kind" : 5])
          }
       }
-      if member(internal_classes, className) then {
-         every class_method := key(internal_classes[className]["methods"]) do {
-            put(results_table["items"], table("label", class_method, "kind", 2))
+      if ::member(internal_classes, className) then {
+         every class_method := ::key(internal_classes[className]["methods"]) do {
+            ::put(results_table["items"], ["label" : class_method;
+                                           "kind" : 2])
          }
          every class_attribute := internal_classes[className]["attributes"][1 to *internal_classes[className]["attributes"]] do {
-            put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
+            ::put(results_table["items"], ["label" : class_attribute["name"];
+                                           "kind" : 5])
          }
       }
-      if member(package_classes, className) then {
-         every class_method := key(package_classes[className]["methods"]) do {
-            put(results_table["items"], table("label", class_method, "kind", 2))
+      if ::member(package_classes, className) then {
+         every class_method := ::key(package_classes[className]["methods"]) do {
+            ::put(results_table["items"], ["label" : class_method;
+                                           "kind" : 2])
          }
          every class_attribute := package_classes[className]["attributes"][1 to *package_classes[className]["attributes"]] do {
-            put(results_table["items"], table("label", class_attribute["name"], "kind", 5))
+            ::put(results_table["items"], ["label" : class_attribute["name"];
+                                           "kind" : 5])
          }
       }
    end
 
    method buildPackageConstructorItems(results_table, packageName)
       local _file, _class, _constructor
-      if member(lsp_database.package_db, packageName) then {
-         every _file := key(lsp_database.package_db[packageName]["files"]) do {
-            every _class := key(lsp_database.package_db[packageName]["files"][_file]["classes"]) do {
+      if ::member(lsp_database.package_db, packageName) then {
+         every _file := ::key(lsp_database.package_db[packageName]["files"]) do {
+            every _class := ::key(lsp_database.package_db[packageName]["files"][_file]["classes"]) do {
                _constructor := lsp_database.package_db[packageName]["files"][_file]["classes"][_class]["constructor"]
-               put(results_table["items"], table("label", _constructor["name"], "kind", 4))
+               ::put(results_table["items"], ["label" : _constructor["name"];
+                                              "kind" : 4])
             }
          }
       }
@@ -712,9 +721,9 @@ class FileHandler(
    method getFileNames()
       local pack, _file, _files
       _files := []
-      every pack := key(lsp_database.package_db) do {
-         every _file := key(lsp_database.package_db[pack]["files"]) do
-            put(_files, _file)
+      every pack := ::key(lsp_database.package_db) do {
+         every _file := ::key(lsp_database.package_db[pack]["files"]) do
+            ::put(_files, _file)
       }
       return _files
    end
@@ -745,22 +754,22 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
    method getObjectName()
       local temp, c, name
       line ? {
-         temp := tab(charNum)
-         while c := move(-1) do {
+         temp := ::tab(charNum)
+         while c := ::move(-1) do {
             if (c ** identifiers) ~== c then {
                break
             }
          }
 
          if ="." then {
-            move(-1)
-            while c := move(-1) do {
+            ::move(-1)
+            while c := ::move(-1) do {
                if (c ** identifiers) ~== c then {
-                  move(1)
+                  ::move(1)
                   break
                }
             }
-            name := tab(upto("."))
+            name := ::tab(::upto("."))
             return name
          }
       }
@@ -770,16 +779,16 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
    method getMethodName()
       local temp, c, _method
       line ? {
-         temp := tab(charNum)
-         while c := move(-1) do {
+         temp := ::tab(charNum)
+         while c := ::move(-1) do {
             if (c ** identifiers) ~== c then {
                break
             }
          }
 
-         if &pos ~= 1 then move(1)
+         if &pos ~= 1 then ::move(1)
 
-         _method := tab(upto("("))
+         _method := ::tab(::upto("("))
          return _method
       }
    end
@@ -820,19 +829,19 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
          double_quote := 0
          backslash_count := 0
          while (&pos < charNum) do {
-            ch := move(1) | break
+            ch := ::move(1) | break
             if ch == "\'" then {
                temppos := &pos
-               move(-1)
-               while move(-1) == "\\" do backslash_count +:= 1
+               ::move(-1)
+               while ::move(-1) == "\\" do backslash_count +:= 1
                if (backslash_count % 2) = 0 then single_quote +:= 1
                backslash_count := 0
                &pos := temppos
             }
             if ch == "\"" then {
                temppos := &pos
-               move(-1)
-               while move(-1) == "\\" do backslash_count +:= 1
+               ::move(-1)
+               while ::move(-1) == "\\" do backslash_count +:= 1
                if (backslash_count % 2) = 0 then double_quote +:= 1
                backslash_count := 0
                &pos := temppos
@@ -847,18 +856,18 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
       #-----------------------------------------------#
 
       line ? {
-         tab(charNum)
-         move(-2)
-         if move() == ":" & move() == ":" then {
-            move(-2)
+         ::tab(charNum)
+         ::move(-2)
+         if ::move() == ":" & ::move() == ":" then {
+            ::move(-2)
             temppos := &pos
-            while c := move(-1) do {
+            while c := ::move(-1) do {
                if (c ** identifiers) ~== c then {
                   break
                }
             }
-            if &pos ~= 1 then move(1)
-            packageName := tab(temppos)
+            if &pos ~= 1 then ::move(1)
+            packageName := ::tab(temppos)
             return "packdualcolon"
          }
       }
@@ -904,10 +913,10 @@ class Context(uniAll, uri, line, lineNum, charNum, objectName, methodName, conte
       line := getDesiredLine(lineNum)
       contextType := detectContextType()
       totalFileLines := 0
-      f := open(uri) | fail
-      if stat(uri).size > 0 then {
-         reads(f, stat(uri).size) ?
-            every upto('\n') do
+      f := ::open(uri) | fail
+      if ::stat(uri).size > 0 then {
+         ::reads(f, ::stat(uri).size) ?
+            every ::upto('\n') do
                totalFileLines +:= 1
       }
       f := close(f)
@@ -932,7 +941,7 @@ procedure makeComment(_function)
 
    every _param := _function.getParams().get() do {
       paramName := _param.getName()
-      put(paramList, paramName)
+      ::put(paramList, paramName)
    }
 
    every _comment := _function.getComments().get() do {
@@ -943,36 +952,36 @@ procedure makeComment(_function)
       every _line := _comment.get() do {
          _line := replace(_line, "\\n", "\\\\n")
 
-         if((find("<[", _line))) then
+         if((::find("<[", _line))) then
             insideComment := 1
-         if((find("]>", _line))) then
+         if((::find("]>", _line))) then
             insideComment := 0
 
-         if((find("<[", _line)) | (find("]>", _line))) then {
+         if((::find("<[", _line)) | (::find("]>", _line))) then {
 
-            if(find("param", _line)) then
-               paramPos := find("param", _line)
+            if(::find("param", _line)) then
+               paramPos := ::find("param", _line)
             else
                paramPos := 9999
 
-            if (find("returns", _line)) then
-               returnsPos := find("returns", _line)
+            if (::find("returns", _line)) then
+               returnsPos := ::find("returns", _line)
             else
                returnsPos := 9999
 
-            if (find("fails", _line)) then
-               failsPos := find("fails", _line)
+            if (::find("fails", _line)) then
+               failsPos := ::find("fails", _line)
             else
                failsPos := 9999
 
-            if (find("generates", _line)) then
-               genPos := find("generates", _line)
+            if (::find("generates", _line)) then
+               genPos := ::find("generates", _line)
             else
                genPos := 9999
 
-            firstKey := min(paramPos, returnsPos, failsPos, genPos)
+            firstKey := ::min(paramPos, returnsPos, failsPos, genPos)
 
-            if ((find("param", _line[firstKey:firstKey+5]) & (find("<[", _line)))) then {
+            if ((::find("param", _line[firstKey:firstKey+5]) & (::find("<[", _line)))) then {
                if \paramList then
                   _line := _line[1:firstKey+6] || "*" || _line[firstKey+6:firstKey+6+*paramList[paramCounter]] || "*:" || _line[firstKey+6+*paramList[paramCounter]:*_line+1]
 
@@ -986,7 +995,7 @@ procedure makeComment(_function)
                paramComment ||:= _line
                currentType := 1
             }
-            else if ((find("returns", _line[firstKey:firstKey+7]) & (find("<[", _line)))) then {
+            else if ((::find("returns", _line[firstKey:firstKey+7]) & (::find("<[", _line)))) then {
                if(returnCounter == 0) then {
                   _line := replace(_line[1:firstKey+7], "returns", "\n **Returns:**  \n " || tabCharacter) || _line[firstKey+8:0]
                   returnCounter +:= 1
@@ -997,7 +1006,7 @@ procedure makeComment(_function)
                returnComment ||:= _line
                currentType := 2
             }
-            else if ((find("fails", _line[firstKey:firstKey+5]) & (find("<[", _line)))) then {
+            else if ((::find("fails", _line[firstKey:firstKey+5]) & (::find("<[", _line)))) then {
                if(failsCounter == 0) then {
                   _line := replace(_line[1:firstKey+5], "fails", "\n **Fails:**  \n " || tabCharacter) || _line[firstKey+6:0]
                   failsCounter +:= 1
@@ -1008,7 +1017,7 @@ procedure makeComment(_function)
                failsComment ||:= _line
                currentType := 3
             }
-            else if ((find("generates", _line[firstKey:firstKey+9]) & (find("<[", _line)))) then {
+            else if ((::find("generates", _line[firstKey:firstKey+9]) & (::find("<[", _line)))) then {
                if(genCounter == 0) then {
                   _line := replace(_line[1:firstKey+9], "generates", "\n **Generates:**  \n " || tabCharacter) || _line[firstKey+10:0]
                   genCounter +:= 1

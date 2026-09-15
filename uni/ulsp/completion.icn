@@ -17,11 +17,11 @@ class CompletionHandler(
 
       # Check that params and position exist and are valid
       if /params then fail
-      if not member(params, "position") then fail
+      if not ::member(params, "position") then fail
       # Get position and verify it's not null before accessing its members
       if /(position := params["position"]) then fail
-      if not member(position, "line") then fail
-      if not member(position, "character") then fail
+      if not ::member(position, "line") then fail
+      if not ::member(position, "character") then fail
 
       line := position["line"] + 1
       character := position["character"] + 1
@@ -30,7 +30,7 @@ class CompletionHandler(
       desired_line := context.line
       _context := context.getCase()
 
-      results_table := table()
+      results_table := ::table()
       results_table["isComplete"] :=  "__true__"
       results_table["items"] := []
 
@@ -63,89 +63,101 @@ class CompletionHandler(
 
    method addBuiltInFunctionsCompletionItems(results_table)
       local _function
-      every _function := key(filehandler.getBuiltInFunctions()) do {
-         put(results_table["items"], table("label", _function, "kind", 3))
+      every _function := ::key(filehandler.getBuiltInFunctions()) do {
+         ::put(results_table["items"], ["label" : _function;
+                                        "kind"  : 3])
       }
    end
 
    method addActionWordsCompletionItems(results_table)
       local _actionWord
       every _actionWord := !filehandler.getActionWords() do {
-         put(results_table["items"], table("label", _actionWord))
+         ::put(results_table["items"], ["label" : _actionWord])
       }
    end
 
    method addDeclarativeExpressionsCompletionItems(results_table)
       local _declarativeExpression
       every _declarativeExpression := !filehandler.getDeclarativeExpressions() do {
-         put(results_table["items"], table("label", _declarativeExpression))
+         ::put(results_table["items"], ["label" : _declarativeExpression])
       }
    end
 
    method addSyntaxReservedWordsCompletionItems(results_table)
       local _syntaxReservedWord
       every _syntaxReservedWord := !filehandler.getSyntaxReservedWords() do {
-         put(results_table["items"], table("label", _syntaxReservedWord))
+         ::put(results_table["items"], ["label" : _syntaxReservedWord])
       }
    end
 
    method addKeywordsCompletionItems(results_table)
       local _keyword
       every _keyword := !filehandler.getKeywords() do {
-         put(results_table["items"], table("label", _keyword, "kind", 14))
+         ::put(results_table["items"], ["label" : _keyword; 
+                                        "kind"  : 14])
       }
    end
 
    method addPreprocessorCompletionItems(results_table)
       local _preprocessor
       every _preprocessor := !filehandler.getPreprocessors() do {
-         put(results_table["items"], table("label", _preprocessor))
+         ::put(results_table["items"], ["label" : _preprocessor])
       }
    end
 
    method addFileHandlerProcedures(results_table, filehandler)
       local _internalProcedure, _linkedProcedure, _importedProcedure, _packageProcedure
-      every _internalProcedure := key(filehandler.getInternalProcedures()) do {
-         put(results_table["items"], table("label", _internalProcedure, "kind", 3))
+      every _internalProcedure := ::key(filehandler.getInternalProcedures()) do {
+         ::put(results_table["items"], ["label" : _internalProcedure; 
+                                        "kind"  : 3])
       }
-      every _linkedProcedure := key(filehandler.getLinkedProcedures()) do {
-         put(results_table["items"], table("label", _linkedProcedure, "kind", 3))
+      every _linkedProcedure := ::key(filehandler.getLinkedProcedures()) do {
+         ::put(results_table["items"], ["label" : _linkedProcedure; 
+                                        "kind"  : 3])
       }
-      every _importedProcedure := key(filehandler.getImportedProcedures()) do {
-         put(results_table["items"], table("label", _importedProcedure, "kind", 3))
+      every _importedProcedure := ::key(filehandler.getImportedProcedures()) do {
+         ::put(results_table["items"], ["label" : _importedProcedure; 
+                                        "kind"  : 3])
       }
-      every _packageProcedure := key(filehandler.getPackageProcedures()) do {
-         put(results_table["items"], table("label", _packageProcedure, "kind", 3))
+      every _packageProcedure := ::key(filehandler.getPackageProcedures()) do {
+         ::put(results_table["items"], ["label" : _packageProcedure; 
+                                        "kind"  : 3])
       }
    end
 
    method addWordspaceClasses(results_table, filehandler)
       local _internalClass, _linkedClass, _importedClass, _packageClass
-      every _internalClass := key(filehandler.getInternalClasses()) do {
-         put(results_table["items"], table("label", _internalClass, "kind", 4))
+      every _internalClass := ::key(filehandler.getInternalClasses()) do {
+         ::put(results_table["items"], ["label" : _internalClass; 
+                                        "kind"  : 4])
       }
-      every _linkedClass := key(filehandler.getLinkedClasses()) do {
-         put(results_table["items"], table("label", _linkedClass, "kind", 4))
+      every _linkedClass := ::key(filehandler.getLinkedClasses()) do {
+         ::put(results_table["items"], ["label" : _linkedClass; 
+                                        "kind"  : 4])
       }
-      every _importedClass := key(filehandler.getImportedClasses()) do {
-         put(results_table["items"], table("label", _importedClass, "kind", 4))
+      every _importedClass := ::key(filehandler.getImportedClasses()) do {
+         ::put(results_table["items"], ["label" : _importedClass; 
+                                        "kind" : 4])
       }
-      every _packageClass := key(filehandler.getPackageClasses()) do {
-         put(results_table["items"], table("label", _packageClass, "kind", 4))
+      every _packageClass := ::key(filehandler.getPackageClasses()) do {
+         ::put(results_table["items"], ["label" : _packageClass; 
+                                        "kind"  : 4])
       }
    end
 
    method addInternalObjects(results_table, filehandler)
       local _object
-      every _object := key(filehandler.getObjects()) do {
-         put(results_table["items"], table("label", _object, "kind", 6))
+      every _object := ::key(filehandler.getObjects()) do {
+         ::put(results_table["items"], ["label" : _object; 
+                                        "kind"  : 6])
       }
    end
 
    method addInternalVariables(results_table, filehandler)
       local _variable
-      every _variable := key(filehandler.getVariables()) do {
-         put(results_table["items"], table("label", _variable, "kind", 6))
+      every _variable := ::key(filehandler.getVariables()) do {
+         ::put(results_table["items"], ["label" : _variable; 
+                                        "kind"  : 6])
       }
    end
 
@@ -165,15 +177,17 @@ class CompletionHandler(
    method addFileCompletionItems(results_table)
       local _file
       every _file := !filehandler.getFileNames() do {
-         put(results_table["items"], table("label", _file, "kind", 17))
+         ::put(results_table["items"], ["label" : _file; 
+                                        "kind"  : 17])
       }
    end
 
    method addPackageCompletionItems(results_table)
       local _package
-      every _package := key(filehandler.getPackages()) do {
+      every _package := ::key(filehandler.getPackages()) do {
          if _package === "(main)" then next
-         put(results_table["items"], table("label", _package, "kind", 12))
+         ::put(results_table["items"], ["label" : _package; 
+                                        "kind"  : 12])
       }
    end
 end

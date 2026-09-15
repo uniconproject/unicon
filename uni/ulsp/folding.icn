@@ -26,8 +26,8 @@ class FoldingRangeHandler(filehandler)
 
       results_list := []
 
-      every tokenKind := key(filehandler.internal_positions) do {
-         every tokenName := key(filehandler.internal_positions[tokenKind]) do {
+      every tokenKind := ::key(filehandler.internal_positions) do {
+         every tokenName := ::key(filehandler.internal_positions[tokenKind]) do {
             entry := filehandler.internal_positions[tokenKind][tokenName]
 
             if member(entry, "range") then {
@@ -36,10 +36,10 @@ class FoldingRangeHandler(filehandler)
 
                if tokenKind == "initially" then endLine+:=1
                if startLine < endLine then {
-                  put(results_list, table(
-                     "startLine", startLine,
-                     "endLine", endLine
-                  ))
+                  ::put(results_list, 
+                        ["startLine" : startLine;
+                         "endLine" : endLine
+                        ])
                }
             }
          }
@@ -70,10 +70,10 @@ class FoldingRangeHandler(filehandler)
             if commentBlock = 1 then commentLine := lineNum
          } else {
             if commentBlock > 1 then {
-               put(results_list, table(
-                  "startLine", commentLine-1,
-                  "endLine", lineNum-2
-               ))
+               ::put(results_list,
+                     ["startLine" : commentLine-1;
+                      "endLine" : lineNum-2
+                     ])
             }
             commentBlock := 0
             if ReMatch("^(link|import)\\s+.*", _line) then {
@@ -81,10 +81,10 @@ class FoldingRangeHandler(filehandler)
                if importBlock = 1 then importLine := lineNum
             } else {
                if importBlock > 1 then {
-                  put(results_list, table(
-                     "startLine", importLine-1,
-                     "endLine", lineNum-2
-                  ))
+                  ::put(results_list,
+                        ["startLine" : importLine-1;
+                         "endLine" : lineNum-2
+                        ])
                }
                importBlock := 0
             }
@@ -93,16 +93,16 @@ class FoldingRangeHandler(filehandler)
                   single_quote := 0
                   double_quote := 0
                   while (&pos < character) do {
-                     ch := move(1) | break
+                     ch := ::move(1) | break
                      if (ch == "\'" & (_line[&pos-2] ~== "\\")) then single_quote +:= 1
                      if (ch == "\"" & (_line[&pos-2] ~== "\\")) then double_quote +:= 1
                   }
                   if (single_quote % 2) = 0 & (double_quote % 2) = 0 then {
-                     startLine := pop(open_blocks)
-                     put(results_list, table(
-                        "startLine", startLine-1,
-                        "endLine", lineNum-2
-                     ))
+                     startLine := ::pop(open_blocks)
+                     ::put(results_list, 
+                           ["startLine" : startLine-1;
+                            "endLine" : lineNum-2
+                           ])
                   }
                }
             }
@@ -111,12 +111,12 @@ class FoldingRangeHandler(filehandler)
                   single_quote := 0
                   double_quote := 0
                   while (&pos < character) do {
-                     ch := move(1) | break
+                     ch := ::move(1) | break
                      if (ch == "\'" & (_line[&pos-2] ~== "\\")) then single_quote +:= 1
                      if (ch == "\"" & (_line[&pos-2] ~== "\\")) then double_quote +:= 1
                   }
                   if (single_quote % 2) = 0 & (double_quote % 2) = 0 then {
-                     push(open_blocks, lineNum)
+                     ::push(open_blocks, lineNum)
                   }
                }
             }

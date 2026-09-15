@@ -1,0 +1,11 @@
+# No __debug__ / __test__: assert/assert_not must preprocess away entirely
+# (see UTR #24 doc/utr/utr24.rst, section 7). These asserts would fail at
+# run time if they were left in, so reaching write() proves they were stripped.
+
+procedure main()
+   local x
+   x := 1
+   assert(x = 2)
+   assert_not(x = 1)
+   write("strip-ok")
+end

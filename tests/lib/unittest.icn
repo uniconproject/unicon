@@ -48,7 +48,7 @@ class TestTestSuite : TestCase(__testSuite)
       self.__testSuite.run()
       runtime := self.__testSuite.__testReporter.__summary.runtime
 
-      assert { 2.0 <= runtime & 3.0 > runtime }
+      assertSuccess { 2.0 <= runtime & 3.0 > runtime }
    end
 
    method testRunFailureTests()
@@ -72,7 +72,7 @@ class SimpleTest : TestCase()
    end
 
    method testAssert()
-      assert { 1 == 1 }
+      assertSuccess { 1 == 1 }
    end
 end
 
@@ -82,7 +82,7 @@ class SuccessTest : TestCase()
    end
 
    method testSuccessAssert()
-      assert { 1 == 1 }
+      assertSuccess { 1 == 1 }
    end
 end
 
@@ -106,10 +106,10 @@ class FailureTest : TestCase()
    end
 
    method testFailAssert()
-      assert { 0 == 9 }
-      assert { 0 ~= 0 }
-      assert { "Unicon" == "Icon" }
-      assert { "Unicon" ~== "Unicon" }
+      assertSuccess { 0 == 9 }
+      assertSuccess { 0 ~= 0 }
+      assertSuccess { "Unicon" == "Icon" }
+      assertSuccess { "Unicon" ~== "Unicon" }
    end
 end
 
@@ -173,8 +173,8 @@ class TestTestCase : TestCase(__calls)
    end
 
    method testAssert()
-      assert { 1 == 1 }
-      assert { "Unicon" == "Unicon" }
+      assertSuccess { 1 == 1 }
+      assertSuccess { "Unicon" == "Unicon" }
 
       self.__calls["tests"] +:= 1
    end

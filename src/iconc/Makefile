@@ -31,8 +31,10 @@ $(OBJS):	../h/config.h ../h/cpuconf.h ../h/cstructs.h ../h/define.h\
 	$(CMNT)@echo "   [ICONC] $<"
 	$(SLNT)$(CC) $(CFLAGS) $(CPPFLAGS) -c $<
 
-ccomp.o:	ccomp.c
-		$(CC) $(CFLAGS) $(CPPFLAGS) -DICONC_LIB="\"$(LIBS)\"" -c ccomp.c
+# ccomp_param.h is generated under UNICON_TOP_BUILDDIR (out-of-tree safe).
+ccomp.o:	ccomp.c $(UNICON_TOP_BUILDDIR)/src/iconc/ccomp_param.h
+		$(CC) $(CFLAGS) $(CPPFLAGS) -I$(UNICON_TOP_BUILDDIR)/src/iconc \
+			-DICONC_LIB="\"$(LIBS)\"" -c ccomp.c
 
 ccode.o:	../h/lexdef.h ctoken.h
 chkinv.o:	ctoken.h

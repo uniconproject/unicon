@@ -1,7 +1,7 @@
-/* gdbmreorg.c - Reorganize the database file. */
+/* gdbmcount.c - get number of items in a gdbm file. */
 
 /* This file is part of GDBM, the GNU data base manager.
-   Copyright (C) 1990-2025 Free Software Foundation, Inc.
+   Copyright (C) 1993-2025 Free Software Foundation, Inc.
 
    GDBM is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,21 +20,38 @@
 #include "autoconf.h"
 #include "gdbmdefs.h"
 
-/* Reorganize the database.  This requires creating a new file and inserting
-   all the elements in the old file DBF into the new file.  The new file
-   is then renamed to the same name as the old file and DBF is updated to
-   contain all the correct information about the new file.  If an error
-   is detected, the return value is negative.  The value zero is returned
-   after a successful reorganization. */
-
 int
-gdbm_reorganize (GDBM_FILE dbf)
+gdbm_count (GDBM_FILE dbf, gdbm_count_t *pcount)
 {
-  gdbm_recovery rcvr;
+  int nbuckets = GDBM_DIR_COUNT (dbf);
+  gdbm_count_t count = 0;
+  int i;
   
   /* Return immediately if the database needs recovery */	
   GDBM_ASSERT_CONSISTENCY (dbf, -1);
+  
+  for (i = 0; i < nbuckets; i = _gdbm_next_bucket_dir (dbf, i))
+    {
+      if (_gdbm_get_bucket (dbf, i))
+	return -1;
+      count += dbf->bucket->count;
+    }
+  *pcount = count;
+  return 0;
+}
 
-  rcvr.max_failures = 0;
-  return gdbm_recover (dbf, &rcvr, GDBM_RCVR_MAX_FAILURES|GDBM_RCVR_FORCE);
+int
+gdbm_bucket_count (GDBM_FILE dbf, size_t *pcount)
+{
+  int i;
+  size_t count = 0;
+  
+  GDBM_ASSERT_CONSISTENCY (dbf, -1);
+
+  for (i = 0; i < GDBM_DIR_COUNT (dbf); i = _gdbm_next_bucket_dir (dbf, i))
+    {
+      ++count;
+    }
+  *pcount = count;
+  return 0;
 }

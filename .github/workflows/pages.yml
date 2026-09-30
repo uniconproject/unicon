@@ -78,7 +78,13 @@ jobs:
     if: >-
       (
         github.event_name != 'workflow_run' ||
-        github.event.workflow_run.conclusion == 'success'
+        (
+          github.event.workflow_run.conclusion == 'success' &&
+          (
+            github.event.workflow_run.head_branch == 'master' ||
+            github.event.workflow_run.head_branch == 'main'
+          )
+        )
       ) &&
       (
         github.repository == 'uniconproject/unicon' ||
@@ -148,9 +154,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          # workflow_run carries the package run that just finished. Other events
-          # leave this empty and the script looks up the latest success on master.
-          PACKAGE_RUN_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || '' }}
+          # workflow_run carries the package run that just finished, and only when
+          # that run was on master or main. A manual dispatch from another branch
+          # must not publish here. Other events leave this empty and the script
+          # looks up the latest success on master.
+          PACKAGE_RUN_ID: ${{ github.event_name == 'workflow_run' && (github.event.workflow_run.head_branch == 'master' || github.event.workflow_run.head_branch == 'main') && github.event.workflow_run.id || '' }}
         run: |
           set -euo pipefail
           mkdir -p _site/downloads
@@ -270,16 +278,24 @@ jobs:
           retention-days: 3
 
   deploy-production:
-    # uniconproject: publish the master/main (or dispatch, or a completed Binary Packages
-    # run on master/main — that always fires from master per its own trigger) build via Pages.
+    # uniconproject: publish a master/main push, a manual dispatch, or a Binary Packages
+    # run whose head branch is master or main. workflow_run sets github.ref to the
+    # default branch even when the package run was started from somewhere else, so the
+    # triggering head branch has to be checked on its own.
     if: >-
       github.repository == 'uniconproject/unicon' &&
       github.event_name != 'pull_request' &&
       (
-        github.ref == 'refs/heads/master' ||
-        github.ref == 'refs/heads/main' ||
-        github.event_name == 'workflow_dispatch' ||
-        github.event_name == 'workflow_run'
+        github.event.workflow_run.head_branch == 'master' ||
+        github.event.workflow_run.head_branch == 'main' ||
+        (
+          github.event_name != 'workflow_run' &&
+          (
+            github.ref == 'refs/heads/master' ||
+            github.ref == 'refs/heads/main' ||
+            github.event_name == 'workflow_dispatch'
+          )
+        )
       )
     needs: build
     runs-on: ubuntu-latest

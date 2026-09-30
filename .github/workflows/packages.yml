@@ -159,13 +159,16 @@ jobs:
         export UNICON_PKG_REV="$base"
         unset UNICON_CONFIGURE_EXTRA
         make debin
-        mkdir -p debian-pkg
-        cp ../unicondist/unicon_*.deb debian-pkg/
+        # Keep the first packages outside the tree. The next make debin runs
+        # make dist, which archives the checkout.
+        mkdir -p "${RUNNER_TEMP}/debian-pkg"
+        cp ../unicondist/unicon_*.deb "${RUNNER_TEMP}/debian-pkg/"
         rm -rf ../unicondist
         export UNICON_PKG_REV="${base}.nographics"
         export UNICON_CONFIGURE_EXTRA=--disable-graphics
         make debin
-        mkdir -p debian-pkg-nographics
+        mkdir -p debian-pkg debian-pkg-nographics
+        cp "${RUNNER_TEMP}/debian-pkg/"*.deb debian-pkg/
         cp ../unicondist/unicon_*.deb debian-pkg-nographics/
 
     - name: Publish
@@ -251,13 +254,16 @@ jobs:
         export UNICON_PKG_REV="$base"
         unset UNICON_CONFIGURE_EXTRA
         make rpmbin
-        mkdir -p rpm-pkg
-        cp ../rpmbuild/RPMS/*/unicon-*.rpm rpm-pkg/
+        # Keep the first packages outside the tree. The next make rpmbin runs
+        # make dist, which archives the checkout.
+        mkdir -p "${RUNNER_TEMP}/rpm-pkg"
+        cp ../rpmbuild/RPMS/*/unicon-*.rpm "${RUNNER_TEMP}/rpm-pkg/"
         rm -rf ../rpmbuild
         export UNICON_PKG_REV="${base}.nographics"
         export UNICON_CONFIGURE_EXTRA=--disable-graphics
         make rpmbin
-        mkdir -p rpm-pkg-nographics
+        mkdir -p rpm-pkg rpm-pkg-nographics
+        cp "${RUNNER_TEMP}/rpm-pkg/"*.rpm rpm-pkg/
         cp ../rpmbuild/RPMS/*/unicon-*.rpm rpm-pkg-nographics/
 
     - name: Publish

@@ -88,7 +88,8 @@ aggregate-summary:
 	  echo "Result: $$res  ($$tp passed, $$tf failed, $$ts skipped) in $$tt seconds"; \
 	else \
 	  echo "Result: $$res  ($$tp passed, $$tf failed, $$ts skipped)"; \
-	fi
+	fi; \
+	if [ $$tf -ne 0 ]; then exit 1; fi
 
 # Per-suite diff reports only for suites with *.diff; then summary table + aggregate Result.
 Report:

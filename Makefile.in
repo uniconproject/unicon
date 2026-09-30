@@ -114,6 +114,9 @@ winbin WinInstaller:
 	@echo "#define AppRevision \""`$(TOPDIR)/config/scripts/version.sh "revision"`"\"" \
 		>> $(TOPDIR)/config/win32/gcc/unicon_version.iss
 	@echo "#define PATCHSTR \"$(PATCHSTR)\"" >> $(TOPDIR)/config/win32/gcc/unicon_version.iss
+	@if test -n "$(GRAPHICS)"; then \
+		echo "#define WithGraphics" >> $(TOPDIR)/config/win32/gcc/unicon_version.iss; \
+	fi
 	$(INNOSETUP) $(TOPDIR)/config/win32/gcc/unicon.iss
 
 

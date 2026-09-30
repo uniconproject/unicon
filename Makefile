@@ -300,6 +300,12 @@ install Install:
 	@$(INST) -m 644 $(TOPDIR)/ipl/gincl/*.icn $(DESTDIR)$(UIPL)/gincl
 	@$(INST) -m 644 $(TOPDIR)/ipl/mincl/*.icn $(DESTDIR)$(UIPL)/mincl
 	@$(INST) -m 644 $(TOPDIR)/ipl/procs/*.icn $(DESTDIR)$(UIPL)/procs
+#	libcfunc.so is built into bin/ for in-tree runs. Packaged iconx looks
+#	for it in the uniroot directory added to FPATH.
+	@if test -f "$(TOPDIR)/bin/libcfunc.so"; then \
+	  echo "Installing libcfunc.so to $(DESTDIR)$(ULROT)"; \
+	  $(INST) $(TOPDIR)/bin/libcfunc.so $(DESTDIR)$(ULROT)/libcfunc.so; \
+	fi
 #	install unicon/uni
 	@for d in $(Udirs); do \
 	  echo "Installing uni/$$d to $(DESTDIR)$(ULB)/$$d ..."; \
@@ -436,11 +442,15 @@ rpm: dist
 # UNICON_CONFIGURE_EXTRA is passed to ./configure (for example --disable-graphics).
 # An empty configure_extra define is an rpmbuild error, so omit it unless set.
 RPM_WITH_GRAPHICS=$(if $(findstring --disable-graphics,$(UNICON_CONFIGURE_EXTRA)),0,1)
+# autoconf accepts --disable-plugins and --enable-plugins=no. Both turn the
+# library off. Match whole words so --disable-plugins=yes is not treated as off.
+RPM_WITH_PLUGINS=$(if $(filter --disable-plugins --disable-plugins=no --enable-plugins=no,$(UNICON_CONFIGURE_EXTRA)),0,1)
 RPM_DEFINES=--define "ver $(PKG_BUILDVER)" \
 	--define "tarball $(UTAR)" \
 	--define "_topdir $(RPM_TOPDIR)" \
 	$(if $(UNICON_CONFIGURE_EXTRA),--define "configure_extra $(UNICON_CONFIGURE_EXTRA)") \
-	--define "with_graphics $(RPM_WITH_GRAPHICS)"
+	--define "with_graphics $(RPM_WITH_GRAPHICS)" \
+	$(if $(filter 0,$(RPM_WITH_PLUGINS)),--without plugins)
 
 rpmbin: rpm
 	cd $(RPM_TOPDIR)/SPECS && rpmbuild -ba $(RPM_DEFINES) unicon.spec

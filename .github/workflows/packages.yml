@@ -170,6 +170,10 @@ jobs:
         mkdir -p debian-pkg debian-pkg-nographics
         cp "${RUNNER_TEMP}/debian-pkg/"*.deb debian-pkg/
         cp ../unicondist/unicon_*.deb debian-pkg-nographics/
+        # Installed ucode links libraries by the absolute path they were
+        # compiled at. Drop the build tree before make Test so those paths
+        # miss and the linker uses the installed copies.
+        rm -rf ../unicondist
 
     - name: Publish
       uses: actions/upload-artifact@v6
@@ -265,6 +269,11 @@ jobs:
         mkdir -p rpm-pkg rpm-pkg-nographics
         cp "${RUNNER_TEMP}/rpm-pkg/"*.rpm rpm-pkg/
         cp ../rpmbuild/RPMS/*/unicon-*.rpm rpm-pkg-nographics/
+        # %autosetup -n unicon uses BUILD/unicon for both packages, so the
+        # graphics ucode's absolute links point at this nographics rebuild.
+        # make Test then links two compilations of the same modules
+        # (inconsistent redeclaration). The rpms are already copied out.
+        rm -rf ../rpmbuild
 
     - name: Publish
       uses: actions/upload-artifact@v6

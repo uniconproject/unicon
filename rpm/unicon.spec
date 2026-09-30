@@ -8,6 +8,11 @@ Name:    unicon
 %{!?tarball: %define tarball unicon_%{ver}.tar.gz}
 # make rpmbin sets with_graphics to 0 for a --disable-graphics build.
 %{!?with_graphics: %define with_graphics 1}
+# libcfunc.so is built unless plugins are turned off. Any of these does that:
+#   rpmbuild --without plugins
+#   make rpmbin with --disable-plugins or --enable-plugins=no
+#     (the Makefile passes --without plugins)
+%bcond_without plugins
 Version: %{ver}
 Release: 1%{?dist}
 Summary: The Unicon Programming Language
@@ -63,7 +68,12 @@ unset CFLAGS
 unset CXXFLAGS
 unset LDFLAGS
 unset RPM_OPT_FLAGS
+# with_plugins is 0 or 1, so a bare %{!?with_plugins} test does not work.
+%if %{with plugins}
 ./configure --prefix=/usr --bindir=%{_bindir} --libdir=%{_libdir} --mandir=%{_mandir} --docdir=%{_docdir}/%{name} %{?configure_extra}
+%else
+./configure --prefix=/usr --bindir=%{_bindir} --libdir=%{_libdir} --mandir=%{_mandir} --docdir=%{_docdir}/%{name} %{?configure_extra} --disable-plugins
+%endif
 make -j8
 
 %install
@@ -97,7 +107,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/iyacc
 %{_bindir}/patchstr
 %{_libdir}/unicon/rt
+# Absent when this package was built with --without plugins.
+%if %{with plugins}
 %{_libdir}/unicon/libcfunc.so
+%endif
 %{_libdir}/unicon/ipl/lib/*.u
 %{_libdir}/unicon/ipl/incl/*.icn
 %{_libdir}/unicon/ipl/gincl/*.icn

@@ -822,7 +822,6 @@ int checkOpenConsole( FILE *w, char *s );
       HFONT mkfont              (char *s, char is_3D);
       int sysTextWidth          (wbp w, char *s, int n);
       int sysFontHeight         (wbp w);
-      int mswinsystem           (char *s);
       void UpdateCursorPos      (wsp ws, wcp wc);
       LRESULT_CALLBACK WndProc  (HWND, UINT, WPARAM, LPARAM);
       HDC CreateWinDC           (wbp);
@@ -875,6 +874,10 @@ int checkOpenConsole( FILE *w, char *s );
 
 #endif                                  /* Graphics */
 
+/* Used by system() on Windows with or without the graphics subsystem. */
+#ifdef MSWindows
+int mswinsystem(char *s);
+#endif                                  /* MSWindows */
 
 #ifdef Audio
 int StartAudioThread(char filename[]);

@@ -83,8 +83,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/icont
 %{_bindir}/iconc
 %{_bindir}/unicon
+# ivib and ui are built only when graphics is enabled.
+%if %{with_graphics}
 %{_bindir}/ivib
 %{_bindir}/ui
+%endif
 %{_bindir}/unidoc
 %{_bindir}/udb
 %{_bindir}/unidep

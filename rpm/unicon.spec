@@ -97,6 +97,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/iyacc
 %{_bindir}/patchstr
 %{_libdir}/unicon/rt
+%{_libdir}/unicon/libcfunc.so
 %{_libdir}/unicon/ipl/lib/*.u
 %{_libdir}/unicon/ipl/incl/*.icn
 %{_libdir}/unicon/ipl/gincl/*.icn

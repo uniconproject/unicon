@@ -300,6 +300,12 @@ install Install:
 	@$(INST) -m 644 $(TOPDIR)/ipl/gincl/*.icn $(DESTDIR)$(UIPL)/gincl
 	@$(INST) -m 644 $(TOPDIR)/ipl/mincl/*.icn $(DESTDIR)$(UIPL)/mincl
 	@$(INST) -m 644 $(TOPDIR)/ipl/procs/*.icn $(DESTDIR)$(UIPL)/procs
+#	libcfunc.so is built into bin/ for in-tree runs. Packaged iconx looks
+#	for it in the uniroot directory added to FPATH.
+	@if test -f "$(TOPDIR)/bin/libcfunc.so"; then \
+	  echo "Installing libcfunc.so to $(DESTDIR)$(ULROT)"; \
+	  $(INST) $(TOPDIR)/bin/libcfunc.so $(DESTDIR)$(ULROT)/libcfunc.so; \
+	fi
 #	install unicon/uni
 	@for d in $(Udirs); do \
 	  echo "Installing uni/$$d to $(DESTDIR)$(ULB)/$$d ..."; \

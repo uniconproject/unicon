@@ -7,6 +7,8 @@
 ; #define PkgName "unicon"
 ; #define AppVersion "13.2"
 ; #define AppRevision "6192-69ae5230"
+; #define WithGraphics
+; WithGraphics is present only when this build includes the graphics subsystem.
 
 #include "unicon_version.iss"
 #define AppName "Unicon"
@@ -52,8 +54,10 @@ ShowLanguageDialog=yes
 ; top dir level to unicon.iss
 SourceDir=.\..\..\..\
 
+#ifdef WithGraphics
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"; MinVersion: 4,4
+#endif
 
 [Files]
 Source: "config\win32\gcc\uninstall.ico"; DestDir: "{app}"; Flags: ignoreversion
@@ -93,12 +97,14 @@ Source: "ipl\progs\*.*"; DestDir: "{app}\ipl\progs"; Flags: ignoreversion
 Source: "ipl\incl\*.*"; DestDir: "{app}\ipl\incl"; Flags: ignoreversion
 Source: "ipl\data\*.*"; DestDir: "{app}\ipl\data"; Flags: ignoreversion
 Source: "ipl\docs\*.*"; DestDir: "{app}\ipl\docs"; Flags: ignoreversion
+#ifdef WithGraphics
 Source: "ipl\gpacks\*.*"; DestDir: "{app}\ipl\gpacks"; Flags: ignoreversion
 Source: "ipl\gprocs\*.*"; DestDir: "{app}\ipl\gprocs"; Flags: ignoreversion
 Source: "ipl\gprogs\*.*"; DestDir: "{app}\ipl\gprogs"; Flags: ignoreversion
 Source: "ipl\gincl\*.*"; DestDir: "{app}\ipl\gincl"; Flags: ignoreversion
 Source: "ipl\gdata\*.*"; DestDir: "{app}\ipl\gdata"; Flags: ignoreversion
 Source: "ipl\gdocs\*.*"; DestDir: "{app}\ipl\gdocs"; Flags: ignoreversion
+#endif
 Source: "ipl\mpacks\*.*"; DestDir: "{app}\ipl\mpacks"; Flags: ignoreversion
 Source: "ipl\mprocs\*.*"; DestDir: "{app}\ipl\mprocs"; Flags: ignoreversion
 Source: "ipl\mprogs\*.*"; DestDir: "{app}\ipl\mprogs"; Flags: ignoreversion
@@ -140,7 +146,8 @@ Source: "uni\unidoc\Makefile"; DestDir: "{app}\uni\unidoc"; Flags: ignoreversion
 Source: "uni\unidoc\uniclass.*"; DestDir: "{app}\uni\unidoc"; Flags: ignoreversion
 
 
-; GUI library
+; GUI library, IVIB, and the IDE are built only with graphics.
+#ifdef WithGraphics
 Source: "uni\gui\*.icn"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
 Source: "uni\gui\*.u"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
 Source: "uni\gui\uniclass.*"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
@@ -157,13 +164,14 @@ Source: "uni\ide\ivib\icon\*.xpm"; DestDir: "{app}\uni\ide\ivib\icon"; Flags: ig
 Source: "uni\ide\ivib\icon\icon.gif"; DestDir: "{app}\uni\ide\ivib\icon"; Flags: ignoreversion
 Source: "uni\ide\ivib\icon\xpmtoims.icn"; DestDir: "{app}\uni\ide\ivib\icon"; Flags: ignoreversion
 
-; The old IVIB 
+; The old IVIB
 ; NOTE: The old ivib was dropped from sources in early 2014.
 Source: "uni\ivib\README"; DestDir: "{app}\uni\ivib"; Flags: ignoreversion
 
 ; IDE
 Source: "uni\ide\*.icn"; DestDir: "{app}\uni\ide"; Flags: ignoreversion
 Source: "uni\ide\Makefile"; DestDir: "{app}\uni\ide"; Flags: ignoreversion
+#endif
 
 ; UDB
 Source: "uni\udb\*.icn"; DestDir: "{app}\uni\udb"; Flags: ignoreversion
@@ -180,13 +188,15 @@ Source: "uni\unicon\idol.u"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
 Source: "uni\unicon\unigram.u"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
 Source: "uni\unicon\Makefile"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
 
-; 3D Library
+; 3D library is built only with graphics.
+#ifdef WithGraphics
 Source: "uni\3d\*.icn"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
 Source: "uni\3d\*.u"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
 Source: "uni\3d\uniclass.*"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
 Source: "uni\3d\viewer\*.icn"; DestDir: "{app}\uni\3d\viewer"; Flags: ignoreversion
 Source: "uni\3d\viewer\Makefile"; DestDir: "{app}\uni\3d\viewer"; Flags: ignoreversion
 Source: "uni\3d\models\*.*"; DestDir: "{app}\uni\3d\models"; Flags: ignoreversion
+#endif
 
 ; tests
 Source: "tests\Makefile"; DestDir: "{app}\tests"; Flags: ignoreversion
@@ -227,15 +237,21 @@ Filename: "{app}\WU.url"; Section: "InternetShortcut"; Key: "URL"; String: "http
 [Icons]
 Name: {group}\{cm:UninstallProgram,Windows Unicon}; Filename: {uninstallexe};IconFilename: "{app}\uninstall.ico"
 Name: "{group}\Windows Unicon on the Web"; Filename: "{app}\WU.url" ;IconFilename: "{app}\internet.ico"
+#ifdef WithGraphics
 Name: "{group}\Windows Unicon"; Filename: "{app}\bin\UI.EXE"
+#endif
 Name: "{group}\Programming with Unicon"; Filename: "{app}\doc\book\ub.pdf"
 Name: "{group}\Unicon Software License"; Filename: "{app}\COPYING.txt" ;IconFilename: "{app}\internet.ico"
+#ifdef WithGraphics
 Name: "{userdesktop}\Windows Unicon"; Filename: "{app}\bin\UI.EXE"; MinVersion: 4,4; Tasks: desktopicon
+#endif
 
 
 [Run]
 ;Filename: "{app}\bin\patchstr.EXE"; Parameters: "-DPatchStringHere {app}\bin\iconx.exe"; Flags: postinstall
+#ifdef WithGraphics
 Filename: "{app}\bin\UI.EXE"; Description: "Launch Windows Unicon"; Flags: nowait postinstall skipifsilent
+#endif
 
 [UninstallDelete]
 Type: files; Name: "{app}\WU.url"

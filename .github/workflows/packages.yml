@@ -13,6 +13,7 @@ on:
       - 'CONTRIBUTING.md'
       - 'COPYING'
       - '**/*.md'
+  workflow_dispatch:
 
 concurrency:
   group: packages-${{ github.workflow }}-${{ github.ref }}
@@ -25,7 +26,7 @@ jobs:
   Windows:
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
-    timeout-minutes: 60
+    timeout-minutes: 120
     strategy:
       matrix:
         cfg:
@@ -57,35 +58,71 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
 
-    - name: Configure
-      run: sh configure  ${{ matrix.cfg.opt }}
-
-    - name: Make
-      run: make
-
-    - name: Installer
+    # One job builds both installers. msys2 setup is shared; the second
+    # configure is a clean rebuild so --disable-graphics is not mixed
+    # with objects from the graphics build.
+    - name: Graphics installer
       run: |
+        sh configure ${{ matrix.cfg.opt }}
+        make
         make WinInstaller
+        mkdir -p win-pkg
+        cp Output/setup-unicon*.exe win-pkg/
 
     - name: Publish
       uses: actions/upload-artifact@v6
       with:
-        name: unicon-${{ matrix.cfg.name }}
-        path: Output/setup-unicon*.exe
+        name: win-${{ matrix.cfg.name }}
+        path: win-pkg/setup-unicon*.exe
         if-no-files-found: warn
 
-  Ubuntu:
-    runs-on: ${{ matrix.cfg.os }}
+    - name: No-graphics installer
+      run: |
+        make distclean
+        rm -f Output/setup-unicon*.exe
+        sh configure --disable-graphics ${{ matrix.cfg.opt }}
+        make
+        make WinInstaller
+        mkdir -p win-pkg-nographics
+        cp Output/setup-unicon*.exe win-pkg-nographics/
+
+    - name: Publish no-graphics
+      uses: actions/upload-artifact@v6
+      with:
+        name: win-${{ matrix.cfg.name }}-nographics
+        path: win-pkg-nographics/setup-unicon*.exe
+        if-no-files-found: warn
+
+  # Containerized so coverage isn't limited to whichever distro versions GitHub happens to
+  # ship as hosted runner images (e.g. no ubuntu-26.04 runner label yet). amd64 uses the
+  # ubuntu-latest host; arm64 uses the ubuntu-24.04-arm host (already proven in build.yml's
+  # Features job) — both just run the target distro's container on top.
+  Deb:
+    runs-on: ${{ matrix.cfg.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     name: ${{ matrix.cfg.name }}
-    timeout-minutes: 60
+    container: ${{ matrix.cfg.image }}
+    timeout-minutes: 90
     strategy:
+      fail-fast: false
       matrix:
         cfg:
-        -  { os: ubuntu-24.04,  name: 'Ubuntu-24.04_amd64',   opt: '' }
-        -  { os: ubuntu-22.04,  name: 'Ubuntu-22.04_amd64',   opt: '' }
-        #-  { os: ubuntu-20.04, name: 'Ubuntu-20.04_x86',  opt: '--host=i686-pc-linux-gnu' }
+        -  { image: 'ubuntu:22.04', arch: amd64, name: 'Ubuntu-22.04_amd64' }
+        -  { image: 'ubuntu:24.04', arch: amd64, name: 'Ubuntu-24.04_amd64' }
+        -  { image: 'ubuntu:26.04', arch: amd64, name: 'Ubuntu-26.04_amd64' }
+        -  { image: 'debian:12',    arch: amd64, name: 'Debian-12_amd64' }
+        -  { image: 'debian:13',    arch: amd64, name: 'Debian-13_amd64' }
+        -  { image: 'ubuntu:22.04', arch: arm64, name: 'Ubuntu-22.04_arm64' }
+        -  { image: 'ubuntu:24.04', arch: arm64, name: 'Ubuntu-24.04_arm64' }
+        -  { image: 'ubuntu:26.04', arch: arm64, name: 'Ubuntu-26.04_arm64' }
+        -  { image: 'debian:12',    arch: arm64, name: 'Debian-12_arm64' }
+        -  { image: 'debian:13',    arch: arm64, name: 'Debian-13_arm64' }
 
     steps:
+    - name: Install git for checkout
+      run: |
+        apt-get update -q -y
+        DEBIAN_FRONTEND=noninteractive apt-get install -q -y git
+
     - name: Checkout
       uses: actions/checkout@v6
 
@@ -93,47 +130,161 @@ jobs:
       uses: actions/cache@v5
       with:
         path: /var/cache/apt/archives/*.deb
-        key: apt-packages-${{ matrix.cfg.os }}-${{ hashFiles('debian/control') }}
-        restore-keys: apt-packages-${{ matrix.cfg.os }}-
+        key: apt-deb-${{ matrix.cfg.image }}-${{ matrix.cfg.arch }}-${{ hashFiles('debian/control') }}
+        restore-keys: apt-deb-${{ matrix.cfg.image }}-${{ matrix.cfg.arch }}-
 
     - name: Install dependencies
+      # Running as root in the container, so no sudo; mk-build-deps needs -t to know how
+      # to invoke apt-get non-interactively for the same reason.
       run: |
-        sudo apt-get update
-        #sudo apt-get install -y gcc-multilib g++-multilib
-        sudo apt-get install -y build-essential fakeroot devscripts equivs dh-autoreconf
-        sudo mk-build-deps --install debian/control
+        apt-get update -q -y
+        DEBIAN_FRONTEND=noninteractive apt-get install -q -y build-essential fakeroot devscripts equivs
+        # dh-autoreconf is a separate package on older Debian/Ubuntu and folded
+        # into debhelper later. debian/rules still asks for the addon.
+        if apt-cache show dh-autoreconf >/dev/null 2>&1; then
+          DEBIAN_FRONTEND=noninteractive apt-get install -q -y dh-autoreconf
+        fi
+        mk-build-deps --install debian/control -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends"
 
-    - name: Configure
-      run: ./configure ${{ matrix.cfg.opt }}
-
+    # Both packages are built here so apt setup runs once. The nographics
+    # revision sorts after the graphics package, and the dist tree is
+    # removed between them so the second debuild starts clean.
     - name: Deb
       run: |
+        # configure writes Makedefs (package name and version). make debin
+        # runs distclean, which must not invent those from Makedefs.in.
+        ./configure
+        base="${GITHUB_RUN_NUMBER}.$(printf %.12s "$GITHUB_SHA")"
+        rm -rf ../unicondist
+        export UNICON_PKG_REV="$base"
+        unset UNICON_CONFIGURE_EXTRA
         make debin
-        mkdir debian-pkg
-        cp ../unicondist/unicon_*.deb debian-pkg/
-        cp ../unicondist/unicon_*.changes debian-pkg/
-        cp ../unicondist/unicon_*.dsc debian-pkg/
-        cp ../unicondist/unicon_*.debian.tar.xz debian-pkg/
-        cp ../unicondist/unicon_*.orig.tar.gz debian-pkg/
+        # Keep the first packages outside the tree. The next make debin runs
+        # make dist, which archives the checkout.
+        mkdir -p "${RUNNER_TEMP}/debian-pkg"
+        cp ../unicondist/unicon_*.deb "${RUNNER_TEMP}/debian-pkg/"
+        rm -rf ../unicondist
+        export UNICON_PKG_REV="${base}.nographics"
+        export UNICON_CONFIGURE_EXTRA=--disable-graphics
+        make debin
+        mkdir -p debian-pkg debian-pkg-nographics
+        cp "${RUNNER_TEMP}/debian-pkg/"*.deb debian-pkg/
+        cp ../unicondist/unicon_*.deb debian-pkg-nographics/
 
     - name: Publish
       uses: actions/upload-artifact@v6
       with:
-        name: unicon-${{ matrix.cfg.name }}
+        name: deb-${{ matrix.cfg.name }}
         path: debian-pkg/unicon_*
         if-no-files-found: warn
 
-    - name: Install
+    - name: Publish no-graphics
+      uses: actions/upload-artifact@v6
+      with:
+        name: deb-${{ matrix.cfg.name }}-nographics
+        path: debian-pkg-nographics/unicon_*
+        if-no-files-found: warn
+
+    - name: Install and test
+      # Container jobs use sh, not bash, so this stays POSIX (no shopt, no arrays).
+      # nographics is the newer version, so install the graphics package first.
       run: |
-        shopt -s nullglob
-        debs=(./debian-pkg/*.deb)
-        if [ "${#debs[@]}" -eq 0 ]; then
+        set -- ./debian-pkg/*.deb
+        if [ ! -f "$1" ]; then
           echo "No .deb packages under debian-pkg/; did the Deb step succeed?"
           exit 1
         fi
-        sudo apt install -y "${debs[@]}"
+        apt-get install -y "$@"
+        make Test
+        set -- ./debian-pkg-nographics/*.deb
+        if [ ! -f "$1" ]; then
+          echo "No .deb packages under debian-pkg-nographics/; did the no-graphics Deb step succeed?"
+          exit 1
+        fi
+        apt-get install -y "$@"
+        make Test
+      env:
+        UC: unicon
 
-    - name: Test
-      run: make Test
+  # rpm/unicon.spec's Version/Source0 are parameterized on the %{ver} macro (make rpmbin
+  # passes --define "ver <version>"), so this always builds the actual checked-out version
+  # rather than the spec's last hand-bumped fallback.
+  Rpm:
+    runs-on: ubuntu-latest
+    name: ${{ matrix.cfg.name }}
+    container: ${{ matrix.cfg.image }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        cfg:
+        -  { image: 'fedora:44',    name: 'Fedora-44_amd64' }
+        -  { image: 'rockylinux:9', name: 'RockyLinux-9_amd64' }
+
+    steps:
+    - name: Install git for checkout
+      run: dnf -y install git
+
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Install dependencies
+      # Matches build.yml's Linux job dep list for these two images; openal/alut/ogg/vorbis
+      # are only in Fedora's repos, not Rocky's, same split build.yml already makes.
+      run: |
+        # unixODBC-devel is in Rocky's CRB repo, which ships disabled.
+        case "${{ matrix.cfg.image }}" in
+          rocky*) enablerepo="--enablerepo=crb" ;;
+          *) enablerepo="" ;;
+        esac
+        dnf -y $enablerepo install rpm-build rpmdevtools gcc make diffutils \
+          libjpeg-turbo-devel libpng-devel libX11-devel \
+          mesa-libGL-devel mesa-libGLU-devel \
+          openssl-devel libssh-devel unixODBC-devel freetype-devel libXft-devel
+        case "${{ matrix.cfg.image }}" in
+          fedora*) dnf -y install openal-soft-devel freealut-devel libogg-devel libvorbis-devel ;;
+        esac
+
+    # Same pattern as the Deb job: one dependency install, two packages.
+    - name: Rpm
+      run: |
+        ./configure
+        base="${GITHUB_RUN_NUMBER}.$(printf %.12s "$GITHUB_SHA")"
+        rm -rf ../rpmbuild
+        export UNICON_PKG_REV="$base"
+        unset UNICON_CONFIGURE_EXTRA
+        make rpmbin
+        # Keep the first packages outside the tree. The next make rpmbin runs
+        # make dist, which archives the checkout.
+        mkdir -p "${RUNNER_TEMP}/rpm-pkg"
+        cp ../rpmbuild/RPMS/*/unicon-*.rpm "${RUNNER_TEMP}/rpm-pkg/"
+        rm -rf ../rpmbuild
+        export UNICON_PKG_REV="${base}.nographics"
+        export UNICON_CONFIGURE_EXTRA=--disable-graphics
+        make rpmbin
+        mkdir -p rpm-pkg rpm-pkg-nographics
+        cp "${RUNNER_TEMP}/rpm-pkg/"*.rpm rpm-pkg/
+        cp ../rpmbuild/RPMS/*/unicon-*.rpm rpm-pkg-nographics/
+
+    - name: Publish
+      uses: actions/upload-artifact@v6
+      with:
+        name: rpm-${{ matrix.cfg.name }}
+        path: rpm-pkg/unicon-*.rpm
+        if-no-files-found: warn
+
+    - name: Publish no-graphics
+      uses: actions/upload-artifact@v6
+      with:
+        name: rpm-${{ matrix.cfg.name }}-nographics
+        path: rpm-pkg-nographics/unicon-*.rpm
+        if-no-files-found: warn
+
+    - name: Install and test
+      run: |
+        dnf -y install ./rpm-pkg/unicon-*.rpm
+        make Test
+        dnf -y install ./rpm-pkg-nographics/unicon-*.rpm
+        make Test
       env:
         UC: unicon

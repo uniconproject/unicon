@@ -151,6 +151,9 @@ jobs:
     # removed between them so the second debuild starts clean.
     - name: Deb
       run: |
+        # configure writes Makedefs (package name and version). make debin
+        # runs distclean, which must not invent those from Makedefs.in.
+        ./configure
         base="${GITHUB_RUN_NUMBER}.$(printf %.12s "$GITHUB_SHA")"
         rm -rf ../unicondist
         export UNICON_PKG_REV="$base"
@@ -242,6 +245,7 @@ jobs:
     # Same pattern as the Deb job: one dependency install, two packages.
     - name: Rpm
       run: |
+        ./configure
         base="${GITHUB_RUN_NUMBER}.$(printf %.12s "$GITHUB_SHA")"
         rm -rf ../rpmbuild
         export UNICON_PKG_REV="$base"

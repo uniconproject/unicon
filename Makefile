@@ -36,16 +36,24 @@ default_target: allsrc
 	@cat unicon-features.log
 	@echo "add $(shell cd $(TOPDIR) && pwd)/bin to your path or do \"make install\" to install Unicon on your system"
 
-.PHONY: plugins update_rev doc config help
+.PHONY: plugins update_rev doc config help seed-makedefs-uni
 
 # Optional $(wildcard config.status): do not require config.status before it exists
 # (e.g. debian/rules clean / dh_auto_clean runs make distclean without configuring).
+# Do not copy Makedefs.in in that case: it still contains @PACKAGE_VERSION@
+# and would make the deb/rpm version string invalid.
 Makedefs: $(srcdir)/Makedefs.in $(wildcard config.status)
 	@if test -f ./config.status; then \
 	  $(SHELL) ./config.status Makedefs; \
 	else \
 	  echo "Warning: config.status missing; Makedefs not regenerated. Run configure first." >&2; \
 	fi
+
+# Makedefs.uni is configure output. Clean targets run before it exists, and
+# an empty file turns "$(RMDIR) html" into a command named html. The template
+# already defines RMDIR, unlike Makedefs.in which still has @PACKAGE_*@.
+seed-makedefs-uni:
+	@if test ! -s Makedefs.uni; then cp $(srcdir)/Makedefs.uni.in Makedefs.uni; fi
 
 update_rev:
 	@$(TOPDIR)/config/scripts/version.sh
@@ -420,14 +428,15 @@ rpm: dist
 	@echo "To finish building the rpm package, do"
 	@echo "   cd $(RPM_TOPDIR)/SPECS"
 	@echo "Then run:"
-	@echo "	 rpmbuild -ba --define 'ver $(PKG_BUILDVER)' --define 'tarball $(UTAR)' --define '_topdir $(RPM_TOPDIR)' --define 'configure_extra $(UNICON_CONFIGURE_EXTRA)' --define 'with_graphics $(RPM_WITH_GRAPHICS)' unicon.spec"
+	@echo "	 rpmbuild -ba $(RPM_DEFINES) unicon.spec"
 
 # UNICON_CONFIGURE_EXTRA is passed to ./configure (for example --disable-graphics).
+# An empty configure_extra define is an rpmbuild error, so omit it unless set.
 RPM_WITH_GRAPHICS=$(if $(findstring --disable-graphics,$(UNICON_CONFIGURE_EXTRA)),0,1)
 RPM_DEFINES=--define "ver $(PKG_BUILDVER)" \
 	--define "tarball $(UTAR)" \
 	--define "_topdir $(RPM_TOPDIR)" \
-	--define "configure_extra $(UNICON_CONFIGURE_EXTRA)" \
+	$(if $(UNICON_CONFIGURE_EXTRA),--define "configure_extra $(UNICON_CONFIGURE_EXTRA)") \
 	--define "with_graphics $(RPM_WITH_GRAPHICS)"
 
 rpmbin: rpm
@@ -484,7 +493,7 @@ Benchmark-icont:
 # "make Pure"  also removes binaries, library, and configured files.
 
 clean Clean:
-		touch Makedefs Makedefs.uni
+		$(MAKE) seed-makedefs-uni
 		rm -rf icon.*
 		cd $(TOPDIR)/src;			$(MAKE) Clean
 		cd $(TOPDIR)/tests;		$(MAKE) Clean
@@ -492,7 +501,7 @@ clean Clean:
 		cd $(TOPDIR)/doc;			$(MAKE) Clean
 
 distclean:
-		touch Makedefs Makedefs.uni
+		$(MAKE) seed-makedefs-uni
 		rm -rf icon.* $(TOPDIR)/bin/[A-Za-z]* $(TOPDIR)/lib/[a-z]*
 		cd $(TOPDIR)/uni;			$(MAKE) Pure
 		cd $(TOPDIR)/ipl;			$(MAKE) Pure
@@ -506,7 +515,7 @@ distclean:
 
 
 Pure:
-		touch Makedefs Makedefs.uni
+		$(MAKE) seed-makedefs-uni
 		rm -rf icon.* $(TOPDIR)/bin/[A-Za-z]* $(TOPDIR)/lib/[a-z]*
 		cd $(TOPDIR)/uni;			$(MAKE) Pure
 		cd $(TOPDIR)/ipl;			$(MAKE) Pure

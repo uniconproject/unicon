@@ -222,7 +222,8 @@ F=*.{u,icn}
 RTbins=$(UNICONX)$(EXE) $(UNICONWX)$(EXE) $(UNICONT)$(EXE) $(UNICONWT)$(EXE) $(UNICONC)$(EXE)
 ADDONbins=udb$(EXE) uprof$(EXE) unidep$(EXE) unidoc$(EXE) ui$(EXE) ivib$(EXE) ulsp$(EXE) uscribe$(EXE)
 UTILbins=patchstr$(EXE) iyacc$(EXE)
-ALLbins=$(RTbins) unicon$(EXE) $(ADDONbins) $(UTILbins) rt.a rt.h
+# rt.a and rt.h are installed with the runtime tree under $(libdir)/unicon/rt.
+ALLbins=$(RTbins) unicon$(EXE) $(ADDONbins) $(UTILbins)
 # binaries that should be signed after install, only needed on arm macOS for now
 SIGNbins=$(RTbins) $(UTILbins)
 
@@ -347,6 +348,9 @@ VV=$(PKG_VERSION)$(MV)
 PKG_STRNAME=$(PKG_TARNAME)_$(VV)$(VSUFFIX)
 UTAR=$(PKG_STRNAME).tar.gz
 UTARORIG=$(PKG_STRNAME).orig.tar.gz
+# CI sets UNICON_PKG_REV (run number, dot, short sha) so a development package
+# sorts newer than the previous build. Local release builds leave it unset.
+PKG_BUILDVER=$(VV)$(VSUFFIX)$(if $(UNICON_PKG_REV),+git$(UNICON_PKG_REV))
 # Tarball, unicondist/, rpmbuild/ go under here (default: parent of repo). If the clone is at
 # /unicon, .. is / (not writable): use e.g. DISTROOT=.dist or a path under your home directory.
 DISTROOT ?= ..
@@ -377,7 +381,16 @@ deb: dist
 	@echo "	 debuild -us -uc"
 
 debin: deb
-	cd $(DISTROOT)/$(udist)/$(PKG_STRNAME) && debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
+	src="$(DISTROOT)/$(udist)/$(PKG_STRNAME)"; \
+	if test -n "$(UNICON_PKG_REV)"; then \
+	  ver="$(PKG_BUILDVER)"; \
+	  sed -i "1s/([^)]*)/($${ver}-1)/" "$$src/debian/changelog"; \
+	  dest="$(DISTROOT)/$(udist)/$(PKG_TARNAME)_$$ver"; \
+	  mv "$$src" "$$dest"; \
+	  mv "$(DISTROOT)/$(udist)/$(UTARORIG)" "$(DISTROOT)/$(udist)/$(PKG_TARNAME)_$$ver.orig.tar.gz"; \
+	  src="$$dest"; \
+	fi; \
+	cd "$$src" && DEB_BUILD_MAINT_OPTIONS="$${DEB_BUILD_MAINT_OPTIONS:+$$DEB_BUILD_MAINT_OPTIONS }optimize=-lto" debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
 	ls -lh $(DISTROOT)/$(udist)/unicon_*.deb
 
 debsrc: deb
@@ -393,31 +406,42 @@ launchpad:
 
 # RPM section
 rpmdir=rpmbuild
+# Absolute, so rpmbuild --define _topdir still points here after the recipe cds into SPECS.
+RPM_TOPDIR=$(abspath $(DISTROOT)/$(rpmdir))
 
 rpm: dist
-	mkdir -p $(DISTROOT)/$(rpmdir)/SOURCES
-	mkdir -p $(DISTROOT)/$(rpmdir)/SPECS
-	cp $(TOPDIR)/rpm/unicon.spec $(DISTROOT)/$(rpmdir)/SPECS
-	mv $(DISTROOT)/$(UTAR) $(DISTROOT)/$(rpmdir)/SOURCES
+	mkdir -p $(RPM_TOPDIR)/SOURCES
+	mkdir -p $(RPM_TOPDIR)/SPECS
+	cp $(TOPDIR)/rpm/unicon.spec $(RPM_TOPDIR)/SPECS
+	mv $(DISTROOT)/$(UTAR) $(RPM_TOPDIR)/SOURCES
 	@echo "To finish building the rpm package, do"
-	@echo "   cd $(DISTROOT)/$(rpmdir)/SPECS"
+	@echo "   cd $(RPM_TOPDIR)/SPECS"
 	@echo "Then run:"
-	@echo "	 rpmbuild -ba unicon.spec"
+	@echo "	 rpmbuild -ba --define 'ver $(PKG_BUILDVER)' --define 'tarball $(UTAR)' --define '_topdir $(RPM_TOPDIR)' unicon.spec"
 
 rpmbin: rpm
-	cd $(DISTROOT)/$(rpmdir)/SPECS &&  rpmbuild -ba unicon.spec
-	@ls $(DISTROOT)/$(rpmdir)/RPMS/
-	ls -lh $(DISTROOT)/$(rpmdir)/RPMS/$(PKG_STRNAME)-*.*.rpm
+	cd $(RPM_TOPDIR)/SPECS && rpmbuild -ba \
+	  --define "ver $(PKG_BUILDVER)" \
+	  --define "tarball $(UTAR)" \
+	  --define "_topdir $(RPM_TOPDIR)" \
+	  unicon.spec
+	ls -lh $(RPM_TOPDIR)/RPMS/*/$(PKG_TARNAME)-*.rpm
 
 rpmresume: rpm
-	cd $(DISTROOT)/$(rpmdir) &&  rpmbuild -bi --short-circuit unicon.spec
-	@ls $(DISTROOT)/$(rpmdir)/RPMS/
-	ls -lh $(DISTROOT)/$(rpmdir)/RPMS/$(PKG_STRNAME)-$(VV)-*.*.rpm
+	cd $(RPM_TOPDIR)/SPECS && rpmbuild -bi --short-circuit \
+	  --define "ver $(PKG_BUILDVER)" \
+	  --define "tarball $(UTAR)" \
+	  --define "_topdir $(RPM_TOPDIR)" \
+	  unicon.spec
+	ls -lh $(RPM_TOPDIR)/RPMS/*/$(PKG_TARNAME)-*.rpm
 
-rpmsrc:
-	cd $(DISTROOT)/$(rpmdir) &&  rpmbuild -bs unicon.spec
-	@ls $(DISTROOT)/$(rpmdir)/SRPMS/
-	ls -lh $(DISTROOT)/$(rpmdir)/RPMS/$(PKG_STRNAME)-*.*.rpm
+rpmsrc: rpm
+	cd $(RPM_TOPDIR)/SPECS && rpmbuild -bs \
+	  --define "ver $(PKG_BUILDVER)" \
+	  --define "tarball $(UTAR)" \
+	  --define "_topdir $(RPM_TOPDIR)" \
+	  unicon.spec
+	ls -lh $(RPM_TOPDIR)/SRPMS/$(PKG_TARNAME)-*.src.rpm
 
 
 ##################################################################

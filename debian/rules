@@ -13,6 +13,17 @@ export DH_ALWAYS_EXCLUDE=CVS:.git
 # package maintainers to append LDFLAGS
 #export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
+# Ubuntu enables -flto=auto -ffat-lto-objects by default. dh_strip removes
+# that bitcode from static libraries named lib*.a, but not from executables
+# or from rt.a, so the Ubuntu .deb is much larger than the Debian one.
+# dpkg-buildpackage freezes CFLAGS before this file runs, so recompute them.
+DEB_BUILD_MAINT_OPTIONS = optimize=-lto
+export DEB_BUILD_MAINT_OPTIONS
+export CFLAGS := $(shell DEB_BUILD_MAINT_OPTIONS='$(DEB_BUILD_MAINT_OPTIONS)' dpkg-buildflags --get CFLAGS)
+export CXXFLAGS := $(shell DEB_BUILD_MAINT_OPTIONS='$(DEB_BUILD_MAINT_OPTIONS)' dpkg-buildflags --get CXXFLAGS)
+export CPPFLAGS := $(shell DEB_BUILD_MAINT_OPTIONS='$(DEB_BUILD_MAINT_OPTIONS)' dpkg-buildflags --get CPPFLAGS)
+export LDFLAGS := $(shell DEB_BUILD_MAINT_OPTIONS='$(DEB_BUILD_MAINT_OPTIONS)' dpkg-buildflags --get LDFLAGS)
+
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 
 DEB_CONFIGURE_EXTRA_FLAGS += --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH)

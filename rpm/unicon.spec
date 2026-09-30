@@ -1,21 +1,32 @@
 Name:    unicon
-Version: 13.1.2
+# make rpmbin passes --define "ver <version>" and --define "tarball <filename>".
+# ver defaults to the same 13.3~prerelease string the Debian changelog and
+# Makefile VSUFFIX use. CI appends +git<run>.<sha> so each master build sorts
+# newer than the last. The dist tarball name does not include that suffix;
+# tarball names the file make dist copied into SOURCES.
+%{!?ver: %define ver 13.3~prerelease}
+%{!?tarball: %define tarball unicon_%{ver}.tar.gz}
+Version: %{ver}
 Release: 1%{?dist}
 Summary: The Unicon Programming Language
 
 License: GPLv2+
-Source0: unicon-13.1.2.tar.gz
+Source0: %{tarball}
 
 BuildRequires: libjpeg-turbo-devel, libpng-devel, libX11-devel
 BuildRequires: mesa-libGL-devel, mesa-libGLU-devel
-BuildRequires: openal-devel, freealut-devel, libogg-devel, libvorbis-devel
-BuildRequires: openssl-devel, unixODBC-devel
+BuildRequires: openssl-devel, libssh-devel, unixODBC-devel
 BuildRequires: libXft-devel, freetype-devel
+# OpenAL, freealut, ogg, and vorbis are not in RHEL/Rocky. Runtime dependencies
+# for libraries that were actually linked come from the automatic soname
+# generator, so a Rocky build does not require OpenAL.
+%if 0%{?fedora}
+BuildRequires: openal-soft-devel, freealut-devel, libogg-devel, libvorbis-devel
+%endif
 
 
 Requires: libjpeg-turbo, libpng, libX11
 Requires: mesa-libGL, mesa-libGLU
-Requires: openal, freealut, libogg, libvorbis
 Requires: openssl, unixODBC
 Requires: libXft, freetype
 
@@ -31,6 +42,10 @@ Interpreter and tools for Unicon, a high-level programming language
 
 
 %global debug_package %{nil}
+# Fedora calls %%set_build_flags before %%build (LTO, arch baseline, package-note
+# linker specs). autoconf's "can I run a binary?" test then fails. This spec
+# runs ./configure itself and wants the compiler's normal defaults.
+%undefine _auto_set_build_flags
 
 %prep
 %autosetup -n unicon
@@ -38,7 +53,11 @@ Interpreter and tools for Unicon, a high-level programming language
 
 
 %build
-./configure --prefix=/usr --bindir=%{_bindir} --libdir=%{_libdir} --mandir=%{_mandir} --docdir=%{_docdir}
+unset CFLAGS
+unset CXXFLAGS
+unset LDFLAGS
+unset RPM_OPT_FLAGS
+./configure --prefix=/usr --bindir=%{_bindir} --libdir=%{_libdir} --mandir=%{_mandir} --docdir=%{_docdir}/%{name}
 make -j8
 
 %install
@@ -60,17 +79,20 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/unicon
 %{_bindir}/ivib
 %{_bindir}/ui
-%{_bindir}/UniDoc
+%{_bindir}/unidoc
 %{_bindir}/udb
 %{_bindir}/unidep
 %{_bindir}/uprof
 %{_bindir}/uscribe
+%{_bindir}/ulsp
 %{_bindir}/iyacc
 %{_bindir}/patchstr
+%{_libdir}/unicon/rt
 %{_libdir}/unicon/ipl/lib/*.u
 %{_libdir}/unicon/ipl/incl/*.icn
 %{_libdir}/unicon/ipl/gincl/*.icn
 %{_libdir}/unicon/ipl/mincl/*.icn
+%{_libdir}/unicon/ipl/procs
 %{_libdir}/unicon/uni/lib/*.*
 %{_libdir}/unicon/uni/3d/*.*
 %{_libdir}/unicon/uni/gui/*.*
@@ -78,6 +100,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/unicon/uni/unidep/*.*
 %{_libdir}/unicon/uni/parser/*.*
 %{_libdir}/unicon/uni/xml/*.*
+%{_libdir}/unicon/uni/ulsp
 %{_libdir}/unicon/uni/uscribe/*.*
 %{_libdir}/unicon/uni/uscribe/themes/*.*
 %{_libdir}/unicon/uni/uscribe/themes/_shared/*.*
@@ -90,8 +113,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/unicon/plugins/lib/*.*
 %{_docdir}/unicon/*.*
 %{_mandir}/man1/unicon.1.gz
-
-%doc README
 
 %license COPYING
 

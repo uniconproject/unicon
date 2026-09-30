@@ -13,6 +13,7 @@ on:
       - 'CONTRIBUTING.md'
       - 'COPYING'
       - '**/*.md'
+  workflow_dispatch:
 
 concurrency:
   group: packages-${{ github.workflow }}-${{ github.ref }}
@@ -70,22 +71,40 @@ jobs:
     - name: Publish
       uses: actions/upload-artifact@v6
       with:
-        name: unicon-${{ matrix.cfg.name }}
+        name: win-${{ matrix.cfg.name }}
         path: Output/setup-unicon*.exe
         if-no-files-found: warn
 
-  Ubuntu:
-    runs-on: ${{ matrix.cfg.os }}
+  # Containerized so coverage isn't limited to whichever distro versions GitHub happens to
+  # ship as hosted runner images (e.g. no ubuntu-26.04 runner label yet). amd64 uses the
+  # ubuntu-latest host; arm64 uses the ubuntu-24.04-arm host (already proven in build.yml's
+  # Features job) — both just run the target distro's container on top.
+  Deb:
+    runs-on: ${{ matrix.cfg.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     name: ${{ matrix.cfg.name }}
+    container: ${{ matrix.cfg.image }}
     timeout-minutes: 60
     strategy:
+      fail-fast: false
       matrix:
         cfg:
-        -  { os: ubuntu-24.04,  name: 'Ubuntu-24.04_amd64',   opt: '' }
-        -  { os: ubuntu-22.04,  name: 'Ubuntu-22.04_amd64',   opt: '' }
-        #-  { os: ubuntu-20.04, name: 'Ubuntu-20.04_x86',  opt: '--host=i686-pc-linux-gnu' }
+        -  { image: 'ubuntu:22.04', arch: amd64, name: 'Ubuntu-22.04_amd64' }
+        -  { image: 'ubuntu:24.04', arch: amd64, name: 'Ubuntu-24.04_amd64' }
+        -  { image: 'ubuntu:26.04', arch: amd64, name: 'Ubuntu-26.04_amd64' }
+        -  { image: 'debian:12',    arch: amd64, name: 'Debian-12_amd64' }
+        -  { image: 'debian:13',    arch: amd64, name: 'Debian-13_amd64' }
+        -  { image: 'ubuntu:22.04', arch: arm64, name: 'Ubuntu-22.04_arm64' }
+        -  { image: 'ubuntu:24.04', arch: arm64, name: 'Ubuntu-24.04_arm64' }
+        -  { image: 'ubuntu:26.04', arch: arm64, name: 'Ubuntu-26.04_arm64' }
+        -  { image: 'debian:12',    arch: arm64, name: 'Debian-12_arm64' }
+        -  { image: 'debian:13',    arch: arm64, name: 'Debian-13_arm64' }
 
     steps:
+    - name: Install git for checkout
+      run: |
+        apt-get update -q -y
+        DEBIAN_FRONTEND=noninteractive apt-get install -q -y git
+
     - name: Checkout
       uses: actions/checkout@v6
 
@@ -93,45 +112,113 @@ jobs:
       uses: actions/cache@v5
       with:
         path: /var/cache/apt/archives/*.deb
-        key: apt-packages-${{ matrix.cfg.os }}-${{ hashFiles('debian/control') }}
-        restore-keys: apt-packages-${{ matrix.cfg.os }}-
+        key: apt-deb-${{ matrix.cfg.image }}-${{ matrix.cfg.arch }}-${{ hashFiles('debian/control') }}
+        restore-keys: apt-deb-${{ matrix.cfg.image }}-${{ matrix.cfg.arch }}-
 
     - name: Install dependencies
+      # Running as root in the container, so no sudo; mk-build-deps needs -t to know how
+      # to invoke apt-get non-interactively for the same reason.
       run: |
-        sudo apt-get update
-        #sudo apt-get install -y gcc-multilib g++-multilib
-        sudo apt-get install -y build-essential fakeroot devscripts equivs dh-autoreconf
-        sudo mk-build-deps --install debian/control
+        apt-get update -q -y
+        DEBIAN_FRONTEND=noninteractive apt-get install -q -y build-essential fakeroot devscripts equivs
+        # dh-autoreconf is a separate package on older Debian/Ubuntu and folded
+        # into debhelper later. debian/rules still asks for the addon.
+        if apt-cache show dh-autoreconf >/dev/null 2>&1; then
+          DEBIAN_FRONTEND=noninteractive apt-get install -q -y dh-autoreconf
+        fi
+        mk-build-deps --install debian/control -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends"
 
     - name: Configure
-      run: ./configure ${{ matrix.cfg.opt }}
+      run: ./configure
 
     - name: Deb
       run: |
+        # run number keeps versions ordered; the short sha identifies the commit.
+        export UNICON_PKG_REV="${GITHUB_RUN_NUMBER}.$(printf %.12s "$GITHUB_SHA")"
         make debin
         mkdir debian-pkg
         cp ../unicondist/unicon_*.deb debian-pkg/
-        cp ../unicondist/unicon_*.changes debian-pkg/
-        cp ../unicondist/unicon_*.dsc debian-pkg/
-        cp ../unicondist/unicon_*.debian.tar.xz debian-pkg/
-        cp ../unicondist/unicon_*.orig.tar.gz debian-pkg/
 
     - name: Publish
       uses: actions/upload-artifact@v6
       with:
-        name: unicon-${{ matrix.cfg.name }}
+        name: deb-${{ matrix.cfg.name }}
         path: debian-pkg/unicon_*
         if-no-files-found: warn
 
     - name: Install
+      # Container jobs use sh, not bash, so this stays POSIX (no shopt, no arrays).
       run: |
-        shopt -s nullglob
-        debs=(./debian-pkg/*.deb)
-        if [ "${#debs[@]}" -eq 0 ]; then
+        set -- ./debian-pkg/*.deb
+        if [ ! -f "$1" ]; then
           echo "No .deb packages under debian-pkg/; did the Deb step succeed?"
           exit 1
         fi
-        sudo apt install -y "${debs[@]}"
+        apt-get install -y "$@"
+
+    - name: Test
+      run: make Test
+      env:
+        UC: unicon
+
+  # rpm/unicon.spec's Version/Source0 are parameterized on the %{ver} macro (make rpmbin
+  # passes --define "ver <version>"), so this always builds the actual checked-out version
+  # rather than the spec's last hand-bumped fallback.
+  Rpm:
+    runs-on: ubuntu-latest
+    name: ${{ matrix.cfg.name }}
+    container: ${{ matrix.cfg.image }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        cfg:
+        -  { image: 'fedora:44',    name: 'Fedora-44_amd64' }
+        -  { image: 'rockylinux:9', name: 'RockyLinux-9_amd64' }
+
+    steps:
+    - name: Install git for checkout
+      run: dnf -y install git
+
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Install dependencies
+      # Matches build.yml's Linux job dep list for these two images; openal/alut/ogg/vorbis
+      # are only in Fedora's repos, not Rocky's, same split build.yml already makes.
+      run: |
+        # unixODBC-devel is in Rocky's CRB repo, which ships disabled.
+        case "${{ matrix.cfg.image }}" in
+          rocky*) enablerepo="--enablerepo=crb" ;;
+          *) enablerepo="" ;;
+        esac
+        dnf -y $enablerepo install rpm-build rpmdevtools gcc make diffutils \
+          libjpeg-turbo-devel libpng-devel libX11-devel \
+          mesa-libGL-devel mesa-libGLU-devel \
+          openssl-devel libssh-devel unixODBC-devel freetype-devel libXft-devel
+        case "${{ matrix.cfg.image }}" in
+          fedora*) dnf -y install openal-soft-devel freealut-devel libogg-devel libvorbis-devel ;;
+        esac
+
+    - name: Configure
+      run: ./configure
+
+    - name: Rpm
+      run: |
+        export UNICON_PKG_REV="${GITHUB_RUN_NUMBER}.$(printf %.12s "$GITHUB_SHA")"
+        make rpmbin
+        mkdir rpm-pkg
+        cp ../rpmbuild/RPMS/*/unicon-*.rpm rpm-pkg/
+
+    - name: Publish
+      uses: actions/upload-artifact@v6
+      with:
+        name: rpm-${{ matrix.cfg.name }}
+        path: rpm-pkg/unicon-*.rpm
+        if-no-files-found: warn
+
+    - name: Install
+      run: dnf -y install ./rpm-pkg/unicon-*.rpm
 
     - name: Test
       run: make Test

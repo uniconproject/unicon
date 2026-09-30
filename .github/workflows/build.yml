@@ -198,7 +198,8 @@ jobs:
         cfg:
         -  { os: 'ubuntu:22.04',  name: 'Ubuntu 22.04',   opt: '--enable-werror' }
         -  { os: 'ubuntu:24.04',  name: 'Ubuntu 24.04',   opt: '--enable-werror' }
-        -  { os: 'fedora:41',     name: 'Fedora 41',      opt: '--enable-werror' }
+        -  { os: 'ubuntu:26.04',  name: 'Ubuntu 26.04',   opt: '--enable-werror' }
+        -  { os: 'fedora:44',     name: 'Fedora 44',      opt: '--enable-werror' }
         -  { os: 'debian:13',     name: 'Debian 13',      opt: '--enable-werror' }
         -  { os: 'debian:12',     name: 'Debian 12',      opt: '--enable-werror' }
         -  { os: 'rockylinux:9',  name: 'Rocky Linux 9',  opt: '--enable-werror' }
@@ -239,7 +240,7 @@ jobs:
         case "${{ matrix.cfg.os }}" in
            ubuntu*|debian*)
               apt-get update -q -y
-              DEBIAN_FRONTEND="noninteractive" apt-get install -q -y build-essential make autotools-dev libc6 libgcc1 libgl1-mesa-dev
+              DEBIAN_FRONTEND="noninteractive" apt-get install -q -y build-essential make autotools-dev libc6 libgcc-s1 libgl1-mesa-dev
               DEBIAN_FRONTEND="noninteractive" apt-get install -q -y libssl-dev libssh-dev libx11-dev libjpeg-dev libpng-dev libglu1-mesa-dev libxft-dev
               DEBIAN_FRONTEND="noninteractive" apt-get install -q -y libopenal-dev libalut-dev libogg-dev libvorbis-dev unixodbc-dev libfreetype6-dev
               ;;
@@ -256,7 +257,7 @@ jobs:
            fedora*)
               dnf -y update
               dnf -y install gcc make diffutils libjpeg-turbo-devel libpng-devel libX11-devel mesa-libGL-devel mesa-libGLU-devel
-              dnf -y install openal-devel freealut-devel libogg-devel libvorbis-devel openssl-devel libssh-devel unixODBC-devel freetype-devel libXft-devel
+              dnf -y install openal-soft-devel freealut-devel libogg-devel libvorbis-devel openssl-devel libssh-devel unixODBC-devel freetype-devel libXft-devel
               ;;
            alpine*)
               apk update

@@ -55,10 +55,19 @@ on:
       - 'Makefile'
       - 'Makedefs*'
   workflow_dispatch:
+  # Re-deploy after Binary Packages finishes so /unicon/downloads/ picks up the packages
+  # built from the commit that just landed, without the docs-only push having to wait on
+  # the (much longer) package build matrix first.
+  workflow_run:
+    workflows: ['Binary Packages']
+    types: [completed]
 
 permissions:
   contents: read
   pull-requests: write
+  # actions: read lets the build job's `gh run download` pull the latest Binary Packages
+  # artifacts (deb/rpm) into the downloads page.
+  actions: read
 
 concurrency:
   group: pages-${{ github.event.pull_request.number || github.ref }}
@@ -67,6 +76,10 @@ concurrency:
 jobs:
   build:
     if: >-
+      (
+        github.event_name != 'workflow_run' ||
+        github.event.workflow_run.conclusion == 'success'
+      ) &&
       (
         github.repository == 'uniconproject/unicon' ||
         github.event_name == 'push' ||
@@ -127,6 +140,96 @@ jobs:
           UNICON_SITE_PREFIX: /unicon
         run: bash config/scripts/gh-pages/build-gh-pages-site.sh _site
 
+      # Dev/deploy download links only — unsigned, straight from CI. The separate signed
+      # apt/dnf repo (reprepro/createrepo, like deb.frrouting.org) for tagged releases is
+      # a manual local step outside this workflow, not generated here.
+      - name: Fetch latest Binary Packages artifacts
+        if: github.repository == 'uniconproject/unicon'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          # workflow_run carries the package run that just finished. Other events
+          # leave this empty and the script looks up the latest success on master.
+          PACKAGE_RUN_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || '' }}
+        run: |
+          set -euo pipefail
+          mkdir -p _site/downloads
+          run_id="${PACKAGE_RUN_ID}"
+          if [ -z "$run_id" ]; then
+            run_id=$(gh run list --workflow packages.yml --branch master --status success \
+              --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          fi
+          if [ -z "$run_id" ]; then
+            echo "No successful Binary Packages run yet for master; downloads page will say so."
+          else
+            echo "Pulling package artifacts from Binary Packages run ${run_id}"
+            # gh accepts a single --pattern; a second copy replaces the first.
+            got=0
+            for pat in 'deb-*' 'rpm-*' 'win-*'; do
+              if gh run download "$run_id" --pattern "$pat" --dir _site/downloads; then
+                got=1
+              else
+                echo "No artifacts matched ${pat}"
+              fi
+            done
+            if [ "$got" -eq 1 ]; then
+              echo "$run_id" > _site/downloads/.run_id
+            fi
+          fi
+
+      - name: Build downloads index page
+        run: |
+          set -euo pipefail
+          mkdir -p _site/downloads
+          out=_site/downloads/index.html
+          run_note='<p><em>No successful package build yet.</em></p>'
+          if [ -f _site/downloads/.run_id ]; then
+            rid=$(cat _site/downloads/.run_id)
+            run_note="<p>From <a href=\"https://github.com/${GITHUB_REPOSITORY}/actions/runs/${rid}\">Binary Packages run ${rid}</a>.</p>"
+            rm -f _site/downloads/.run_id
+          fi
+          {
+            echo '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+            echo '<title>Unicon downloads</title>'
+            cat config/scripts/gh-pages/includes/header.html
+            echo '</head><body>'
+            cat config/scripts/gh-pages/includes/before-body.html
+            echo '<main style="max-width:60rem;margin:2rem auto;padding:0 1rem;font-family:sans-serif">'
+            echo '<h1>Development package downloads</h1>'
+            echo '<p>Built automatically from the latest <code>master</code> commit.'
+            echo ' These are <strong>unsigned development builds</strong> for manual'
+            echo ' <code>dpkg -i</code> / <code>rpm -i</code> install, or the Windows'
+            echo ' installer &mdash; not an apt/dnf-tracked release repo. Signed release'
+            echo ' packages are published separately per tagged release.</p>'
+            echo "$run_note"
+            for kind_label in 'deb:Debian / Ubuntu (.deb)' 'rpm:Fedora / RHEL-family (.rpm)' 'win:Windows'; do
+              kind="${kind_label%%:*}"
+              label="${kind_label#*:}"
+              echo "<h2>${label}</h2><ul>"
+              found=0
+              for d in _site/downloads/"${kind}"-*/; do
+                [ -d "$d" ] || continue
+                for f in "$d"*; do
+                  [ -f "$f" ] || continue
+                  case "$f" in
+                    *.deb|*.rpm|*.exe) ;;
+                    *) continue ;;
+                  esac
+                  rel="${f#_site/downloads/}"
+                  echo "<li><a href=\"${rel}\">${rel}</a></li>"
+                  found=1
+                done
+              done
+              if [ "$found" -eq 0 ]; then
+                echo '<li><em>none yet</em></li>'
+              fi
+              echo '</ul>'
+            done
+            echo '</main>'
+            cat config/scripts/gh-pages/includes/after-body.html
+            echo '</body></html>'
+          } > "$out"
+
       - name: Upload site artifact
         uses: actions/upload-artifact@v4
         with:
@@ -135,14 +238,16 @@ jobs:
           retention-days: 3
 
   deploy-production:
-    # uniconproject: publish the master/main (or dispatch) build via Pages.
+    # uniconproject: publish the master/main (or dispatch, or a completed Binary Packages
+    # run on master/main — that always fires from master per its own trigger) build via Pages.
     if: >-
       github.repository == 'uniconproject/unicon' &&
       github.event_name != 'pull_request' &&
       (
         github.ref == 'refs/heads/master' ||
         github.ref == 'refs/heads/main' ||
-        github.event_name == 'workflow_dispatch'
+        github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'workflow_run'
       )
     needs: build
     runs-on: ubuntu-latest

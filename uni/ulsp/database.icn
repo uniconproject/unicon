@@ -12,7 +12,7 @@ package ulsp
 
 
 import UniDoc
-link paths
+link paths, io
 import logger
 
 
@@ -162,8 +162,11 @@ class LSPDB(
          every file_in_pack := pack.getFiles().get() do {
             Logger.debug4_kind("db:path:package:file", "Processing ", file_in_pack.getName())
             file_without_ext := &null
+            # The following could leave a &null in x
+            x := suffix(file_in_pack.getName())[2]
             file_in_pack.getName() ? {
-               file_without_ext := tab(upto("."))
+               # if x is &null, get entire string and not just removal of file extension
+               file_without_ext := tab(-(*\x + 1) | 0)
             }
             file_table[file_without_ext] := table()
 

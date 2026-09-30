@@ -117,9 +117,18 @@ ARCH=$(shell $(UC) -features | grep Arch | cut -d " " -f 2)
 UNAME=$(shell uname )
 RNAME=unicon-$(UNAME)-$(ARCH).report
 
+# Report exits nonzero when suites fail, after it has printed Result:.
+# Upload that report, then pass the test status on. If Report stops
+# before Result:, leave the published copy alone.
 publish:
-	$(MAKE) -s Report > $(RNAME)
-	scp $(RNAME) web.sf.net:/home/project-web/unicon/htdocs/test/auto/
+	$(MAKE) -s Report > $(RNAME); status=$$?; \
+	if ! grep -q '^Result: ' $(RNAME); then \
+	  echo "Report stopped before the Result line; not uploading $(RNAME)" >&2; \
+	  [ $$status -eq 0 ] && exit 1; \
+	  exit $$status; \
+	fi; \
+	scp $(RNAME) web.sf.net:/home/project-web/unicon/htdocs/test/auto/ || exit 1; \
+	exit $$status
 
 Test-icont:	; cd general; $(MAKE) Test; cd ../posix; $(MAKE) Test
 Samples Samples-icont:	; cd general; $(MAKE) Samples

@@ -197,17 +197,47 @@ jobs:
             echo '<main style="max-width:60rem;margin:2rem auto;padding:0 1rem;font-family:sans-serif">'
             echo '<h1>Development package downloads</h1>'
             echo '<p>Built automatically from the latest <code>master</code> commit.'
-            echo ' These are <strong>unsigned development builds</strong> for manual'
-            echo ' <code>dpkg -i</code> / <code>rpm -i</code> install, or the Windows'
-            echo ' installer &mdash; not an apt/dnf-tracked release repo. Signed release'
-            echo ' packages are published separately per tagged release.'
-            echo ' Names ending in <code>-nographics</code> are built with'
-            echo ' <code>--disable-graphics</code>.</p>'
+            echo ' These are <strong>unsigned development builds</strong>, not an'
+            echo ' apt or dnf repository. Signed release packages are published'
+            echo ' separately per tagged release.'
+            echo ' A path containing <code>nographics</code> is built with'
+            echo ' <code>--disable-graphics</code> and has no GUI, IDE, or 3D library.</p>'
             echo "$run_note"
-            for kind_label in 'deb:Debian / Ubuntu (.deb)' 'rpm:Fedora / RHEL-family (.rpm)' 'win:Windows'; do
+            for kind_label in 'deb:Debian / Ubuntu (.deb)' 'rpm:Fedora / Rocky Linux (.rpm)' 'win:Windows'; do
               kind="${kind_label%%:*}"
               label="${kind_label#*:}"
-              echo "<h2>${label}</h2><ul>"
+              echo "<h2>${label}</h2>"
+              case "$kind" in
+                deb)
+                  echo '<p>Download the package for your release and architecture,'
+                  echo ' for example Ubuntu 24.04 amd64 or Debian 13 arm64.'
+                  echo ' From the directory where you saved it:</p>'
+                  echo '<pre><code>sudo apt install "./unicon_&lt;version&gt;_&lt;arch&gt;.deb"</code></pre>'
+                  echo '<p>Quote the filename. It contains <code>~</code>, which the shell'
+                  echo ' would otherwise treat as your home directory.'
+                  echo ' <code>apt</code> installs the shared libraries the package needs.'
+                  echo ' A local file is not signed, and apt may say so; that is expected.'
+                  echo ' <code>dpkg -i</code> does not install those libraries. If you use it,'
+                  echo ' run <code>sudo apt-get -f install</code> afterward.</p>'
+                  ;;
+                rpm)
+                  echo '<p>Download the Fedora 44 or Rocky Linux 9 x86_64 package that'
+                  echo ' matches your system. The two are not interchangeable.'
+                  echo ' From the directory where you saved it:</p>'
+                  echo '<pre><code>sudo dnf install "./unicon-&lt;version&gt;.rpm"</code></pre>'
+                  echo '<p>Quote the filename because it contains <code>~</code>.'
+                  echo ' <code>dnf</code> installs the dependencies.'
+                  echo ' <code>rpm -i</code> does not.</p>'
+                  ;;
+                win)
+                  echo '<p>Download the 64-bit <code>.exe</code> and run it. The installer'
+                  echo ' is unsigned, so Windows may report an unknown publisher.'
+                  echo ' It adds the Unicon <code>bin</code> directory to the system'
+                  echo ' <code>PATH</code>. Open a new terminal after installation so the'
+                  echo ' updated path is picked up.</p>'
+                  ;;
+              esac
+              echo '<ul>'
               found=0
               for d in _site/downloads/"${kind}"-*/; do
                 [ -d "$d" ] || continue

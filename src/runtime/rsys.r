@@ -1022,25 +1022,6 @@ int netstatus (char *url, struct netstat *buf)
 #endif                                  /* Network */
 
 #if NT
-#ifdef Dbm
-/*
- * Win32 does not provide a link() function expected by GDBM.
- * Cross fingers and hope that copy-on-link semantics will work.
- */
-int link(char *s1, char *s2)
-{
-   int c;
-   FILE *f1 = fopen(s1,"rb"), *f2;
-   if (f1 == NULL) return -1;
-   f2 = fopen(s2, "wb");
-   if (f2 == NULL) { fclose(f1); return -1; }
-   while ((c = fgetc(f1)) != EOF) fputc(c, f2);
-   fclose(f1);
-   fclose(f2);
-   return 0;
-}
-#endif                                  /* Dbm */
-
 struct b_cons *LstTmpFiles;
 void closetmpfiles()
 {

@@ -390,6 +390,9 @@ debin: deb
 	  mv "$(DISTROOT)/$(udist)/$(UTARORIG)" "$(DISTROOT)/$(udist)/$(PKG_TARNAME)_$$ver.orig.tar.gz"; \
 	  src="$$dest"; \
 	fi; \
+	if test -n "$(UNICON_CONFIGURE_EXTRA)"; then \
+	  printf '%s\n' "$(UNICON_CONFIGURE_EXTRA)" > "$$src/debian/configure-extra"; \
+	fi; \
 	cd "$$src" && DEB_BUILD_MAINT_OPTIONS="$${DEB_BUILD_MAINT_OPTIONS:+$$DEB_BUILD_MAINT_OPTIONS }optimize=-lto" debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
 	ls -lh $(DISTROOT)/$(udist)/unicon_*.deb
 
@@ -417,22 +420,22 @@ rpm: dist
 	@echo "To finish building the rpm package, do"
 	@echo "   cd $(RPM_TOPDIR)/SPECS"
 	@echo "Then run:"
-	@echo "	 rpmbuild -ba --define 'ver $(PKG_BUILDVER)' --define 'tarball $(UTAR)' --define '_topdir $(RPM_TOPDIR)' unicon.spec"
+	@echo "	 rpmbuild -ba --define 'ver $(PKG_BUILDVER)' --define 'tarball $(UTAR)' --define '_topdir $(RPM_TOPDIR)' --define 'configure_extra $(UNICON_CONFIGURE_EXTRA)' --define 'with_graphics $(RPM_WITH_GRAPHICS)' unicon.spec"
+
+# UNICON_CONFIGURE_EXTRA is passed to ./configure (for example --disable-graphics).
+RPM_WITH_GRAPHICS=$(if $(findstring --disable-graphics,$(UNICON_CONFIGURE_EXTRA)),0,1)
+RPM_DEFINES=--define "ver $(PKG_BUILDVER)" \
+	--define "tarball $(UTAR)" \
+	--define "_topdir $(RPM_TOPDIR)" \
+	--define "configure_extra $(UNICON_CONFIGURE_EXTRA)" \
+	--define "with_graphics $(RPM_WITH_GRAPHICS)"
 
 rpmbin: rpm
-	cd $(RPM_TOPDIR)/SPECS && rpmbuild -ba \
-	  --define "ver $(PKG_BUILDVER)" \
-	  --define "tarball $(UTAR)" \
-	  --define "_topdir $(RPM_TOPDIR)" \
-	  unicon.spec
+	cd $(RPM_TOPDIR)/SPECS && rpmbuild -ba $(RPM_DEFINES) unicon.spec
 	ls -lh $(RPM_TOPDIR)/RPMS/*/$(PKG_TARNAME)-*.rpm
 
 rpmresume: rpm
-	cd $(RPM_TOPDIR)/SPECS && rpmbuild -bi --short-circuit \
-	  --define "ver $(PKG_BUILDVER)" \
-	  --define "tarball $(UTAR)" \
-	  --define "_topdir $(RPM_TOPDIR)" \
-	  unicon.spec
+	cd $(RPM_TOPDIR)/SPECS && rpmbuild -bi --short-circuit $(RPM_DEFINES) unicon.spec
 	ls -lh $(RPM_TOPDIR)/RPMS/*/$(PKG_TARNAME)-*.rpm
 
 rpmsrc: rpm

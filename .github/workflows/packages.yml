@@ -26,7 +26,7 @@ jobs:
   Windows:
     runs-on: ${{ matrix.cfg.os }}
     name: ${{ matrix.cfg.name }}
-    timeout-minutes: 60
+    timeout-minutes: 120
     strategy:
       matrix:
         cfg:
@@ -58,21 +58,39 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
 
-    - name: Configure
-      run: sh configure  ${{ matrix.cfg.opt }}
-
-    - name: Make
-      run: make
-
-    - name: Installer
+    # One job builds both installers. msys2 setup is shared; the second
+    # configure is a clean rebuild so --disable-graphics is not mixed
+    # with objects from the graphics build.
+    - name: Graphics installer
       run: |
+        sh configure ${{ matrix.cfg.opt }}
+        make
         make WinInstaller
+        mkdir -p win-pkg
+        cp Output/setup-unicon*.exe win-pkg/
 
     - name: Publish
       uses: actions/upload-artifact@v6
       with:
         name: win-${{ matrix.cfg.name }}
-        path: Output/setup-unicon*.exe
+        path: win-pkg/setup-unicon*.exe
+        if-no-files-found: warn
+
+    - name: No-graphics installer
+      run: |
+        make distclean
+        rm -f Output/setup-unicon*.exe
+        sh configure --disable-graphics ${{ matrix.cfg.opt }}
+        make
+        make WinInstaller
+        mkdir -p win-pkg-nographics
+        cp Output/setup-unicon*.exe win-pkg-nographics/
+
+    - name: Publish no-graphics
+      uses: actions/upload-artifact@v6
+      with:
+        name: win-${{ matrix.cfg.name }}-nographics
+        path: win-pkg-nographics/setup-unicon*.exe
         if-no-files-found: warn
 
   # Containerized so coverage isn't limited to whichever distro versions GitHub happens to
@@ -83,7 +101,7 @@ jobs:
     runs-on: ${{ matrix.cfg.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     name: ${{ matrix.cfg.name }}
     container: ${{ matrix.cfg.image }}
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -128,16 +146,24 @@ jobs:
         fi
         mk-build-deps --install debian/control -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends"
 
-    - name: Configure
-      run: ./configure
-
+    # Both packages are built here so apt setup runs once. The nographics
+    # revision sorts after the graphics package, and the dist tree is
+    # removed between them so the second debuild starts clean.
     - name: Deb
       run: |
-        # run number keeps versions ordered; the short sha identifies the commit.
-        export UNICON_PKG_REV="${GITHUB_RUN_NUMBER}.$(printf %.12s "$GITHUB_SHA")"
+        base="${GITHUB_RUN_NUMBER}.$(printf %.12s "$GITHUB_SHA")"
+        rm -rf ../unicondist
+        export UNICON_PKG_REV="$base"
+        unset UNICON_CONFIGURE_EXTRA
         make debin
-        mkdir debian-pkg
+        mkdir -p debian-pkg
         cp ../unicondist/unicon_*.deb debian-pkg/
+        rm -rf ../unicondist
+        export UNICON_PKG_REV="${base}.nographics"
+        export UNICON_CONFIGURE_EXTRA=--disable-graphics
+        make debin
+        mkdir -p debian-pkg-nographics
+        cp ../unicondist/unicon_*.deb debian-pkg-nographics/
 
     - name: Publish
       uses: actions/upload-artifact@v6
@@ -146,8 +172,16 @@ jobs:
         path: debian-pkg/unicon_*
         if-no-files-found: warn
 
-    - name: Install
+    - name: Publish no-graphics
+      uses: actions/upload-artifact@v6
+      with:
+        name: deb-${{ matrix.cfg.name }}-nographics
+        path: debian-pkg-nographics/unicon_*
+        if-no-files-found: warn
+
+    - name: Install and test
       # Container jobs use sh, not bash, so this stays POSIX (no shopt, no arrays).
+      # nographics is the newer version, so install the graphics package first.
       run: |
         set -- ./debian-pkg/*.deb
         if [ ! -f "$1" ]; then
@@ -155,9 +189,14 @@ jobs:
           exit 1
         fi
         apt-get install -y "$@"
-
-    - name: Test
-      run: make Test
+        make Test
+        set -- ./debian-pkg-nographics/*.deb
+        if [ ! -f "$1" ]; then
+          echo "No .deb packages under debian-pkg-nographics/; did the no-graphics Deb step succeed?"
+          exit 1
+        fi
+        apt-get install -y "$@"
+        make Test
       env:
         UC: unicon
 
@@ -168,7 +207,7 @@ jobs:
     runs-on: ubuntu-latest
     name: ${{ matrix.cfg.name }}
     container: ${{ matrix.cfg.image }}
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -200,15 +239,22 @@ jobs:
           fedora*) dnf -y install openal-soft-devel freealut-devel libogg-devel libvorbis-devel ;;
         esac
 
-    - name: Configure
-      run: ./configure
-
+    # Same pattern as the Deb job: one dependency install, two packages.
     - name: Rpm
       run: |
-        export UNICON_PKG_REV="${GITHUB_RUN_NUMBER}.$(printf %.12s "$GITHUB_SHA")"
+        base="${GITHUB_RUN_NUMBER}.$(printf %.12s "$GITHUB_SHA")"
+        rm -rf ../rpmbuild
+        export UNICON_PKG_REV="$base"
+        unset UNICON_CONFIGURE_EXTRA
         make rpmbin
-        mkdir rpm-pkg
+        mkdir -p rpm-pkg
         cp ../rpmbuild/RPMS/*/unicon-*.rpm rpm-pkg/
+        rm -rf ../rpmbuild
+        export UNICON_PKG_REV="${base}.nographics"
+        export UNICON_CONFIGURE_EXTRA=--disable-graphics
+        make rpmbin
+        mkdir -p rpm-pkg-nographics
+        cp ../rpmbuild/RPMS/*/unicon-*.rpm rpm-pkg-nographics/
 
     - name: Publish
       uses: actions/upload-artifact@v6
@@ -217,10 +263,18 @@ jobs:
         path: rpm-pkg/unicon-*.rpm
         if-no-files-found: warn
 
-    - name: Install
-      run: dnf -y install ./rpm-pkg/unicon-*.rpm
+    - name: Publish no-graphics
+      uses: actions/upload-artifact@v6
+      with:
+        name: rpm-${{ matrix.cfg.name }}-nographics
+        path: rpm-pkg-nographics/unicon-*.rpm
+        if-no-files-found: warn
 
-    - name: Test
-      run: make Test
+    - name: Install and test
+      run: |
+        dnf -y install ./rpm-pkg/unicon-*.rpm
+        make Test
+        dnf -y install ./rpm-pkg-nographics/unicon-*.rpm
+        make Test
       env:
         UC: unicon

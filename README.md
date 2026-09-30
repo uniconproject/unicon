@@ -49,7 +49,8 @@ For source tarballs and release binaries, see the unicon.org
 
 **[Download packages](https://uniconproject.github.io/unicon/downloads/)**
 for development builds of the latest `master` commit: Debian/Ubuntu `.deb`,
-Fedora/Rocky `.rpm`, and a Windows installer.
+Fedora/Rocky `.rpm`, and a Windows installer. Packages whose names end in
+`nographics` are the same builds configured with `--disable-graphics`.
 
 
 ## Build Instructions

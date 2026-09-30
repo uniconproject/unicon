@@ -6,6 +6,8 @@ Name:    unicon
 # tarball names the file make dist copied into SOURCES.
 %{!?ver: %define ver 13.3~prerelease}
 %{!?tarball: %define tarball unicon_%{ver}.tar.gz}
+# make rpmbin sets with_graphics to 0 for a --disable-graphics build.
+%{!?with_graphics: %define with_graphics 1}
 Version: %{ver}
 Release: 1%{?dist}
 Summary: The Unicon Programming Language
@@ -13,10 +15,12 @@ Summary: The Unicon Programming Language
 License: GPLv2+
 Source0: %{tarball}
 
+%if %{with_graphics}
 BuildRequires: libjpeg-turbo-devel, libpng-devel, libX11-devel
 BuildRequires: mesa-libGL-devel, mesa-libGLU-devel
-BuildRequires: openssl-devel, libssh-devel, unixODBC-devel
 BuildRequires: libXft-devel, freetype-devel
+%endif
+BuildRequires: openssl-devel, libssh-devel, unixODBC-devel
 # OpenAL, freealut, ogg, and vorbis are not in RHEL/Rocky. Runtime dependencies
 # for libraries that were actually linked come from the automatic soname
 # generator, so a Rocky build does not require OpenAL.
@@ -25,10 +29,12 @@ BuildRequires: openal-soft-devel, freealut-devel, libogg-devel, libvorbis-devel
 %endif
 
 
+%if %{with_graphics}
 Requires: libjpeg-turbo, libpng, libX11
 Requires: mesa-libGL, mesa-libGLU
-Requires: openssl, unixODBC
 Requires: libXft, freetype
+%endif
+Requires: openssl, unixODBC
 
 
 Requires(post): info
@@ -57,7 +63,7 @@ unset CFLAGS
 unset CXXFLAGS
 unset LDFLAGS
 unset RPM_OPT_FLAGS
-./configure --prefix=/usr --bindir=%{_bindir} --libdir=%{_libdir} --mandir=%{_mandir} --docdir=%{_docdir}/%{name}
+./configure --prefix=/usr --bindir=%{_bindir} --libdir=%{_libdir} --mandir=%{_mandir} --docdir=%{_docdir}/%{name} %{?configure_extra}
 make -j8
 
 %install

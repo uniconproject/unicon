@@ -32,9 +32,13 @@ DEB_CONFIGURE_EXTRA_FLAGS += --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH)
 %:
 	dh $@  --with autoreconf --with autotools-dev
 
+# Optional extra ./configure arguments, for example --disable-graphics.
+# make debin writes this file; debuild does not pass the environment through.
+UNICON_CONFIGURE_EXTRA := $(strip $(shell cat debian/configure-extra 2>/dev/null))
+
 # Unicon build configuration
 override_dh_auto_configure:
-	dh_auto_configure -- --prefix=/usr --mandir=/usr/share/man --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) --enable-verbosebuild
+	dh_auto_configure -- --prefix=/usr --mandir=/usr/share/man --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) --enable-verbosebuild $(UNICON_CONFIGURE_EXTRA)
 
 
 #override_dh_installinit:

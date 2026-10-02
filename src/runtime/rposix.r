@@ -1441,7 +1441,11 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int sock_type, int family)
      }
 
   INIT_ADDRINFO_HINTS(hints, family, sock, (nohost?AI_PASSIVE:0), proto);
-  if ( (rc = getaddrinfo((nohost?NULL:addr), service, &hints, &res0)) != 0) {
+  /* Name resolution can block; let GC proceed meanwhile. */
+  DEC_NARTHREADS;
+  rc = getaddrinfo((nohost?NULL:addr), service, &hints, &res0);
+  INC_NARTHREADS_CONTROLLED;
+  if (rc != 0) {
     set_gaierrortext(rc);
     return NULL;
   }
@@ -2909,7 +2913,15 @@ int sock_connect(char *fn, int sock_type, int timeout, int af_fam,
 #endif                                  /* NT */
    }
 
+   /* A blocking connect() can take a long time; let GC proceed. */
+   {
+   int connect_errno;
+   DEC_NARTHREADS;
    rc = connect(s, sa, len);
+   connect_errno = errno;
+   INC_NARTHREADS_CONTROLLED;
+   errno = connect_errno;
+   }
 
    if (timeout > 0) {
 #if UNIX
@@ -2935,7 +2947,11 @@ int sock_connect(char *fn, int sock_type, int timeout, int af_fam,
          FD_ZERO(&es);
          FD_SET(s, &es);
          errno = 0;
+         DEC_NARTHREADS;
          sc = select(FD_SETSIZE, NULL, &ws, &es, &tv);
+         cc = errno;
+         INC_NARTHREADS_CONTROLLED;
+         errno = cc;
          /*
           * A result of 0 means timeout; in this case errno will be zero too,
           * and that can be used to distinguish from another error condition.
@@ -2986,7 +3002,11 @@ int sock_connect(char *fn, int sock_type, int timeout, int af_fam,
          FD_ZERO(&es);
          FD_SET(s, &es);
          WSASetLastError(0);
+         DEC_NARTHREADS;
          sc = select(FD_SETSIZE, NULL, &ws, &es, &tv);
+         cc = errno;
+         INC_NARTHREADS_CONTROLLED;
+         errno = cc;
          /* A result of 0 means timeout; in this case WSAGetLastError() will return zero,
             and that can be used to distinguish from another error condition. */
          if (sc <= 0) {

@@ -1602,11 +1602,14 @@ Deliberate Syntax Error
                }
 #endif                                  /* HAVE_LIBSSL */
 
-               /* "na"/"nl" => bind (and listen/accept per sock_type) */
-               DEC_NARTHREADS;
+               /*
+                * "na"/"nl" => bind (and listen/accept per sock_type).
+                * sock_listen() counts itself out around its blocking
+                * calls; it converts attributes and sets &errortext, so
+                * it must be entered with this thread counted in.
+                */
                fd = sock_listen(fnamestr, sock_type,
                                 (status & Fs_Listen) != 0, af_fam, attr, n);
-               INC_NARTHREADS_CONTROLLED;
 
 #if HAVE_LIBSSL
                if(fd > 0 && status & Fs_Encrypt) {
@@ -1674,11 +1677,13 @@ Deliberate Syntax Error
                      timeout = 0;
                }
 #endif                                  /* Graphics || Messaging || ISQL */
-               /* connect to a port (or raw destination) */
-               DEC_NARTHREADS;
+               /*
+                * Connect to a port (or raw destination).  As with
+                * sock_listen(), sock_connect() counts itself out only
+                * around its blocking calls.
+                */
                fd = sock_connect(fnamestr, sock_type, timeout,
                                  af_fam, attr, n);
-               INC_NARTHREADS_CONTROLLED;
 #if HAVE_LIBSSL
                if(fd > 0 && status & Fs_Encrypt){
                   int err;

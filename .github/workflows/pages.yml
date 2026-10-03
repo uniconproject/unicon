@@ -173,7 +173,7 @@ jobs:
             echo "Pulling package artifacts from Binary Packages run ${run_id}"
             # gh accepts a single --pattern; a second copy replaces the first.
             got=0
-            for pat in 'deb-*' 'rpm-*' 'win-*'; do
+            for pat in 'deb-*' 'rpm-*' 'arch-*' 'win-*'; do
               if gh run download "$run_id" --pattern "$pat" --dir _site/downloads; then
                 got=1
               else
@@ -212,7 +212,7 @@ jobs:
             echo ' <code>--disable-graphics --disable-audio</code> and has no GUI,'
             echo ' IDE, 3D library, or audio.</p>'
             echo "$run_note"
-            for kind_label in 'deb:Debian / Ubuntu (.deb)' 'rpm:Fedora / Rocky Linux (.rpm)' 'win:Windows'; do
+            for kind_label in 'deb:Debian / Ubuntu (.deb)' 'rpm:Fedora / Rocky Linux (.rpm)' 'arch:Arch Linux / CachyOS' 'win:Windows'; do
               kind="${kind_label%%:*}"
               label="${kind_label#*:}"
               echo "<h2>${label}</h2>"
@@ -238,6 +238,15 @@ jobs:
                   echo ' <code>dnf</code> installs the dependencies.'
                   echo ' <code>rpm -i</code> does not.</p>'
                   ;;
+                arch)
+                  echo '<p>Download either the Arch Linux or the CachyOS directory.'
+                  echo ' They are built in different containers and are not'
+                  echo ' interchangeable. From the graphics directory, skip the'
+                  echo ' no-graphics packages. They conflict with this set:</p>'
+                  echo '<pre><code>sudo pacman -U $(ls ./*.pkg.tar.zst | grep -v nographics)</code></pre>'
+                  echo '<p>The <code>nographics</code> directory contains only'
+                  echo ' <code>unicon-runtime-nographics</code>.</p>'
+                  ;;
                 win)
                   echo '<p>Download the 64-bit <code>.exe</code> and run it. The installer'
                   echo ' is unsigned, so Windows may report an unknown publisher.'
@@ -253,7 +262,7 @@ jobs:
                 for f in "$d"*; do
                   [ -f "$f" ] || continue
                   case "$f" in
-                    *.deb|*.rpm|*.exe) ;;
+                    *.deb|*.rpm|*.exe|*.pkg.tar.zst) ;;
                     *) continue ;;
                   esac
                   rel="${f#_site/downloads/}"

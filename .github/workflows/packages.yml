@@ -420,6 +420,84 @@ jobs:
       env:
         UC: unicon
 
+  # Arch and CachyOS share one PKGBUILD. CachyOS is its own container so the
+  # binaries are built with that image's compiler flags. Both produce the
+  # full split, including unicon-runtime-nographics. These artifacts are
+  # downloads only until a pacman repository is published.
+  Arch:
+    runs-on: ubuntu-latest
+    name: ${{ matrix.cfg.name }}
+    container: ${{ matrix.cfg.image }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        cfg:
+        - { image: 'archlinux:base-devel', name: 'Arch-x86_64' }
+        - { image: 'cachyos/cachyos', name: 'CachyOS-x86_64' }
+
+    steps:
+    - name: Install dependencies
+      run: |
+        pacman -Syu --needed --noconfirm git base-devel \
+          libx11 libxft freetype2 mesa glu libpng libjpeg-turbo \
+          openssl libssh unixodbc openal freealut libvorbis libogg
+
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Package
+      run: |
+        base="${GITHUB_RUN_NUMBER}.$(printf %.12s "$GITHUB_SHA")"
+        useradd -m builder
+        mkdir -p arch-pkg
+        chown -R builder:builder "$PWD"
+        su builder -c "cd arch && env UNICON_PKG_REV='${base}' PKGDEST='${PWD}/arch-pkg' makepkg --noconfirm"
+        mkdir -p arch-pkg-nographics
+        cp arch-pkg/unicon-runtime-nographics-*.pkg.tar.zst arch-pkg-nographics/
+        ls -lh arch-pkg arch-pkg-nographics
+
+    - name: Publish
+      uses: actions/upload-artifact@v6
+      with:
+        name: arch-${{ matrix.cfg.name }}
+        path: arch-pkg/*.pkg.tar.zst
+        if-no-files-found: error
+
+    - name: Publish no-graphics
+      uses: actions/upload-artifact@v6
+      with:
+        name: arch-${{ matrix.cfg.name }}-nographics
+        path: arch-pkg-nographics/*.pkg.tar.zst
+        if-no-files-found: error
+
+    - name: Install and test
+      # unicon and unicon-nographics conflict. The no-graphics runtime
+      # conflicts with unicon-runtime, so the test install is the graphics
+      # set. The other two packages are checked from their metadata.
+      run: |
+        set --
+        for f in ./arch-pkg/*.pkg.tar.zst; do
+          case "$f" in
+            ./arch-pkg/unicon-nographics-*|./arch-pkg/unicon-runtime-nographics-*)
+              continue
+              ;;
+          esac
+          if [ -f "$f" ]; then
+            set -- "$@" "$f"
+          fi
+        done
+        if [ ! -f "$1" ]; then
+          echo "No Arch packages under arch-pkg/; did the Package step succeed?"
+          exit 1
+        fi
+        pacman -U --noconfirm "$@"
+        make Test
+        pacman -Qpi ./arch-pkg/unicon-nographics-*.pkg.tar.zst | grep -q unicon-runtime-nographics
+        pacman -Qpi ./arch-pkg/unicon-runtime-nographics-*.pkg.tar.zst | grep -q unicon-vm
+      env:
+        UC: unicon
+
   # One orig tarball, per-suite .dsc, and rpm trees for the local reprepro
   # and createrepo repos. Channel (dev/rc/release) is chosen when publishing,
   # not here; master is dev, a tag containing "rc" is rc, any other tag is

@@ -2781,6 +2781,12 @@ function{1} lock(x)
          }
       file:{
          inline {
+            /*
+             * File mutexes exist before any thread does.  Lock for real
+             * even then: otherwise this is a no-op, and an unlock() after
+             * the first thread starts would release a mutex never taken.
+             */
+            TURN_ON_CONCURRENT();
             MUTEX_LOCKID_CONTROLLED(BlkD(x, File)->mutexid);
             return x;
             }
@@ -2823,6 +2829,7 @@ function{0,1} trylock(x)
       file:{
          inline {
             int rv;
+            TURN_ON_CONCURRENT();       /* see lock() */
             MUTEX_TRYLOCKID(BlkD(x, File)->mutexid, rv);
             if (rv == 0) return x;
             fail;

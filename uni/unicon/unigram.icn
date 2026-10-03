@@ -3020,8 +3020,9 @@ procedure InsertLocks(nd,crl)
             }
          }
 
-         # look for fail tokens amongst the children
-         if *crl > 0 & /noKids then {
+         # look for fail tokens amongst the children;
+         # the FAIL token in the keyword &fail is not a fail expression
+         if *crl > 0 & /noKids & nd.label ~== "keyword" then {
             every k := nd.children[n := 1 to *nd.children] do {
                if type(k) == "token" & k.tok == FAIL then {
                   nd.children[n] := mkUnlock(k, crl, tokLocn(k))
@@ -3379,7 +3380,7 @@ procedure mkUnlockBreakExpr(brk, expr, crl, breaks, unlocks, locn)
    k.children[2] := mkUnlockFallibleExpr(expr,crl[1+:unlocks],locn)
    return
 end
-#line 3386 "unigram.icn"
+#line 3387 "unigram.icn"
 $define YYACCEPT return 0
 $define YYABORT return 1
 ################################################################
@@ -4990,4 +4991,4 @@ procedure action_325()
  yyval := node("error") 
 end
 
-#line 4997 "unigram.icn"
+#line 4998 "unigram.icn"

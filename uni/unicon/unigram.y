@@ -1308,8 +1308,9 @@ procedure InsertLocks(nd,crl)
             }
          }
 
-         # look for fail tokens amongst the children
-         if *crl > 0 & /noKids then {
+         # look for fail tokens amongst the children;
+         # the FAIL token in the keyword &fail is not a fail expression
+         if *crl > 0 & /noKids & nd.label ~== "keyword" then {
             every k := nd.children[n := 1 to *nd.children] do {
                if type(k) == "token" & k.tok == FAIL then {
                   nd.children[n] := mkUnlock(k, crl, tokLocn(k))

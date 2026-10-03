@@ -698,9 +698,29 @@ void coclean(struct b_coexpr *cp) {
       MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
     }
 #endif                  /* Concurrent */
+    /*
+     * Mark the thread dead and wake everyone waiting on its queues.  This
+     * must happen under each queue's mutex: a receiver checks alive and
+     * then waits while holding it, so an unlocked store-and-signal can
+     * fall between the two and the wakeup is lost for good.  Broadcast,
+     * since every waiter must see that no more values are coming.
+     */
+    {
+    struct b_list *qp;
+
+    qp = BlkD(cp->outbox, List);
+    MUTEX_LOCKBLK_CONTROLLED(qp, "coclean(): outbox mutex");
+    qp = BlkD(cp->outbox, List);   /* may have moved while we waited */
     cp->alive = -8;
-    CV_SIGNAL_EMPTYBLK(BlkD(cp->outbox, List));
-    CV_SIGNAL_FULLBLK(BlkD(cp->inbox, List));
+    pthread_cond_broadcast(condvars[qp->cvempty]);
+    MUTEX_UNLOCKBLK(qp, "coclean(): outbox mutex");
+
+    qp = BlkD(cp->inbox, List);
+    MUTEX_LOCKBLK_CONTROLLED(qp, "coclean(): inbox mutex");
+    qp = BlkD(cp->inbox, List);
+    pthread_cond_broadcast(condvars[qp->cvfull]);
+    MUTEX_UNLOCKBLK(qp, "coclean(): inbox mutex");
+    }
 
     DEC_NARTHREADS;
     cp->alive = -1;

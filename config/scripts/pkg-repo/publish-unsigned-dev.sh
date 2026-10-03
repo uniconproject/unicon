@@ -68,6 +68,27 @@ enabled=1
 gpgcheck=0
 repo_gpgcheck=0
 EOF
+   # Tumbleweed's $releasever is a snapshot date, so that tree is a fixed path.
+   cat > "$out/rpm/unicon-leap.repo" <<EOF
+[unicon-dev]
+name=Unicon dev for openSUSE Leap 16.0 (unsigned master snapshots)
+baseurl=${base}/pkgs/rpm/opensuse/16.0/\$basearch/
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+autorefresh=1
+type=rpm-md
+EOF
+   cat > "$out/rpm/unicon-tumbleweed.repo" <<EOF
+[unicon-dev]
+name=Unicon dev for openSUSE Tumbleweed (unsigned master snapshots)
+baseurl=${base}/pkgs/rpm/opensuse/tumbleweed/\$basearch/
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+autorefresh=1
+type=rpm-md
+EOF
    cat > "$out/arch/unicon-dev.conf" <<EOF
 [unicon-dev]
 Server = ${base}/pkgs/arch/\$arch
@@ -135,10 +156,12 @@ EOF
 }
 
 # fedora-44_x86_64 -> fedora/44/x86_64
+# opensuse-tumbleweed_x86_64 -> opensuse/tumbleweed/x86_64
+# Split on the first underscore. x86_64 itself contains one.
 rpm_dest() {
    local token_arch=$1 token arch family ver
-   arch=${token_arch##*_}
-   token=${token_arch%_*}
+   arch=${token_arch#*_}
+   token=${token_arch%%_*}
    ver=${token##*-}
    family=${token%-*}
    printf '%s/%s/%s\n' "$family" "$ver" "$arch"

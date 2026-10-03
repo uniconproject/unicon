@@ -306,31 +306,64 @@ jobs:
       fail-fast: false
       matrix:
         cfg:
-        -  { image: 'fedora:44',    name: 'Fedora-44_amd64' }
-        -  { image: 'rockylinux:9', name: 'RockyLinux-9_amd64' }
+        -  { image: 'fedora:44',              name: 'Fedora-44_amd64' }
+        -  { image: 'rockylinux:9',           name: 'RockyLinux-9_amd64' }
+        -  { image: 'opensuse/leap:16.0',     name: 'OpenSUSE-Leap-16.0_amd64' }
+        -  { image: 'opensuse/tumbleweed:latest', name: 'OpenSUSE-Tumbleweed_amd64' }
 
     steps:
     - name: Install git for checkout
-      run: dnf -y install git
+      run: |
+        case "${{ matrix.cfg.image }}" in
+          opensuse*)
+            # The permissions package fails to set file capabilities in this
+            # container. Lock it so zypper does not try to update it.
+            zypper -n al permissions || true
+            zypper -n refresh
+            # Tumbleweed ships busybox-gawk, which conflicts with gawk.
+            # --force-resolution removes that provider instead of aborting.
+            zypper -n install --force-resolution git
+            ;;
+          *)
+            dnf -y install git
+            ;;
+        esac
 
     - name: Checkout
       uses: actions/checkout@v6
 
     - name: Install dependencies
-      # Matches build.yml's Linux job dep list for these two images; openal/alut/ogg/vorbis
-      # are only in Fedora's repos, not Rocky's, same split build.yml already makes.
+      # openal/alut/ogg/vorbis are in Fedora and openSUSE, not Rocky.
+      # unixODBC-devel is in Rocky's CRB repo, which ships disabled.
+      # openSUSE spells several devel packages differently from Fedora.
       run: |
-        # unixODBC-devel is in Rocky's CRB repo, which ships disabled.
         case "${{ matrix.cfg.image }}" in
-          rocky*) enablerepo="--enablerepo=crb" ;;
-          *) enablerepo="" ;;
-        esac
-        dnf -y $enablerepo install rpm-build rpmdevtools gcc make diffutils \
-          libjpeg-turbo-devel libpng-devel libX11-devel \
-          mesa-libGL-devel mesa-libGLU-devel \
-          openssl-devel libssh-devel unixODBC-devel freetype-devel libXft-devel
-        case "${{ matrix.cfg.image }}" in
-          fedora*) dnf -y install openal-soft-devel freealut-devel libogg-devel libvorbis-devel ;;
+          opensuse*)
+            zypper -n al permissions || true
+            # rpm-build requires gawk. The Tumbleweed image has busybox-gawk,
+            # and a non-interactive install cancels that conflict unless the
+            # solver is allowed to replace it. The same applies to other
+            # busybox-* packages this image uses in place of the real tools.
+            zypper -n install --force-resolution rpm-build gcc make diffutils \
+              libjpeg8-devel libpng16-devel libX11-devel \
+              Mesa-libGL-devel glu-devel \
+              libopenssl-3-devel libssh-devel unixODBC-devel \
+              freetype2-devel libXft-devel \
+              openal-soft-devel freealut-devel libogg-devel libvorbis-devel
+            ;;
+          *)
+            case "${{ matrix.cfg.image }}" in
+              rocky*) enablerepo="--enablerepo=crb" ;;
+              *) enablerepo="" ;;
+            esac
+            dnf -y $enablerepo install rpm-build rpmdevtools gcc make diffutils \
+              libjpeg-turbo-devel libpng-devel libX11-devel \
+              mesa-libGL-devel mesa-libGLU-devel \
+              openssl-devel libssh-devel unixODBC-devel freetype-devel libXft-devel
+            case "${{ matrix.cfg.image }}" in
+              fedora*) dnf -y install openal-soft-devel freealut-devel libogg-devel libvorbis-devel ;;
+            esac
+            ;;
         esac
 
     # Same pattern as the Deb job: one dependency install, two packages.
@@ -411,7 +444,14 @@ jobs:
           echo "No .rpm packages under rpm-pkg/; did the Rpm step succeed?"
           exit 1
         fi
-        dnf -y install "$@"
+        case "${{ matrix.cfg.image }}" in
+          opensuse*)
+            zypper -n --no-gpg-checks install --allow-unsigned-rpm "$@"
+            ;;
+          *)
+            dnf -y install "$@"
+            ;;
+        esac
         make Test
         rpm -qp --requires ./rpm-pkg/unicon-nographics-*.rpm | grep -q unicon-runtime-nographics
         # The no-graphics runtime conflicts with unicon-runtime.

@@ -7,12 +7,16 @@
 # Accepts artifact names from this workflow:
 #   repo-deb-Ubuntu-24.04_amd64[-nographics]
 #   repo-rpm-Fedora-44_amd64[-nographics]
+#   repo-rpm-OpenSUSE-Leap-16.0_amd64[-nographics]
+#   repo-rpm-OpenSUSE-Tumbleweed_amd64[-nographics]
 # and the older downloads-page names (deb-*, rpm-*) which are binaries only.
 #
 # Output:
 #   deb/unicon/<suite>_<arch>/
 #   deb/unicon/<suite>_source/          # after staging
 #   rpm/unicon/fedora-44_x86_64/
+#   rpm/unicon/opensuse-16.0_x86_64/
+#   rpm/unicon/opensuse-tumbleweed_x86_64/
 #   channel                             # dev, rc, or release
 #
 # A nographics artifact is only unicon-runtime-nographics. Its .deb/.rpm
@@ -51,6 +55,8 @@ map_artifact() {
       deb-Debian-13_*)    kind=deb; token=trixie; arch=${name#deb-Debian-13_} ;;
       rpm-Fedora-44_*)    kind=rpm; token=fedora-44; arch=x86_64 ;;
       rpm-RockyLinux-9_*) kind=rpm; token=rocky-9; arch=x86_64 ;;
+      rpm-OpenSUSE-Leap-16.0_*) kind=rpm; token=opensuse-16.0; arch=x86_64 ;;
+      rpm-OpenSUSE-Tumbleweed_*) kind=rpm; token=opensuse-tumbleweed; arch=x86_64 ;;
       *) return 1 ;;
    esac
    printf '%s %s %s %s\n' "$kind" "$nographics" "$token" "$arch"

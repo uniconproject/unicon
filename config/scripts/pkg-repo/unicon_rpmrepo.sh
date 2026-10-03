@@ -32,10 +32,11 @@ need_tools() {
 }
 
 # fedora-44_x86_64 -> fedora/44/x86_64
+# Split on the first underscore. x86_64 itself contains one.
 rpm_leaf() {
    local token_arch="$1" token arch family ver
-   arch=${token_arch##*_}
-   token=${token_arch%_*}
+   arch=${token_arch#*_}
+   token=${token_arch%%_*}
    ver=${token##*-}
    family=${token%-*}
    printf '%s/%s/%s\n' "$family" "$ver" "$arch"

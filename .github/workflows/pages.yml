@@ -242,7 +242,7 @@ jobs:
               echo '<p><em>No apt repository in this build yet.</em></p>'
             fi
             echo '<h2>Fedora / Rocky Linux</h2>'
-            if find _site/pkgs/rpm -name repomd.xml -print -quit | grep -q .; then
+            if find _site/pkgs/rpm/fedora _site/pkgs/rpm/rocky -name repomd.xml -print -quit 2>/dev/null | grep -q .; then
               echo '<p>Fedora:</p>'
               echo "<pre><code>sudo dnf config-manager --add-repo ${base}/pkgs/rpm/unicon-fedora.repo"
               echo 'sudo dnf install unicon</code></pre>'
@@ -252,6 +252,21 @@ jobs:
               echo '<p>Fedora 44 and Rocky Linux 9, x86_64. The packages are not interchangeable.</p>'
             else
               echo '<p><em>No dnf repository in this build yet.</em></p>'
+            fi
+            echo '<h2>openSUSE</h2>'
+            if find _site/pkgs/rpm/opensuse -name repomd.xml -print -quit 2>/dev/null | grep -q .; then
+              echo '<p>Leap 16.0:</p>'
+              echo "<pre><code>sudo zypper addrepo ${base}/pkgs/rpm/unicon-leap.repo"
+              echo 'sudo zypper refresh'
+              echo 'sudo zypper install unicon</code></pre>'
+              echo '<p>Tumbleweed:</p>'
+              echo "<pre><code>sudo zypper addrepo ${base}/pkgs/rpm/unicon-tumbleweed.repo"
+              echo 'sudo zypper refresh'
+              echo 'sudo zypper install unicon</code></pre>'
+              echo '<p>Leap 16.0 and Tumbleweed, x86_64. They are not interchangeable'
+              echo ' with each other or with the Fedora and Rocky packages.</p>'
+            else
+              echo '<p><em>No zypper repository in this build yet.</em></p>'
             fi
             echo '<h2>Arch Linux / CachyOS</h2>'
             if [ -f _site/pkgs/arch/x86_64/unicon.db ] || [ -f _site/pkgs/cachyos/x86_64/unicon.db ]; then

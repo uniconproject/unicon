@@ -25,15 +25,25 @@ License: GPLv2+
 Source0: %{tarball}
 
 %if %{with_graphics}
+%if 0%{?suse_version}
+BuildRequires: libjpeg8-devel, libpng16-devel, libX11-devel
+BuildRequires: Mesa-libGL-devel, glu-devel
+BuildRequires: libXft-devel, freetype2-devel
+%else
 BuildRequires: libjpeg-turbo-devel, libpng-devel, libX11-devel
 BuildRequires: mesa-libGL-devel, mesa-libGLU-devel
 BuildRequires: libXft-devel, freetype-devel
 %endif
+%endif
+%if 0%{?suse_version}
+BuildRequires: libopenssl-3-devel, libssh-devel, unixODBC-devel
+%else
 BuildRequires: openssl-devel, libssh-devel, unixODBC-devel
+%endif
 # OpenAL, freealut, ogg, and vorbis are not in RHEL/Rocky. Runtime dependencies
 # for libraries that were actually linked come from the automatic soname
-# generator, so a Rocky build does not require OpenAL.
-%if 0%{?fedora}
+# generator, so a Rocky build does not require OpenAL. openSUSE has them.
+%if 0%{?fedora} || 0%{?suse_version}
 BuildRequires: openal-soft-devel, freealut-devel, libogg-devel, libvorbis-devel
 %endif
 
@@ -101,10 +111,17 @@ library or ui/ivib. Conflicts with the unicon metapackage.
 
 %package runtime
 Summary: Unicon virtual machine
+%if 0%{?suse_version}
+Requires: libopenssl3, unixODBC
+Requires: libjpeg8, libpng16-16, libX11-6
+Requires: Mesa-libGL1, libGLU1
+Requires: libXft2, libfreetype6
+%else
 Requires: openssl, unixODBC
 Requires: libjpeg-turbo, libpng, libX11
 Requires: mesa-libGL, mesa-libGLU
 Requires: libXft, freetype
+%endif
 Provides: unicon-vm
 Conflicts: unicon-runtime-nographics
 Obsoletes: unicon < 13.3~prerelease-1

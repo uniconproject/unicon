@@ -1301,7 +1301,7 @@ char *f(int region, word nbytes)
       /*
        * Set "curr_private" to point to newest region.
        */
-      MUTEX_LOCKID(mtx_heap);
+      MUTEX_LOCKID_CONTROLLED(mtx_heap);
       while (curr_private->next)
          curr_private = curr_private->next;
 #endif                                  /* Concurrent */

@@ -798,7 +798,7 @@ keyword{3} regions
 
       suspend C_integer 0;              /* static region */
 
-      MUTEX_LOCKID(MTX_STRHEAP);
+      MUTEX_LOCKID_CONTROLLED(MTX_STRHEAP);
       allRegions = DiffPtrs(strend,strbase);
       for (rp = curstring->next; rp; rp = rp->next)
          allRegions += DiffPtrs(rp->end,rp->base);
@@ -807,7 +807,7 @@ keyword{3} regions
       MUTEX_UNLOCKID(MTX_STRHEAP);
       suspend C_integer allRegions;     /* string region */
 
-      MUTEX_LOCKID(MTX_BLKHEAP);
+      MUTEX_LOCKID_CONTROLLED(MTX_BLKHEAP);
       allRegions = DiffPtrs(blkend,blkbase);
       for (rp = curblock->next; rp; rp = rp->next)
          allRegions += DiffPtrs(rp->end,rp->base);
@@ -850,7 +850,7 @@ keyword{3} storage
 
       suspend C_integer 0;              /* static region */
 
-      MUTEX_LOCKID(MTX_STRHEAP);
+      MUTEX_LOCKID_CONTROLLED(MTX_STRHEAP);
       allRegions = DiffPtrs(strfree,strbase);
       for (rp = curstring->next; rp; rp = rp->next)
          allRegions += DiffPtrs(rp->free,rp->base);
@@ -859,7 +859,7 @@ keyword{3} storage
       MUTEX_UNLOCKID(MTX_STRHEAP);
       suspend C_integer allRegions;     /* string region */
 
-      MUTEX_LOCKID(MTX_BLKHEAP);
+      MUTEX_LOCKID_CONTROLLED(MTX_BLKHEAP);
       allRegions = DiffPtrs(blkfree,blkbase);
       for (rp = curblock->next; rp; rp = rp->next)
          allRegions += DiffPtrs(rp->free,rp->base);

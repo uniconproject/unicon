@@ -33,3 +33,73 @@ $ debuild -us -uc
 
 * The resulting .deb will be in the parent directory
 
+Binary packages
+ The source package is one orig tarball shared by every suite. It
+ builds several binary packages, the way Debian splits Icon into
+ iconx, icont, and icon-ipl.
+
+   unicon           Metapackage. "apt install unicon" installs the
+                    full graphics set: runtime, compiler, libraries,
+                    and the prebuilt tools. Conflicts with
+                    unicon-nographics.
+   unicon-nographics
+                    Metapackage for the no-graphics install. Same set
+                    except unicon-runtime-nographics instead of
+                    unicon-runtime, and no unicon-gui or unicon-ui.
+                    Conflicts with unicon.
+   unicon-runtime   The virtual machine, linked with graphics. The
+                    executable name comes from configure. Provides
+                    unicon-vm.
+   unicon-runtime-nographics
+                    The same virtual machine from the build configured
+                    with --disable-graphics and --disable-audio. Same
+                    executable name, so the two packages Conflict and
+                    only one is installed. Also Provides unicon-vm.
+   unicon-plugins   libcfunc.so and the loadable plugins. loadfunc()
+                    looks for libcfunc.so. Depends on either runtime.
+                    Not required just to run the virtual machine.
+   unicon-lib       uni/lib. Needed when a program imports it. A
+                    prebuilt tool does not depend on this package:
+                    link/import are compiled in.
+   unicon-translator
+                    The unicon front end and the translator, plus
+                    uni/parser. The translator executable name is
+                    selected by configure. Depends on unicon-lib and
+                    either runtime.
+   unicon-compiler  The compiler and rt/. The executable name is
+                    selected by configure. Depends on either runtime.
+   unicon-patchstr  patchstr. Package builds run it before the files
+                    are split, so each package already holds patched
+                    binaries. It is not run again on install. The
+                    Windows installer does run it, because the
+                    directory is chosen then.
+   unicon-ipl       ipl/. This is Icon's icon-ipl. For programs that
+                    link it, not for the prebuilt tools.
+   unicon-gui       uni/gui and uni/3d. Imported by programs.
+                    Depends on unicon-runtime. Graphics build only.
+   unicon-xml       uni/xml. Imported by programs.
+
+ Each prebuilt tool is its own package and depends on either runtime.
+ ivib and ui need the graphics runtime. uscribe does not depend on
+ unicon, unicon-translator, unicon-compiler, unicon-lib, unicon-ipl, or udb.
+
+   unicon-uscribe   uscribe and uni/uscribe/themes
+   unicon-udb       udb and uprof
+   unicon-ulsp      ulsp and uni/ulsp
+   unicon-unidoc    unidoc and uni/unidoc
+   unicon-unidep    unidep and uni/unidep
+   unicon-iyacc     iyacc
+   unicon-uflex     uflex
+   unicon-ui        ui and ivib. Depends on unicon-runtime.
+
+ The graphics build produces every package except
+ unicon-runtime-nographics. The no-graphics build passes
+ --disable-graphics and --disable-audio and selects the build profile
+ pkg.unicon.nographics, which produces only that runtime package.
+ The unicon-nographics metapackage is built with the graphics set. It
+ depends on unicon-runtime-nographics, so it installs from the
+ repository, where both builds are published, and not from the
+ graphics build directory alone. The repo scripts publish every *.deb / *.rpm
+ from the build. Windows is not split into these packages. It still ships two
+ full installers, one with graphics and one without.
+

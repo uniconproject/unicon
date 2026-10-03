@@ -29,12 +29,33 @@ DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 DEB_CONFIGURE_EXTRA_FLAGS += --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH)
 
 
+# dh runs dh_update_autotools_config itself. The autotools-dev addon
+# was removed in debhelper compat 12.
 %:
-	dh $@  --with autoreconf --with autotools-dev
+	dh $@  --with autoreconf
 
 # Optional extra ./configure arguments, for example --disable-graphics.
 # make debin writes this file; debuild does not pass the environment through.
 UNICON_CONFIGURE_EXTRA := $(strip $(shell cat debian/configure-extra 2>/dev/null))
+
+# Published packages pass --enable-uniconx so the executables can sit
+# beside Icon. The installed names are read from Makedefs after configure,
+# not written down here.
+ifeq ($(findstring --enable-uniconx,$(UNICON_CONFIGURE_EXTRA)),)
+UNICON_CONFIGURE_EXTRA += --enable-uniconx
+endif
+
+# The pkg.unicon.nographics build profile ships only unicon-runtime-nographics.
+# The name is namespaced because lintian rejects unregistered profile names.
+# make debin sets DEB_BUILD_PROFILES when asked for --disable-graphics.
+ifneq ($(filter pkg.unicon.nographics,$(DEB_BUILD_PROFILES)),)
+ifeq ($(findstring --disable-graphics,$(UNICON_CONFIGURE_EXTRA)),)
+UNICON_CONFIGURE_EXTRA += --disable-graphics
+endif
+ifeq ($(findstring --disable-audio,$(UNICON_CONFIGURE_EXTRA)),)
+UNICON_CONFIGURE_EXTRA += --disable-audio
+endif
+endif
 
 # Unicon build configuration
 override_dh_auto_configure:
@@ -44,10 +65,39 @@ override_dh_auto_configure:
 #override_dh_installinit:
 #	dh_installinit --no-start
 
-# Do we need to custmoize the install?
-#override_dh_auto_install:
-#	dh_auto_install
-
+# Place the virtual machine, translator, and compiler using the names
+# configure wrote into Makedefs. The Windows GUI variants are included
+# only when that build produced them.
+# The pkg.unicon.nographics profile ships only unicon-runtime-nographics,
+# so drop every other installed file before dh_install. compat 13 treats
+# leftovers as errors.
+override_dh_install:
+	set -e; \
+	UNICONX=$$(sed -n 's/^UNICONX=//p' Makedefs); \
+	UNICONWX=$$(sed -n 's/^UNICONWX=//p' Makedefs); \
+	UNICONT=$$(sed -n 's/^UNICONT=//p' Makedefs); \
+	UNICONWT=$$(sed -n 's/^UNICONWT=//p' Makedefs); \
+	UNICONC=$$(sed -n 's/^UNICONC=//p' Makedefs); \
+	place() { \
+	  bin="$$1"; pkg="$$2"; \
+	  if [ -n "$$bin" ] && [ -f "debian/tmp/usr/bin/$$bin" ]; then \
+	    install -D "debian/tmp/usr/bin/$$bin" "debian/$$pkg/usr/bin/$$bin"; \
+	    rm -f "debian/tmp/usr/bin/$$bin"; \
+	  fi; \
+	}; \
+	if [ -n "$(filter pkg.unicon.nographics,$(DEB_BUILD_PROFILES))" ]; then \
+	  find debian/tmp/usr/bin -type f ! -name "$$UNICONX" ! -name "$$UNICONWX" -delete; \
+	  rm -rf debian/tmp/usr/share debian/tmp/usr/lib/*/unicon; \
+	  place "$$UNICONX" unicon-runtime-nographics; \
+	  place "$$UNICONWX" unicon-runtime-nographics; \
+	else \
+	  place "$$UNICONX" unicon-runtime; \
+	  place "$$UNICONWX" unicon-runtime; \
+	  place "$$UNICONT" unicon-translator; \
+	  place "$$UNICONWT" unicon-translator; \
+	  place "$$UNICONC" unicon-compiler; \
+	fi; \
+	dh_install
 
 # for manually installed dependencies
 override_dh_shlibdeps:

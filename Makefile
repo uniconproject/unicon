@@ -424,12 +424,12 @@ debin: deb
 	fi; \
 	case " $(UNICON_CONFIGURE_EXTRA) " in \
 	  *" --disable-graphics "*) \
-	    DEB_BUILD_PROFILES="$${DEB_BUILD_PROFILES:+$$DEB_BUILD_PROFILES }nographics"; \
+	    DEB_BUILD_PROFILES="$${DEB_BUILD_PROFILES:+$$DEB_BUILD_PROFILES }pkg.unicon.nographics"; \
 	    export DEB_BUILD_PROFILES; \
 	    ;; \
 	esac; \
 	cd "$$src" && DEB_BUILD_MAINT_OPTIONS="$${DEB_BUILD_MAINT_OPTIONS:+$$DEB_BUILD_MAINT_OPTIONS }optimize=-lto" debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
-	ls -lh $(DISTROOT)/$(udist)/unicon_*.deb
+	ls -lh $(DISTROOT)/$(udist)/*.deb
 
 debsrc: deb
 	cd $(DISTROOT)/$(udist)/$(PKG_STRNAME) && debuild -S $(SIGNOPT) --lintian-opts --profile debian

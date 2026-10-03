@@ -422,8 +422,8 @@ jobs:
 
   # Arch and CachyOS share one PKGBUILD. CachyOS is its own container so the
   # binaries are built with that image's compiler flags. Both produce the
-  # full split, including unicon-runtime-nographics. These artifacts are
-  # downloads only until a pacman repository is published.
+  # full split, including unicon-runtime-nographics. repo-arch-* is the
+  # unsigned pacman database the Pages site publishes.
   Arch:
     runs-on: ubuntu-latest
     name: ${{ matrix.cfg.name }}
@@ -455,7 +455,16 @@ jobs:
         su builder -c "cd arch && env UNICON_PKG_REV='${base}' PKGDEST='${PWD}/arch-pkg' makepkg --noconfirm"
         mkdir -p arch-pkg-nographics
         cp arch-pkg/unicon-runtime-nographics-*.pkg.tar.zst arch-pkg-nographics/
-        ls -lh arch-pkg arch-pkg-nographics
+        # Full set, including unicon-nographics, so one pacman repo can
+        # install either metapackage. upload-artifact drops symlinks, so
+        # the names pacman fetches are real files.
+        mkdir -p arch-repo/x86_64
+        cp arch-pkg/*.pkg.tar.zst arch-repo/x86_64/
+        repo-add arch-repo/x86_64/unicon.db.tar.zst arch-repo/x86_64/*.pkg.tar.zst
+        rm -f arch-repo/x86_64/unicon.db arch-repo/x86_64/unicon.files
+        cp arch-repo/x86_64/unicon.db.tar.* arch-repo/x86_64/unicon.db
+        cp arch-repo/x86_64/unicon.files.tar.* arch-repo/x86_64/unicon.files
+        ls -lh arch-pkg arch-pkg-nographics arch-repo/x86_64
 
     - name: Publish
       uses: actions/upload-artifact@v6
@@ -469,6 +478,13 @@ jobs:
       with:
         name: arch-${{ matrix.cfg.name }}-nographics
         path: arch-pkg-nographics/*.pkg.tar.zst
+        if-no-files-found: error
+
+    - name: Publish pacman repo
+      uses: actions/upload-artifact@v6
+      with:
+        name: repo-arch-${{ matrix.cfg.name }}
+        path: arch-repo/x86_64/*
         if-no-files-found: error
 
     - name: Install and test

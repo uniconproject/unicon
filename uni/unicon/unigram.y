@@ -1202,7 +1202,10 @@ record ParseError ( lineNumber, errorMessage )
 #
 # If  critical mtx: crit_expr is found then
 #   Replace                    With
-#   critical mtx : crit_expr   { lock(mtx); 1(crit_expr, unlock(mtx)) | (unlock(mtx, &fail)\1 }
+#   critical mtx : crit_expr   { lock(mtx);
+#                                1(crit_expr, unlock(mtx) | (lock(mtx), &fail)) |
+#                                (unlock(mtx), &fail)\1 }
+#   (resuming a generating crit_expr takes the lock again first)
 # and inside crit_expr
 #   Replace                    With
 #   fail                       { unlock(mtx...); fail }
@@ -1523,15 +1526,85 @@ procedure mkLockUnlock(expr, mtx, locn)
    # otherwise
    return mkBrace(
                   node("compound",
-                       node("invoke",
-                             token(IDENT, "lock", locn.line, locn.column, locn.filename),
-                             token(LPAREN,"(", locn.line, locn.column, locn.filename),
-                             mtx,
-                             token(RPAREN,")", locn.line, locn.column, locn.filename)),
+                       mkLockCall(mtx, locn),
                          ";",
-                         mkUnlockFallibleExpr(expr, [mtx], locn)),
+                         mkCriticalBody(expr, mtx, locn)),
                          locn
                   )
+end
+
+procedure mkLockCall(mtx, locn)
+   return node("invoke",
+               token(IDENT, "lock", locn.line, locn.column, locn.filename),
+               token(LPAREN,"(", locn.line, locn.column, locn.filename),
+               mtx,
+               token(RPAREN,")", locn.line, locn.column, locn.filename))
+end
+
+#  expr -> ( 1 ( expr, unlock(mtx) | (lock(mtx), &fail) ) | ( unlock(mtx), &fail)\1 )
+#
+#  Like mkUnlockFallibleExpr(expr, [mtx]), except that resuming the critical
+#  expression takes the lock again before backtracking into expr, so a
+#  generator produces each result under the lock and the final failure of
+#  expr releases it once.  Without the relock, resumption ran expr unlocked
+#  and then unlocked a mutex it no longer held.
+procedure mkCriticalBody(expr, mtx, locn)
+   local relock, unlockexpr, sexpr, fexpr
+
+   relock := node("Paren",
+                  token(LPAREN,"(", locn.line, locn.column, locn.filename),
+                  node("elst1",
+                       mkLockCall(mtx, locn),
+                       token(COMMA, ",", locn.line, locn.column, locn.filename),
+                       node("keyword",
+                            token(AND,"&",locn.line, locn.column, locn.filename),
+                            token(FAIL,"fail",locn.line, locn.column, locn.filename))),
+                  token(RPAREN,")", locn.line, locn.column, locn.filename))
+
+   unlockexpr := node("Paren",
+                      token(LPAREN,"(", locn.line, locn.column, locn.filename),
+                      node(BAR,
+                           node("invoke",
+                                token(IDENT, "unlock", locn.line, locn.column, locn.filename),
+                                token(LPAREN,"(", locn.line, locn.column, locn.filename),
+                                mtx,
+                                token(RPAREN,")", locn.line, locn.column, locn.filename)),
+                           token(BAR, "|",  locn.line, locn.column, locn.filename),
+                           relock),
+                      token(RPAREN,")", locn.line, locn.column, locn.filename))
+
+   sexpr := node("invoke",
+                 token(INTLIT, "1", locn.line, locn.column, locn.filename),
+                 token(LPAREN,"(", locn.line, locn.column, locn.filename),
+                 node("elst1", expr,
+                      token(COMMA, ",", locn.line, locn.column, locn.filename),
+                      unlockexpr),
+                 token(RPAREN,")", locn.line, locn.column, locn.filename))
+
+   fexpr := node("limit",
+                 node("Paren",
+                      token(LPAREN,"(", locn.line, locn.column, locn.filename),
+                      node("elst1",
+                           node("invoke",
+                                token(IDENT, "unlock", locn.line, locn.column, locn.filename),
+                                token(LPAREN,"(", locn.line, locn.column, locn.filename),
+                                mtx,
+                                token(RPAREN,")", locn.line, locn.column, locn.filename)),
+                           token(COMMA, ",", locn.line, locn.column, locn.filename),
+                           node("keyword",
+                                token(AND,"&",locn.line, locn.column, locn.filename),
+                                token(FAIL,"fail",locn.line, locn.column, locn.filename))),
+                      token(RPAREN,")", locn.line, locn.column, locn.filename)),
+                 token(BACKSLASH, "\\",  locn.line, locn.column, locn.filename),
+                 token(INTLIT, "1", locn.line, locn.column, locn.filename))
+
+   return node("Paren",
+               token(LPAREN,"(", locn.line, locn.column, locn.filename),
+               node(BAR,
+                    sexpr,  # Do this if expr succeeds
+                    token(BAR, "|",  locn.line, locn.column, locn.filename),
+                    fexpr), # Do this if expr fails
+               token(RPAREN,")", locn.line, locn.column, locn.filename))
 end
 
 # suspend expr -> { suspend 1 ( expr, unlock(mtx...) } do lock(...mtx) ; lock(..mtx) }

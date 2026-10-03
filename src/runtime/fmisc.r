@@ -2536,13 +2536,13 @@ end
 
 
 #define GETCVMUTEXID(x,y){ \
-   if (x>-2 || -x-1>ncondvars) irunerr(180, x); \
+   if (x>-2 || -x-1>ncondvars) { irunerr(180, x); errorfail; } \
    y = condvarsmtxs[-x-2];}
 
 #define GETMUTEXID(x,y) { \
    if (x<0) GETCVMUTEXID(x,y) \
    else y = x-1; \
-   if (y<NUM_STATIC_MUTEXES || y>=nmutexes) irunerr(180, x);}
+   if (y<NUM_STATIC_MUTEXES || y>=nmutexes) { irunerr(180, x); errorfail; }}
 
 
 word get_mutex( pthread_mutexattr_t *mattr){
@@ -2579,8 +2579,10 @@ word get_cv(word mtx){
       RESUME_THREADS();
       }
 
-   condvars[ncondvars] = malloc(sizeof(pthread_cond_t)); \
-   pthread_cond_init(condvars[ncondvars], NULL);
+   condvars[ncondvars] = malloc(sizeof(pthread_cond_t));
+   if (condvars[ncondvars] == NULL)
+      syserr("get_cv(): out of memory for condition variables!");
+   CV_INIT(condvars[ncondvars], "get_cv()");
    if(mtx<0)
       condvarsmtxs[ncondvars]=get_mutex(&rmtx_attr);
    else
@@ -2650,8 +2652,10 @@ function{0,1} signal(x, y)
    body {
       int rv;
       word i, x1 = -x-2;
-       if (x1<0 || x1>=ncondvars)
+       if (x1<0 || x1>=ncondvars) {
          irunerr(181, x);
+         errorfail;
+         }
       if (Y == 0) {
          if ((rv=pthread_cond_broadcast(condvars[x1])) != 0) {
             }
@@ -2840,6 +2844,30 @@ function{0,1} trylock(x)
      }
 end
 
+/*
+ * Unlock mutex id mtx for unlock().  Returns 0 or the pthread error, so
+ * that releasing a mutex this thread does not hold (EPERM) can be a
+ * run-time error rather than a system error.
+ */
+static int unlock_mutexid(word mtx)
+{
+   if (!is_concurrent)
+      return 0;
+   return pthread_mutex_unlock(MUTEXID(mtx));
+}
+
+#begdef UnlockOrFail(mtx, errexpr)
+   {
+   int rv = unlock_mutexid(mtx);
+   if (rv == EPERM) {
+      errexpr;
+      errorfail;
+      }
+   else if (rv != 0)
+      handle_thread_error(rv, FUNC_MUTEX_UNLOCK, "unlock()");
+   }
+#enddef
+
 "unlock(x) - unlock mutex x"
 
 function{1} unlock(x)
@@ -2849,7 +2877,7 @@ function{1} unlock(x)
       word x1;
       GETMUTEXID(x, x1);
 
-      MUTEX_UNLOCKID(x1);
+      UnlockOrFail(x1, irunerr(186, x));
       return C_integer x;
       }
    }
@@ -2861,7 +2889,7 @@ function{1} unlock(x)
          body {
             struct b_mask *bp = BlkMask(x);
             if (bp->shared){
-               MUTEX_UNLOCKBLK_NOCHK(bp, "unlock(structure) function");
+               UnlockOrFail(bp->mutexid, runerr(186, x));
                return x;
                }
             runerr(180, x);
@@ -2869,7 +2897,7 @@ function{1} unlock(x)
          }
       file:{
          inline {
-            MUTEX_UNLOCKID(BlkD(x, File)->mutexid);
+            UnlockOrFail(BlkD(x, File)->mutexid, runerr(186, x));
             return x;
             }
          }

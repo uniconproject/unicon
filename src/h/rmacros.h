@@ -1655,7 +1655,7 @@
 #define CV_WAIT(cv, mtxid)                                              \
       do {                                                              \
         int __rv;                                                       \
-        if ((__rv=pthread_cond_wait(cv, MUTEXID(mtxid)))<0 ){           \
+        if ((__rv=pthread_cond_wait(cv, MUTEXID(mtxid))) != 0){         \
           fprintf(stderr, "condition variable wait failure %d\n", __rv); \
           exit(-1);                                                     \
         }                                                               \
@@ -1664,7 +1664,7 @@
 #define CV_INIT(cv, msg)                                                \
       do{                                                               \
         int __rv;                                                       \
-        if ((__rv=pthread_cond_init(cv, NULL))<0 ){                     \
+        if ((__rv=pthread_cond_init(cv, NULL)) != 0){                   \
           handle_thread_error(__rv, FUNC_COND_INIT, msg);               \
         }                                                               \
       } while (0)

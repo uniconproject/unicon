@@ -1656,7 +1656,7 @@ void handle_thread_error(int val, int func, char* msg)
       break;
       }
 
-      perror("");
+      fprintf(stderr, "%s\n", strerror(val));
       syserr("");
       return;
 }

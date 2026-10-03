@@ -222,7 +222,11 @@ int activate(dptr val, struct b_coexpr *ncp, dptr result)
       }
    else
    if (IS_TS_THREAD(ncp->status) && IS_TS_ASYNC(ncp->status)){
-      struct b_list *hp;
+      /*
+       * Tended: the waits below run counted out, so a collection may move
+       * the list block while this thread sleeps.
+       */
+      tended struct b_list *hp;
 
       if (!is:null(*val)){
       /* send */
@@ -250,26 +254,18 @@ int activate(dptr val, struct b_coexpr *ncp, dptr result)
       MUTEX_LOCKBLK_CONTROLLED(hp, "activate: list mutex");
       if (hp->size==0){
          hp->empty++;
-         while (hp->size==0){
-            if (hp->size==0 && ncp->alive<0){
-               hp->empty--;
-               return A_Resume;
-               }
+         /*
+          * Wait while the outbox is empty and its producer is still alive.
+          * Every way out goes through the unlock below, counted in.
+          */
+         while (hp->size==0 && ncp->alive>=0){
             CV_SIGNAL_FULLBLK(hp);
             DEC_NARTHREADS;
-            if (hp->size==0 && ncp->alive<0){
-               hp->empty--;
-               return A_Resume;
-               }
             CV_WAIT_EMPTYBLK(hp);
             INC_NARTHREADS_CONTROLLED;
-            if (hp->size==0 && ncp->alive<0){
-               hp->empty--;
-               return A_Resume;
-               }
             }
          hp->empty--;
-         if (hp->size==0){ /* This shouldn't be the case, but.. */
+         if (hp->size==0){ /* the producer is gone and left nothing */
             MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
             CV_SIGNAL_FULLBLK(hp);
             return A_Resume;

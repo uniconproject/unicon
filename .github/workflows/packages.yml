@@ -58,12 +58,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
 
-    # One job builds both installers. msys2 setup is shared; the second
-    # configure is a clean rebuild so --disable-graphics is not mixed
-    # with objects from the graphics build.
+    # Two full installers, graphics and no-graphics. Each one is a single
+    # setup program; the deb/rpm package split is not applied here.
+    # msys2 setup is shared. The second configure is a clean rebuild so
+    # --disable-graphics is not mixed with objects from the graphics build.
     - name: Graphics installer
       run: |
-        sh configure ${{ matrix.cfg.opt }}
+        sh configure --enable-uniconx ${{ matrix.cfg.opt }}
         make
         make WinInstaller
         mkdir -p win-pkg
@@ -80,7 +81,7 @@ jobs:
       run: |
         make distclean
         rm -f Output/setup-unicon*.exe
-        sh configure --disable-graphics ${{ matrix.cfg.opt }}
+        sh configure --disable-graphics --disable-audio --enable-uniconx ${{ matrix.cfg.opt }}
         make
         make WinInstaller
         mkdir -p win-pkg-nographics
@@ -105,17 +106,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # deb_rev is the Debian revision only. The upstream version (and the
+        # .orig.tar.gz filename) is shared; assemble-repo-incoming.sh copies
+        # one orig into every suite. upload_orig is the canonical suite
+        # (trixie amd64), matching canonical_source_dist in
+        # config/scripts/pkg-repo/distros.sh.
         cfg:
-        -  { image: 'ubuntu:22.04', arch: amd64, name: 'Ubuntu-22.04_amd64' }
-        -  { image: 'ubuntu:24.04', arch: amd64, name: 'Ubuntu-24.04_amd64' }
-        -  { image: 'ubuntu:26.04', arch: amd64, name: 'Ubuntu-26.04_amd64' }
-        -  { image: 'debian:12',    arch: amd64, name: 'Debian-12_amd64' }
-        -  { image: 'debian:13',    arch: amd64, name: 'Debian-13_amd64' }
-        -  { image: 'ubuntu:22.04', arch: arm64, name: 'Ubuntu-22.04_arm64' }
-        -  { image: 'ubuntu:24.04', arch: arm64, name: 'Ubuntu-24.04_arm64' }
-        -  { image: 'ubuntu:26.04', arch: arm64, name: 'Ubuntu-26.04_arm64' }
-        -  { image: 'debian:12',    arch: arm64, name: 'Debian-12_arm64' }
-        -  { image: 'debian:13',    arch: arm64, name: 'Debian-13_arm64' }
+        - { image: 'ubuntu:22.04', arch: amd64, name: 'Ubuntu-22.04_amd64', codename: jammy,    deb_rev: '1~ubuntu22.04.1', upload_source: true,  upload_orig: false }
+        - { image: 'ubuntu:24.04', arch: amd64, name: 'Ubuntu-24.04_amd64', codename: noble,    deb_rev: '1~ubuntu24.04.1', upload_source: true,  upload_orig: false }
+        - { image: 'ubuntu:26.04', arch: amd64, name: 'Ubuntu-26.04_amd64', codename: resolute, deb_rev: '1~ubuntu26.04.1', upload_source: true,  upload_orig: false }
+        - { image: 'debian:12',    arch: amd64, name: 'Debian-12_amd64',    codename: bookworm, deb_rev: '1~deb12u1',       upload_source: true,  upload_orig: false }
+        - { image: 'debian:13',    arch: amd64, name: 'Debian-13_amd64',    codename: trixie,   deb_rev: '1~deb13u1',       upload_source: true,  upload_orig: true }
+        - { image: 'ubuntu:22.04', arch: arm64, name: 'Ubuntu-22.04_arm64', codename: jammy,    deb_rev: '1~ubuntu22.04.1', upload_source: false, upload_orig: false }
+        - { image: 'ubuntu:24.04', arch: arm64, name: 'Ubuntu-24.04_arm64', codename: noble,    deb_rev: '1~ubuntu24.04.1', upload_source: false, upload_orig: false }
+        - { image: 'ubuntu:26.04', arch: arm64, name: 'Ubuntu-26.04_arm64', codename: resolute, deb_rev: '1~ubuntu26.04.1', upload_source: false, upload_orig: false }
+        - { image: 'debian:12',    arch: arm64, name: 'Debian-12_arm64',    codename: bookworm, deb_rev: '1~deb12u1',       upload_source: false, upload_orig: false }
+        - { image: 'debian:13',    arch: arm64, name: 'Debian-13_arm64',    codename: trixie,   deb_rev: '1~deb13u1',       upload_source: false, upload_orig: false }
 
     steps:
     - name: Install git for checkout
@@ -146,14 +152,52 @@ jobs:
         fi
         mk-build-deps --install debian/control -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends"
 
-    # Both packages are built here so apt setup runs once. The nographics
-    # revision sorts after the graphics package, and the dist tree is
-    # removed between them so the second debuild starts clean.
+    # Both builds share one upstream version. The second is
+    # --disable-graphics --disable-audio and, via DEB_BUILD_PROFILES=pkg.unicon.nographics, ships
+    # only unicon-runtime-nographics. The dist tree is removed between
+    # them so the second debuild starts clean.
     - name: Deb
+      env:
+        UNICON_DEB_REV: ${{ matrix.cfg.deb_rev }}
+        UNICON_DEB_CODENAME: ${{ matrix.cfg.codename }}
+        UPLOAD_SOURCE: ${{ matrix.cfg.upload_source }}
+        UPLOAD_ORIG: ${{ matrix.cfg.upload_orig }}
       run: |
         # configure writes Makedefs (package name and version). make debin
         # runs distclean, which must not invent those from Makedefs.in.
         ./configure
+        # POSIX: container jobs use sh. debian-pkg is the downloads-page
+        # artifact (debs only). debian-repo is what the apt repo consumes
+        # and, on amd64, includes the .dsc and .debian.tar.*.
+        save_debs() {
+          dest="$1"
+          mkdir -p "$dest"
+          # Every binary package, not only unicon_*.deb. A later split
+          # (runtime, translator, ipl, gui, tools) uses names like
+          # unicon-runtime_*.deb, which the unicon_ prefix does not match.
+          for f in ../unicondist/*.deb ../unicondist/*.ddeb; do
+            if [ -f "$f" ]; then
+              cp "$f" "$dest/"
+            fi
+          done
+        }
+        save_source() {
+          dest="$1"
+          if [ "$UPLOAD_SOURCE" != "true" ]; then
+            return 0
+          fi
+          mkdir -p "$dest"
+          cp ../unicondist/unicon_*.dsc "$dest/"
+          cp ../unicondist/unicon_*.debian.tar.* "$dest/"
+          for f in ../unicondist/unicon_*.changes ../unicondist/unicon_*.buildinfo; do
+            if [ -f "$f" ]; then
+              cp "$f" "$dest/"
+            fi
+          done
+          if [ "$UPLOAD_ORIG" = "true" ]; then
+            cp ../unicondist/unicon_*.orig.tar.* "$dest/"
+          fi
+        }
         base="${GITHUB_RUN_NUMBER}.$(printf %.12s "$GITHUB_SHA")"
         rm -rf ../unicondist
         export UNICON_PKG_REV="$base"
@@ -161,15 +205,20 @@ jobs:
         make debin
         # Keep the first packages outside the tree. The next make debin runs
         # make dist, which archives the checkout.
-        mkdir -p "${RUNNER_TEMP}/debian-pkg"
-        cp ../unicondist/unicon_*.deb "${RUNNER_TEMP}/debian-pkg/"
+        save_debs "${RUNNER_TEMP}/debian-pkg"
+        save_debs "${RUNNER_TEMP}/debian-repo"
+        save_source "${RUNNER_TEMP}/debian-repo"
         rm -rf ../unicondist
-        export UNICON_PKG_REV="${base}.nographics"
-        export UNICON_CONFIGURE_EXTRA=--disable-graphics
+        export UNICON_PKG_REV="$base"
+        export UNICON_CONFIGURE_EXTRA="--disable-graphics --disable-audio"
         make debin
-        mkdir -p debian-pkg debian-pkg-nographics
+        mkdir -p debian-pkg debian-pkg-nographics debian-repo debian-repo-nographics
         cp "${RUNNER_TEMP}/debian-pkg/"*.deb debian-pkg/
-        cp ../unicondist/unicon_*.deb debian-pkg-nographics/
+        cp -a "${RUNNER_TEMP}/debian-repo/." debian-repo/
+        save_debs debian-pkg-nographics
+        save_debs debian-repo-nographics
+        # No second .dsc. The graphics build already uploaded the source,
+        # and a second .changes would collide with it.
         # Installed ucode links libraries by the absolute path they were
         # compiled at. Drop the build tree before make Test so those paths
         # miss and the linker uses the installed copies.
@@ -179,34 +228,69 @@ jobs:
       uses: actions/upload-artifact@v6
       with:
         name: deb-${{ matrix.cfg.name }}
-        path: debian-pkg/unicon_*
+        path: |
+          debian-pkg/*.deb
+          debian-pkg/*.ddeb
         if-no-files-found: warn
 
     - name: Publish no-graphics
       uses: actions/upload-artifact@v6
       with:
         name: deb-${{ matrix.cfg.name }}-nographics
-        path: debian-pkg-nographics/unicon_*
+        path: |
+          debian-pkg-nographics/*.deb
+          debian-pkg-nographics/*.ddeb
         if-no-files-found: warn
+
+    # Separate from deb-* so the downloads page does not publish orig tarballs.
+    - name: Publish repo
+      uses: actions/upload-artifact@v6
+      with:
+        name: repo-deb-${{ matrix.cfg.name }}
+        path: debian-repo/*
+        if-no-files-found: error
+
+    - name: Publish repo no-graphics
+      uses: actions/upload-artifact@v6
+      with:
+        name: repo-deb-${{ matrix.cfg.name }}-nographics
+        path: debian-repo-nographics/*
+        if-no-files-found: error
 
     - name: Install and test
       # Container jobs use sh, not bash, so this stays POSIX (no shopt, no arrays).
-      # nographics is the newer version, so install the graphics package first.
+      # unicon-runtime and unicon-runtime-nographics conflict, so the test
+      # install is the graphics set. The nographics package is checked
+      # on its own below.
       run: |
-        set -- ./debian-pkg/*.deb
+        # unicon-nographics depends on unicon-runtime-nographics, which is
+        # built by the other configure and is not in this directory.
+        set --
+        for f in ./debian-pkg/*.deb; do
+          case "$f" in
+            ./debian-pkg/unicon-nographics_*) continue ;;
+          esac
+          if [ -f "$f" ]; then
+            set -- "$@" "$f"
+          fi
+        done
         if [ ! -f "$1" ]; then
           echo "No .deb packages under debian-pkg/; did the Deb step succeed?"
           exit 1
         fi
         apt-get install -y "$@"
         make Test
-        set -- ./debian-pkg-nographics/*.deb
+        dpkg-deb -f ./debian-pkg/unicon-nographics_*.deb Depends | grep -q unicon-runtime-nographics
+        set -- ./debian-pkg-nographics/unicon-runtime-nographics_*.deb
         if [ ! -f "$1" ]; then
-          echo "No .deb packages under debian-pkg-nographics/; did the no-graphics Deb step succeed?"
+          echo "No unicon-runtime-nographics package under debian-pkg-nographics/"
           exit 1
         fi
-        apt-get install -y "$@"
-        make Test
+        # Package is unicon-runtime-nographics, so a combined grep matches
+        # the name and never reaches Provides or Conflicts.
+        test "$(dpkg-deb -f "$1" Package)" = unicon-runtime-nographics
+        test "$(dpkg-deb -f "$1" Provides)" = unicon-vm
+        test "$(dpkg-deb -f "$1" Conflicts)" = unicon-runtime
       env:
         UC: unicon
 
@@ -259,16 +343,23 @@ jobs:
         unset UNICON_CONFIGURE_EXTRA
         make rpmbin
         # Keep the first packages outside the tree. The next make rpmbin runs
-        # make dist, which archives the checkout.
-        mkdir -p "${RUNNER_TEMP}/rpm-pkg"
-        cp ../rpmbuild/RPMS/*/unicon-*.rpm "${RUNNER_TEMP}/rpm-pkg/"
+        # make dist, which archives the checkout. rpm-pkg is the downloads
+        # page (binaries). rpm-repo also keeps the src.rpm.
+        mkdir -p "${RUNNER_TEMP}/rpm-pkg" "${RUNNER_TEMP}/rpm-repo"
+        cp ../rpmbuild/RPMS/*/*.rpm "${RUNNER_TEMP}/rpm-pkg/"
+        cp ../rpmbuild/RPMS/*/*.rpm "${RUNNER_TEMP}/rpm-repo/"
+        if ls ../rpmbuild/SRPMS/unicon-*.src.rpm >/dev/null 2>&1; then
+          cp ../rpmbuild/SRPMS/unicon-*.src.rpm "${RUNNER_TEMP}/rpm-repo/"
+        fi
         rm -rf ../rpmbuild
-        export UNICON_PKG_REV="${base}.nographics"
-        export UNICON_CONFIGURE_EXTRA=--disable-graphics
+        export UNICON_PKG_REV="$base"
+        export UNICON_CONFIGURE_EXTRA="--disable-graphics --disable-audio"
         make rpmbin
-        mkdir -p rpm-pkg rpm-pkg-nographics
+        mkdir -p rpm-pkg rpm-pkg-nographics rpm-repo rpm-repo-nographics
         cp "${RUNNER_TEMP}/rpm-pkg/"*.rpm rpm-pkg/
-        cp ../rpmbuild/RPMS/*/unicon-*.rpm rpm-pkg-nographics/
+        cp -a "${RUNNER_TEMP}/rpm-repo/." rpm-repo/
+        cp ../rpmbuild/RPMS/*/unicon-runtime-nographics-*.rpm rpm-pkg-nographics/
+        cp ../rpmbuild/RPMS/*/unicon-runtime-nographics-*.rpm rpm-repo-nographics/
         # %autosetup -n unicon uses BUILD/unicon for both packages, so the
         # graphics ucode's absolute links point at this nographics rebuild.
         # make Test then links two compilations of the same modules
@@ -279,21 +370,82 @@ jobs:
       uses: actions/upload-artifact@v6
       with:
         name: rpm-${{ matrix.cfg.name }}
-        path: rpm-pkg/unicon-*.rpm
+        path: rpm-pkg/*.rpm
         if-no-files-found: warn
 
     - name: Publish no-graphics
       uses: actions/upload-artifact@v6
       with:
         name: rpm-${{ matrix.cfg.name }}-nographics
-        path: rpm-pkg-nographics/unicon-*.rpm
+        path: rpm-pkg-nographics/*.rpm
         if-no-files-found: warn
+
+    - name: Publish repo
+      uses: actions/upload-artifact@v6
+      with:
+        name: repo-rpm-${{ matrix.cfg.name }}
+        path: rpm-repo/*
+        if-no-files-found: error
+
+    - name: Publish repo no-graphics
+      uses: actions/upload-artifact@v6
+      with:
+        name: repo-rpm-${{ matrix.cfg.name }}-nographics
+        path: rpm-repo-nographics/*
+        if-no-files-found: error
 
     - name: Install and test
       run: |
-        dnf -y install ./rpm-pkg/unicon-*.rpm
+        # unicon-nographics depends on unicon-runtime-nographics, which is
+        # built by the other configure and is not in this directory.
+        set --
+        for f in ./rpm-pkg/*.rpm; do
+          case "$f" in
+            ./rpm-pkg/unicon-nographics-*) continue ;;
+          esac
+          if [ -f "$f" ]; then
+            set -- "$@" "$f"
+          fi
+        done
+        if [ ! -f "$1" ]; then
+          echo "No .rpm packages under rpm-pkg/; did the Rpm step succeed?"
+          exit 1
+        fi
+        dnf -y install "$@"
         make Test
-        dnf -y install ./rpm-pkg-nographics/unicon-*.rpm
-        make Test
+        rpm -qp --requires ./rpm-pkg/unicon-nographics-*.rpm | grep -q unicon-runtime-nographics
+        # The no-graphics runtime conflicts with unicon-runtime.
+        rpm -qp --provides ./rpm-pkg-nographics/unicon-runtime-nographics-*.rpm | grep -qx unicon-vm
+        rpm -qp --conflicts ./rpm-pkg-nographics/unicon-runtime-nographics-*.rpm | grep -qx unicon-runtime
       env:
         UC: unicon
+
+  # One orig tarball, per-suite .dsc, and rpm trees for the local reprepro
+  # and createrepo repos. Channel (dev/rc/release) is chosen when publishing,
+  # not here; master is dev, a tag containing "rc" is rc, any other tag is
+  # release. See config/scripts/pkg-repo/.
+  stage-repo:
+    name: Stage repository incoming
+    needs: [Deb, Rpm]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Download repo artifacts
+      uses: actions/download-artifact@v6
+      continue-on-error: true
+      with:
+        pattern: repo-*
+        path: raw-incoming
+
+    - name: Share one orig tarball and lay out suites
+      run: bash config/scripts/pkg-repo/assemble-repo-incoming.sh raw-incoming repo-incoming
+
+    - name: Publish repo-incoming
+      uses: actions/upload-artifact@v6
+      with:
+        name: repo-incoming
+        path: repo-incoming
+        if-no-files-found: error

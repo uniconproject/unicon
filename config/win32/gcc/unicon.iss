@@ -362,13 +362,24 @@ begin
       // if the iterated item is not a directory named like Dir.exe
       if FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY = 0 then
       begin
-        if (FindRec.Name = 'icont.exe') or (FindRec.Name = 'wicont.exe') then
+        if (FindRec.Name = 'icont.exe') or (FindRec.Name = 'unicont.exe') or
+           (FindRec.Name = 'wicont.exe') or (FindRec.Name = 'wunicont.exe') then
 
         begin
-          if FindRec.Name = 'icont.exe' then
-            iconx := 'iconx.exe'
+          if (FindRec.Name = 'icont.exe') or (FindRec.Name = 'unicont.exe') then
+          begin
+            if FindRec.Name = 'unicont.exe' then
+              iconx := 'uniconx.exe'
+            else
+              iconx := 'iconx.exe';
+          end
           else
-            iconx := 'wiconx.exe';
+          begin
+            if FindRec.Name = 'wunicont.exe' then
+              iconx := 'wuniconx.exe'
+            else
+              iconx := 'wiconx.exe';
+          end;
 
           Result := Result + PatchExe(' -DPatchStringHere ' +  FindRec.Name + ' ' +
                               ExpandConstant('{app}\bin\'+ iconx));

@@ -146,9 +146,9 @@ jobs:
           UNICON_SITE_PREFIX: /unicon
         run: bash config/scripts/gh-pages/build-gh-pages-site.sh _site
 
-      # Dev/deploy download links only — unsigned, straight from CI. The separate signed
-      # apt/dnf repo (reprepro/createrepo, like deb.frrouting.org) for tagged releases is
-      # a manual local step outside this workflow, not generated here.
+      # Dev/deploy download links only — unsigned, straight from CI. The signed
+      # apt/dnf repos (components dev, rc, release) are published locally from
+      # the repo-incoming artifact. See config/scripts/pkg-repo/.
       - name: Fetch latest Binary Packages artifacts
         if: github.repository == 'uniconproject/unicon'
         env:
@@ -209,7 +209,8 @@ jobs:
             echo ' apt or dnf repository. Signed release packages are published'
             echo ' separately per tagged release.'
             echo ' A path containing <code>nographics</code> is built with'
-            echo ' <code>--disable-graphics</code> and has no GUI, IDE, or 3D library.</p>'
+            echo ' <code>--disable-graphics --disable-audio</code> and has no GUI,'
+            echo ' IDE, 3D library, or audio.</p>'
             echo "$run_note"
             for kind_label in 'deb:Debian / Ubuntu (.deb)' 'rpm:Fedora / Rocky Linux (.rpm)' 'win:Windows'; do
               kind="${kind_label%%:*}"

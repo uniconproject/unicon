@@ -4,18 +4,15 @@
 #
 # Note: doing a unicon compile would have a temp filename difference.
 #
+# The translator is icont, or unicont when configured with --enable-uniconx.
+# An in-tree build is preferred. ICONT overrides both. After a package
+# install the in-tree binary is gone, so fall back to PATH.
 
 
 link io
 procedure main()
-    local icont
-$ifdef _MS_WINDOWS_NT
-    icont := "../../bin/icont.exe"
-$else
-    icont := "../../bin/icont"
-$endif
-   if not exists(icont) then
-      icont := "icont"
+   local icont
+   icont := translator()
    remove("foo.out")
    f := open("x.icn","w")
    write(f,"procedure main()")
@@ -48,4 +45,20 @@ $else
    remove("x")
 $endif
    write("...done")
+end
+
+# icont or unicont, whichever this build installed.
+procedure translator()
+   local exe, name, cmd
+   if cmd := getenv("ICONT") then return cmd
+   exe := ""
+$ifdef _MS_WINDOWS_NT
+   exe := ".exe"
+$endif
+   every name := !["unicont", "icont"] do
+      if exists("../../bin/" || name || exe) then
+         return "../../bin/" || name || exe
+   every name := !["unicont", "icont"] do
+      if cmd := pathfind(name) then return cmd
+   return "icont" || exe
 end

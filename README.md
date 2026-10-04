@@ -47,10 +47,19 @@ On macOS git is available with Xcode. On Windows you can install and set up git 
 For source tarballs and release binaries, see the unicon.org
 [download page](https://unicon.org/downloads.html).
 
-**[Download packages](https://uniconproject.github.io/unicon/downloads/)**
-for development builds of the latest `master` commit: Debian/Ubuntu `.deb`,
-Fedora/Rocky `.rpm`, and a Windows installer. Packages whose names end in
-`nographics` are the same builds configured with `--disable-graphics`.
+Development builds of the latest `master` commit are on the
+**[download packages](https://uniconproject.github.io/unicon/downloads/)**
+page. That page has the apt, dnf, zypper, and pacman repositories under
+`pkgs/`, and the Windows installers.
+
+`unicon` installs the full graphics set. `unicon-nographics` is that set
+built without graphics or audio, and without the GUI library or ui/ivib.
+The two cannot be installed together. `unicon-runtime` and
+`unicon-runtime-nographics` are just the virtual machine, and they
+conflict as well. The other packages are the pieces on their own:
+translator, compiler, class library, program library, plugins, the GUI
+library, ui/ivib, and tools such as uscribe, udb, and iyacc. Windows
+ships two complete installers instead of these separate packages.
 
 
 ## Build Instructions

@@ -65,7 +65,7 @@ jobs:
     - name: Graphics installer
       run: |
         sh configure --enable-uniconx ${{ matrix.cfg.opt }}
-        make
+        make -j8
         make WinInstaller
         mkdir -p win-pkg
         cp Output/setup-unicon*.exe win-pkg/
@@ -82,7 +82,7 @@ jobs:
         make distclean
         rm -f Output/setup-unicon*.exe
         sh configure --disable-graphics --disable-audio --enable-uniconx ${{ matrix.cfg.opt }}
-        make
+        make -j8
         make WinInstaller
         mkdir -p win-pkg-nographics
         cp Output/setup-unicon*.exe win-pkg-nographics/

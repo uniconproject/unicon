@@ -654,6 +654,40 @@
  */
 #define not_poweroftwo(a) ((a) & (a-1))
 
+/*
+ * C11 atomics.  configure defines HAVE_C11_ATOMICS when the compiler
+ * provides <stdatomic.h>.  With them, a few flags and counters shared
+ * between threads are atomic objects, read and written with the
+ * operations below, and the mutexes that used to guard them compile away
+ * (SERIAL_LOCK).  Without them, these are plain variables, the macros are
+ * plain loads and stores, and the mutexes stay.
+ */
+#if defined(Concurrent) && defined(HAVE_C11_ATOMICS)
+   #define AtomicInt                    atomic_int
+   #define AtomicWord                   atomic_intptr_t
+   #define ATOMIC_LOAD(x)               atomic_load_explicit(&(x), memory_order_relaxed)
+   #define ATOMIC_LOAD_ACQUIRE(x)       atomic_load_explicit(&(x), memory_order_acquire)
+   #define ATOMIC_STORE(x, v)           atomic_store_explicit(&(x), (v), memory_order_relaxed)
+   #define ATOMIC_STORE_RELEASE(x, v)   atomic_store_explicit(&(x), (v), memory_order_release)
+   #define ATOMIC_ADD(x, v)             atomic_fetch_add_explicit(&(x), (v), memory_order_relaxed)
+   #define ATOMIC_FENCE_ACQUIRE()       atomic_thread_fence(memory_order_acquire)
+   #define ATOMIC_FENCE_RELEASE()       atomic_thread_fence(memory_order_release)
+   #define SERIAL_LOCK(mtx)
+   #define SERIAL_UNLOCK(mtx)
+#else                                   /* Concurrent && HAVE_C11_ATOMICS */
+   #define AtomicInt                    int
+   #define AtomicWord                   word
+   #define ATOMIC_LOAD(x)               (x)
+   #define ATOMIC_LOAD_ACQUIRE(x)       (x)
+   #define ATOMIC_STORE(x, v)           ((x) = (v))
+   #define ATOMIC_STORE_RELEASE(x, v)   ((x) = (v))
+   #define ATOMIC_ADD(x, v)             ((x) += (v), (x) - (v))
+   #define ATOMIC_FENCE_ACQUIRE()
+   #define ATOMIC_FENCE_RELEASE()
+   #define SERIAL_LOCK(mtx)             MUTEX_LOCKID(mtx)
+   #define SERIAL_UNLOCK(mtx)           MUTEX_UNLOCKID(mtx)
+#endif                                  /* Concurrent && HAVE_C11_ATOMICS */
+
 #ifdef Concurrent
 
    #define CE_INBOX_SIZE        1024

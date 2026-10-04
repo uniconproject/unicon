@@ -582,6 +582,34 @@ if test "x$orig_cxxflags" != "x" ; then
   CXXFLAGS="$CXXFLAGS $orig_cxxflags"
 fi
 
+dnl When concurrency is enabled, use C11 atomics (<stdatomic.h>) for the
+dnl runtime's lock-free flags and counters if the compiler provides them;
+dnl otherwise the runtime keeps using its mutexes.  Linked rather than only
+dnl compiled, since some targets need libatomic.  Run after CFLAGS are
+dnl finalized so e.g. -std=c11 is visible to the probe.
+if test "x$concurrency" != "xno"; then
+  AC_CACHE_CHECK([for C11 atomics],
+    [ac_cv_c11_atomics],
+    [AC_LINK_IFELSE(
+      [AC_LANG_SOURCE([[
+#include <stdatomic.h>
+static atomic_int ua_i;
+static atomic_intptr_t ua_w;
+int main(void) {
+   atomic_fetch_add_explicit(&ua_w, 1, memory_order_relaxed);
+   atomic_store_explicit(&ua_i, 1, memory_order_release);
+   atomic_thread_fence(memory_order_acquire);
+   return atomic_load_explicit(&ua_i, memory_order_relaxed) - 1;
+}
+]])],
+      [ac_cv_c11_atomics=yes],
+      [ac_cv_c11_atomics=no])])
+  if test "x$ac_cv_c11_atomics" = "xyes"; then
+    AC_DEFINE([HAVE_C11_ATOMICS], [1],
+      [Define if the compiler provides C11 <stdatomic.h> atomics])
+  fi
+fi
+
 if test x"$debug" = x"yes" ; then
   STRIP="@\#strip"
 else

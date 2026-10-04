@@ -1,55 +1,43 @@
 /* dbmseq.c - Visit all elements in the database.  This is the NDBM
    interface. */
 
-/*  This file is part of GDBM, the GNU data base manager, by Philip A. Nelson.
-    Copyright (C) 1990, 1991, 1993  Free Software Foundation, Inc.
+/* This file is part of GDBM, the GNU data base manager.
+   Copyright (C) 1990-2025 Free Software Foundation, Inc.
 
-    GDBM is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2, or (at your option)
-    any later version.
+   GDBM is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3, or (at your option)
+   any later version.
 
-    GDBM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+   GDBM is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with GDBM; see the file COPYING.  If not, write to
-    the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+   You should have received a copy of the GNU General Public License
+   along with GDBM. If not, see <http://www.gnu.org/licenses/>.    */
 
-    You may contact the author by:
-       e-mail:  phil@cs.wwu.edu
-      us-mail:  Philip A. Nelson
-                Computer Science Department
-                Western Washington University
-                Bellingham, WA 98226
-       
-*************************************************************************/
-
-
-/* include system configuration before all else. */
-#include "../h/config.h"
-
+/* Include system configuration before all else. */
+#include "autoconf.h"
+#include "ndbm.h"
 #include "gdbmdefs.h"
-#include "extern.h"
-
 
 /* NDBM Start the visit of all keys in the database.  This produces
    something in hash order, not in any sorted order.  DBF is the dbm file
    information pointer. */
 
 datum
-dbm_firstkey (gdbm_file_info *dbf)
+dbm_firstkey (DBM *dbm)
 {
   datum ret_val;
 
   /* Free previous dynamic memory, do actual call, and save pointer to new
      memory. */
-  ret_val = gdbm_firstkey (dbf);
-  if (_gdbm_memory.dptr != NULL) free (_gdbm_memory.dptr);
-  _gdbm_memory = ret_val;
-
+  ret_val = gdbm_firstkey (dbm->file);
+  if (dbm->_dbm_memory.dptr != NULL)
+    free (dbm->_dbm_memory.dptr);
+  dbm->_dbm_memory = ret_val;
+  __gdbm_error_to_ndbm (dbm);
   /* Return the new value. */
   return ret_val;
 }
@@ -59,19 +47,20 @@ dbm_firstkey (gdbm_file_info *dbf)
    DBF is the file information pointer. */
 
 datum
-dbm_nextkey (gdbm_file_info *dbf)
+dbm_nextkey (DBM *dbm)
 {
   datum ret_val;
 
   /* Make sure we have a valid key. */
-  if (_gdbm_memory.dptr == NULL)
-    return _gdbm_memory;
+  if (dbm->_dbm_memory.dptr == NULL)
+    return dbm->_dbm_memory;
 
   /* Call gdbm nextkey with the old value. After that, free the old value. */
-  ret_val = gdbm_nextkey (dbf,_gdbm_memory);
-  if (_gdbm_memory.dptr != NULL) free (_gdbm_memory.dptr);
-  _gdbm_memory = ret_val;
-
+  ret_val = gdbm_nextkey (dbm->file, dbm->_dbm_memory);
+  if (dbm->_dbm_memory.dptr != NULL)
+    free (dbm->_dbm_memory.dptr);
+  dbm->_dbm_memory = ret_val;
+  __gdbm_error_to_ndbm (dbm);
   /* Return the new value. */
   return ret_val;
 }

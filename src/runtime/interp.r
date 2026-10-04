@@ -85,7 +85,7 @@ struct init_site {
    struct init_site *next;
    };
 static struct init_site *init_sites;    /* protected by MTX_INITIAL */
-static int init_running;                /* how many; read without the lock */
+static AtomicInt init_running;          /* how many; read without the lock */
 static pthread_cond_t init_done_cv = PTHREAD_COND_INITIALIZER;
 
 /*
@@ -134,7 +134,7 @@ static int init_finish(struct threadstate *owner, struct pf_marker *frame)
  * enough for the owner, which made its own increment.
  */
 #define InitFrameExit(owner, frame) do { \
-   if (init_running) { \
+   if (ATOMIC_LOAD(init_running)) { \
       MUTEX_LOCKID_ALWAYS(MTX_INITIAL); \
       init_finish(owner, frame); \
       MUTEX_UNLOCKID_ALWAYS(MTX_INITIAL); \
@@ -772,7 +772,7 @@ Deliberate Syntax Error
 
 #ifdef Concurrent
       /* If there is a pending GC request, then block/sleep*/
-      if (thread_call){
+      if (ATOMIC_LOAD(thread_call)){
         ExInterp_sp;
         thread_control(TC_ANSWERCALL);
         /*EntInterp_sp;*/

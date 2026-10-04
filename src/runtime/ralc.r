@@ -370,10 +370,11 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
    {
    unsigned long available = memorysize(1);
    word size;
-   if (NARthreads <= 32)       size = available * 0.005;
-   else if (NARthreads <= 96)  size = available * 0.004;
-   else if (NARthreads <= 224) size = available * 0.003;
-   else if (NARthreads <= 480) size = available * 0.002;
+   int nthreads = ATOMIC_LOAD(NARthreads);
+   if (nthreads <= 32)       size = available * 0.005;
+   else if (nthreads <= 96)  size = available * 0.004;
+   else if (nthreads <= 224) size = available * 0.003;
+   else if (nthreads <= 480) size = available * 0.002;
    else                        size = available * 0.001;
    ep->ini_blksize = ep->ini_ssize = size;
    }

@@ -880,8 +880,8 @@ void *nctramp(void *arg)
 
 pthread_mutexattr_t rmtx_attr;  /* recursive mutex attr ready to be used */
 pthread_t TCthread;
-int thread_call;
-int NARthreads;
+AtomicInt thread_call;
+AtomicInt NARthreads;
 pthread_cond_t cond_tc;
 
 #ifndef NamedSemaphores
@@ -1050,6 +1050,7 @@ void thread_control(int action)
    switch (action){
       case TC_ANSWERCALL:{
          /*---------------------------------*/
+         ATOMIC_FENCE_ACQUIRE();        /* pairs with the store of thread_call */
          switch (action_in_progress){
             case TC_KILLALLTHREADS:{
                #ifdef CoClean
@@ -1084,7 +1085,7 @@ void thread_control(int action)
                MUTEX_LOCKID(MTX_NARTHREADS);
                NARthreads--;
                MUTEX_UNLOCKID(MTX_NARTHREADS);
-               CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
+               CV_WAIT_ON_EXPR(ATOMIC_LOAD(thread_call), &cond_tc, MTX_COND_TC);
                MUTEX_UNLOCKID(MTX_COND_TC);
 
                /*
@@ -1117,7 +1118,7 @@ void thread_control(int action)
             /* wake up another TCthread and go to sleep */
             sem_post(sem_tcp);
 
-            CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
+            CV_WAIT_ON_EXPR(ATOMIC_LOAD(thread_call), &cond_tc, MTX_COND_TC);
 
             MUTEX_UNLOCKID(MTX_COND_TC);
 
@@ -1134,7 +1135,7 @@ void thread_control(int action)
           * reset (post) sem_gc to be ready for the next GC round
           */
 
-         thread_call = 0;
+         ATOMIC_STORE(thread_call, 0);
          NARthreads++;
          sem_post(sem_tcp);
          action_in_progress = TC_NONE;
@@ -1225,11 +1226,11 @@ void thread_control(int action)
          MUTEX_LOCKID(MTX_THREADCONTROL);
 
          TCthread = pthread_self();
-         thread_call = 1;
+         ATOMIC_STORE(thread_call, 1);
          /* NARthreads should reach and stay at zero during TC*/
          while (1) {
             MUTEX_LOCKID(MTX_NARTHREADS);
-            if (NARthreads  <= 0) break;  /* unlock MTX_NARTHREADS after GC*/
+            if (ATOMIC_LOAD(NARthreads) <= 0) break;  /* unlock MTX_NARTHREADS after GC*/
             MUTEX_UNLOCKID(MTX_NARTHREADS);
             usleep(50);
             }
@@ -1258,11 +1259,16 @@ void thread_control(int action)
          return;
          }
       case TC_KILLALLTHREADS:{
-         /* wait until only this thread is running  */
-         thread_call = 1;
+         /*
+          * Wait until only this thread is running.  Publish the action
+          * before the call: a thread that sees the call reads the action
+          * after an acquire fence in TC_ANSWERCALL, and must not see
+          * TC_NONE and park as if for a collection.
+          */
          action_in_progress = action;
+         ATOMIC_STORE_RELEASE(thread_call, 1);
          while (1) {
-            if (NARthreads  <= 1) break;  /* unlock MTX_NARTHREADS after GC*/
+            if (ATOMIC_LOAD(NARthreads) <= 1) break;
             usleep(50);
             }
 

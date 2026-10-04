@@ -804,12 +804,12 @@
 #ifdef Graphics
 #define Poll() do{ \
   if (!pollctr--) pollctr = pollevent(); \
-  if (thread_call){ \
+  if (ATOMIC_LOAD(thread_call)){ \
     thread_control(TC_ANSWERCALL);}\
 }while (0)
    #else                                /* Graphics */
 #define Poll() do{ \
-  if (thread_call){ \
+  if (ATOMIC_LOAD(thread_call)){ \
   thread_control(TC_ANSWERCALL);\
   }\
   } while (0)
@@ -1564,10 +1564,23 @@
           NARthreads++;                                 \
       while (0)
 
+/*
+ * Counting out only ever lowers NARthreads, which cannot let a collection
+ * start early, so with atomics it needs no lock.  This is the hot path
+ * around every blocking call.  It also means a CONTROLLED lock taken on
+ * the collector cannot relock MTX_NARTHREADS, which the collector holds.
+ * Counting back in still goes through MTX_THREADCONTROL and
+ * MTX_NARTHREADS, which hold threads off while a collection runs.
+ */
+#ifdef HAVE_C11_ATOMICS
+#define DEC_NARTHREADS_BASIC                            \
+          ATOMIC_ADD(NARthreads, -1);
+#else                                   /* HAVE_C11_ATOMICS */
 #define DEC_NARTHREADS_BASIC                            \
           MUTEX_LOCKID_BASIC(MTX_NARTHREADS);           \
           NARthreads--;                                 \
           MUTEX_UNLOCKID_BASIC(MTX_NARTHREADS);
+#endif                                  /* HAVE_C11_ATOMICS */
 
 #define DEC_NARTHREADS_ALWAYS                           \
       do {                                              \

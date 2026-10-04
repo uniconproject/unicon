@@ -3004,7 +3004,7 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
                 * OR: another thread is in a critical region and locked
                 * MTX_THREADCONTROL.
                 */
-               if (thread_call) {
+               if (ATOMIC_LOAD(thread_call)) {
                   /* I'm part of the GC party now! Sleeping!!*/
                   thread_control(TC_ANSWERCALL);
                   }

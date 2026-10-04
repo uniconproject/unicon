@@ -17,6 +17,39 @@ global fin,fout,fLine,alpha,alphadot,white,nonwhite,nonalpha,reserved
 global classes,comp,exec,strict,links,imports,loud,compiles,ct,tmpcount
 global yyfilename, iconc_import
 
+# Class specs queued by WriteSpec and written by flush_uniclass.
+global pending_class_specs
+
+# No timeout: same as a socket open, wait until the lock is free.
+procedure uniclass_open(path, mode)
+   return open(path, mode)
+end
+
+#
+# One read-write open for this source file: every queued class spec,
+# then the package record merged with what is already stored.
+#
+procedure flush_uniclass()
+   local f, spec
+   if \iconc_import then {
+      pending_class_specs := &null
+      return
+      }
+   if /thePackage & (not (*\pending_class_specs > 0)) then
+      return
+   f := uniclass_open(env, "d") |
+      stop("can't open class database ", image(env))
+   every spec := !\pending_class_specs do {
+      insert(f, spec[1], spec[2]) |
+         stop("...insert fails on ", image(spec[1]), " value of size ", *spec[2])
+      fetch(f, spec[1]) | stop("fetch(", image(spec[1]), ") fails")
+      }
+   if \thePackage then
+      thePackage.write_into(f)
+   close(f)
+   pending_class_specs := &null
+end
+
 procedure reinitialize()
    classes  := taque()
    links := []
@@ -24,6 +57,7 @@ procedure reinitialize()
    imported := table()
    imported_classes := table()
    thePackage := &null
+   pending_class_specs := &null
 end
 
 # classspec database (DBM) entry
@@ -139,7 +173,7 @@ class Package : declaration(files, dir, classes)
 
       if /dir then return
 
-      f := open(dir || "/uniclass", "dr") |
+      f := uniclass_open(dir || "/uniclass", "dr") |
          stop("Couldn't re-open uniclass db in " || dir)
       every s := (if \sym then sym else fields.foreach()) do {
          if member(imported, s) then
@@ -170,14 +204,12 @@ class Package : declaration(files, dir, classes)
       /files := idTaque(":")
       if files.insert(filename) then {
          iwrite(filename, " is added to package ", name)
-         writespec()
          }
       else iwrite(filename, " is already in Package ", name)
    end
    method insertsym(sym, filename)
       if fields.insert(sym) then {
          iwrite(sym, " added to package ", name)
-         writespec()
          }
       else iwrite(sym, " is already in Package ", name)
    end
@@ -191,14 +223,42 @@ class Package : declaration(files, dir, classes)
       s := s[1: (*tag + *name + 2)] || fs || s[*tag+*name+2:0]
       return s
    end
-   method writespec()
-   if \iconc_import then return
-   if \name & (f := open(env,"d")) then {
-      insert(f, name, String())
-      close(f)
+   #
+   # f is already open read-write. Re-read the stored package and
+   # union its files and symbols with this compile, then store once.
+   #
+   method write_into(f)
+      local s, diskfiles, diskfields, id
+      if /name then
+         stop("can't write package spec for ", image(name))
+      if s := fetch(f, name) then {
+         if find(":", s) & find("(", s) then {
+            diskfiles := idTaque(":")
+            diskfiles.parse(s[find(":", s)+1:find("(", s)])
+            /files := idTaque(":")
+            every id := diskfiles.foreach() do
+               files.insert(id)
+            }
+         if find("(", s) & find(")", s) then {
+            diskfields := classFields()
+            diskfields.parse(s[find("(", s)+1:find(")", s)])
+            /fields := classFields()
+            every id := diskfields.foreach() do
+               fields.insert(id)
+            }
+         }
+      insert(f, name, String()) |
+         stop("can't write package spec for ", image(name))
       return
-      }
-   stop("can't write package spec for ", image(name))
+   end
+   method writespec()
+   local f
+   if \iconc_import then return
+   f := uniclass_open(env, "d") |
+      stop("can't write package spec for ", image(name))
+   write_into(f)
+   close(f)
+   return
    end
 initially(name)
    if name[1] == name[-1] == "\"" then {
@@ -377,13 +437,8 @@ class Class : declaration (supers,
        }
     write(f,,")")
   end
-  method WriteSpec() # write the specification of a class
+  method WriteSpec() # queue the specification of a class
     if \iconc_import then return # Do not write anything during the iconc import phase
-    f := open(env,"d") | {
-       write(&errout, "can't open class database ", image(env),
-             " to write spec for ",self.name)
-       fail
-       }
 
     nam := self.name
     s := yyfilename || "\nclass " || nam
@@ -407,12 +462,8 @@ class Class : declaration (supers,
 #       remove("gzip.out")
 #       }
 
-    insert(f, nam, s) |
-       stop("...insert fails on ", image(nam), " value of size ", *s)
-    close(f)
-    f := open(env,"d") | stop("no check")
-    s := fetch(f, nam) | stop("fetch(", image(nam),") fails")
-    close(f)
+    /pending_class_specs := []
+    put(pending_class_specs, [nam, s])
   end
 
   #
@@ -1051,7 +1102,7 @@ procedure fetchspec(name)
       # throw away initial "." and trailing "/"
       if basedir[-1] == ("\\"|"/") then basedir := basedir[2:-1]
       }
-   if f := open(basedir || "/" || env,"dr") then {
+   if f := uniclass_open(basedir || "/" || env,"dr") then {
       if s := fetch(f, name) then {
          close(f)
 #        if s[1] == "\^z" then { # need to decompress s
@@ -1075,7 +1126,7 @@ procedure fetchspec(name)
    if \ipath then {
       every dir := !ipath do {
          if dir[1]==dir[-1]=="\"" then dir := dir[2:-1]
-         if f := open(dir || "/" || env, "dr") then {
+         if f := uniclass_open(dir || "/" || env, "dr") then {
             if s := fetch(f, name) then {
                close(f); return db_entry(dir, s) }
             close(f)

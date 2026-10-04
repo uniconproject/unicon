@@ -1,0 +1,64 @@
+#
+# initial clauses in the concurrent VM: each clause runs once, recursion
+# skips it as in Icon, other threads wait for it, clauses of different
+# procedures do not serialize, and leaving the body by return does not
+# strand other threads.
+#
+
+global ran
+
+procedure q()
+   initial write("q: initial ran")
+   return 1
+end
+
+procedure p()
+   initial wait(thread q())             # waits on a thread entering q's clause
+   return 1
+end
+
+procedure f(n)
+   initial if n > 0 then f(n-1)         # recursion skips the clause
+   return n
+end
+
+procedure slow()
+   static v
+   initial { ran +:= 1; delay(200); v := 42 }
+   return v
+end
+
+procedure early(x)
+   static v
+   initial { v := 1; if x then return v; v := 2 }
+   return v
+end
+
+procedure s()
+   initial write("s: initial ran")
+   return
+end
+
+procedure main()
+   local T, R, v
+
+   if not (&features == "concurrent threads") then
+      stop("This program requires concurrent threads.")
+
+   p()
+   write("cross-procedure: ok")
+
+   write("recursion: f(3) = ", f(3))
+
+   ran := 0
+   T := []; R := mutex([])
+   every 1 to 10 do put(T, thread put(R, slow()))
+   every wait(!T)
+   every v := !R do if v ~= 42 then write("saw ", image(v))
+   write("concurrent callers: body ran ", ran, " time(s), ", *R, " callers saw 42")
+
+   early(1)
+   wait(thread write("after return from initial: ", early()))
+   wait(thread s())
+   write("done")
+end

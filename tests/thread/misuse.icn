@@ -1,0 +1,33 @@
+#
+# Mutex and condition variable misuse raises run-time errors rather than
+# crashing or silently succeeding; a file lock taken before the first
+# thread is a real lock.
+#
+
+procedure main()
+   local m, L, cv, cm, cv2, T
+
+   if not (&features == "concurrent threads") then
+      stop("This program requires concurrent threads.")
+
+   lock(&errout)                        # before any thread exists
+   wait(thread write("thread ran"))
+   unlock(&errout)
+   write("file lock across the first thread: ok")
+
+   &error := -1
+   m := mutex()
+   unlock(m) | write("unlock not held: ", &errornumber, " ", &errortext)
+   L := mutex([])
+   unlock(L) | write("unlock structure not held: ", &errornumber)
+   cv := condvar()
+   wait(cv) | write("wait without the mutex: ", &errornumber)
+   lock(99999) | write("invalid mutex: ", &errornumber)
+   signal(-99999) | write("invalid condition variable: ", &errornumber)
+   &error := 0
+
+   cm := mutex(); cv2 := condvar(cm)
+   T := thread { delay(100); lock(cm); signal(cv2); unlock(cm) }
+   lock(cm); wait(cv2); unlock(cm); wait(T)
+   write("condvar wait/signal: ok")
+end

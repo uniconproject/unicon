@@ -90,7 +90,7 @@ static pthread_cond_t init_done_cv = PTHREAD_COND_INITIALIZER;
 
 /*
  * Rewrite the init whose operand ends at after into "agoto L2", the same
- * rewrite Op_Goto does to itself (PutInstr): operand first, then opcode.
+ * rewrite Op_Goto does to itself (PutInstr): operand, fence, opcode.
  */
 static void init_rewrite(word *after)
 {
@@ -100,9 +100,11 @@ static void init_rewrite(word *after)
    at.opnd = after;
 #if WordBits == IntBits
    at.opnd[-1] = target;
+   ATOMIC_FENCE_RELEASE();
    at.op[-2] = Op_Agoto;
 #else                                   /* WordBits == IntBits */
    at.opnd[-1] = target;
+   ATOMIC_FENCE_RELEASE();
    at.op[-3] = Op_Agoto;
 #endif                                  /* WordBits == IntBits */
 }
@@ -360,13 +362,26 @@ if (((int (*)(dptr))*(optab[lastop]))(rargp) == A_Resume) {
  * condition on the pointer-based bytecode, the macro may not write
  * the new opcode until after the offset has been converted to a pointer.
  */
+/*
+ * Another thread may fetch the new opcode without the mutex, so the
+ * operand must be visible before it: a release fence between the two
+ * stores, paired with an acquire fence where the absolute opcodes read
+ * their operand (AbsOperandFence).  On x86 these only constrain the
+ * compiler; on weakly ordered CPUs (ARM64, POWER) they are required.
+ */
+#ifdef Concurrent
+#define AbsOperandFence() ATOMIC_FENCE_ACQUIRE()
+#else                                   /* Concurrent */
+#define AbsOperandFence()
+#endif                                  /* Concurrent */
+
 #if WordBits == IntBits
 #begdef PutInstr(x,y,op_offset)
-   do { ipc.opnd[-1] = (y); ipc.op[-1-op_offset] = (x); } while(0)
+   do { ipc.opnd[-1] = (y); ATOMIC_FENCE_RELEASE(); ipc.op[-1-op_offset] = (x); } while(0)
 #enddef
 #else if WordBits == IntBits*2
 #begdef PutInstr(x,y,op_offset)
-   do { ipc.opnd[-1] = (y); ipc.op[-1-2*op_offset] = (x); } while(0)
+   do { ipc.opnd[-1] = (y); ATOMIC_FENCE_RELEASE(); ipc.op[-1-2*op_offset] = (x); } while(0)
 #enddef
 #else
 deliberate syntax error
@@ -813,6 +828,7 @@ Deliberate Syntax Error
             break;
 
          case Op_Acset:         /* cset, absolute address */
+            AbsOperandFence();
 L_acset:
             PushVal(D_Cset);
             PushAVal(GetWord);
@@ -858,6 +874,7 @@ L_acset:
             break;
 
          case Op_Areal:         /* real, absolute address */
+            AbsOperandFence();
 L_areal:
             PushVal(D_Real);
 #ifdef DescriptorDouble
@@ -904,6 +921,7 @@ L_areal:
             break;
 
          case Op_Astr:          /* string, absolute address */
+            AbsOperandFence();
 L_astr:
             PushVal(GetWord);
             PushAVal(GetWord);
@@ -953,6 +971,7 @@ L_astr:
             break;
 
          case Op_Aglobal:       /* global, absolute address */
+            AbsOperandFence();
 L_aglobal:
             PushVal(D_Var);
             PushAVal(GetWord);
@@ -999,6 +1018,7 @@ L_aglobal:
             break;
 
          case Op_Astatic:       /* static, absolute address */
+            AbsOperandFence();
 L_astatic:
             PushVal(D_Var);
             PushAVal(GetWord);
@@ -1446,6 +1466,7 @@ invokej:
             goto mark;
 
          case Op_Amark:         /* mark with absolute fipc */
+            AbsOperandFence();
 L_amark:
             newefp = (struct ef_marker *)(rsp + 1);
             newefp->ef_failure.opnd = (word *)GetWord;
@@ -2098,6 +2119,7 @@ EntInterp_sp;
             break;
 
          case Op_Agoto:         /* goto absolute address */
+            AbsOperandFence();
 L_agoto:
             opnd = GetWord;
             ipc.opnd = (word *)opnd;

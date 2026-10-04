@@ -874,14 +874,14 @@ struct progstate {
 
 
 
-   word Coexp_ser;                      /* this program's serial numbers */
-   word List_ser;
-   word Intern_list_ser;
+   AtomicWord Coexp_ser;                      /* this program's serial numbers */
+   AtomicWord List_ser;
+   AtomicWord Intern_list_ser;
 #ifdef PatternType
-   word Pat_ser;
+   AtomicWord Pat_ser;
 #endif                                  /* PatternType */
-   word Set_ser;
-   word Table_ser;
+   AtomicWord Set_ser;
+   AtomicWord Table_ser;
 
    word Kywd_time_elsewhere;            /* ???? TLS vs global  &time spent in other programs */
    word Kywd_time_out;                  /* ????  TLS vs global &time at last program switch out */

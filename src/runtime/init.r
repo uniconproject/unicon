@@ -246,11 +246,11 @@ int dumped = 0;                         /* non-zero if reloaded from dump */
 #endif                                  /* ExecImages */
 
 #ifdef MultipleRuns
-extern word coexp_ser;
-extern word list_ser;
-extern word intern_list_ser;
-extern word set_ser;
-extern word table_ser;
+extern AtomicWord coexp_ser;
+extern AtomicWord list_ser;
+extern AtomicWord intern_list_ser;
+extern AtomicWord set_ser;
+extern AtomicWord table_ser;
 extern int first_time;
 #endif                                  /* MultipleRuns */
 

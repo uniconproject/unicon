@@ -27,8 +27,8 @@ GDBM_VERSION_PATCH = 0
 
 DEFS =
 
-# This is third-party code we do not patch: report its warnings but do
-# not let --enable-werror turn them into build failures.
+# Third-party code: report its warnings but do not let --enable-werror
+# turn them into build failures.
 GDBM_CFLAGS = $(filter-out -Werror,$(CFLAGS))
 
 %.o: %.c

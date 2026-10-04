@@ -46,10 +46,9 @@ gdbm_w32_sysconf (int name)
 
 /*
  * Replacements for lock.c, which relies on flock/lockf/fcntl locks and
- * POSIX signals and timers.  Windows offers none of those, so databases
- * are not locked, as was the case with the GDBM previously used here.
- * The NDBM interface that Unicon uses opens databases with GDBM_NOLOCK
- * and never reaches these.
+ * POSIX signals and timers.  Windows offers none of those, so these
+ * succeed without locking.  dbm_open locks by default and reaches
+ * these unless the caller passes DBM_NOLOCK.
  */
 
 int

@@ -213,7 +213,9 @@ ndbm_open_dir_file (const char *base, int pagfd, int mode)
    it will be a GDBM_WRCREAT (creator and writer) and if the FLAGS == O_RDWR,
    it will be a GDBM_WRITER and if FLAGS contain O_TRUNC then it will be
    a GDBM_NEWDB.  The O_CLOEXEC bit raises GDBM_CLOEXEC flag.
-   All other values of FLAGS are ignored. */
+   DBM_NOLOCK, which is not an open(2) bit, raises GDBM_NOLOCK.
+   Without it the database is locked. All other values of FLAGS
+   are ignored. */
 
 DBM *
 dbm_open (char *file, int flags, int mode)
@@ -259,7 +261,13 @@ dbm_open (char *file, int flags, int mode)
   if (flags & O_CLOEXEC)
     open_flags |= GDBM_CLOEXEC;
 
-  open_flags |= GDBM_NOLOCK;
+  /*
+   * GDBM 1.9+ always set GDBM_NOLOCK here, so ndbm would not deadlock
+   * a program that locks the file itself. Lock unless the caller
+   * passes DBM_NOLOCK. That matches GDBM 1.7.3 and gdbm_open.
+   */
+  if (flags & DBM_NOLOCK)
+    open_flags |= GDBM_NOLOCK;
   
   dbm = calloc (1, sizeof (*dbm));
   if (!dbm)

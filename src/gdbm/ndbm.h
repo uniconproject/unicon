@@ -31,6 +31,13 @@
 #define DBM_INSERT  GDBM_INSERT
 #define DBM_REPLACE GDBM_REPLACE
 
+/*
+ * Passed in dbm_open's flags. The database is locked unless this bit
+ * is set. It is not an open(2) flag: GDBM_NOLOCK is 0x40, which is
+ * O_CREAT on some systems, so it cannot travel in flags itself.
+ */
+#define DBM_NOLOCK 0x40000000
+
 /* The file information header.  */
 typedef struct
 {

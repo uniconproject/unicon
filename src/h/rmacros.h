@@ -1616,20 +1616,6 @@
           MUTEX_LOCKID_CONTROLLED_ALWAYS(mtx);  \
       while (0)
 
-#define MUTEX_LOCK_CONTROLLED(mtx, msg)         \
-      do {                                      \
-        if (is_concurrent) {                    \
-          MUTEX_LOCKID_CONTROLLED_ALWAYS(mtx)   \
-          int __rv;                             \
-          MUTEX_TRYLOCK(mtx, __rv, msg);        \
-          if (__rv==EBUSY){                     \
-            DEC_NARTHREADS_BASIC;               \
-            MUTEX_LOCK(mtx, msg);               \
-            INC_NARTHREADS_CONTROLLED_BASIC;    \
-          }                                     \
-        }                                       \
-      } while (0)
-
 /********** block macros *************/
 #define MUTEX_LOCKBLK(bp, msg) \
       do if (bp->shared) {MUTEX_LOCKID_ALWAYS(bp->mutexid);} while (0)
@@ -1659,12 +1645,6 @@
    MUTEX_TRYLOCKID(bp->mutexid, isbusy)
 
 
-#define C_PUT_PROTECTED(L, v)                                   \
-      do {                                                      \
-        MUTEX_LOCKBLK(BlkD(L, List));                           \
-        c_put(&L, &v); MUTEX_UNLOCKBLK(BlkD(L, List));          \
-      } while (0)
-
 #define MUTEX_INITBLK(bp)                       \
       do {                                      \
         if (!bp->shared){                       \
@@ -1682,9 +1662,6 @@
       } while (0)
 
 #define MUTEX_GETBLK(bp) mutexes[bp->mutexid]
-
-#define CV_GETULLTBLK(bp) condvars[bp->cvfull]
-#define CV_GETULLTBLK(bp) condvars[bp->cvfull]
 
 #define CV_INITBLK(bp)                          \
       do {                                      \
@@ -1756,14 +1733,13 @@
 #define MUTEX_LOCKID_ALWAYS(mtx)
 #define MUTEX_UNLOCKID_ALWAYS(mtx)
 
-#define MUTEX_LOCK_CONTROLLED(mtx, msg)
 #define MUTEX_LOCKID_CONTROLLED(mtx)
 #define INC_LOCKID(x, mtx)
 #define DEC_LOCKID(x, mtx)
 #define INC_NARTHREADS_CONTROLLED
 #define DEC_NARTHREADS
 #define INC_NARTHREADS_CONTROLLED_ALWAYS
-#define DEC_NARTHREADS_CONTROLLED_ALWAYS
+#define DEC_NARTHREADS_ALWAYS
 
 #define MUTEX_INITBLK(bp)
 #define MUTEX_INITBLKID(bp, mtx)
@@ -1773,11 +1749,8 @@
 #define MUTEX_LOCKBLK_CONTROLLED_NOCHK(bp, msg)
 #define MUTEX_UNLOCKBLK(bp, msg)
 #define MUTEX_TRYLOCKBLK(bp, isbusy, msg)
-#define C_PUT_PROTECTED(L, v)
 #define CV_INITBLK(bp)
 #define MUTEX_GETBLK(bp)
-#define CV_GETULLTBLK(bp)
-#define CV_GETULLTBLK(bp)
 
 #define CV_WAIT_FULLBLK(bp)
 #define CV_WAIT(cv, mtxid)

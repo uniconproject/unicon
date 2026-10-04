@@ -4,8 +4,9 @@
  * Upstream GDBM targets POSIX systems only.  This header, included from
  * autoconf.h on _WIN32, fills the gaps for the MinGW build so the upstream
  * sources can stay unmodified.  The Makefile also leaves out the files
- * that cannot work here (lock.c, which w32compat.c replaces, and the
- * dump/load/import/export utilities), none of which Unicon uses.
+ * that cannot work here: lock.c, which w32compat.c replaces with
+ * LockFileEx-based locking, and the dump/load/import/export utilities,
+ * which Unicon does not use.
  */
 
 #ifndef UNICON_GDBM_W32COMPAT_H

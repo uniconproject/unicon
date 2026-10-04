@@ -59,6 +59,17 @@ procedure main()
    write("key range: ", ks[1], "..", ks[-1], " (", *ks, " keyN keys)")
    close(d)
 
+   # lock=no is the same database with no file lock.
+   d := open(name, "d", "lock=no") | stop("can't open ", name, " lock=no")
+   close(d)
+   d := open(name, "dr", "lock=no") | stop("can't reopen ", name, " lock=no")
+   if d["key2"] ~== "replaced" then write("unlocked read mismatch")
+   close(d)
+
+   d := open(name, "dr", 1000) | stop("can't reopen ", name, " with timeout")
+   if d["key2"] ~== "replaced" then write("timeout read mismatch")
+   close(d)
+
    cleanup()
    write("done")
 end

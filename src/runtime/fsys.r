@@ -312,7 +312,7 @@ function{0,1} getenv(s)
 end
 
 
-#if defined(Graphics) || defined(Messaging) || defined(ISQL)
+#if defined(Graphics) || defined(Messaging) || defined(ISQL) || defined(Dbm)
 "open(s1, s2, ...) - open file named s1 with options s2"
 " and attributes given in trailing arguments."
 function{0,1} open(fname, spec, attr[n])
@@ -584,6 +584,11 @@ function{0,1} open(fname, spec)
       extern FILE *fopen(const char *, const char *);
       FILE *f = NULL;
       SOCKET fd;
+#ifdef Dbm
+      word dbm_ai;
+      C_integer dbm_timeout;
+      tended struct descrip dbmattr;
+#endif                                  /* Dbm */
       tended struct b_file *fl;
 #ifdef PosixFns
       struct stat st;
@@ -1471,6 +1476,10 @@ Deliberate Syntax Error
 #ifdef Dbm
       if (status & Fs_Dbm) {
          int mode;
+         extern void unicon_dbm_set_open(int lock, int timeout_ms);
+         /*
+          * "d" alone is read/write.
+          */
          if ((status & Fs_Read && status & Fs_Write) || status == Fs_Dbm) {
             mode = O_RDWR|O_CREAT;
             status |= Fs_Read|Fs_Write;
@@ -1481,11 +1490,55 @@ Deliberate Syntax Error
          else
            mode = O_RDONLY;
 
+         /*
+          * Same timeout rule as sockets: 0 (the default) waits until
+          * the lock is free, and a positive count is milliseconds
+          * before open() fails. lock=no skips the lock; lock=yes
+          * is the default.
+          */
+         dbm_timeout = 0;
+         for (dbm_ai = 0; dbm_ai < n; dbm_ai++) {
+            char *p;
+            word len;
+
+            if (is:null(attr[dbm_ai]))
+               continue;
+            if (dbm_ai == 0 && cnv:C_integer(attr[dbm_ai], dbm_timeout)) {
+               if (dbm_timeout < 0)
+                  dbm_timeout = 0;
+               continue;
+               }
+            if (!cnv:tmp_string(attr[dbm_ai], dbmattr))
+               runerr(103, attr[dbm_ai]);
+            p = StrLoc(dbmattr);
+            len = StrLen(dbmattr);
+            if (len > 5 && strncmp(p, "lock=", 5) == 0) {
+               p += 5;
+               len -= 5;
+               if (len == 2 && strncmp(p, "no", 2) == 0)
+                  status |= Fs_DbmNolock;
+               else if (len == 3 && strncmp(p, "yes", 3) == 0)
+                  status &= ~Fs_DbmNolock;
+               else {
+                  set_errortext(205);
+                  fail;
+                  }
+               }
+            else {
+               set_errortext(205);
+               fail;
+               }
+            }
+         if (dbm_timeout > 2147483647)
+            dbm_timeout = 2147483647;
+         unicon_dbm_set_open((status & Fs_DbmNolock) ? 0 : 1,
+                             (int)dbm_timeout);
+
          if ((f = (FILE *)dbm_open(fnamestr, mode, 0666)) == NULL) {
             set_errortext(191);
             fail;
             }
-      }
+         }
       else
 #endif                                  /* DBM */
 

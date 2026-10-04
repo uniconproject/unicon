@@ -42,7 +42,9 @@
 #define Fs_Pipe         020     /* reading or writing on a pipe */
                                 /* see also: BPipe down below */
 
-/*                      040        this bit is now available */
+#ifdef Dbm
+#define Fs_DbmNolock     040     /* DBM open attribute lock=no */
+#endif                                  /* Dbm */
 
 #define Fs_Reading     0100     /* last file operation was read */
 #define Fs_Writing     0200     /* last file operation was write */

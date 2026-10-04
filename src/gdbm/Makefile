@@ -1,7 +1,8 @@
 # GDBM Makefile for Unicon.
 #
-# The .c and .h files here (other than autoconf.h and w32compat.*) are
-# unmodified copies of upstream GNU dbm sources: the core library from
+# The .c and .h files here (other than autoconf.h, udbm.c, and
+# w32compat.*) are unmodified copies of upstream GNU dbm sources:
+# the core library from
 # gdbm-X.Y/src and the NDBM compatibility layer from gdbm-X.Y/compat,
 # which is the interface the Unicon runtime uses (see src/h/sys.h).
 # GDBM's own configure/automake machinery is not used; autoconf.h maps
@@ -27,8 +28,8 @@ GDBM_VERSION_PATCH = 0
 
 DEFS =
 
-# This is third-party code we do not patch: report its warnings but do
-# not let --enable-werror turn them into build failures.
+# Third-party code: report its warnings but do not let --enable-werror
+# turn them into build failures.
 GDBM_CFLAGS = $(filter-out -Werror,$(CFLAGS))
 
 %.o: %.c
@@ -47,6 +48,16 @@ GDBM_OF = gdbmclose.o gdbmcount.o gdbmdelete.o gdbmdump.o gdbmerrno.o \
 NDBM_OF = dbmopen.o dbmdelete.o dbmerr.o dbmfetch.o dbmstore.o dbmseq.o \
 	dbmclose.o dbmdirfno.o dbmpagfno.o dbmrdonly.o
 
+# dbmopen.c always passes GDBM_NOLOCK. Compile that one call as
+# unicon_ndbm_gdbm_open (udbm.c) so the lock policy stays out of the
+# upstream file.
+dbmopen.o: dbmopen.c $(HDRS) $(AUTO_H)
+	$(CMNT)@echo "   [GDBM] $<"
+	$(SLNT)$(CC) -c $(CPPFLAGS) $(DEFS) -I. -I$(srcdir) $(GDBM_CFLAGS) \
+	  -Dgdbm_open=unicon_ndbm_gdbm_open $<
+
+UNICOND_OF = udbm.o
+
 # Native Windows lacks the POSIX facilities used by lock.c (replaced by
 # w32compat.c) and by the dump/load/import/export utilities (not used by
 # Unicon, so simply left out).
@@ -56,7 +67,7 @@ W32_OF = w32compat.o
 W32_HDRS = w32compat.h
 endif
 
-OBJS = $(GDBM_OF) $(NDBM_OF) $(W32_OF)
+OBJS = $(GDBM_OF) $(NDBM_OF) $(W32_OF) $(UNICOND_OF)
 
 HDRS = autoconf.h gdbm.h gdbmconst.h gdbmdefs.h gettext.h proto.h \
 	systems.h ndbm.h $(W32_HDRS)

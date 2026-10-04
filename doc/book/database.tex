@@ -107,7 +107,12 @@ on all platforms.
 
 DBM databases are accessed via the \texttt{open()} function using mode
 \texttt{"d"} to open a database for reading and writing, or mode
-\texttt{"dr"} for read-only access. Once opened, DBM databases
+\texttt{"dr"} for read-only access. The file is locked on every
+platform, including Windows. As for a socket, the optional integer
+third argument is a timeout in milliseconds: 0, or omitting it, waits
+until the lock is free, and a positive value makes \texttt{open()}
+fail if the lock is still busy. \texttt{lock=no} skips the lock;
+\texttt{lock=yes} is the default. Once opened, DBM databases
 resemble the table data type and are manipulated using table
 operations. For example, if \texttt{d} is a DBM file,
 \texttt{d[s]}\index{subscript operator} performs a database

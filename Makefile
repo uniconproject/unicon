@@ -232,7 +232,7 @@ F=*.{u,icn}
 # runtime binaries, variants of iconx, icont, and iconc
 RTbins=$(UNICONX)$(EXE) $(UNICONWX)$(EXE) $(UNICONT)$(EXE) $(UNICONWT)$(EXE) $(UNICONC)$(EXE)
 ADDONbins=udb$(EXE) uprof$(EXE) unidep$(EXE) unidoc$(EXE) ui$(EXE) ivib$(EXE) ulsp$(EXE) uscribe$(EXE)
-UTILbins=patchstr$(EXE) iyacc$(EXE)
+UTILbins=patchstr$(EXE) iyacc$(EXE) uflex$(EXE)
 # rt.a and rt.h are installed with the runtime tree under $(libdir)/unicon/rt.
 ALLbins=$(RTbins) unicon$(EXE) $(ADDONbins) $(UTILbins)
 # binaries that should be signed after install, only needed on arm macOS for now
@@ -368,6 +368,10 @@ UTARORIG=$(PKG_STRNAME).orig.tar.gz
 # CI sets UNICON_PKG_REV (run number, dot, short sha) so a development package
 # sorts newer than the previous build. Local release builds leave it unset.
 PKG_BUILDVER=$(VV)$(VSUFFIX)$(if $(UNICON_PKG_REV),+git$(UNICON_PKG_REV))
+# CI sets UNICON_DEB_REV per suite (1~deb13u1, 1~ubuntu24.04.1, ...). The
+# upstream version, and therefore the .orig.tar.gz name, stays the same so
+# reprepro can store one orig for every suite. UNICON_DEB_CODENAME replaces
+# UNRELEASED in the changelog so the .changes distribution matches the suite.
 # Tarball, unicondist/, rpmbuild/ go under here (default: parent of repo). If the clone is at
 # /unicon, .. is / (not writable): use e.g. DISTROOT=.dist or a path under your home directory.
 DISTROOT ?= ..
@@ -399,9 +403,17 @@ deb: dist
 
 debin: deb
 	src="$(DISTROOT)/$(udist)/$(PKG_STRNAME)"; \
+	if test -n "$(UNICON_PKG_REV)" || test -n "$$UNICON_DEB_REV" || test -n "$$UNICON_DEB_CODENAME"; then \
+	  ver="$(PKG_BUILDVER)"; \
+	  deb_rev="$${UNICON_DEB_REV:-1}"; \
+	  sed -i "1s/([^)]*)/($${ver}-$${deb_rev})/" "$$src/debian/changelog"; \
+	  if test -n "$${UNICON_DEB_CODENAME:-}"; then \
+	    sed -i "1s/) UNRELEASED;/) $${UNICON_DEB_CODENAME};/" "$$src/debian/changelog"; \
+	  fi; \
+	  echo "Debian version $${ver}-$${deb_rev} ($${UNICON_DEB_CODENAME:-UNRELEASED})"; \
+	fi; \
 	if test -n "$(UNICON_PKG_REV)"; then \
 	  ver="$(PKG_BUILDVER)"; \
-	  sed -i "1s/([^)]*)/($${ver}-1)/" "$$src/debian/changelog"; \
 	  dest="$(DISTROOT)/$(udist)/$(PKG_TARNAME)_$$ver"; \
 	  mv "$$src" "$$dest"; \
 	  mv "$(DISTROOT)/$(udist)/$(UTARORIG)" "$(DISTROOT)/$(udist)/$(PKG_TARNAME)_$$ver.orig.tar.gz"; \
@@ -410,8 +422,14 @@ debin: deb
 	if test -n "$(UNICON_CONFIGURE_EXTRA)"; then \
 	  printf '%s\n' "$(UNICON_CONFIGURE_EXTRA)" > "$$src/debian/configure-extra"; \
 	fi; \
+	case " $(UNICON_CONFIGURE_EXTRA) " in \
+	  *" --disable-graphics "*) \
+	    DEB_BUILD_PROFILES="$${DEB_BUILD_PROFILES:+$$DEB_BUILD_PROFILES }pkg.unicon.nographics"; \
+	    export DEB_BUILD_PROFILES; \
+	    ;; \
+	esac; \
 	cd "$$src" && DEB_BUILD_MAINT_OPTIONS="$${DEB_BUILD_MAINT_OPTIONS:+$$DEB_BUILD_MAINT_OPTIONS }optimize=-lto" debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
-	ls -lh $(DISTROOT)/$(udist)/unicon_*.deb
+	ls -lh $(DISTROOT)/$(udist)/*.deb
 
 debsrc: deb
 	cd $(DISTROOT)/$(udist)/$(PKG_STRNAME) && debuild -S $(SIGNOPT) --lintian-opts --profile debian

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Unicon Debian repository</title>
+<style>
+  body { font-family: sans-serif; max-width: 52rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.45; }
+  pre { background: #f4f4f4; padding: 0.8rem 1rem; overflow: auto; }
+  code { font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<h1>Unicon Debian repository</h1>
+<p>Components, one per line in <code>sources.list</code>:</p>
+<ul>
+  <li><code>dev</code> — snapshots built from <code>master</code></li>
+  <li><code>rc</code> — release candidates</li>
+  <li><code>stable</code> — the latest release</li>
+  <li><code>13.3</code> — the current minor release</li>
+</ul>
+<p>Enable one of them. There is no major-only component. The graphics
+build is this repository. The <code>--disable-graphics</code> build is
+a second repository, <code>unicon-nographics</code>, with the same
+components. Do not enable both for the same component: the no-graphics
+package sorts as a newer <code>unicon</code>.</p>
+<pre><code># add the archive key
+curl -fsSL https://deb.unicon.org/unicon/keys.gpg | sudo tee /usr/share/keyrings/unicon-archive.gpg &gt; /dev/null
+
+# dev, rc, stable, or 13.3
+UNICVER=stable
+echo "deb [signed-by=/usr/share/keyrings/unicon-archive.gpg] https://deb.unicon.org/unicon $(lsb_release -sc) $UNICVER" | sudo tee /etc/apt/sources.list.d/unicon.list
+
+sudo apt update &amp;&amp; sudo apt install unicon</code></pre>
+<p>No-graphics build (no GUI, IDE, or 3D library):</p>
+<pre><code>echo "deb [signed-by=/usr/share/keyrings/unicon-archive.gpg] https://deb.unicon.org/unicon-nographics $(lsb_release -sc) $UNICVER" | sudo tee /etc/apt/sources.list.d/unicon-nographics.list</code></pre>
+<p>Suites currently built: Debian 12 (bookworm), Debian 13 (trixie),
+Ubuntu 22.04 (jammy), Ubuntu 24.04 (noble), Ubuntu 26.04 (resolute).
+amd64 and arm64.</p>
+<p>The archive is signed by
+<code>A90F C36D 9429 4097 98E9  C2D8 74DE ED43 AB19 4DBF</code>,
+Jafar Al-Gharaibeh (launchpad) &lt;to.jafar@gmail.com&gt;.</p>
+</body>
+</html>

@@ -1,0 +1,299 @@
+# Split Unicon the same way as the Debian and RPM packages.
+# unicon is the graphics metapackage. unicon-nographics is the headless
+# metapackage. The two virtual machines are separate builds because one
+# is configured with --disable-graphics --disable-audio.
+#
+# Pacman pkgver cannot contain '~', so 13.3~prerelease becomes
+# 13.3.prerelease. CI sets UNICON_PKG_REV (run number, dot, short sha).
+#
+# Build from the repository root's arch/ directory, after installing
+# makedepends. makepkg refuses to run as root.
+#
+#   env UNICON_PKG_REV="$run.$sha" makepkg --noconfirm
+
+pkgbase=unicon
+pkgname=(
+  unicon
+  unicon-nographics
+  unicon-runtime
+  unicon-runtime-nographics
+  unicon-plugins
+  unicon-lib
+  unicon-translator
+  unicon-compiler
+  unicon-patchstr
+  unicon-ipl
+  unicon-gui
+  unicon-xml
+  unicon-uscribe
+  unicon-udb
+  unicon-ulsp
+  unicon-unidoc
+  unicon-unidep
+  unicon-iyacc
+  unicon-uflex
+  unicon-ui
+)
+pkgver=13.3.prerelease
+pkgrel=1
+pkgdesc='Unicon programming language'
+url='https://www.unicon.org'
+arch=('x86_64' 'x86_64_v3' 'x86_64_v4')
+license=('GPL-2.0-or-later')
+# LTO makes the binaries much larger and has broken configure's
+# "can I run a binary?" test on other packaging builds.
+options=('!debug' '!lto')
+makedepends=(
+  'libx11' 'libxft' 'freetype2' 'mesa' 'glu' 'libpng' 'libjpeg-turbo'
+  'openssl' 'libssh' 'unixodbc' 'openal' 'freealut' 'libvorbis' 'libogg'
+)
+
+if [[ -n ${UNICON_PKG_REV:-} ]]; then
+  pkgver="13.3.prerelease+git${UNICON_PKG_REV}"
+fi
+
+# Names configure wrote into Makedefs. The Windows GUI names are always
+# written, but only a Windows build produces those binaries.
+makedef() {
+  local key=$1 file=$2
+  sed -n "s/^${key}=//p" "$file"
+}
+
+move_path() {
+  local stage=$1 rel=$2
+  local src="$stage/$rel"
+  if [[ ! -e $src ]]; then
+    echo "missing ${src}" >&2
+    return 1
+  fi
+  mkdir -p "$pkgdir/$(dirname "$rel")"
+  mv "$src" "$pkgdir/$rel"
+}
+
+move_bin() {
+  local stage=$1 name=$2 optional=${3:-}
+  if [[ -z $name ]]; then
+    return 0
+  fi
+  if [[ ! -e $stage/usr/bin/$name ]]; then
+    if [[ -n $optional ]]; then
+      return 0
+    fi
+    echo "missing ${stage}/usr/bin/${name}" >&2
+    return 1
+  fi
+  move_path "$stage" "usr/bin/$name"
+}
+
+install_license() {
+  install -Dm644 "$srcdir/unicon/COPYING" \
+    "$pkgdir/usr/share/licenses/$1/COPYING"
+}
+
+prepare() {
+  local dest=$srcdir/unicon
+  mkdir -p "$dest"
+  tar -C "$startdir/.." \
+    --exclude='./.git' \
+    --exclude='./arch/src' \
+    --exclude='./arch/pkg' \
+    --exclude='./arch-pkg' \
+    -cf - . | tar -C "$dest" -xf -
+  cp -a "$dest" "$srcdir/unicon-ng"
+}
+
+build() {
+  local flags jobs
+  jobs=$(nproc)
+  flags=(
+    --prefix=/usr
+    --libdir=/usr/lib
+    --mandir=/usr/share/man
+    --docdir=/usr/share/doc/unicon
+    --enable-uniconx
+  )
+  (
+    cd "$srcdir/unicon"
+    ./configure "${flags[@]}"
+    make -j"$jobs"
+    make install DESTDIR="$srcdir/stage-gfx"
+  )
+  (
+    cd "$srcdir/unicon-ng"
+    ./configure "${flags[@]}" --disable-graphics --disable-audio
+    make -j"$jobs"
+    make install DESTDIR="$srcdir/stage-ng"
+  )
+}
+
+package_unicon() {
+  pkgdesc='Unicon programming language'
+  depends=(
+    unicon-runtime unicon-lib unicon-plugins unicon-translator
+    unicon-compiler unicon-patchstr unicon-ipl unicon-gui unicon-xml
+    unicon-uscribe unicon-udb unicon-ulsp unicon-unidoc unicon-unidep
+    unicon-iyacc unicon-uflex unicon-ui
+  )
+  conflicts=('unicon-nographics')
+  move_path "$srcdir/stage-gfx" usr/share/doc/unicon
+  install_license unicon
+}
+
+package_unicon-nographics() {
+  pkgdesc='Unicon programming language, no graphics'
+  depends=(
+    unicon-runtime-nographics unicon-lib unicon-plugins unicon-translator
+    unicon-compiler unicon-patchstr unicon-ipl unicon-xml
+    unicon-uscribe unicon-udb unicon-ulsp unicon-unidoc unicon-unidep
+    unicon-iyacc unicon-uflex
+  )
+  conflicts=('unicon')
+  install_license unicon-nographics
+}
+
+package_unicon-runtime() {
+  local stage=$srcdir/stage-gfx
+  local defs=$srcdir/unicon/Makedefs
+  pkgdesc='Unicon virtual machine'
+  provides=('unicon-vm')
+  conflicts=('unicon-runtime-nographics')
+  move_bin "$stage" "$(makedef UNICONX "$defs")"
+  move_bin "$stage" "$(makedef UNICONWX "$defs")" optional
+  install_license unicon-runtime
+}
+
+package_unicon-runtime-nographics() {
+  local stage=$srcdir/stage-ng
+  local defs=$srcdir/unicon-ng/Makedefs
+  pkgdesc='Unicon virtual machine, no graphics or audio'
+  provides=('unicon-vm')
+  conflicts=('unicon-runtime')
+  move_bin "$stage" "$(makedef UNICONX "$defs")"
+  move_bin "$stage" "$(makedef UNICONWX "$defs")" optional
+  install_license unicon-runtime-nographics
+}
+
+package_unicon-plugins() {
+  pkgdesc='Unicon loadable C functions and plugins'
+  depends=('unicon-vm')
+  move_path "$srcdir/stage-gfx" usr/lib/unicon/libcfunc.so
+  move_path "$srcdir/stage-gfx" usr/lib/unicon/plugins
+  install_license unicon-plugins
+}
+
+package_unicon-lib() {
+  pkgdesc='Unicon class library'
+  move_path "$srcdir/stage-gfx" usr/lib/unicon/uni/lib
+  install_license unicon-lib
+}
+
+package_unicon-translator() {
+  local stage=$srcdir/stage-gfx
+  local defs=$srcdir/unicon/Makedefs
+  pkgdesc='Unicon translator'
+  depends=('unicon-lib' 'unicon-vm')
+  move_bin "$stage" "$(makedef UNICONT "$defs")"
+  move_bin "$stage" "$(makedef UNICONWT "$defs")" optional
+  move_path "$stage" usr/bin/unicon
+  move_path "$stage" usr/lib/unicon/uni/parser
+  move_path "$stage" usr/share/man/man1/unicon.1
+  install_license unicon-translator
+}
+
+package_unicon-compiler() {
+  local stage=$srcdir/stage-gfx
+  local defs=$srcdir/unicon/Makedefs
+  pkgdesc='Unicon compiler'
+  depends=('unicon-vm')
+  move_bin "$stage" "$(makedef UNICONC "$defs")"
+  move_path "$stage" usr/lib/unicon/rt
+  install_license unicon-compiler
+}
+
+package_unicon-patchstr() {
+  pkgdesc='Unicon binary path patcher'
+  move_path "$srcdir/stage-gfx" usr/bin/patchstr
+  install_license unicon-patchstr
+}
+
+package_unicon-ipl() {
+  pkgdesc='Unicon program library'
+  move_path "$srcdir/stage-gfx" usr/lib/unicon/ipl
+  install_license unicon-ipl
+}
+
+package_unicon-gui() {
+  pkgdesc='Unicon graphics class library'
+  depends=('unicon-runtime')
+  move_path "$srcdir/stage-gfx" usr/lib/unicon/uni/gui
+  move_path "$srcdir/stage-gfx" usr/lib/unicon/uni/3d
+  install_license unicon-gui
+}
+
+package_unicon-xml() {
+  pkgdesc='Unicon XML library'
+  move_path "$srcdir/stage-gfx" usr/lib/unicon/uni/xml
+  install_license unicon-xml
+}
+
+package_unicon-uscribe() {
+  pkgdesc='Uscribe literate-programming tool'
+  depends=('unicon-vm')
+  move_path "$srcdir/stage-gfx" usr/bin/uscribe
+  move_path "$srcdir/stage-gfx" usr/lib/unicon/uni/uscribe
+  install_license unicon-uscribe
+}
+
+package_unicon-udb() {
+  pkgdesc='Unicon debugger'
+  depends=('unicon-vm')
+  move_path "$srcdir/stage-gfx" usr/bin/udb
+  move_path "$srcdir/stage-gfx" usr/bin/uprof
+  install_license unicon-udb
+}
+
+package_unicon-ulsp() {
+  pkgdesc='Unicon language server'
+  depends=('unicon-vm')
+  move_path "$srcdir/stage-gfx" usr/bin/ulsp
+  move_path "$srcdir/stage-gfx" usr/lib/unicon/uni/ulsp
+  install_license unicon-ulsp
+}
+
+package_unicon-unidoc() {
+  pkgdesc='Unicon documentation generator'
+  depends=('unicon-vm')
+  move_path "$srcdir/stage-gfx" usr/bin/unidoc
+  move_path "$srcdir/stage-gfx" usr/lib/unicon/uni/unidoc
+  install_license unicon-unidoc
+}
+
+package_unicon-unidep() {
+  pkgdesc='Unicon dependency lister'
+  depends=('unicon-vm')
+  move_path "$srcdir/stage-gfx" usr/bin/unidep
+  move_path "$srcdir/stage-gfx" usr/lib/unicon/uni/unidep
+  install_license unicon-unidep
+}
+
+package_unicon-iyacc() {
+  pkgdesc='iyacc parser generator'
+  depends=('unicon-vm')
+  move_path "$srcdir/stage-gfx" usr/bin/iyacc
+  install_license unicon-iyacc
+}
+
+package_unicon-uflex() {
+  pkgdesc='uflex lexical analyzer generator'
+  depends=('unicon-vm')
+  move_path "$srcdir/stage-gfx" usr/bin/uflex
+  install_license unicon-uflex
+}
+
+package_unicon-ui() {
+  pkgdesc='Unicon ui and ivib'
+  depends=('unicon-runtime')
+  move_path "$srcdir/stage-gfx" usr/bin/ui
+  move_path "$srcdir/stage-gfx" usr/bin/ivib
+  install_license unicon-ui
+}

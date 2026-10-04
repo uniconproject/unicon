@@ -34,6 +34,7 @@ on:
       - 'uni/uscribe/**'
       - 'config/editor/**'
       - 'config/scripts/gh-pages/**'
+      - 'config/scripts/pkg-repo/**'
       - '.github/workflows/pages.yml'
       - 'debian/control'
       - 'configure.ac'
@@ -49,6 +50,7 @@ on:
       - 'uni/uscribe/**'
       - 'config/editor/**'
       - 'config/scripts/gh-pages/**'
+      - 'config/scripts/pkg-repo/**'
       - '.github/workflows/pages.yml'
       - 'debian/control'
       - 'configure.ac'
@@ -98,7 +100,7 @@ jobs:
         github.ref == 'refs/heads/main'
       )
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -106,7 +108,7 @@ jobs:
       - name: Install Pandoc and TeX (uscribe PDF)
         run: |
           sudo apt-get update
-          sudo apt-get install -y pandoc \
+          sudo apt-get install -y pandoc reprepro createrepo-c \
             texlive-latex-recommended texlive-latex-extra \
             texlive-fonts-recommended
 
@@ -146,10 +148,10 @@ jobs:
           UNICON_SITE_PREFIX: /unicon
         run: bash config/scripts/gh-pages/build-gh-pages-site.sh _site
 
-      # Dev/deploy download links only — unsigned, straight from CI. The separate signed
-      # apt/dnf repo (reprepro/createrepo, like deb.frrouting.org) for tagged releases is
-      # a manual local step outside this workflow, not generated here.
-      - name: Fetch latest Binary Packages artifacts
+      # Unsigned dev apt/dnf/pacman repos from the latest master package run.
+      # Signed rc/stable/13.3 stay on the local publish path. Windows remains
+      # a direct download. See config/scripts/pkg-repo/publish-unsigned-dev.sh.
+      - name: Publish unsigned dev repositories
         if: github.repository == 'uniconproject/unicon'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -161,7 +163,7 @@ jobs:
           PACKAGE_RUN_ID: ${{ github.event_name == 'workflow_run' && (github.event.workflow_run.head_branch == 'master' || github.event.workflow_run.head_branch == 'main') && github.event.workflow_run.id || '' }}
         run: |
           set -euo pipefail
-          mkdir -p _site/downloads
+          mkdir -p _site/downloads "${RUNNER_TEMP}/repo-incoming" "${RUNNER_TEMP}/repo-arch"
           run_id="${PACKAGE_RUN_ID}"
           if [ -z "$run_id" ]; then
             run_id=$(gh run list --workflow packages.yml --branch master --status success \
@@ -171,19 +173,34 @@ jobs:
             echo "No successful Binary Packages run yet for master; downloads page will say so."
           else
             echo "Pulling package artifacts from Binary Packages run ${run_id}"
-            # gh accepts a single --pattern; a second copy replaces the first.
             got=0
-            for pat in 'deb-*' 'rpm-*' 'win-*'; do
-              if gh run download "$run_id" --pattern "$pat" --dir _site/downloads; then
-                got=1
-              else
-                echo "No artifacts matched ${pat}"
-              fi
-            done
+            # One --name extracts into the directory. A pattern creates a subdirectory per artifact.
+            if gh run download "$run_id" --name repo-incoming --dir "${RUNNER_TEMP}/repo-incoming"; then
+              got=1
+            else
+              echo "No repo-incoming artifact"
+            fi
+            if gh run download "$run_id" --pattern 'repo-arch-*' --dir "${RUNNER_TEMP}/repo-arch"; then
+              got=1
+            else
+              echo "No repo-arch artifacts"
+            fi
+            if gh run download "$run_id" --pattern 'win-*' --dir _site/downloads; then
+              got=1
+            else
+              echo "No Windows artifacts"
+            fi
             if [ "$got" -eq 1 ]; then
               echo "$run_id" > _site/downloads/.run_id
             fi
           fi
+          owner="${GITHUB_REPOSITORY%%/*}"
+          name="${GITHUB_REPOSITORY#*/}"
+          bash config/scripts/pkg-repo/publish-unsigned-dev.sh \
+            "${RUNNER_TEMP}/repo-incoming" \
+            "${RUNNER_TEMP}/repo-arch" \
+            _site/pkgs \
+            "https://${owner}.github.io/${name}"
 
       - name: Build downloads index page
         run: |
@@ -203,68 +220,90 @@ jobs:
             echo '</head><body>'
             cat config/scripts/gh-pages/includes/before-body.html
             echo '<main style="max-width:60rem;margin:2rem auto;padding:0 1rem;font-family:sans-serif">'
-            echo '<h1>Development package downloads</h1>'
+            base="https://${GITHUB_REPOSITORY%%/*}.github.io/${GITHUB_REPOSITORY#*/}"
+            echo '<h1>Development packages</h1>'
             echo '<p>Built automatically from the latest <code>master</code> commit.'
-            echo ' These are <strong>unsigned development builds</strong>, not an'
-            echo ' apt or dnf repository. Signed release packages are published'
-            echo ' separately per tagged release.'
-            echo ' A path containing <code>nographics</code> is built with'
-            echo ' <code>--disable-graphics</code> and has no GUI, IDE, or 3D library.</p>'
+            echo ' These repositories are <strong>unsigned</strong> and contain only'
+            echo ' the <code>dev</code> component. <code>apt install unicon</code> is the'
+            echo ' graphics set. <code>apt install unicon-nographics</code> is the same'
+            echo ' set around the virtual machine built with'
+            echo ' <code>--disable-graphics</code> and <code>--disable-audio</code>.'
+            echo ' The two metapackages conflict. Signed release repositories are'
+            echo ' published separately.</p>'
             echo "$run_note"
-            for kind_label in 'deb:Debian / Ubuntu (.deb)' 'rpm:Fedora / Rocky Linux (.rpm)' 'win:Windows'; do
-              kind="${kind_label%%:*}"
-              label="${kind_label#*:}"
-              echo "<h2>${label}</h2>"
-              case "$kind" in
-                deb)
-                  echo '<p>Download the package for your release and architecture,'
-                  echo ' for example Ubuntu 24.04 amd64 or Debian 13 arm64.'
-                  echo ' From the directory where you saved it:</p>'
-                  echo '<pre><code>sudo apt install "./unicon_&lt;version&gt;_&lt;arch&gt;.deb"</code></pre>'
-                  echo '<p>Quote the filename. It contains <code>~</code>, which the shell'
-                  echo ' would otherwise treat as your home directory.'
-                  echo ' <code>apt</code> installs the shared libraries the package needs.'
-                  echo ' A local file is not signed, and apt may say so; that is expected.'
-                  echo ' <code>dpkg -i</code> does not install those libraries. If you use it,'
-                  echo ' run <code>sudo apt-get -f install</code> afterward.</p>'
-                  ;;
-                rpm)
-                  echo '<p>Download the Fedora 44 or Rocky Linux 9 x86_64 package that'
-                  echo ' matches your system. The two are not interchangeable.'
-                  echo ' From the directory where you saved it:</p>'
-                  echo '<pre><code>sudo dnf install "./unicon-&lt;version&gt;.rpm"</code></pre>'
-                  echo '<p>Quote the filename because it contains <code>~</code>.'
-                  echo ' <code>dnf</code> installs the dependencies.'
-                  echo ' <code>rpm -i</code> does not.</p>'
-                  ;;
-                win)
-                  echo '<p>Download the 64-bit <code>.exe</code> and run it. The installer'
-                  echo ' is unsigned, so Windows may report an unknown publisher.'
-                  echo ' It adds the Unicon <code>bin</code> directory to the system'
-                  echo ' <code>PATH</code>. Open a new terminal after installation so the'
-                  echo ' updated path is picked up.</p>'
-                  ;;
-              esac
-              echo '<ul>'
-              found=0
-              for d in _site/downloads/"${kind}"-*/; do
-                [ -d "$d" ] || continue
-                for f in "$d"*; do
-                  [ -f "$f" ] || continue
-                  case "$f" in
-                    *.deb|*.rpm|*.exe) ;;
-                    *) continue ;;
-                  esac
-                  rel="${f#_site/downloads/}"
-                  echo "<li><a href=\"${rel}\">${rel}</a></li>"
-                  found=1
-                done
+            echo '<h2>Debian / Ubuntu</h2>'
+            if [ -d _site/pkgs/deb/dists ]; then
+              echo '<pre><code>. /etc/os-release'
+              echo "printf 'Types: deb\\nURIs: ${base}/pkgs/deb\\nSuites: %s\\nComponents: dev\\nTrusted: yes\\n' \"\$VERSION_CODENAME\" | sudo tee /etc/apt/sources.list.d/unicon-dev.sources"
+              echo 'sudo apt update'
+              echo 'sudo apt install unicon</code></pre>'
+              echo '<p>Suites: bookworm, trixie, jammy, noble, resolute. amd64 and arm64.</p>'
+            else
+              echo '<p><em>No apt repository in this build yet.</em></p>'
+            fi
+            echo '<h2>Fedora / Rocky Linux</h2>'
+            if find _site/pkgs/rpm/fedora _site/pkgs/rpm/rocky -name repomd.xml -print -quit 2>/dev/null | grep -q .; then
+              echo '<p>Fedora:</p>'
+              echo "<pre><code>sudo dnf config-manager --add-repo ${base}/pkgs/rpm/unicon-fedora.repo"
+              echo 'sudo dnf install unicon</code></pre>'
+              echo '<p>Rocky Linux:</p>'
+              echo "<pre><code>sudo dnf config-manager --add-repo ${base}/pkgs/rpm/unicon-rocky.repo"
+              echo 'sudo dnf install unicon</code></pre>'
+              echo '<p>Fedora 44 and Rocky Linux 9, x86_64. The packages are not interchangeable.</p>'
+            else
+              echo '<p><em>No dnf repository in this build yet.</em></p>'
+            fi
+            echo '<h2>openSUSE</h2>'
+            if find _site/pkgs/rpm/opensuse -name repomd.xml -print -quit 2>/dev/null | grep -q .; then
+              echo '<p>Leap 16.0:</p>'
+              echo "<pre><code>sudo zypper addrepo ${base}/pkgs/rpm/unicon-leap.repo"
+              echo 'sudo zypper refresh'
+              echo 'sudo zypper install unicon</code></pre>'
+              echo '<p>Tumbleweed:</p>'
+              echo "<pre><code>sudo zypper addrepo ${base}/pkgs/rpm/unicon-tumbleweed.repo"
+              echo 'sudo zypper refresh'
+              echo 'sudo zypper install unicon</code></pre>'
+              echo '<p>Leap 16.0 and Tumbleweed, x86_64. They are not interchangeable'
+              echo ' with each other or with the Fedora and Rocky packages.</p>'
+            else
+              echo '<p><em>No zypper repository in this build yet.</em></p>'
+            fi
+            echo '<h2>Arch Linux / CachyOS</h2>'
+            if [ -f _site/pkgs/arch/x86_64/unicon.db ] || [ -f _site/pkgs/cachyos/x86_64/unicon.db ]; then
+              echo '<p>Arch Linux and CachyOS are separate repositories. Append the matching block to <code>/etc/pacman.conf</code>:</p>'
+              echo '<pre><code>[unicon-dev]'
+              echo "Server = ${base}/pkgs/arch/\$arch"
+              echo 'SigLevel = Never</code></pre>'
+              echo '<p>On CachyOS use <code>/pkgs/cachyos/</code> instead of <code>/pkgs/arch/</code>, then <code>sudo pacman -Sy unicon</code>.</p>'
+            else
+              echo '<p><em>No pacman repository in this build yet.</em></p>'
+            fi
+            echo '<h2>Windows</h2>'
+            echo '<p>Download the 64-bit <code>.exe</code> and run it. The installer'
+            echo ' is unsigned, so Windows may report an unknown publisher.'
+            echo ' It adds the Unicon <code>bin</code> directory to the system'
+            echo ' <code>PATH</code>. Open a new terminal after installation so the'
+            echo ' updated path is picked up. A path containing <code>nographics</code>'
+            echo ' is built with <code>--disable-graphics</code> and <code>--disable-audio</code>.</p>'
+            echo '<ul>'
+            found=0
+            for d in _site/downloads/win-*/; do
+              [ -d "$d" ] || continue
+              for f in "$d"*; do
+                [ -f "$f" ] || continue
+                case "$f" in
+                  *.exe) ;;
+                  *) continue ;;
+                esac
+                rel="${f#_site/downloads/}"
+                echo "<li><a href=\"${rel}\">${rel}</a></li>"
+                found=1
               done
-              if [ "$found" -eq 0 ]; then
-                echo '<li><em>none yet</em></li>'
-              fi
-              echo '</ul>'
             done
+            if [ "$found" -eq 0 ]; then
+              echo '<li><em>none yet</em></li>'
+            fi
+            echo '</ul>'
             echo '</main>'
             cat config/scripts/gh-pages/includes/after-body.html
             echo '</body></html>'

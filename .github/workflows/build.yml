@@ -619,7 +619,8 @@ jobs:
         mkdir -p "$DISTROOT"
         make debin DISTROOT="$DISTROOT"
         mkdir debian-pkg
-        cp "$DISTROOT"/unicondist/unicon_*.deb debian-pkg/
+        # unicon-runtime_*.deb does not match unicon_*.deb.
+        cp "$DISTROOT"/unicondist/*.deb debian-pkg/
         cp "$DISTROOT"/unicondist/unicon_*.changes debian-pkg/
         cp "$DISTROOT"/unicondist/unicon_*.dsc debian-pkg/
         cp "$DISTROOT"/unicondist/unicon_*.debian.tar.xz debian-pkg/
@@ -628,7 +629,15 @@ jobs:
     - name: Install
       run: |
         shopt -s nullglob
-        debs=(./debian-pkg/*.deb)
+        debs=()
+        for f in ./debian-pkg/*.deb; do
+          # Built by the graphics configure, but it depends on
+          # unicon-runtime-nographics from the other build.
+          case "$f" in
+            ./debian-pkg/unicon-nographics_*) continue ;;
+          esac
+          debs+=("$f")
+        done
         if [ "${#debs[@]}" -eq 0 ]; then
           echo "No .deb packages under debian-pkg/; did the Deb step succeed?"
           exit 1

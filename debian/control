@@ -3,11 +3,11 @@ Section: devel
 Priority: optional
 Maintainer: Jafar Al-Gharaibeh <to.jafar@gmail.com>
 Build-Depends:
-	debhelper (>= 9.20160709),
+	debhelper (>= 13),
 	autotools-dev,
 	libc6,
 	libgcc-s1,
-	libgl1-mesa-dev,
+	libgl-dev,
 	libssl-dev,
 	libssh-dev,
 	libx11-dev,
@@ -22,13 +22,256 @@ Build-Depends:
 	libfreetype6-dev,
 	libxft-dev
 Standards-Version: 3.9.8
-
 Homepage: http://www.unicon.org
+
 Package: unicon
+Architecture: all
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-runtime,
+	unicon-lib,
+	unicon-plugins,
+	unicon-translator,
+	unicon-compiler,
+	unicon-patchstr,
+	unicon-ipl,
+	unicon-gui,
+	unicon-xml,
+	unicon-uscribe,
+	unicon-udb,
+	unicon-ulsp,
+	unicon-unidoc,
+	unicon-unidep,
+	unicon-iyacc,
+	unicon-uflex,
+	unicon-ui,
+	${misc:Depends}
+Conflicts: unicon-nographics
+Description: Unicon programming language
+ Unicon is a modern dialect of the Icon programming language.
+ .
+ This package depends on the full graphics install: the virtual machine,
+ the compiler, the libraries, and the prebuilt tools. It conflicts with
+ unicon-nographics.
+
+Package: unicon-nographics
+Architecture: all
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-runtime-nographics,
+	unicon-lib,
+	unicon-plugins,
+	unicon-translator,
+	unicon-compiler,
+	unicon-patchstr,
+	unicon-ipl,
+	unicon-xml,
+	unicon-uscribe,
+	unicon-udb,
+	unicon-ulsp,
+	unicon-unidoc,
+	unicon-unidep,
+	unicon-iyacc,
+	unicon-uflex,
+	${misc:Depends}
+Conflicts: unicon
+Description: Unicon programming language, no graphics
+ The full Unicon install built around the no-graphics virtual machine:
+ compiler, libraries, and the tools that do not draw.
+ .
+ It does not depend on unicon-gui or unicon-ui. It conflicts with unicon.
+
+Package: unicon-runtime
 Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Provides: unicon
-Description: Interpreter and tools for Unicon, a high-level programming language
- Unicon is a "modern dialect" descending from the Icon programming language.
- Unicon incorporates numerous new features and extensions to make the Icon
- language more suitable for a broad range of real-world applications.
+Provides: unicon-vm
+Conflicts: unicon-runtime-nographics
+Replaces: unicon-runtime-nographics, unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon virtual machine
+ The Unicon virtual machine, linked with graphics. The executable
+ name is selected by configure.
+ .
+ Programs that need graphics, including ui and ivib, depend on this
+ package. It cannot be installed together with unicon-runtime-nographics.
+
+Package: unicon-runtime-nographics
+Architecture: any
+Build-Profiles: <pkg.unicon.nographics>
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Provides: unicon-vm
+Conflicts: unicon-runtime
+Replaces: unicon-runtime, unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon virtual machine, no graphics
+ The Unicon virtual machine built with --disable-graphics and
+ --disable-audio. Same executable name as unicon-runtime, linked
+ without the graphics and audio libraries.
+ .
+ It cannot be installed together with unicon-runtime. The compiler and
+ the tools that do not draw accept either package.
+
+Package: unicon-plugins
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-runtime | unicon-runtime-nographics, ${misc:Depends}, ${shlibs:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon loadable C functions and plugins
+ libcfunc.so, which loadfunc() searches for, and the loadable plugins.
+ Not required to run the virtual machine. Either runtime can load them.
+
+Package: unicon-lib
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: ${misc:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon class library
+ The class library under uni/lib. A program that imports it needs this
+ package. Prebuilt tools already have those modules linked in.
+
+Package: unicon-translator
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-lib, unicon-runtime | unicon-runtime-nographics, ${misc:Depends}, ${shlibs:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon translator
+ The unicon front end and the translator. The translator
+ executable name is selected by configure.
+ Also ships the translator files under uni/parser.
+ .
+ Depends on unicon-lib and either virtual machine. unicon-runtime is
+ preferred when neither is installed.
+
+Package: unicon-compiler
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-runtime | unicon-runtime-nographics, ${misc:Depends}, ${shlibs:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon compiler
+ The compiler that translates Unicon to C. The executable name is
+ selected by configure. Also ships rt/, the library and headers used
+ when compiling.
+ .
+ Depends on either virtual machine. unicon-runtime is preferred when
+ neither is installed.
+
+Package: unicon-patchstr
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon binary path patcher
+ patchstr writes an install prefix into Unicon executables.
+ .
+ Debian and RPM packages run it while the package is built, after
+ the final /usr paths are known and before the files are split.
+ Each package then contains its own already-patched binaries. This
+ package does not patch other packages after installation.
+ The Windows installer runs patchstr at install time, because the
+ directory is chosen then.
+
+Package: unicon-ipl
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: ${misc:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon program library
+ The Icon Program Library shipped with Unicon. For programs that link
+ it. Prebuilt tools do not need this package.
+
+Package: unicon-gui
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-runtime, ${misc:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon graphics class library
+ uni/gui and uni/3d. Programs that import these classes need the
+ graphics virtual machine, so this package depends on unicon-runtime.
+
+Package: unicon-xml
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: ${misc:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon XML library
+ The classes under uni/xml, for programs that import them.
+
+Package: unicon-uscribe
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-runtime | unicon-runtime-nographics, ${misc:Depends}, ${shlibs:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Uscribe literate-programming tool
+ uscribe and its theme files. Depends only on a Unicon virtual machine.
+
+Package: unicon-udb
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-runtime | unicon-runtime-nographics, ${misc:Depends}, ${shlibs:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon debugger
+ udb and uprof. Depends only on a Unicon virtual machine.
+
+Package: unicon-ulsp
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-runtime | unicon-runtime-nographics, ${misc:Depends}, ${shlibs:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon language server
+ ulsp and the files under uni/ulsp.
+
+Package: unicon-unidoc
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-runtime | unicon-runtime-nographics, ${misc:Depends}, ${shlibs:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon documentation generator
+ unidoc and the files under uni/unidoc.
+
+Package: unicon-unidep
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-runtime | unicon-runtime-nographics, ${misc:Depends}, ${shlibs:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon dependency lister
+ unidep and the files under uni/unidep.
+
+Package: unicon-iyacc
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-runtime | unicon-runtime-nographics, ${misc:Depends}, ${shlibs:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: iyacc parser generator
+ iyacc, the Unicon parser generator.
+
+Package: unicon-uflex
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-runtime | unicon-runtime-nographics, ${misc:Depends}, ${shlibs:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: uflex lexical analyzer generator
+ uflex, the Unicon lexical analyzer generator.
+
+Package: unicon-ui
+Architecture: any
+Build-Profiles: <!pkg.unicon.nographics>
+Depends: unicon-runtime, ${misc:Depends}, ${shlibs:Depends}
+Replaces: unicon (<< 13.3~prerelease-1)
+Breaks: unicon (<< 13.3~prerelease-1)
+Description: Unicon ui and ivib
+ The ui IDE and the ivib interface builder. Both need the graphics
+ virtual machine.

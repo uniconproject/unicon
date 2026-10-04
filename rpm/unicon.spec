@@ -1,4 +1,3 @@
-Name:    unicon
 # make rpmbin passes --define "ver <version>" and --define "tarball <filename>".
 # ver defaults to the same 13.3~prerelease string the Debian changelog and
 # Makefile VSUFFIX use. CI appends +git<run>.<sha> so each master build sorts
@@ -13,6 +12,11 @@ Name:    unicon
 #   make rpmbin with --disable-plugins or --enable-plugins=no
 #     (the Makefile passes --without plugins)
 %bcond_without plugins
+%if %{with_graphics}
+Name: unicon
+%else
+Name: unicon-runtime-nographics
+%endif
 Version: %{ver}
 Release: 1%{?dist}
 Summary: The Unicon Programming Language
@@ -21,35 +25,243 @@ License: GPLv2+
 Source0: %{tarball}
 
 %if %{with_graphics}
+%if 0%{?suse_version}
+BuildRequires: libjpeg8-devel, libpng16-devel, libX11-devel
+BuildRequires: Mesa-libGL-devel, glu-devel
+BuildRequires: libXft-devel, freetype2-devel
+%else
 BuildRequires: libjpeg-turbo-devel, libpng-devel, libX11-devel
 BuildRequires: mesa-libGL-devel, mesa-libGLU-devel
 BuildRequires: libXft-devel, freetype-devel
 %endif
+%endif
+%if 0%{?suse_version}
+BuildRequires: libopenssl-3-devel, libssh-devel, unixODBC-devel
+%else
 BuildRequires: openssl-devel, libssh-devel, unixODBC-devel
+%endif
 # OpenAL, freealut, ogg, and vorbis are not in RHEL/Rocky. Runtime dependencies
 # for libraries that were actually linked come from the automatic soname
-# generator, so a Rocky build does not require OpenAL.
-%if 0%{?fedora}
+# generator, so a Rocky build does not require OpenAL. openSUSE has them.
+%if 0%{?fedora} || 0%{?suse_version}
 BuildRequires: openal-soft-devel, freealut-devel, libogg-devel, libvorbis-devel
 %endif
 
 
 %if %{with_graphics}
+Requires: unicon-runtime
+Requires: unicon-lib
+Requires: unicon-plugins
+Requires: unicon-translator
+Requires: unicon-compiler
+Requires: unicon-patchstr
+Requires: unicon-ipl
+Requires: unicon-gui
+Requires: unicon-xml
+Requires: unicon-uscribe
+Requires: unicon-udb
+Requires: unicon-ulsp
+Requires: unicon-unidoc
+Requires: unicon-unidep
+Requires: unicon-iyacc
+Requires: unicon-uflex
+Requires: unicon-ui
+Conflicts: unicon-nographics
+%else
+Provides: unicon-vm
+Conflicts: unicon-runtime
+Obsoletes: unicon < 13.3~prerelease-1
+%endif
+
+%description
+%if %{with_graphics}
+Metapackage for the full Unicon install: virtual machine, compiler,
+libraries, and prebuilt tools.
+%else
+Unicon virtual machine built without graphics or audio. Installs the same
+files as unicon-runtime and conflicts with it.
+%endif
+ Unicon is a modern dialect of the Icon programming language.
+
+%if %{with_graphics}
+
+%package nographics
+Summary: Unicon without graphics
+Requires: unicon-runtime-nographics
+Requires: unicon-lib
+Requires: unicon-plugins
+Requires: unicon-translator
+Requires: unicon-compiler
+Requires: unicon-patchstr
+Requires: unicon-ipl
+Requires: unicon-xml
+Requires: unicon-uscribe
+Requires: unicon-udb
+Requires: unicon-ulsp
+Requires: unicon-unidoc
+Requires: unicon-unidep
+Requires: unicon-iyacc
+Requires: unicon-uflex
+Conflicts: unicon
+
+%description nographics
+Metapackage for the full no-graphics install: virtual machine, compiler,
+libraries, and the tools that do not draw. Does not include the GUI
+library or ui/ivib. Conflicts with the unicon metapackage.
+
+%package runtime
+Summary: Unicon virtual machine
+%if 0%{?suse_version}
+Requires: libopenssl3, unixODBC
+Requires: libjpeg8, libpng16-16, libX11-6
+Requires: Mesa-libGL1, libGLU1
+Requires: libXft2, libfreetype6
+%else
+Requires: openssl, unixODBC
 Requires: libjpeg-turbo, libpng, libX11
 Requires: mesa-libGL, mesa-libGLU
 Requires: libXft, freetype
 %endif
-Requires: openssl, unixODBC
+Provides: unicon-vm
+Conflicts: unicon-runtime-nographics
+Obsoletes: unicon < 13.3~prerelease-1
 
+%description runtime
+The virtual machine, linked with graphics. The executable name comes
+from configure. ui, ivib, and the graphics class library need this package.
 
-Requires(post): info
-Requires(preun): info
+%package plugins
+Summary: Unicon loadable C functions and plugins
+Requires: (unicon-runtime or unicon-runtime-nographics)
+Obsoletes: unicon < 13.3~prerelease-1
 
-%description
-Interpreter and tools for Unicon, a high-level programming language
- Unicon is a "modern dialect" descending from the Icon programming language.
- Unicon incorporates numerous new features and extensions to make the Icon
- language more suitable for a broad range of real-world applications.
+%description plugins
+libcfunc.so, which loadfunc() searches for, and the loadable plugins.
+Not required just to run the virtual machine.
+
+%package lib
+Summary: Unicon class library
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description lib
+The class library under uni/lib. Programs that import it need this
+package. Prebuilt tools already have those modules linked in.
+
+%package translator
+Summary: Unicon translator
+Requires: unicon-lib
+Requires: (unicon-runtime or unicon-runtime-nographics)
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description translator
+The unicon front end and the translator. The translator executable
+name comes from configure.
+
+%package patchstr
+Summary: Unicon binary path patcher
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description patchstr
+patchstr writes an install prefix into Unicon executables. RPM packages
+run it while the package is built, so each package already contains
+patched binaries.
+
+%package compiler
+Summary: Unicon compiler
+Requires: (unicon-runtime or unicon-runtime-nographics)
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description compiler
+The compiler and the rt/ library and headers it uses. The executable
+name comes from configure.
+
+%package ipl
+Summary: Unicon program library
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description ipl
+The Icon Program Library shipped with Unicon.
+
+%package gui
+Summary: Unicon graphics class library
+Requires: unicon-runtime
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description gui
+uni/gui and uni/3d. Depends on the graphics virtual machine.
+
+%package xml
+Summary: Unicon XML library
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description xml
+The classes under uni/xml.
+
+%package uscribe
+Summary: Uscribe literate-programming tool
+Requires: (unicon-runtime or unicon-runtime-nographics)
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description uscribe
+uscribe and its theme files. Depends only on a Unicon virtual machine.
+
+%package udb
+Summary: Unicon debugger
+Requires: (unicon-runtime or unicon-runtime-nographics)
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description udb
+udb and uprof.
+
+%package ulsp
+Summary: Unicon language server
+Requires: (unicon-runtime or unicon-runtime-nographics)
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description ulsp
+ulsp and the files under uni/ulsp.
+
+%package unidoc
+Summary: Unicon documentation generator
+Requires: (unicon-runtime or unicon-runtime-nographics)
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description unidoc
+unidoc and the files under uni/unidoc.
+
+%package unidep
+Summary: Unicon dependency lister
+Requires: (unicon-runtime or unicon-runtime-nographics)
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description unidep
+unidep and the files under uni/unidep.
+
+%package iyacc
+Summary: iyacc parser generator
+Requires: (unicon-runtime or unicon-runtime-nographics)
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description iyacc
+iyacc, the Unicon parser generator.
+
+%package uflex
+Summary: uflex lexical analyzer generator
+Requires: (unicon-runtime or unicon-runtime-nographics)
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description uflex
+uflex, the Unicon lexical analyzer generator.
+
+%package ui
+Summary: Unicon ui and ivib
+Requires: unicon-runtime
+Obsoletes: unicon < 13.3~prerelease-1
+
+%description ui
+The ui IDE and the ivib interface builder.
+
+%endif
 
 
 %global debug_package %{nil}
@@ -68,76 +280,125 @@ unset CFLAGS
 unset CXXFLAGS
 unset LDFLAGS
 unset RPM_OPT_FLAGS
+# Docdir stays unicon even when this build's Name is the nographics runtime.
 # with_plugins is 0 or 1, so a bare %{!?with_plugins} test does not work.
 %if %{with plugins}
-./configure --prefix=/usr --bindir=%{_bindir} --libdir=%{_libdir} --mandir=%{_mandir} --docdir=%{_docdir}/%{name} %{?configure_extra}
+./configure --prefix=/usr --bindir=%{_bindir} --libdir=%{_libdir} --mandir=%{_mandir} --docdir=%{_docdir}/unicon --enable-uniconx %{?configure_extra}
 %else
-./configure --prefix=/usr --bindir=%{_bindir} --libdir=%{_libdir} --mandir=%{_mandir} --docdir=%{_docdir}/%{name} %{?configure_extra} --disable-plugins
+./configure --prefix=/usr --bindir=%{_bindir} --libdir=%{_libdir} --mandir=%{_mandir} --docdir=%{_docdir}/unicon --enable-uniconx %{?configure_extra} --disable-plugins
 %endif
 make -j8
 
 %install
 rm -rf $RPM_BUILD_ROOT
 %make_install
+# Executable names are whatever configure wrote into Makedefs.
+xname=$(sed -n 's/^UNICONX=//p' Makedefs)
+wxname=$(sed -n 's/^UNICONWX=//p' Makedefs)
+tname=$(sed -n 's/^UNICONT=//p' Makedefs)
+wtname=$(sed -n 's/^UNICONWT=//p' Makedefs)
+cname=$(sed -n 's/^UNICONC=//p' Makedefs)
+%if ! %{with_graphics}
+# This build publishes only the no-graphics virtual machine.
+find %{buildroot}%{_bindir} -type f ! -name "$xname" ! -name "$wxname" -delete
+rm -rf %{buildroot}%{_docdir} %{buildroot}%{_mandir}
+rm -rf %{buildroot}%{_libdir}/unicon
+%endif
+: > %{_builddir}/unicon/runtime.files
+for b in "$xname" "$wxname"; do
+  if [ -n "$b" ] && [ -f "%{buildroot}%{_bindir}/$b" ]; then
+    echo "%{_bindir}/$b" >> %{_builddir}/unicon/runtime.files
+  fi
+done
+%if %{with_graphics}
+: > %{_builddir}/unicon/translator.files
+for b in "$tname" "$wtname"; do
+  if [ -n "$b" ] && [ -f "%{buildroot}%{_bindir}/$b" ]; then
+    echo "%{_bindir}/$b" >> %{_builddir}/unicon/translator.files
+  fi
+done
+: > %{_builddir}/unicon/compiler.files
+if [ -n "$cname" ] && [ -f "%{buildroot}%{_bindir}/$cname" ]; then
+  echo "%{_bindir}/$cname" >> %{_builddir}/unicon/compiler.files
+fi
+%endif
 
-#%{buildroot}/%{_bindir}/patchstr  -DPatchUnirotHere %{buildroot}/%{_bindir}/iconx %{_libdir}/unicon
-#%{buildroot}/%{_bindir}/patchstr  -DPatchUnirotHere %{buildroot}/%{_bindir}/icont %{_libdir}/unicon
-#%{buildroot}/%{_bindir}/patchstr  -DPatchUnirotHere %{buildroot}/%{_bindir}/iconc %{_libdir}/unicon
-
-%post
-
-%preun
+%if %{with_graphics}
 
 %files
-%{_bindir}/iconx
-%{_bindir}/icont
-%{_bindir}/iconc
-%{_bindir}/unicon
-# ivib and ui are built only when graphics is enabled.
-%if %{with_graphics}
-%{_bindir}/ivib
-%{_bindir}/ui
-%endif
-%{_bindir}/unidoc
-%{_bindir}/udb
-%{_bindir}/unidep
-%{_bindir}/uprof
-%{_bindir}/uscribe
-%{_bindir}/ulsp
-%{_bindir}/iyacc
-%{_bindir}/patchstr
-%{_libdir}/unicon/rt
-# Absent when this package was built with --without plugins.
+%{_docdir}/unicon
+%license COPYING
+
+%files nographics
+
+%files runtime -f %{_builddir}/unicon/runtime.files
+
+%files plugins
 %if %{with plugins}
 %{_libdir}/unicon/libcfunc.so
 %endif
-%{_libdir}/unicon/ipl/lib/*.u
-%{_libdir}/unicon/ipl/incl/*.icn
-%{_libdir}/unicon/ipl/gincl/*.icn
-%{_libdir}/unicon/ipl/mincl/*.icn
-%{_libdir}/unicon/ipl/procs
-%{_libdir}/unicon/uni/lib/*.*
-%{_libdir}/unicon/uni/3d/*.*
-%{_libdir}/unicon/uni/gui/*.*
-%{_libdir}/unicon/uni/unidoc/*.*
-%{_libdir}/unicon/uni/unidep/*.*
-%{_libdir}/unicon/uni/parser/*.*
-%{_libdir}/unicon/uni/xml/*.*
-%{_libdir}/unicon/uni/ulsp
-%{_libdir}/unicon/uni/uscribe/*.*
-%{_libdir}/unicon/uni/uscribe/themes/*.*
-%{_libdir}/unicon/uni/uscribe/themes/_shared/*.*
-%{_libdir}/unicon/uni/uscribe/themes/basic/*.*
-%{_libdir}/unicon/uni/uscribe/themes/basic/static/*.*
-%{_libdir}/unicon/uni/uscribe/themes/classic/*.*
-%{_libdir}/unicon/uni/uscribe/themes/classic/static/*.*
-%{_libdir}/unicon/uni/uscribe/themes/dark/*.*
-%{_libdir}/unicon/uni/uscribe/themes/dark/static/*.*
-%{_libdir}/unicon/plugins/lib/*.*
-%{_docdir}/unicon/*.*
-%{_mandir}/man1/unicon.1.gz
+%{_libdir}/unicon/plugins
 
+%files lib
+%{_libdir}/unicon/uni/lib
+
+%files translator -f %{_builddir}/unicon/translator.files
+%{_bindir}/unicon
+%{_libdir}/unicon/uni/parser
+%{_mandir}/man1/unicon.1*
+
+%files patchstr
+%{_bindir}/patchstr
+
+%files compiler -f %{_builddir}/unicon/compiler.files
+%{_libdir}/unicon/rt
+
+%files ipl
+%{_libdir}/unicon/ipl
+
+%files gui
+%{_libdir}/unicon/uni/gui
+%{_libdir}/unicon/uni/3d
+
+%files xml
+%{_libdir}/unicon/uni/xml
+
+%files uscribe
+%{_bindir}/uscribe
+%{_libdir}/unicon/uni/uscribe
+
+%files udb
+%{_bindir}/udb
+%{_bindir}/uprof
+
+%files ulsp
+%{_bindir}/ulsp
+%{_libdir}/unicon/uni/ulsp
+
+%files unidoc
+%{_bindir}/unidoc
+%{_libdir}/unicon/uni/unidoc
+
+%files unidep
+%{_bindir}/unidep
+%{_libdir}/unicon/uni/unidep
+
+%files iyacc
+%{_bindir}/iyacc
+
+%files uflex
+%{_bindir}/uflex
+
+%files ui
+%{_bindir}/ui
+%{_bindir}/ivib
+
+%else
+
+%files -f %{_builddir}/unicon/runtime.files
 %license COPYING
+
+%endif
 
 %changelog
 * Fri Mar 29 2019 Jafar Al-Gharaibeh <to.Jafar@gmail.com> 13.1.2-1

@@ -845,6 +845,17 @@ Deliberate Syntax Error
                fail;
 #endif                                  /* DBM */
 
+            case 'k':
+            case 'K':
+#ifdef Dbm
+               /* With "d": do not lock the database ("dk", "drk"). */
+               status |= Fs_DbmNolock;
+               continue;
+#else
+               set_errortext(1045);
+               fail;
+#endif                                  /* DBM */
+
             case 'm':
             case 'M':
 #ifdef Messaging
@@ -908,6 +919,11 @@ Deliberate Syntax Error
                runerr(209, spec);
             }
          }
+
+#ifdef Dbm
+      if ((status & Fs_DbmNolock) && !(status & Fs_Dbm))
+         runerr(209, spec);
+#endif                                  /* Dbm */
 
 #if HAVE_LIBSSL
       /*
@@ -1471,7 +1487,12 @@ Deliberate Syntax Error
 #ifdef Dbm
       if (status & Fs_Dbm) {
          int mode;
-         if ((status & Fs_Read && status & Fs_Write) || status == Fs_Dbm) {
+         /*
+          * "d" alone is read/write. Fs_DbmNolock ("k") does not
+          * change that, so compare without it.
+          */
+         if ((status & Fs_Read && status & Fs_Write) ||
+             (status & ~Fs_DbmNolock) == Fs_Dbm) {
             mode = O_RDWR|O_CREAT;
             status |= Fs_Read|Fs_Write;
          }
@@ -1480,6 +1501,9 @@ Deliberate Syntax Error
          }
          else
            mode = O_RDONLY;
+
+         if (status & Fs_DbmNolock)
+            mode |= DBM_NOLOCK;
 
          if ((f = (FILE *)dbm_open(fnamestr, mode, 0666)) == NULL) {
             set_errortext(191);

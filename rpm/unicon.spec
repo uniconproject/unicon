@@ -132,7 +132,7 @@ from configure. ui, ivib, and the graphics class library need this package.
 
 %package plugins
 Summary: Unicon loadable C functions and plugins
-Requires: (unicon-runtime or unicon-runtime-nographics)
+Requires: (unicon-runtime-nographics or unicon-runtime)
 Obsoletes: unicon < 13.3~prerelease-1
 
 %description plugins
@@ -150,7 +150,7 @@ package. Prebuilt tools already have those modules linked in.
 %package translator
 Summary: Unicon translator
 Requires: unicon-lib
-Requires: (unicon-runtime or unicon-runtime-nographics)
+Requires: (unicon-runtime-nographics or unicon-runtime)
 Obsoletes: unicon < 13.3~prerelease-1
 
 %description translator
@@ -168,7 +168,7 @@ patched binaries.
 
 %package compiler
 Summary: Unicon compiler
-Requires: (unicon-runtime or unicon-runtime-nographics)
+Requires: (unicon-runtime-nographics or unicon-runtime)
 Obsoletes: unicon < 13.3~prerelease-1
 
 %description compiler
@@ -199,7 +199,7 @@ The classes under uni/xml.
 
 %package uscribe
 Summary: Uscribe literate-programming tool
-Requires: (unicon-runtime or unicon-runtime-nographics)
+Requires: (unicon-runtime-nographics or unicon-runtime)
 Obsoletes: unicon < 13.3~prerelease-1
 
 %description uscribe
@@ -207,7 +207,7 @@ uscribe and its theme files. Depends only on a Unicon virtual machine.
 
 %package udb
 Summary: Unicon debugger
-Requires: (unicon-runtime or unicon-runtime-nographics)
+Requires: (unicon-runtime-nographics or unicon-runtime)
 Obsoletes: unicon < 13.3~prerelease-1
 
 %description udb
@@ -215,7 +215,7 @@ udb and uprof.
 
 %package ulsp
 Summary: Unicon language server
-Requires: (unicon-runtime or unicon-runtime-nographics)
+Requires: (unicon-runtime-nographics or unicon-runtime)
 Obsoletes: unicon < 13.3~prerelease-1
 
 %description ulsp
@@ -223,7 +223,7 @@ ulsp and the files under uni/ulsp.
 
 %package unidoc
 Summary: Unicon documentation generator
-Requires: (unicon-runtime or unicon-runtime-nographics)
+Requires: (unicon-runtime-nographics or unicon-runtime)
 Obsoletes: unicon < 13.3~prerelease-1
 
 %description unidoc
@@ -231,7 +231,7 @@ unidoc and the files under uni/unidoc.
 
 %package unidep
 Summary: Unicon dependency lister
-Requires: (unicon-runtime or unicon-runtime-nographics)
+Requires: (unicon-runtime-nographics or unicon-runtime)
 Obsoletes: unicon < 13.3~prerelease-1
 
 %description unidep
@@ -239,7 +239,7 @@ unidep and the files under uni/unidep.
 
 %package iyacc
 Summary: iyacc parser generator
-Requires: (unicon-runtime or unicon-runtime-nographics)
+Requires: (unicon-runtime-nographics or unicon-runtime)
 Obsoletes: unicon < 13.3~prerelease-1
 
 %description iyacc
@@ -247,7 +247,7 @@ iyacc, the Unicon parser generator.
 
 %package uflex
 Summary: uflex lexical analyzer generator
-Requires: (unicon-runtime or unicon-runtime-nographics)
+Requires: (unicon-runtime-nographics or unicon-runtime)
 Obsoletes: unicon < 13.3~prerelease-1
 
 %description uflex

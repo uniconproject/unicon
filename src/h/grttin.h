@@ -250,6 +250,17 @@ typedef int pid_t;
 /*
  * dummy typedefs for things defined in #include files
  */
+
+/*
+ * C11 <stdatomic.h> names (RTT typedef stubs only).
+ * Real definitions come from the header in compiled runtime code.
+ */
+typedef int atomic_flag, atomic_bool, atomic_char, atomic_schar, atomic_uchar;
+typedef int atomic_short, atomic_ushort, atomic_int, atomic_uint, atomic_long;
+typedef int atomic_ulong, atomic_llong, atomic_ullong;
+typedef int atomic_size_t, atomic_ptrdiff_t, atomic_intptr_t, atomic_uintptr_t;
+typedef int AtomicInt, AtomicWord;      /* rmacros.h */
+
 typedef int clock_t, time_t, fd_set;
 
 #if WildCards

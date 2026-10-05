@@ -1,0 +1,34 @@
+#
+# Sends and receives that block on a thread's queues return once that
+# thread is gone, instead of waiting forever.
+#
+
+procedure work(k)
+   every 1 to k
+   fail
+end
+
+procedure main()
+   local T, i, n, x
+
+   if not (&features == "concurrent threads") then
+      stop("This program requires concurrent threads.")
+
+   T := thread &fail
+   delay(100)
+   every i := 1 to 1100 do (i @>> T) | break
+   write("blocking send to a dead thread returned")
+
+   T := thread &fail
+   delay(100)
+   (x := <<@T) | write("blocking receive from a dead thread fails")
+
+   T := thread { every i := 1 to 3 do i @>> &null; &fail }
+   n := 0
+   while <<@T do n +:= 1
+   write("received ", n, " values")
+
+   # @T on a thread that ends around the time of the receive
+   every 1 to 1000 do { T := thread work(?2000); every 1 to ?2000; @T }
+   write("receive racing thread exit: ok")
+end

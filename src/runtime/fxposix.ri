@@ -1647,12 +1647,27 @@ function{0,1} wait(pid, options)
       if (pid < -1) {
 
          int x = -pid-2;
-         if (x<0 || x>=ncondvars)
+         if (x<0 || x>=ncondvars) {
             irunerr(181, pid);
+            errorfail;
+            }
 
+         {
+         int rv;
          DEC_NARTHREADS;
-         CV_WAIT(condvars[x], condvarsmtxs[x]);
+         rv = pthread_cond_wait(condvars[x], MUTEXID(condvarsmtxs[x]));
          INC_NARTHREADS_CONTROLLED;
+         /*
+          * Not holding the mutex. Linux returns EPERM; macOS returns
+          * EINVAL.
+          */
+         if (rv == EPERM || rv == EINVAL) {
+            irunerr(186, pid);
+            errorfail;
+            }
+         else if (rv != 0)
+            handle_thread_error(rv, FUNC_COND_WAIT, "wait()");
+         }
 
          return C_integer 1;
          }

@@ -1,0 +1,39 @@
+#
+# critical regions release their mutex on every way out, including when
+# the critical expression is a generator that is resumed.
+#
+
+global m
+
+procedure free()                        # is m free, seen from another thread?
+   local T
+   T := thread (if trylock(m) then (unlock(m), "free") else "held")
+   return <<@T
+end
+
+procedure gen(L)
+   suspend critical m: !L
+end
+
+procedure first()
+   critical m: return 42
+end
+
+procedure main()
+   local L, x
+
+   if not (&features == "concurrent threads") then
+      stop("This program requires concurrent threads.")
+
+   m := mutex(); L := [1, 2, 3]
+   every x := (critical m: !L) do writes(x, ":", free(), " ")
+   write("| after every: ", free())
+   x := (critical m: !L); write("bounded: ", free())
+   (critical m: L[99]) | write("failing body: ", free())
+   (critical m: &fail) | write("&fail body: ", free())
+   every x := gen(L) do writes(x, ":", free(), " ")
+   write("| after suspend: ", free())
+   first(); write("return: ", free())
+   every x := (critical m: !L) do break
+   write("break: ", free())
+end

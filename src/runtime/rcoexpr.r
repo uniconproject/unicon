@@ -12,7 +12,9 @@ static continuation coexpr_fnc;
 
 #ifdef Concurrent
 void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp);
+void tlschain_unlink(struct threadstate *tstate);
 void tlschain_remove(struct threadstate *tstate);
+static void release_thread_tstate(struct b_coexpr *cp);
 
 #define TRANSFER_KLEVEL(ncp, ccp) do {                                  \
     if (IS_TS_SYNC(ncp->status) && ncp->program == ccp->program) {      \
@@ -614,6 +616,7 @@ int pthreadcoswitch(struct b_coexpr *old, struct b_coexpr *new, word ostat, word
  */
 void coclean(struct b_coexpr *cp) {
   struct region *strregion=NULL, *blkregion=NULL;
+  int had_thread = 0;
 
 #ifdef Concurrent
   if (cp->tstate){
@@ -644,9 +647,13 @@ void coclean(struct b_coexpr *cp) {
 
     cp->alive = -1;         /* signal thread to exit */
     if (cp->have_thread){
-      sem_post(cp->semp);       /* unblock it */
+      /* a thread that already exited closed its semaphore */
+      if (cp->semp)
+         sem_post(cp->semp);    /* unblock it */
       THREAD_JOIN(cp->thread, NULL);    /* wait for thread to exit */
       cp->alive = -2;           /* mark it as joined */
+      cp->have_thread = 0;
+      had_thread = 1;           /* still return its private heaps below */
     }
     if (!IS_TS_THREAD(cp->status)) {
 #ifndef NO_COEXPR_SEMAPHORE_FIX
@@ -655,7 +662,7 @@ void coclean(struct b_coexpr *cp) {
 #ifdef Concurrent
 #ifdef PthreadCoswitch
       if (cp->tstate) {
-         if (cp->have_thread) {
+         if (had_thread) {
             /*
              * Pthread coswitch: dedicated thread was joined above; only the GC
              * thread runs here (sweep path); mutators are stopped.
@@ -698,15 +705,58 @@ void coclean(struct b_coexpr *cp) {
       MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
     }
 #endif                  /* Concurrent */
-    cp->alive = -8;
-    CV_SIGNAL_EMPTYBLK(BlkD(cp->outbox, List));
-    CV_SIGNAL_FULLBLK(BlkD(cp->inbox, List));
+    /*
+     * Mark the thread dead and wake everyone waiting on its queues.  This
+     * must happen under each queue's mutex: a receiver checks alive and
+     * then waits while holding it, so an unlocked store-and-signal can
+     * fall between the two and the wakeup is lost for good.  Broadcast,
+     * since every waiter must see that no more values are coming.
+     */
+    {
+    struct b_list *qp;
 
-    DEC_NARTHREADS;
+    qp = BlkD(cp->outbox, List);
+    MUTEX_LOCKBLK_CONTROLLED(qp, "coclean(): outbox mutex");
+    qp = BlkD(cp->outbox, List);   /* may have moved while we waited */
+    cp->alive = -8;
+    pthread_cond_broadcast(condvars[qp->cvempty]);
+    MUTEX_UNLOCKBLK(qp, "coclean(): outbox mutex");
+
+    qp = BlkD(cp->inbox, List);
+    MUTEX_LOCKBLK_CONTROLLED(qp, "coclean(): inbox mutex");
+    qp = BlkD(cp->inbox, List);
+    pthread_cond_broadcast(condvars[qp->cvfull]);
+    MUTEX_UNLOCKBLK(qp, "coclean(): inbox mutex");
+    }
+
+    /*
+     * Leave the TLS chain.  The collector marks every tstate on it as a
+     * root, including K_current, so a finished thread left there kept its
+     * co-expression, stacks and queues alive forever and was re-marked by
+     * every later collection.  The tstate memory itself stays: other
+     * co-expressions this thread activated may still point at it.  It is
+     * freed when this co-expression is collected; see
+     * release_thread_tstate().
+     */
+    if (cp->tstate) {
+       MUTEX_LOCKID(MTX_TLS_CHAIN);
+       MUTEX_LOCKID(MTX_STRINGTOTAL);
+       MUTEX_LOCKID(MTX_BLOCKTOTAL);
+       tlschain_unlink(cp->tstate);
+       MUTEX_UNLOCKID(MTX_BLOCKTOTAL);
+       MUTEX_UNLOCKID(MTX_STRINGTOTAL);
+       MUTEX_UNLOCKID(MTX_TLS_CHAIN);
+       }
+
+    /*
+     * Finish with the co-expression block while still counted in: once
+     * counted out, a collection may sweep it and join this thread.
+     */
     cp->alive = -1;
 #ifndef NO_COEXPR_SEMAPHORE_FIX
     if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
 #endif                  /* NO_COEXPR_SEMAPHORE_FIX */
+    DEC_NARTHREADS;
     pthread_exit(NULL);
   }
 
@@ -721,18 +771,10 @@ void coclean(struct b_coexpr *cp) {
 #endif                  /* NO_COEXPR_SEMAPHORE_FIX */
 #ifdef Concurrent
   /*
-   * Give up the heaps owned by the old thread,
-   * only GC thread is running, no need to lock
+   * A thread's co-expression is being collected; only the collector is
+   * running.
    */
-  if (CHECK_FLAG(cp->status, Ts_Posix) && blkregion){
-    MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
-    swap2publicheap(blkregion, NULL,  &public_blockregion);
-    MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
-    MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
-    swap2publicheap(strregion, NULL,  &public_stringregion);
-    MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
-  }
-  tlschain_remove(cp->tstate);
+  release_thread_tstate(cp);
 #endif                  /* Concurrent */
 
   return;
@@ -838,8 +880,8 @@ void *nctramp(void *arg)
 
 pthread_mutexattr_t rmtx_attr;  /* recursive mutex attr ready to be used */
 pthread_t TCthread;
-int thread_call;
-int NARthreads;
+AtomicInt thread_call;
+AtomicInt NARthreads;
 pthread_cond_t cond_tc;
 
 #ifndef NamedSemaphores
@@ -1008,6 +1050,7 @@ void thread_control(int action)
    switch (action){
       case TC_ANSWERCALL:{
          /*---------------------------------*/
+         ATOMIC_FENCE_ACQUIRE();        /* pairs with the store of thread_call */
          switch (action_in_progress){
             case TC_KILLALLTHREADS:{
                #ifdef CoClean
@@ -1042,7 +1085,7 @@ void thread_control(int action)
                MUTEX_LOCKID(MTX_NARTHREADS);
                NARthreads--;
                MUTEX_UNLOCKID(MTX_NARTHREADS);
-               CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
+               CV_WAIT_ON_EXPR(ATOMIC_LOAD(thread_call), &cond_tc, MTX_COND_TC);
                MUTEX_UNLOCKID(MTX_COND_TC);
 
                /*
@@ -1075,7 +1118,7 @@ void thread_control(int action)
             /* wake up another TCthread and go to sleep */
             sem_post(sem_tcp);
 
-            CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
+            CV_WAIT_ON_EXPR(ATOMIC_LOAD(thread_call), &cond_tc, MTX_COND_TC);
 
             MUTEX_UNLOCKID(MTX_COND_TC);
 
@@ -1092,7 +1135,7 @@ void thread_control(int action)
           * reset (post) sem_gc to be ready for the next GC round
           */
 
-         thread_call = 0;
+         ATOMIC_STORE(thread_call, 0);
          NARthreads++;
          sem_post(sem_tcp);
          action_in_progress = TC_NONE;
@@ -1183,11 +1226,11 @@ void thread_control(int action)
          MUTEX_LOCKID(MTX_THREADCONTROL);
 
          TCthread = pthread_self();
-         thread_call = 1;
+         ATOMIC_STORE(thread_call, 1);
          /* NARthreads should reach and stay at zero during TC*/
          while (1) {
             MUTEX_LOCKID(MTX_NARTHREADS);
-            if (NARthreads  <= 0) break;  /* unlock MTX_NARTHREADS after GC*/
+            if (ATOMIC_LOAD(NARthreads) <= 0) break;  /* unlock MTX_NARTHREADS after GC*/
             MUTEX_UNLOCKID(MTX_NARTHREADS);
             usleep(50);
             }
@@ -1216,11 +1259,16 @@ void thread_control(int action)
          return;
          }
       case TC_KILLALLTHREADS:{
-         /* wait until only this thread is running  */
-         thread_call = 1;
+         /*
+          * Wait until only this thread is running.  Publish the action
+          * before the call: a thread that sees the call reads the action
+          * after an acquire fence in TC_ANSWERCALL, and must not see
+          * TC_NONE and park as if for a collection.
+          */
          action_in_progress = action;
+         ATOMIC_STORE_RELEASE(thread_call, 1);
          while (1) {
-            if (NARthreads  <= 1) break;  /* unlock MTX_NARTHREADS after GC*/
+            if (ATOMIC_LOAD(NARthreads) <= 1) break;
             usleep(50);
             }
 
@@ -1298,18 +1346,22 @@ void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp)
    MUTEX_UNLOCKID(MTX_TLS_CHAIN);
 }
 
-void tlschain_remove(struct threadstate *tstate)
+/*
+ * Take tstate off the TLS chain and fold its allocation totals into the
+ * program's.  Safe to call on a tstate that is already off the chain.
+ * Assumes MTX_TLS_CHAIN (and the totals mutexes) are held if needed; the
+ * collector, running alone, doesn't need them.
+ */
+void tlschain_unlink(struct threadstate *tstate)
 {
-   /*
-    * This function assumes that MTX_TLS_CHAIN is locked/unlocked
-    * if needed. GCthread doesn't need to lock for example.
-    */
-
    if (!tstate || !tstate->prev) return;
 
    tstate->prev->next = tstate->next;
    if (tstate->next)
       tstate->next->prev = tstate->prev;
+   else
+      roottstate.prev = tstate->prev;   /* tlschain_add() appends here */
+   tstate->prev = tstate->next = NULL;
 #if ConcurrentCOMPILER
    /* CurrentCOMPILER has tstate but no pstate */
    curstring->size += tstate->stringtotal;
@@ -1318,9 +1370,53 @@ void tlschain_remove(struct threadstate *tstate)
    rootpstate.stringtotal += tstate->stringtotal;
    rootpstate.blocktotal += tstate->blocktotal;
 #endif                                  /* ConcurrentCOMPILER */
+   tstate->stringtotal = tstate->blocktotal = 0;
+}
+
+void tlschain_remove(struct threadstate *tstate)
+{
+   if (!tstate || !tstate->prev) return;
+
+   tlschain_unlink(tstate);
    if (tstate->c && tstate->c->isProghead) return;
 
-   free(tstate);
+#ifndef HAVE_KEYWORD__THREAD
+   free(tstate);                        /* else it is thread-local storage */
+#endif                                  /* HAVE_KEYWORD__THREAD */
+}
+
+/*
+ * Release the tstate of a thread whose co-expression cp is being
+ * collected.  Only the collector is running and the thread has been
+ * joined or has exited.  Co-expressions the thread activated took its
+ * tstate (co_chng()); clear those references before freeing it.  A
+ * thread exits through coclean(), which already gave its heaps to the
+ * public lists and left the TLS chain; a tstate still on the chain did
+ * not, so do both here.
+ */
+static void release_thread_tstate(struct b_coexpr *cp)
+{
+   struct threadstate *ts = cp->tstate;
+   struct b_coexpr *ce;
+
+   if (!ts) return;
+   cp->tstate = NULL;
+
+   if (ts->prev) {
+      if (ts->Curblock)
+         swap2publicheap(ts->Curblock, NULL, &public_blockregion);
+      if (ts->Curstring)
+         swap2publicheap(ts->Curstring, NULL, &public_stringregion);
+      tlschain_unlink(ts);
+      }
+
+   for (ce = stklist; ce; ce = ce->nextstk)
+      if (ce->tstate == ts)
+         ce->tstate = NULL;
+
+#ifndef HAVE_KEYWORD__THREAD
+   free(ts);                            /* else it is thread-local storage */
+#endif                                  /* HAVE_KEYWORD__THREAD */
 }
 
 /*
@@ -1566,7 +1662,7 @@ void handle_thread_error(int val, int func, char* msg)
       break;
       }
 
-      perror("");
+      fprintf(stderr, "%s\n", strerror(val));
       syserr("");
       return;
 }

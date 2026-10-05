@@ -612,7 +612,13 @@ critical region: \{ \\
 \noindent
 Another change introduced in release 13.3 is that \texttt{critical mtx: expr}
 produces the value of \texttt{expr} (previously, it produced the value of
-\texttt{mtx}).
+\texttt{mtx}). If \texttt{expr} is a generator, the mutex is released when
+it produces a result and locked again before it is resumed, so each result is
+produced under the lock and the mutex is free while the result is used:
+
+\iconcode{
+every x := (critical mtx: !L) do write(x)
+}
 
 \bigskip
 In some situations, a thread might have several tasks to finish and may not want
@@ -676,9 +682,12 @@ end
 }
 
 \texttt{Initial} clauses are thread-safe. They can be thought of as a built-in
-critical region that is run only once. No thread is allowed to enter the
-procedure if there is a thread still executing in the \texttt{initial}
-block. This can be useful in a concurrent environment to do critical
+critical region that is run only once. No other thread is allowed past the
+\texttt{initial} clause while a thread is still executing in the
+\texttt{initial} block; clauses of different procedures do not wait for each
+other. A recursive call made from inside the \texttt{initial} block skips
+it, as in Icon, and leaving the block by \texttt{return}, \texttt{fail} or
+\texttt{suspend} counts as finishing it. This can be useful in a concurrent environment to do critical
 initialization, such as creating a new mutex object instead of declaring a mutex
 variable to be global and initializing it somewhere else, or passing it from one
 function to another where it will be actually used.  A concurrent version of
@@ -1295,6 +1304,12 @@ procedure consume(p) \\
 \ \ \ every !10 do write({<}{<}@ p) \\
 end
 }
+
+A blocking operation does not wait for a thread that has terminated: a
+blocking receive from a thread that has finished fails once its outbox is
+empty, and a blocking send to one returns without waiting for space. A loop
+such as \texttt{while x := {<}{<}@ p do ...} therefore ends when \texttt{p}
+is done and has delivered all of its values.
 
 In some cases, a thread might want to use a blocking receive to get values from
 a second thread, but it is not willing to block indefinitely; it may do some

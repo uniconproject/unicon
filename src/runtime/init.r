@@ -246,11 +246,11 @@ int dumped = 0;                         /* non-zero if reloaded from dump */
 #endif                                  /* ExecImages */
 
 #ifdef MultipleRuns
-extern word coexp_ser;
-extern word list_ser;
-extern word intern_list_ser;
-extern word set_ser;
-extern word table_ser;
+extern AtomicWord coexp_ser;
+extern AtomicWord list_ser;
+extern AtomicWord intern_list_ser;
+extern AtomicWord set_ser;
+extern AtomicWord table_ser;
 extern int first_time;
 #endif                                  /* MultipleRuns */
 
@@ -1009,7 +1009,7 @@ Deliberate Syntax Error
    mainhead->status = Ts_Main | Ts_Attached | Ts_Async;
 
 #ifdef Concurrent
-   thread_call=0;               /* The thread who requested a GC */
+   ATOMIC_STORE(thread_call, 0);  /* The thread who requested a GC */
    NARthreads=1;        /* Number of Async Running threads*/
 
    if (alcce_queues(mainhead) == Failed)

@@ -692,18 +692,29 @@ further by allocating a separate mutex for each instance of each opcode
 instead of using just seven mutexes for the seven self-modifying opcodes;
 it is unlikely that this would be worth implementing, since the number of
 instances is large and each instance of a self-modifying instruction uses
-its mutex only once when it replaces itself.  To provide a thread safe
+its mutex only once when it replaces itself.  Because another thread may fetch a rewritten opcode without taking the
+mutex, the new operand must become visible before the new opcode. When the
+compiler provides C11 atomics, a release fence separates the two stores, and
+the absolute opcodes issue an acquire fence before reading their operand. On
+x86 these fences only constrain the compiler; on weakly ordered processors
+such as ARM64 and POWER they are required.
+
+To provide a thread safe
 \texttt{initial} clause (discussed in \ref{Unicon-Initial-Clause}) at the language
-level, a similar technique used for self-modifying instructions was
-utilized, unlike self-modifying instructions, where locking and unlocking
-take place at the same instructions, with initial clause, the locking
-happens at the beginning of the clause, and the unlocking happens at the
-end. To allow such behavior, a new VM instruction was introduced which
-takes care of updating the instruction at the beginning of the clause, and
-unlocks the mutex. The updated instruction causes all of the subsequent
-calls to the function containing the initial clause made by any thread to
-skip over the clause.  This mechanism effectively eliminates the need to do
-any locking/unlocking after it is initialized.
+level, the clause is bracketed by two instructions: \texttt{Op\_Init} at the
+beginning, whose operand is the offset past the clause, and a VM instruction
+introduced for this purpose, \texttt{Op\_EInit}, at the end. The first thread
+to reach \texttt{Op\_Init} records the clause as in progress, together with
+its own thread state and procedure frame, and runs the body. The record lives
+in a list protected by a mutex, but the mutex is not held while the body
+runs, so clauses of different procedures never wait for each other. Another
+thread reaching the clause waits on a condition variable until it is done; the
+same thread reaching it again, through recursion, skips it, as Icon does. The
+clause is done when \texttt{Op\_EInit} is reached, or when its procedure frame
+returns, fails or suspends out of the body. Either way the \texttt{Op\_Init}
+instruction is rewritten into an absolute goto past the clause, which makes all
+of the subsequent calls to the procedure skip over it.  This mechanism
+eliminates the need to do any locking/unlocking after it is initialized.
 
 \begin{figure}[h]
 \begin{center}
@@ -972,9 +983,12 @@ checked by all threads once per virtual machine instruction.  The runtime
 system keeps track of how many threads are running using a global counter
 \texttt{NARthreads}, which is incremented and decremented by the threads
 depending on their state: before a thread blocks on a mutex it decrements
-the counter, and increments it after unblocking. The counter itself is
-protected by a mutex and can be incremented only if there is no garbage
+the counter, and increments it after unblocking. Incrementing the counter
+is protected by a mutex and can happen only if there is no garbage
 collection request pending or taking place (Figure \ref{trackThreads}).
+When the compiler provides C11 atomics, the counter is an atomic variable
+and decrementing it takes no lock: a decrement can never let a garbage
+collection start too early.
 
 After a call for garbage collection causes a thread to enter the
 \texttt{thread\_control} function, the thread decrements the running

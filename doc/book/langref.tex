@@ -973,8 +973,11 @@ co-expression to evaluate \textit{expr}.
 execution of \textit{expr} on value {\textit x}. Value {\textit x} must
 be a mutex or protected object that has a mutex. The critical section
 causes {\textit x} to be locked before evaluating {\textit expr} and
-unlocked afterward. Breaking, returning or failing out of {\textit expr} 
-does not automatically unlock {\textit x}.\WarningNotThreadSafe
+unlocked afterward, however {\textit expr} is left: by producing a result,
+by failing, or by \texttt{break}, \texttt{next}, \texttt{return},
+\texttt{fail} or \texttt{suspend}. If {\textit expr} is a generator and is
+resumed, {\textit x} is locked again first, so each result is produced
+under the lock. The critical expression produces the value of {\textit expr}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -1061,10 +1064,11 @@ with the package name.
 \noindent
 \index{initial}The \texttt{initial} expression is executed the first
 time a procedure or method is invoked.
-Any subsequent invocations (of the procedure or method) \ConcurrencyIssue
+Invocations by other threads \ConcurrencyIssue
 will not proceed until the \texttt{initial} expression has finished execution.
 A recursive invocation of the procedure inside the \texttt{initial} expression
-causes a runtime error.
+skips it, as in Icon. Leaving the \texttt{initial} expression by \texttt{return},
+\texttt{fail} or \texttt{suspend} also counts as finishing it.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -1608,7 +1612,8 @@ if no left operand is supplied. Activation may be augmented.
 The send operator places a message in another thread's public
 inbox, or in the current thread's public outbox. The normal version fails
 if the box is full; the blocking version waits for space to become
-available.
+available, unless the receiving thread has terminated, in which case it
+does not wait.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -1621,7 +1626,8 @@ available.
 The receive operator obtains a message from another thread's public
 outbox, or the current thread's public inbox. The normal version fails
 if the box is empty; the blocking version waits for a message to become
-available.
+available. Once the sending thread has terminated, a blocking receive
+from it fails when its outbox is empty.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -2722,7 +2728,8 @@ generates names in the currently active procedure in \texttt{ce}.
 associated with thread-safe object \texttt{x}.
 Mutexes are recursive (i.e. they may be locked again by the same co-expression
 or thread without blocking) but must be unlocked as many times as they are
-locked. It is an error to unlock a mutex more times than it has been locked.
+locked. It is an error to unlock a mutex more times than it has been locked
+(run-time error 186).
 
 \bigskip\hrule\vspace{0.1cm}
 \index{log}
@@ -3677,7 +3684,8 @@ of \texttt{x}.
 
 \noindent
 \index{lock}\texttt{unlock(x)} unlocks the mutex \texttt{x} or the mutex
-associated with thread-safe object \texttt{x}.
+associated with thread-safe object \texttt{x}. Unlocking a mutex that the
+current thread does not hold is run-time error 186.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{upto}
@@ -3723,8 +3731,11 @@ program that created \texttt{c}.
 \noindent
 \index{wait()}\texttt{wait(x)} waits for \texttt{x}. If \texttt{x} is
 a thread, \texttt{wait()} waits for it to finish. If \texttt{x} is
-is a condition variable \texttt{wait()} waits until that variable is
-subsequently signaled by another thread.
+a condition variable \texttt{wait()} waits until that variable is
+subsequently signaled by another thread. The condition variable's mutex
+must be locked by the calling thread (run-time error 186 otherwise), and
+locked only once: waiting releases one level of a recursive lock, so a
+mutex locked twice stays held and the signaling thread can never acquire it.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -5047,13 +5058,14 @@ unevaluated expression\\
 175 \ \ \ \ \ \ \ network connection expected\\
 180 \ \ \ \ \ \ \ invalid mutex\\
 181 \ \ \ \ \ \ \ invalid condition variable\\
-182 \ \ \ \ \ \ \ illegal recursion in initial clause\\
+182 \ \ \ \ \ \ \ illegal recursion in initial clause (no longer produced)\\
 183 \ \ \ \ \ \ \ concurrent threads are not enabled in
 this virtual machine\\
 184 \ \ \ \ \ \ \ structure cannot have more than one mutex at 
 the same time\\
 185 \ \ \ \ \ \ \ converting an active co-expression to a thread
 is not yet supported\\
+186 \ \ \ \ \ \ \ mutex is not locked by the current thread\\
 %%----------------------------------------
 190 \ \ \ \ \ \ \ dbm database expected\\
 191 \ \ \ \ \ \ \ cannot open dbm database\\

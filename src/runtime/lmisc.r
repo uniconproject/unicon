@@ -222,7 +222,11 @@ int activate(dptr val, struct b_coexpr *ncp, dptr result)
       }
    else
    if (IS_TS_THREAD(ncp->status) && IS_TS_ASYNC(ncp->status)){
-      struct b_list *hp;
+      /*
+       * Tended: the waits below run counted out, so a collection may move
+       * the list block while this thread sleeps.
+       */
+      tended struct b_list *hp;
 
       if (!is:null(*val)){
       /* send */
@@ -231,7 +235,8 @@ int activate(dptr val, struct b_coexpr *ncp, dptr result)
       MUTEX_LOCKBLK_CONTROLLED(hp, "activate(): list mutex");
       if (hp->size>=hp->max){
          hp->full++;
-         while (hp->size>=hp->max){
+         /* a dead thread will never drain its inbox */
+         while (hp->size>=hp->max && ncp->alive>=0){
             CV_SIGNAL_EMPTYBLK(hp);
             DEC_NARTHREADS;
             CV_WAIT_FULLBLK(hp);
@@ -249,26 +254,18 @@ int activate(dptr val, struct b_coexpr *ncp, dptr result)
       MUTEX_LOCKBLK_CONTROLLED(hp, "activate: list mutex");
       if (hp->size==0){
          hp->empty++;
-         while (hp->size==0){
-            if (hp->size==0 && ncp->alive<0){
-               hp->empty--;
-               return A_Resume;
-               }
+         /*
+          * Wait while the outbox is empty and its producer is still alive.
+          * Every way out goes through the unlock below, counted in.
+          */
+         while (hp->size==0 && ncp->alive>=0){
             CV_SIGNAL_FULLBLK(hp);
             DEC_NARTHREADS;
-            if (hp->size==0 && ncp->alive<0){
-               hp->empty--;
-               return A_Resume;
-               }
             CV_WAIT_EMPTYBLK(hp);
             INC_NARTHREADS_CONTROLLED;
-            if (hp->size==0 && ncp->alive<0){
-               hp->empty--;
-               return A_Resume;
-               }
             }
          hp->empty--;
-         if (hp->size==0){ /* This shouldn't be the case, but.. */
+         if (hp->size==0){ /* the producer is gone and left nothing */
             MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
             CV_SIGNAL_FULLBLK(hp);
             return A_Resume;
@@ -348,8 +345,9 @@ int msg_receive(dptr dccp, dptr dncp,
              MUTEX_LOCKBLK_CONTROLLED(hp, "receive(): list mutex");
              if (hp->size==0){
                 hp->empty++;
-                while (hp->size==0){
-                  CV_SIGNAL_FULLBLK(hp);
+                /* stop waiting once the producing thread is gone */
+                while (hp->size==0 && (!dncp || ncp->alive>=0)){
+                   CV_SIGNAL_FULLBLK(hp);
                    DEC_NARTHREADS;
                    CV_WAIT_EMPTYBLK(hp);
                    INC_NARTHREADS_CONTROLLED;
@@ -432,7 +430,8 @@ int msg_send( dptr dccp, dptr dncp,
    tended struct b_coexpr *ccp = BlkD(*dccp, Coexpr);
    tended struct b_list *hp;
    if (dncp){
-      dptr ncpRQ = &(BlkD(*dncp, Coexpr)->inbox);
+      struct b_coexpr *ncp = BlkD(*dncp, Coexpr);
+      dptr ncpRQ = &(ncp->inbox);
       hp = BlkD(*ncpRQ, List);
       MUTEX_LOCKBLK_CONTROLLED(hp, "msg_send(): list mutex");
       if (hp->size>=hp->max){
@@ -441,7 +440,8 @@ int msg_send( dptr dccp, dptr dncp,
             Fail;
             }
          hp->full++;
-         while (hp->size>=hp->max){
+         /* a dead thread will never drain its inbox */
+         while (hp->size>=hp->max && ncp->alive>=0){
             CV_SIGNAL_EMPTYBLK(hp);
             DEC_NARTHREADS;
             CV_WAIT_FULLBLK(hp);
@@ -672,10 +672,12 @@ operator{0,1} @>> sndbk(x,y)
 
    body{
 #ifdef Concurrent
+      /* the receiving thread, if any; a dead one will never drain y */
+      struct b_coexpr *peer = (is:coexpr(y) ? BlkD(y, Coexpr) : NULL);
       MUTEX_LOCKBLK_CONTROLLED(hp, "snd(): list mutex");
       if (hp->size>=hp->max){
          hp->full++;
-         while (hp->size>=hp->max){
+         while (hp->size>=hp->max && (!peer || peer->alive>=0)){
             CV_SIGNAL_EMPTYBLK(hp);
             DEC_NARTHREADS;
             CV_WAIT_FULLBLK(hp);
@@ -954,13 +956,17 @@ operator{0,1} <<@ rcvbk(x,y)
       runerr(118, y)
 
    body{
+#ifdef Concurrent
+      /* the producing thread, if any; stop waiting once it is gone */
+      struct b_coexpr *peer = (is:coexpr(y) ? BlkD(y, Coexpr) : NULL);
+#endif                                  /* Concurrent */
       switch (x){
          case -1 :
             MUTEX_LOCKBLK_CONTROLLED(hp, "rcvbk(): list mutex");
             if (hp->size==0){
 #ifdef Concurrent
                hp->empty++;
-               while (hp->size==0){
+               while (hp->size==0 && (!peer || peer->alive>=0)){
                   CV_SIGNAL_FULLBLK(hp);
                   DEC_NARTHREADS;
                   CV_WAIT_EMPTYBLK(hp);

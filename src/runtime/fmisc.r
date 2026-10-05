@@ -3099,6 +3099,26 @@ MissingFuncV(signal)
  */
 #if defined(Concurrent) || defined(PosixFns)
 
+#ifdef Concurrent
+/*
+ * Set the size limit of the message queue or channel *lp under its mutex,
+ * and wake any senders blocked on the old limit so they test the new one.
+ * *lp is re-read after locking: the list may move while the lock waits.
+ */
+static word set_queue_limit(dptr lp, word n)
+{
+   struct b_list *hp = BlkD(*lp, List);
+
+   MUTEX_LOCKBLK_CONTROLLED(hp, "Attrib(): queue limit");
+   hp = BlkD(*lp, List);
+   hp->max = n;
+   if (hp->full)
+      pthread_cond_broadcast(condvars[hp->cvfull]);
+   MUTEX_UNLOCKBLK(hp, "Attrib(): queue limit");
+   return n;
+}
+#endif                                  /* Concurrent */
+
 "Attrib(argv[]) - read/write attributes (threads, sockets, ttys, ...)"
 
 function{*} Attrib(argv[argc])
@@ -3456,7 +3476,7 @@ function{*} Attrib(argv[argc])
 
          switch (q) {
             case CHANNEL_LIMIT:
-               return C_integer (hp->max = n);
+               return C_integer set_queue_limit(&argv[0], n);
                break;
             default: runerr(101, argv[base]);
             }
@@ -3492,27 +3512,25 @@ function{*} Attrib(argv[argc])
       /* must have pairs of attribute and their values to continue */
       if ((argc-base)%2 != 0) runerr(130, nulldesc);
 
+      /*
+       * Set every pair and produce the last value set.  The sizes count
+       * the values in a queue and are read-only.
+       */
       for (; base < argc; base+=2){
          if (!cnv:C_integer(argv[base], q)) runerr(101, argv[base]);
          if (!cnv:C_integer(argv[base+1], n)) runerr(101, argv[base+1]);
          switch (q) {
-            case INBOX_SIZE:
-               return C_integer (BlkD(ccp->inbox, List)->size = n);
-               break;
-            case OUTBOX_SIZE:
-               return C_integer (BlkD(ccp->outbox, List)->size = n);
-               break;
             case INBOX_LIMIT:
-               return C_integer (BlkD(ccp->inbox, List)->max = n);
+               set_queue_limit(&ccp->inbox, n);
                break;
             case OUTBOX_LIMIT:
-               return C_integer (BlkD(ccp->outbox, List)->max = n);
+               set_queue_limit(&ccp->outbox, n);
                break;
             default: runerr(101, argv[base]);
             }
          }
 
-      fail;
+      return C_integer n;
 #else                                   /* Concurrent */
       runerr(121, argv[0]);
 #endif                                  /* Concurrent */

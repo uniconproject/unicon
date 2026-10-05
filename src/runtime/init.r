@@ -1663,7 +1663,7 @@ static word unicon_getrandom(void)
  *   &random := map("sSmMhH", "Hh:Mm:Ss", &clock) +
  *    map("YyXxMmDd", "YyXx/Mm/Dd", &date) + &time + 1009 * ncalls
  */
-   static int ncalls = 0;
+   static AtomicInt ncalls = 0;
    word krandom;
    time_t t;
    struct tm *ct;
@@ -1699,8 +1699,7 @@ static word unicon_getrandom(void)
    /* + map &time */
 
 #ifndef HAVE_KEYWORD__THREAD
-   ncalls++;
-   krandom += millisec() + 1009 * ncalls;
+   krandom += millisec() + 1009 * (ATOMIC_ADD(ncalls, 1) + 1);
 #else
    krandom += millisec() + 1009 * (int) curtstate;
 #endif

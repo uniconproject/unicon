@@ -2630,7 +2630,12 @@ function{0,1} signal(x, y)
           * Transmit whatever is needed to wake it up.
           */
 #ifdef PthreadCoswitch
-         if (BlkD(x, Coexpr)->alive == 0)
+         /*
+          * Only a running thread can be woken.  A finished thread keeps
+          * its semaphore until it is collected, and x holds it, so a
+          * thread that exits after this test is posted to harmlessly.
+          */
+         if (BlkD(x, Coexpr)->alive <= 0 || BlkD(x, Coexpr)->semp == NULL)
             fail;
 
          sem_post(BlkD(x, Coexpr)->semp);

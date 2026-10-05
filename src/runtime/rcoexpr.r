@@ -760,12 +760,10 @@ void coclean(struct b_coexpr *cp) {
 
     /*
      * Finish with the co-expression block while still counted in: once
-     * counted out, a collection may sweep it and join this thread.
+     * counted out, a collection may sweep it and join this thread.  The
+     * semaphore stays open until then: signal() may still post to it.
      */
     cp->alive = -1;
-#ifndef NO_COEXPR_SEMAPHORE_FIX
-    if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
-#endif                  /* NO_COEXPR_SEMAPHORE_FIX */
     DEC_NARTHREADS;
     pthread_exit(NULL);
   }

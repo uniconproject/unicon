@@ -396,6 +396,7 @@ if test x"$tsan" = x"yes" ; then
   AC_CFLAG([-fsanitize=thread], [AC_MSG_ERROR([ThreadSanitizer (-fsanitize=thread) is not supported by $CC])])
   AC_CXXFLAG([-fsanitize=thread], [AC_MSG_ERROR([ThreadSanitizer (-fsanitize=thread) is not supported by $CXX])])
   LDFLAGS="$LDFLAGS -fsanitize=thread"
+  AC_DEFINE([ThreadSanitizer], [1], [Define if built with ThreadSanitizer (--enable-tsan).])
 fi
 
 if test x"$msan" = x"yes" ; then

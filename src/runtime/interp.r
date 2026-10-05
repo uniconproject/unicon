@@ -48,6 +48,22 @@ word lastop;                    /* Last operator evaluated */
 #endif                                  /* MultiProgram */
 
 /*
+ * A rewritten opcode is published with a release fence before a plain
+ * store, and read with a plain load (and an acquire fence where the
+ * operand is used; AbsOperandFence).  ThreadSanitizer does not model
+ * fences, so in its builds the fetch is an acquire load and the store a
+ * release store, which is what the fences stand for.  PutInstr publishes
+ * in every build, so these are not under Concurrent.
+ */
+#ifdef ThreadSanitizer
+#define GetOp (word)__atomic_load_n(ipc.op++, __ATOMIC_ACQUIRE)
+#define PublishOp(p, x) __atomic_store_n((p), (x), __ATOMIC_RELEASE)
+#else                                   /* ThreadSanitizer */
+#define GetOp (word)(*ipc.op++)
+#define PublishOp(p, x) do { ATOMIC_FENCE_RELEASE(); *(p) = (x); } while (0)
+#endif                                  /* ThreadSanitizer */
+
+/*
  * Istate variables.
  */
 
@@ -100,12 +116,10 @@ static void init_rewrite(word *after)
    at.opnd = after;
 #if WordBits == IntBits
    at.opnd[-1] = target;
-   ATOMIC_FENCE_RELEASE();
-   at.op[-2] = Op_Agoto;
+   PublishOp(&at.op[-2], Op_Agoto);
 #else                                   /* WordBits == IntBits */
    at.opnd[-1] = target;
-   ATOMIC_FENCE_RELEASE();
-   at.op[-3] = Op_Agoto;
+   PublishOp(&at.op[-3], Op_Agoto);
 #endif                                  /* WordBits == IntBits */
 }
 
@@ -353,7 +367,6 @@ if (((int (*)(dptr))*(optab[lastop]))(rargp) == A_Resume) {
  */
 #define GetWord (*ipc.opnd++)
 #define PutWord(x) ipc.opnd[-1] = (x)
-#define GetOp (word)(*ipc.op++)
 #define PutOp(x) ipc.op[-1] = (x)
 
 /*
@@ -383,11 +396,11 @@ if (((int (*)(dptr))*(optab[lastop]))(rargp) == A_Resume) {
 
 #if WordBits == IntBits
 #begdef PutInstr(x,y,op_offset)
-   do { ipc.opnd[-1] = (y); ATOMIC_FENCE_RELEASE(); ipc.op[-1-op_offset] = (x); } while(0)
+   do { ipc.opnd[-1] = (y); PublishOp(&ipc.op[-1-op_offset], (x)); } while(0)
 #enddef
 #else if WordBits == IntBits*2
 #begdef PutInstr(x,y,op_offset)
-   do { ipc.opnd[-1] = (y); ATOMIC_FENCE_RELEASE(); ipc.op[-1-2*op_offset] = (x); } while(0)
+   do { ipc.opnd[-1] = (y); PublishOp(&ipc.op[-1-2*op_offset], (x)); } while(0)
 #enddef
 #else
 deliberate syntax error

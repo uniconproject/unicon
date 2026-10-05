@@ -238,9 +238,10 @@
 #begdef Desc_EVValD(bp, code, type)
 #if code
    do {
-   eventdesc.dword = type;
-   eventdesc.vword.bptr = (union block *)(bp);
-   EVValD(&eventdesc, code);
+   struct descrip evdesc__;
+   evdesc__.dword = type;
+   evdesc__.vword.bptr = (union block *)(bp);
+   EVValD(&evdesc__, code);
    } while (0)
 #endif
 #enddef                                 /* Desc_EVValD */

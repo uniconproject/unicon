@@ -136,7 +136,6 @@ extern int improbable;
 extern char typech[];
 extern word oldsum;
 extern struct descrip csetdesc;         /* cset descriptor */
-extern struct descrip eventdesc;        /* event descriptor */
 extern struct b_iproc mt_llist;
 extern struct descrip rzerodesc;        /* real descriptor */
 extern struct b_real realzero;          /* real zero block */

@@ -220,7 +220,6 @@ struct descrip zerodesc = {D_Integer};  /* integer 0 */
  * Descriptors used by event monitoring.
  */
 struct descrip csetdesc = {D_Cset};
-struct descrip eventdesc;
 #ifdef DescriptorDouble
 struct descrip rzerodesc = {D_Real, 0.0};
 #else                                   /* DescriptorDouble */

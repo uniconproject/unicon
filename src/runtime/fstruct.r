@@ -70,12 +70,15 @@ function{1} delete(s, x[n])
             C_integer cnv_x;
             int i, size, argc;
 
-#ifdef Arrays
-            if (BlkD(s,List)->listtail==NULL)
-               if (arraytolist(&s)!=Succeeded) fail;
-#endif                                  /* Arrays*/
-
             MUTEX_LOCKBLK_CONTROLLED(BlkD(s, List), "delete(): lock list");
+#ifdef Arrays
+            /* Convert under the lock, so two threads cannot both convert this list. */
+            if (BlkD(s,List)->listtail==NULL)
+               if (arraytolist(&s)!=Succeeded) {
+                  MUTEX_UNLOCKBLK(BlkD(s, List), "delete(): unlock list");
+                  fail;
+                  }
+#endif                                  /* Arrays*/
 
             for (argc = 0; argc < n; argc++) {
                if (!cnv:C_integer(x[argc], cnv_x)) runerr(101, x[argc]);
@@ -211,12 +214,16 @@ function{0,1} get_or_pop(x,i)
             fail;
 
             EVValD(&x, E_Lget);
+            MUTEX_LOCKBLK_CONTROLLED(BlkD(x, List), "get() lock list");
 #ifdef Arrays
+            /* Convert under the lock, so two threads cannot both convert this list. */
             if (BlkD(x, List)->listtail==NULL)
-               if (arraytolist(&x)!=Succeeded) fail;
+               if (arraytolist(&x)!=Succeeded) {
+                  MUTEX_UNLOCKBLK(BlkD(x, List), "get(): unlock list");
+                  fail;
+                  }
 #endif                                  /* Arrays*/
             hp = BlkD(x, List);
-            MUTEX_LOCKBLK_CONTROLLED(hp, "get() lock list");
             for(j=0;j<i;j++)
                if (!c_get(hp, &result)){
                   MUTEX_UNLOCKBLK(hp, "get(): unlock list");
@@ -763,12 +770,15 @@ function{1} insert(s, x[n])
             C_integer cnv_x;
             word i, j, size, argc;
 
-#ifdef Arrays
-            if (BlkD(s,List)->listtail==NULL)
-               if (arraytolist(&s)!=Succeeded) fail;
-#endif                                  /* Arrays*/
-
             MUTEX_LOCKBLK_CONTROLLED(BlkD(s, List), "insert(): lock list");
+#ifdef Arrays
+            /* Convert under the lock, so two threads cannot both convert this list. */
+            if (BlkD(s,List)->listtail==NULL)
+               if (arraytolist(&s)!=Succeeded) {
+                  MUTEX_UNLOCKBLK(BlkD(s, List), "insert(): unlock list");
+                  fail;
+                  }
+#endif                                  /* Arrays*/
 
             for(argc=0;argc<n;argc+=2) {
                hp = BlkD(s, List);
@@ -1620,12 +1630,15 @@ function{0,1} pull(x,n)
       if (n <= 0)
          fail;
 
-#ifdef Arrays
-      if (BlkD(x,List)->listtail==NULL)
-         if (arraytolist(&x)!=Succeeded) fail;
-#endif                                  /* Arrays*/
-
       MUTEX_LOCKBLK_CONTROLLED(BlkD(x, List), "pull(): lock list");
+#ifdef Arrays
+      /* Convert under the lock, so two threads cannot both convert this list. */
+      if (BlkD(x,List)->listtail==NULL)
+         if (arraytolist(&x)!=Succeeded) {
+            MUTEX_UNLOCKBLK(BlkD(x, List), "pull(): unlock list");
+            fail;
+            }
+#endif                                  /* Arrays*/
 
       for(j=0;j<n;j++) {
          EVValD(&x, E_Lpull);
@@ -1677,9 +1690,14 @@ void c_push(dptr l, dptr val)
    register struct b_lelem *bp; /* does not need to be tended */
    static int two = 2;          /* some compilers generate bad code for
                                    division by a constant that's a power of 2*/
+   MUTEX_LOCKBLK_CONTROLLED(BlkD(*l, List), "c_push: lock list");
 #ifdef Arrays
+   /* Convert under the lock, so two threads cannot both convert this list. */
    if (BlkD(*l,List)->listtail==NULL)
-      if (arraytolist(l)!=Succeeded) return;
+      if (arraytolist(l)!=Succeeded) {
+         MUTEX_UNLOCKBLK(BlkD(*l, List), "c_push: unlock list");
+         return;
+         }
 #endif                                  /* Arrays*/
 
    /*
@@ -1736,6 +1754,7 @@ void c_push(dptr l, dptr val)
    bp->first = i;
    bp->nused++;
    BlkLoc(*l)->List.size++;
+   MUTEX_UNLOCKBLK(BlkD(*l, List), "c_push: unlock list");
    }
 
 
@@ -1761,12 +1780,6 @@ function{1} push(x, vals[n])
       static int two = 2;       /* some compilers generate bad code for
                                    division by a constant that's a power of 2*/
 
-#ifdef Arrays
-      if (BlkD(x,List)->listtail==NULL)
-         if (arraytolist(&x)!=Succeeded) fail;
-#endif                                  /* Arrays*/
-
-
       if (n == 0) {
          dp = &nulldesc;
          num = 1;
@@ -1777,6 +1790,14 @@ function{1} push(x, vals[n])
          }
 
       MUTEX_LOCKBLK_CONTROLLED(BlkD(x, List), "push(): lock list");
+#ifdef Arrays
+      /* Convert under the lock, so two threads cannot both convert this list. */
+      if (BlkD(x,List)->listtail==NULL)
+         if (arraytolist(&x)!=Succeeded) {
+            MUTEX_UNLOCKBLK(BlkD(x, List), "push(): unlock list");
+            fail;
+            }
+#endif                                  /* Arrays*/
 
       for (val = 0; val < num; val++) {
          /*
@@ -1940,11 +1961,6 @@ function{1} put(x, vals[n])
       register struct b_lelem *bp;  /* does not need to be tended */
       static int two = 2;       /* some compilers generate bad code for
                                    division by a constant that's a power of 2*/
-#ifdef Arrays
-            if (BlkD(x,List)->listtail==NULL)
-               if (arraytolist(&x)!=Succeeded) fail;
-#endif                                  /* Arrays*/
-
       if (n == 0) {
          dp = &nulldesc;
          num = 1;
@@ -1955,6 +1971,14 @@ function{1} put(x, vals[n])
          }
 
       MUTEX_LOCKBLK_CONTROLLED(BlkD(x,List), "put(): lock list");
+#ifdef Arrays
+      /* Convert under the lock, so two threads cannot both convert this list. */
+      if (BlkD(x,List)->listtail==NULL)
+         if (arraytolist(&x)!=Succeeded) {
+            MUTEX_UNLOCKBLK(BlkD(x,List), "put(): unlock list");
+            fail;
+            }
+#endif                                  /* Arrays*/
 
       /*
        * Point hp at the list-header block and bp at the last

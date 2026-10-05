@@ -146,58 +146,86 @@
          inline {
 #ifdef Arrays
             if ( Offset(x)>0 ) {
+               /*
+                * An array element lives in its owning list.  Hold that
+                * list's lock from the test through the store, so two
+                * assignments cannot both convert the array, and a write
+                * into the array cannot race with a conversion.  The lock
+                * may count this thread out, so reload the list after it.
+                */
                /* don't know actual title, don't use checking BlkD macro */
                if (BlkLoc(x)->Realarray.title==T_Realarray){
                   double yy;
-                  if (cnv:C_double(y, yy)){
-                     *(double *)( (word *) VarLoc(x) + Offset(x)) = yy;
+                  int stored;
+                  tended struct b_list *xlist;
+                  tended struct descrip dlist;
+                  word i;
+
+                  xlist = (struct b_list *)BlkD(x, Realarray)->listp;
+                  MUTEX_LOCKBLK_CONTROLLED(xlist, "asgn: lock list");
+                  xlist = (struct b_list *)BlkD(x, Realarray)->listp;
+                  i = (Offset(x)*sizeof(word)-sizeof(struct b_realarray)
+                     +sizeof(double)) / sizeof(double);
+                  stored = 0;
+                  if (xlist->listtail == NULL) {
+                     if (cnv:C_double(y, yy)){
+                        *(double *)( (word *) VarLoc(x) + Offset(x)) = yy;
+                        stored = 1;
+                        }
                      }
-                  else{ /* y is not real, try to convert the realarray to list*/
-                     tended struct b_list *xlist= BlkD(x, Realarray)->listp;
-                     tended struct descrip dlist;
-                     word i;
-
-                     i = (Offset(x)*sizeof(word)-sizeof(struct b_realarray)
-                        +sizeof(double)) / sizeof(double);
-
-                     dlist.vword.bptr = (union block *) xlist;
-                     dlist.dword = D_List;
-                     if (arraytolist(&dlist)!=Succeeded) fail;
-
+                  if (!stored) {
                      /*
                       * assuming the new list has one lelem block only,
                       * i should be in the first block. no need to loop
                       * through several blocks
                       */
-
+                     dlist.vword.bptr = (union block *) xlist;
+                     dlist.dword = D_List;
+                     if (arraytolist(&dlist)!=Succeeded) {
+                        MUTEX_UNLOCKBLK(xlist, "asgn: unlock list");
+                        fail;
+                        }
+                     xlist = (struct b_list *)dlist.vword.bptr;
                      *(dptr)(&xlist->listhead->Lelem.lslots[i]) = y;
                      }
+                  MUTEX_UNLOCKBLK(xlist, "asgn: unlock list");
                }
                /* don't know actual title, don't use checking BlkD macro */
                else if (BlkLoc(x)->Intarray.title==T_Intarray){
                   C_integer ii;
-                  if (cnv:(exact)C_integer(y, ii))
-                     *((word *)VarLoc(x) + Offset(x)) = ii;
-                  else{ /* y is not integer, try to convert the intarray to list*/
-                     tended struct b_list *xlist= BlkD(x, Intarray)->listp;
-                     tended struct descrip dlist;
-                     word i;
+                  int stored;
+                  tended struct b_list *xlist;
+                  tended struct descrip dlist;
+                  word i;
 
-                     i = (Offset(x)*sizeof(word)-sizeof(struct b_intarray)+
-                        sizeof(word)) / sizeof(word);
-
+                  xlist = (struct b_list *)BlkD(x, Intarray)->listp;
+                  MUTEX_LOCKBLK_CONTROLLED(xlist, "asgn: lock list");
+                  xlist = (struct b_list *)BlkD(x, Intarray)->listp;
+                  i = (Offset(x)*sizeof(word)-sizeof(struct b_intarray)+
+                     sizeof(word)) / sizeof(word);
+                  stored = 0;
+                  if (xlist->listtail == NULL) {
+                     if (cnv:(exact)C_integer(y, ii)) {
+                        *((word *)VarLoc(x) + Offset(x)) = ii;
+                        stored = 1;
+                        }
+                     }
+                  if (!stored) {
+                     /*
+                      * assuming the new list has one lelem block only,
+                      * i should be in the first block. no need to loop
+                      * through several blocks
+                      */
                      dlist.vword.bptr = (union block *) xlist;
                      dlist.dword = D_List;
-                     if (arraytolist(&dlist)!=Succeeded) fail;
-
-                     /*
-                     * assuming the new list has one lelem block only,
-                     * i should be in the first block. no need to loop
-                     * through several blocks
-                     */
-
+                     if (arraytolist(&dlist)!=Succeeded) {
+                        MUTEX_UNLOCKBLK(xlist, "asgn: unlock list");
+                        fail;
+                        }
+                     xlist = (struct b_list *)dlist.vword.bptr;
                      *(dptr)(&xlist->listhead->Lelem.lslots[i]) = y;
                      }
+                  MUTEX_UNLOCKBLK(xlist, "asgn: unlock list");
                   }
                else
                   Asgn(x, y)

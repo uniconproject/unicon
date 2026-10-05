@@ -555,9 +555,16 @@ operator{0,1} ? random(underef x -> dx)
 #if ConcurrentCOMPILER
             CURTSTATE();
 #endif                                  /* ConcurrentCOMPILER */
+            /*
+             * Hold a shared list's lock from reading the size to locating
+             * the element, or another thread can shrink it in between.
+             */
+            MUTEX_LOCKBLK_CONTROLLED(BlkD(dx,List), "?x: lock list");
             val = BlkD(dx,List)->size;
-            if (val <= 0)
+            if (val <= 0) {
+               MUTEX_UNLOCKBLK(BlkD(dx,List), "?x: unlock list");
                fail;
+               }
             rval = RandVal;
             rval *= val;
             i = (word)rval + 1;
@@ -589,10 +596,12 @@ operator{0,1} ? random(underef x -> dx)
                i += Blk(bp,Lelem)->first - j;
                if (i >= bp->Lelem.nslots)
                   i -= bp->Lelem.nslots;
+               MUTEX_UNLOCKBLK(BlkD(dx,List), "?x: unlock list");
                return struct_var(&(bp->Lelem.lslots[i]), bp);
 #ifdef Arrays
                }
-            else if (BlkType(bp)==T_Realarray)
+            MUTEX_UNLOCKBLK(BlkD(dx,List), "?x: unlock list");
+            if (BlkType(bp)==T_Realarray)
                return  struct_var(&((struct b_realarray *)(bp))->a[i-1], bp);
             else  /* if (Blk(bp, Intarray)->title==T_Intarray)     assumed to be int array*/
                return  struct_var(&((struct b_intarray *)(bp))->a[i-1], bp);
@@ -803,13 +812,19 @@ operator{0,1} [:] sect(underef x -> dx, i, j)
 
       body {
          C_integer t;
+         int rv;
 
+         /*
+          * Hold a shared list's lock while the bounds are checked and the
+          * section is copied.
+          */
+         MUTEX_LOCKBLK_CONTROLLED(BlkD(dx,List), "x[i:j]: lock list");
          i = cvpos((long)i, (long)BlkD(dx,List)->size);
-         if (i == CvtFail)
-            fail;
          j = cvpos((long)j, (long)BlkD(dx,List)->size);
-         if (j == CvtFail)
+         if (i == CvtFail || j == CvtFail) {
+            MUTEX_UNLOCKBLK(BlkD(dx,List), "x[i:j]: unlock list");
             fail;
+            }
          if (i > j) {
             t = i;
             i = j;
@@ -819,19 +834,19 @@ operator{0,1} [:] sect(underef x -> dx, i, j)
 #ifdef Arrays
          if (BlkD(dx,List)->listtail!=NULL){
 #endif                                  /* Arrays */
-            if (cplist(&dx, &result, i, j) == RunError)
-               runerr(0);
+            rv = cplist(&dx, &result, i, j);
 #ifdef Arrays
                }
          else if ( BlkType(BlkD(dx,List)->listhead)==T_Realarray){
-            if (cprealarray(&dx, &result, i, j) == RunError)
-               runerr(0);
+            rv = cprealarray(&dx, &result, i, j);
             }
          else /*if ( BlkType(BlkD(dx,List)->listhead)==T_Intarray)*/{
-            if (cpintarray(&dx, &result, i, j) == RunError)
-               runerr(0);
+            rv = cpintarray(&dx, &result, i, j);
             }
 #endif                                  /* Arrays */
+         MUTEX_UNLOCKBLK(BlkD(dx,List), "x[i:j]: unlock list");
+         if (rv == RunError)
+            runerr(0);
          return result;
          }
       }
@@ -1201,9 +1216,12 @@ operator{0,1} [] subsc(underef x -> dx,y)
                return struct_var(&bp->Lelem.lslots[i], bp);
 #ifdef Arrays
             }
-            else if (BlkType(bp)==T_Realarray)
-                  return  struct_var(&((struct b_realarray *)(bp))->a[i-1], bp);
+            else if (BlkType(bp)==T_Realarray) {
+               MUTEX_UNLOCKBLK(BlkD(dx,List), "x[y]: unlock list");
+               return  struct_var(&((struct b_realarray *)(bp))->a[i-1], bp);
+               }
             else { /* if (BlkType(bp)==T_Intarray)     assumed to be int array*/
+               MUTEX_UNLOCKBLK(BlkD(dx,List), "x[y]: unlock list");
                return  struct_var(&((struct b_intarray *)(bp))->a[i-1], bp);
                }
 #endif                                  /* Arrays */

@@ -104,6 +104,10 @@ int sock_getstrg(register char *buf, int maxi, dptr file)
 int getstrg(register char *buf, int maxi, struct b_file *fbp)
    {
    register int c, l;
+   int untrans, rv;
+#if NT
+   int ntpipe, pipeclosed = 0;
+#endif                                  /* NT */
    FILE *fd = fbp->fd.fp;
 
 #if defined(PosixFns) && !defined(Concurrent)
@@ -180,6 +184,19 @@ int getstrg(register char *buf, int maxi, struct b_file *fbp)
    }
 #endif                                  /* PosixFns */
 
+   untrans = (fbp->status & Fs_Untrans);
+#if NT
+   ntpipe = (fbp->status & Fs_Pipe);
+#endif                                  /* NT */
+
+   /*
+    * Only C stdio runs in this loop, so count out once for the whole line
+    * rather than around every character.  fbp points into the block heap,
+    * which a collection may move while this thread is counted out, so it
+    * is not touched again until the thread has counted back in (done:).
+    */
+   DEC_NARTHREADS;
+
    while (1) {
 
 #ifdef Graphics
@@ -187,32 +204,28 @@ int getstrg(register char *buf, int maxi, struct b_file *fbp)
 #endif                                  /* Graphics */
 
 #if NT
-      if (fbp->status & Fs_Pipe) {
+      if (ntpipe) {
          if (feof(fd)) {
             pclose(fd);
-            fbp->status = 0;
-            if (l>0) return 1;
-            else return -1;
+            pipeclosed = 1;
+            rv = (l>0) ? 1 : -1;
+            goto done;
             }
          }
 #endif                                  /* NT */
       errno = 0;
-      DEC_NARTHREADS;
-      if ((c = fgetc(fd)) == '\n') {    /* \n terminates line */
-         INC_NARTHREADS_CONTROLLED;
+      if ((c = fgetc(fd)) == '\n')      /* \n terminates line */
          break;
-         }
-      INC_NARTHREADS_CONTROLLED;
 
-      if (c == '\r' && (fbp->status & Fs_Untrans) == 0) {
+      if (c == '\r' && untrans == 0) {
          /* \r terminates line in translated mode */
 #if NT
-   if (fbp->status & Fs_Pipe) {
+   if (ntpipe) {
       if (feof(fd)) {
          pclose(fd);
-         fbp->status = 0;
-         if (l>0) return 1;
-         else return -1;
+         pipeclosed = 1;
+         rv = (l>0) ? 1 : -1;
+         goto done;
          }
       }
 #endif                                  /* NT */
@@ -221,20 +234,20 @@ int getstrg(register char *buf, int maxi, struct b_file *fbp)
          break;
          }
 #if NT
-   if (fbp->status & Fs_Pipe) {
+   if (ntpipe) {
       if (feof(fd)) {
          pclose(fd);
-         fbp->status = 0;
-         if (l>0) return 1;
-         else return -1;
+         pipeclosed = 1;
+         rv = (l>0) ? 1 : -1;
+         goto done;
          }
       }
 #endif                                  /* NT */
       if (c == EOF) {
 #if NT
-         if (fbp->status & Fs_Pipe) {
+         if (ntpipe) {
             pclose(fd);
-            fbp->status = 0;
+            pipeclosed = 1;
             }
 #endif                                  /* NT */
 
@@ -247,7 +260,8 @@ int getstrg(register char *buf, int maxi, struct b_file *fbp)
             || errno == EWOULDBLOCK
 #endif
          ) {
-            return -1;
+            rv = -1;
+            goto done;
          }
 #endif                                  /* PosixFns */
 
@@ -256,10 +270,12 @@ int getstrg(register char *buf, int maxi, struct b_file *fbp)
             /* Clear the saved chars buffer */
             nsaved = 0;
 #endif                                  /* PosixFns && !Concurrent */
-            return l;
+            rv = l;
+            goto done;
             }
          else {
-            return -1;
+            rv = -1;
+            goto done;
             }
          }
       if (++l > maxi) {
@@ -268,7 +284,8 @@ int getstrg(register char *buf, int maxi, struct b_file *fbp)
          /* Clear the saved chars buffer */
          nsaved = 0;
 #endif                                  /* PosixFns && !Concurrent */
-         return -2;
+         rv = -2;
+         goto done;
          }
 #if defined(PosixFns) && !defined(Concurrent)
       savedbuf[nsaved++] = c;
@@ -280,8 +297,15 @@ int getstrg(register char *buf, int maxi, struct b_file *fbp)
    /* We can clear the saved static buffer */
    nsaved = 0;
 #endif                                  /* PosixFns && !Concurrent */
+   rv = l;
 
-   return l;
+done:
+   INC_NARTHREADS_CONTROLLED;
+#if NT
+   if (pipeclosed)
+      fbp->status = 0;
+#endif                                  /* NT */
+   return rv;
    }
 
 /*

@@ -930,7 +930,7 @@ int     getch           (void);
 int     getche          (void);
 double  getdbl          (dptr dp);
 int     getimage        (dptr dp1, dptr dp2);
-int     getstrg         (char *buf, int maxi, struct b_file *fbp);
+int     getstrg         (char *buf, int maxi, dptr file);
 void    hgrow           (union block *bp);
 void    hshrink         (union block *bp);
 C_integer iipow         (C_integer n1, C_integer n2, int *over_flowp);

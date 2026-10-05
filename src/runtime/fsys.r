@@ -2297,7 +2297,7 @@ function{0,1} read(f)
          else
 #endif                                  /* PseudoPty */
 
-         if ((slen = getstrg(sbuf, MaxReadStr, BlkD(f,File))) == -1) {
+         if ((slen = getstrg(sbuf, MaxReadStr, &f)) == -1) {
 #ifdef PosixFns
             set_syserrortext(errno);
 #endif                                  /* PosixFns */

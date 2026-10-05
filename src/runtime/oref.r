@@ -339,7 +339,7 @@ operator{*} ! bang(underef x -> dx)
                   else
 #endif                                  /* Dbm */
 
-                  if ((slen = getstrg(sbuf,MaxCvtLen,BlkD(dx,File))) == -1)
+                  if ((slen = getstrg(sbuf,MaxCvtLen,&dx)) == -1)
                      fail;
                   rlen = slen < 0 ? (word)MaxCvtLen : slen;
 

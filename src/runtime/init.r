@@ -768,8 +768,8 @@ void init_progstate(struct progstate *pstate);
     * If this is one-time program initialization and no concurrent threads
     * are possible, I am not sure how these mutexes can be needed.
     */
-MUTEX_LOCKID(MTX_PUBLICSTRHEAP);
-MUTEX_LOCKID(MTX_PUBLICBLKHEAP);
+MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
+MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
    Public_stringregion = NULL;
    Public_blockregion = NULL;
 MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);

@@ -134,10 +134,16 @@ static int init_finish(struct threadstate *owner, struct pf_marker *frame)
  * A procedure frame is being left by return, fail or suspend; finish an
  * initial clause it left without reaching einit.  The unlocked test is
  * enough for the owner, which made its own increment.
+ *
+ * MTX_INITIAL is always taken CONTROLLED: a thread can hold it while it
+ * waits out a collection, and a thread blocking on it plainly would keep
+ * the collector waiting.  Waiting counts the thread out, so the stack
+ * pointer is synced first for the collector.
  */
 #define InitFrameExit(owner, frame) do { \
    if (ATOMIC_LOAD(init_running)) { \
-      MUTEX_LOCKID_ALWAYS(MTX_INITIAL); \
+      ExInterp_sp; \
+      MUTEX_LOCKID_CONTROLLED_ALWAYS(MTX_INITIAL); \
       init_finish(owner, frame); \
       MUTEX_UNLOCKID_ALWAYS(MTX_INITIAL); \
       } \
@@ -2131,6 +2137,7 @@ L_agoto:
             struct init_site *site;
             word *after = ipc.opnd + 1;
 
+            ExInterp_sp;                        /* may wait counted out */
             MUTEX_LOCKID_CONTROLLED_ALWAYS(MTX_INITIAL);
             for (;;) {
                if (ipc.op[-1] == Op_Agoto) {    /* done */
@@ -2182,7 +2189,8 @@ init_skipped:
              * The body is done.  Its clause was already finished if the body
              * suspended out of this frame earlier and was resumed.
              */
-            MUTEX_LOCKID_ALWAYS(MTX_INITIAL);
+            ExInterp_sp;                        /* may wait counted out */
+            MUTEX_LOCKID_CONTROLLED_ALWAYS(MTX_INITIAL);
             init_finish(curtstate, pfp);
             MUTEX_UNLOCKID_ALWAYS(MTX_INITIAL);
 #endif                                  /* Concurrent */

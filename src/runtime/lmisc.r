@@ -798,14 +798,17 @@ operator{0,1} <@ rcv(x,y)
             if (i == 0) i = tb;
             else if (tb < i) i = tb;
             Protect(sbuf = alcstr(NULL, i), runerr(0));
-            DEC_NARTHREADS;
+            /*
+             * No counting out: the data is already there, so the read does
+             * not block, and sbuf is in the string region, which a
+             * collection could move while this thread was counted out.
+             */
 #if NT
             status = ReadFile(pt->master_read, sbuf, i, &tb, NULL);
 #else
             tb = read(pt->master_fd, sbuf, i);
             status = (tb != -1);
 #endif
-            INC_NARTHREADS_CONTROLLED;
             if (!status) fail;
             StrLoc(desc) = sbuf;
             StrLen(desc) = tb;

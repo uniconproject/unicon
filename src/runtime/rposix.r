@@ -6059,13 +6059,21 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
    CURTSTATE();
 
    if ((fd = get_fd(*f, 0)) < 0)
-     ReturnErrNum(174, f);
+     ReturnErrNum(174, 0);
 
    IntVal(amperErrno) = 0;
 
    if (n > 0) {
-      /* Allocate n bytes of char space */
-      StrLoc(*d) = alcstr(NULL, n);
+      /*
+       * Call this counted in.  The read may block, so the thread counts
+       * out around it, and a collection may then move the string region:
+       * read into a private buffer and copy the bytes into the string
+       * region after counting back in.
+       */
+      char *buf = malloc(n);
+      int err;
+      if (buf == NULL)
+         ReturnErrNum(306, 0);
       StrLen(*d) = 0;
 #if HAVE_LIBSSH
       if (fstatus & Fs_SSH) {
@@ -6081,12 +6089,12 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
             }
          else if (sshf->nl_pending) {
             sshf->nl_pending = 0;
-            *StrLoc(*d) = '\n';
+            *buf = '\n';
             tally = 1;
             }
          else {
             DEC_NARTHREADS;
-            tally = ssh_chan_read(sshf, StrLoc(*d), n, 1);
+            tally = ssh_chan_read(sshf, buf, n, 1);
             INC_NARTHREADS_CONTROLLED;
             if (tally < 0)
                set_ssh_errortext(sshf->sess, sshf->sfile ? 1335 : 1334);
@@ -6100,30 +6108,41 @@ dptr u_read(dptr f, int n, int fstatus, dptr d)
       if (fstatus & Fs_Socket) {
 #if HAVE_LIBSSL
         if (fstatus & Fs_Encrypt) {
-           tally = SSL_read(BlkD(*f,File)->fd.ssl, StrLoc(*d), n);
+           SSL *ssl = BlkD(*f,File)->fd.ssl;
+           DEC_NARTHREADS;
+           tally = SSL_read(ssl, buf, n);
+           err = errno;
+           INC_NARTHREADS_CONTROLLED;
+           errno = err;
            if (tally <= 0)
-             set_ssl_connection_errortext(BlkD(*f,File)->fd.ssl, tally);
+             set_ssl_connection_errortext(ssl, tally);
            }
         else
 #endif                                  /* LIBSSL */
-          tally = recv(fd, StrLoc(*d), n, 0);
+          {
+          DEC_NARTHREADS;
+          tally = recv(fd, buf, n, 0);
+          err = errno;
+          INC_NARTHREADS_CONTROLLED;
+          errno = err;
+          }
       }
-      else
-        tally = read(fd, StrLoc(*d), n);
+      else {
+        DEC_NARTHREADS;
+        tally = read(fd, buf, n);
+        err = errno;
+        INC_NARTHREADS_CONTROLLED;
+        errno = err;
+        }
 
-      if (tally <= 0) {
-         strtotal += n;
-         strfree = StrLoc(*d);
+      if (tally > 0 && (StrLoc(*d) = alcstr(buf, tally)) == NULL) {
+         free(buf);
+         ReturnErrNum(306, 0);
+         }
+      free(buf);
+      if (tally <= 0)
          return 0;
-      }
       StrLen(*d) = tally;
-      /*
-       * We may not have used the entire amount of storage we reserved.
-       */
-      nbytes = DiffPtrs(StrLoc(*d) + tally, strfree);
-      EVStrAlc(nbytes);
-      strtotal += nbytes;
-      strfree = StrLoc(*d) + tally;
       }
    else {
       /* Read as much as we can without blocking, in chunks of 1536 bytes */
@@ -6240,10 +6259,25 @@ tryagain:
                tally = 1;
                }
             else {
+               /*
+                * Count out around the read.  The destination is in the
+                * string region, which a collection may move, so read
+                * into a private buffer and copy after counting back in.
+                */
+               char *buf = malloc(bufsize);
+               if (buf == NULL) {
+#if defined(Concurrent)
+                  if (ssh_have_mtx)
+                     MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+                  ReturnErrNum(306, 0);
+                  }
                DEC_NARTHREADS;
-               tally = ssh_chan_read(sshf, StrLoc(*d) + i*bufsize,
-                                     bufsize, 0);
+               tally = ssh_chan_read(sshf, buf, bufsize, 0);
                INC_NARTHREADS_CONTROLLED;
+               if (tally > 0)
+                  memcpy(StrLoc(*d) + i*bufsize, buf, tally);
+               free(buf);
                if (tally < 0) {
                   set_ssh_errortext(sshf->sess, sshf->sfile ? 1335 : 1334);
                   strtotal += bufsize;

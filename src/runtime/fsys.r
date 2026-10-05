@@ -2574,14 +2574,12 @@ function{0,1} reads(f,i)
                   StrLen(s) = 0;
                   StrLoc(s) = "";
                   for (;;) {
-                     DEC_NARTHREADS;
+                     /* u_read() counts out around its blocking reads */
                      if (u_read(&f, MaxReadStr, status, &chunk) == 0) {
-                        INC_NARTHREADS_CONTROLLED;
                         if (StrLen(s) == 0)
                            fail;
                         return s;
                         }
-                     INC_NARTHREADS_CONTROLLED;
                      Protect(reserve(Strings, StrLen(s) + StrLen(chunk)),
                              runerr(0));
                      if (StrLen(s) > 0 &&
@@ -2598,12 +2596,8 @@ function{0,1} reads(f,i)
                         }
                      }
                   }
-               DEC_NARTHREADS;
-               if (u_read(&f, i, status, &s) == 0) {
-                  INC_NARTHREADS_CONTROLLED;
+               if (u_read(&f, i, status, &s) == 0)
                   fail;
-                  }
-               INC_NARTHREADS_CONTROLLED;
                /* reads(f, 0): nonblocking; fail if nothing available */
                if (i == 0 && StrLen(s) == 0)
                   fail;
@@ -2766,13 +2760,12 @@ function{0,1} reads(f,i)
 #ifdef PosixFns
       /* Remember, sockets are always unbuffered */
       if ((status & Fs_Unbuf) && !(status & Fs_BPipe)) {
-         /* We do one read(2) call here to avoid interactions with stdio */
-         DEC_NARTHREADS;
-         if (u_read(&f, i, status, &s) == 0) { /* EOF, or sets errortext */
-            INC_NARTHREADS_CONTROLLED;
+         /*
+          * We do one read(2) call here to avoid interactions with stdio.
+          * u_read() counts out around the read itself.
+          */
+         if (u_read(&f, i, status, &s) == 0)    /* EOF, or sets errortext */
             fail;
-            }
-         INC_NARTHREADS_CONTROLLED;
          return s;
       }
 #endif                                  /* PosixFns */

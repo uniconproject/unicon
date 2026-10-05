@@ -1949,8 +1949,9 @@ the idle window between operations. Status including \texttt{type}
 (material role), \texttt{op} (operation), certificate identity, and a
 non-destructive hash \texttt{hash} peek uses \texttt{h["\textit{name}"]}.
 For a co-expression or list, integer attribute codes from
-\texttt{threadh.icn} query or set thread inbox/outbox and channel limits
-(see Chapter~8; requires Concurrent).
+\texttt{threadh.icn} query thread inbox/outbox sizes and query or set
+their limits and channel limits (see Chapter~8; requires Concurrent).
+Sizes are read-only; several limits may be set in one call.
 
 \bigskip
 \hrule\vspace{0.1cm}
@@ -3734,7 +3735,9 @@ program that created \texttt{c}.
 
 \noindent
 \index{wait()}\texttt{wait(x)} waits for \texttt{x}. If \texttt{x} is
-a thread, \texttt{wait()} waits for it to finish. If \texttt{x} is
+a thread, \texttt{wait()} waits for it to finish. A thread is waited for
+once: \texttt{wait()} fails if the thread never ran or has already been
+waited for, also by a concurrent \texttt{wait()}. If \texttt{x} is
 a condition variable \texttt{wait()} waits until that variable is
 subsequently signaled by another thread. The condition variable's mutex
 must be locked by the calling thread (run-time error 186 otherwise), and

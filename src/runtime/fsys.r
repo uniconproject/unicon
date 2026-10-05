@@ -4039,8 +4039,16 @@ function {1} name(x[nargs])
 #ifdef Concurrent
                      if (fblk)
                         MUTEX_UNLOCKID(fblk->mutexid);
+                     fblk = NULL;
 #endif                                  /* Concurrent */
                      }
+#else                                   /* nl */
+#ifdef Concurrent
+                  /* writes(): release the file being switched away from */
+                  if (fblk)
+                     MUTEX_UNLOCKID(fblk->mutexid);
+                  fblk = NULL;
+#endif                                  /* Concurrent */
 #endif                                  /* nl */
 
                   /*

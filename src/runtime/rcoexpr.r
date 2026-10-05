@@ -141,9 +141,19 @@ void co_init(struct b_coexpr *sblkp)
    *((struct pf_marker *)dsp) = rblkp->pfmkr;
    sblkp->es_pfp = (struct pf_marker *)dsp;
 #ifdef PatternType
- if (!is_in_a_block_region((char *)(sblkp->es_pfp->pattern_cache)) ||
-     (sblkp->es_pfp->pattern_cache->title != T_Table))
+ {
+ int inheap;
+ /*
+  * The block region chain is shared; a thread being spawned links its
+  * region into it under MTX_BLKHEAP.  (The collector, which also calls
+  * is_in_a_block_region(), runs alone and must not take this lock.)
+  */
+ MUTEX_LOCKID_CONTROLLED(MTX_BLKHEAP);
+ inheap = is_in_a_block_region((char *)(sblkp->es_pfp->pattern_cache));
+ MUTEX_UNLOCKID(MTX_BLKHEAP);
+ if (!inheap || (sblkp->es_pfp->pattern_cache->title != T_Table))
    sblkp->es_pfp->pattern_cache = NULL;
+ }
 #endif                                  /* PatternType */
    sblkp->es_tend = NULL;
    dsp = (dptr)((word *)dsp + Vwsizeof(*pfp));

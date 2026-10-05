@@ -1604,16 +1604,37 @@ function{0,1} wait(pid, options)
      body {
         struct b_coexpr *cp;
         if (IS_TS_THREAD(BlkLoc(pid)->Coexpr.status)) {
-           cp =  &BlkLoc(pid)->Coexpr;
-
-           if ( cp->alive == 0 || cp->alive == -2) fail;
-
-           DEC_NARTHREADS;
-           THREAD_JOIN(cp->thread, NULL);
-           cp->alive = -2;    /* mark it as joined*/
-           INC_NARTHREADS_CONTROLLED;
-
-           return pid;
+           word mtx;
+           /*
+            * Claim the join: a thread can be joined only once, so of
+            * several wait() calls, even concurrent ones, one joins and
+            * the others fail.  Claim under the inbox mutex (by id: the
+            * list may move while this thread waits for it), and release
+            * it before joining, since the exiting thread takes it to
+            * wake its receivers.
+            *
+            * Reload the co-expression after the lock and again after the
+            * join.  Either wait can count this thread out, and a
+            * collection may then move the block.  The join uses a copy
+            * of the thread id taken while the block is still in place.
+            */
+           cp = &BlkLoc(pid)->Coexpr;
+           mtx = BlkD(cp->inbox, List)->mutexid;
+           MUTEX_LOCKID_CONTROLLED(mtx);
+           cp = &BlkLoc(pid)->Coexpr;
+           if (cp->alive != 0 && cp->alive != -2 && cp->have_thread) {
+              pthread_t thr = cp->thread;
+              cp->have_thread = 0;
+              MUTEX_UNLOCKID(mtx);
+              DEC_NARTHREADS;
+              THREAD_JOIN(thr, NULL);
+              INC_NARTHREADS_CONTROLLED;
+              cp = &BlkLoc(pid)->Coexpr;
+              cp->alive = -2;    /* mark it as joined*/
+              return pid;
+              }
+           MUTEX_UNLOCKID(mtx);
+           fail;
            }
         else fail;
         }

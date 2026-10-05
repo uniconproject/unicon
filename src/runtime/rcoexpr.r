@@ -290,8 +290,8 @@ int co_chng(struct b_coexpr *ncp,
             hp->full--;
             }
          c_put(&(BlkD(k_current,Coexpr)->outbox), valloc);
-         MUTEX_UNLOCKBLK(BlkD(BlkD(k_current,Coexpr)->outbox, List), "co_chng(): list mutex");
          CV_SIGNAL_EMPTYBLK(BlkD(BlkD(k_current,Coexpr)->outbox, List));
+         MUTEX_UNLOCKBLK(BlkD(BlkD(k_current,Coexpr)->outbox, List), "co_chng(): list mutex");
          if (IS_TS_THREAD(ccp->status) &&
             (swtch_typ == A_Coret || swtch_typ == A_Cofail)){
             /*

@@ -1723,11 +1723,25 @@
         }                                                               \
       } while (0)
 
+/*
+ * Wait on a queue's "full" or "empty" condition variable, holding the
+ * list's mutex, with the thread counted out while it waits.  The condition
+ * variable and mutex are looked up first, while still counted in: once the
+ * thread is counted out, a collection may move the list block.
+ */
+#define CV_WAIT_COUNTED_OUT(cvp, mtxp) do {   \
+      pthread_cond_t *cv__ = (cvp);           \
+      pthread_mutex_t *mtx__ = (mtxp);        \
+      DEC_NARTHREADS;                         \
+      pthread_cond_wait(cv__, mtx__);         \
+      INC_NARTHREADS_CONTROLLED;              \
+   } while (0)
+
 #define CV_WAIT_FULLBLK(bp) \
-    pthread_cond_wait(condvars[bp->cvfull], MUTEX_GETBLK(bp));
+    CV_WAIT_COUNTED_OUT(condvars[(bp)->cvfull], MUTEX_GETBLK(bp))
 
 #define CV_WAIT_EMPTYBLK(bp) \
-    pthread_cond_wait(condvars[bp->cvempty], MUTEX_GETBLK(bp));
+    CV_WAIT_COUNTED_OUT(condvars[(bp)->cvempty], MUTEX_GETBLK(bp))
 
 #define CV_SIGNAL_FULLBLK(bp) if (bp->full) { \
     pthread_cond_signal(condvars[bp->cvfull]);}
@@ -1735,8 +1749,13 @@
 #define CV_SIGNAL_EMPTYBLK(bp) if (bp->empty) { \
     pthread_cond_signal(condvars[bp->cvempty]);}
 
-#define CV_TIMEDWAIT_EMPTYBLK(bp, t)\
-  pthread_cond_timedwait(condvars[bp->cvempty], MUTEX_GETBLK(bp), &t);
+#define CV_TIMEDWAIT_EMPTYBLK(bp, t) do {               \
+      pthread_cond_t *cv__ = condvars[(bp)->cvempty];   \
+      pthread_mutex_t *mtx__ = MUTEX_GETBLK(bp);        \
+      DEC_NARTHREADS;                                   \
+      pthread_cond_timedwait(cv__, mtx__, &(t));        \
+      INC_NARTHREADS_CONTROLLED;                        \
+   } while (0)
 
 #define SUSPEND_THREADS() thread_control(TC_STOPALLTHREADS)
 #define RESUME_THREADS() thread_control(TC_WAKEUPCALL)

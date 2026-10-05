@@ -290,9 +290,7 @@ int co_chng(struct b_coexpr *ncp,
             hp->full++;
             while (hp->size>=hp->max){
                CV_SIGNAL_EMPTYBLK(hp);
-               DEC_NARTHREADS;
                CV_WAIT_FULLBLK(hp);
-               INC_NARTHREADS_CONTROLLED;
                hp = BlkD(BlkD(k_current,Coexpr)->outbox, List);
                }
             hp->full--;

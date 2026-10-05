@@ -183,9 +183,7 @@ int activate(dptr val, struct b_coexpr *ncp, dptr result)
          hp->full++;
          while (hp->size>=hp->max){
             CV_SIGNAL_EMPTYBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_FULLBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->full--;
          }
@@ -202,9 +200,7 @@ int activate(dptr val, struct b_coexpr *ncp, dptr result)
          hp->empty++;
          while (hp->size==0){
             CV_SIGNAL_FULLBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_EMPTYBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->empty--;
          if (hp->size==0){ /* This shouldn't be the case, but.. */
@@ -238,9 +234,7 @@ int activate(dptr val, struct b_coexpr *ncp, dptr result)
          /* a dead thread will never drain its inbox */
          while (hp->size>=hp->max && ncp->alive>=0){
             CV_SIGNAL_EMPTYBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_FULLBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->full--;
          }
@@ -260,9 +254,7 @@ int activate(dptr val, struct b_coexpr *ncp, dptr result)
           */
          while (hp->size==0 && ncp->alive>=0){
             CV_SIGNAL_FULLBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_EMPTYBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->empty--;
          if (hp->size==0){ /* the producer is gone and left nothing */
@@ -348,9 +340,7 @@ int msg_receive(dptr dccp, dptr dncp,
                 /* stop waiting once the producing thread is gone */
                 while (hp->size==0 && (!dncp || ncp->alive>=0)){
                    CV_SIGNAL_FULLBLK(hp);
-                   DEC_NARTHREADS;
                    CV_WAIT_EMPTYBLK(hp);
-                   INC_NARTHREADS_CONTROLLED;
                    }
                 hp->empty--;
                 if (hp->size==0){ /* This shouldn't be the case, but.. */
@@ -402,9 +392,7 @@ int msg_receive(dptr dccp, dptr dncp,
                 ts.tv_sec += timeout / 1000;
 
                 hp->empty++;
-                DEC_NARTHREADS;
                 CV_TIMEDWAIT_EMPTYBLK(hp, ts);
-                INC_NARTHREADS_CONTROLLED;
                 hp->empty--;
                 if (hp->size==0){
                    MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
@@ -443,9 +431,7 @@ int msg_send( dptr dccp, dptr dncp,
          /* a dead thread will never drain its inbox */
          while (hp->size>=hp->max && ncp->alive>=0){
             CV_SIGNAL_EMPTYBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_FULLBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->full--;
          }
@@ -482,9 +468,7 @@ int msg_send( dptr dccp, dptr dncp,
          hp->full++;
          while (hp->size>=hp->max){
             CV_SIGNAL_EMPTYBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_FULLBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->full--;
          }
@@ -679,9 +663,7 @@ operator{0,1} @>> sndbk(x,y)
          hp->full++;
          while (hp->size>=hp->max && (!peer || peer->alive>=0)){
             CV_SIGNAL_EMPTYBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_FULLBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->full--;
          }
@@ -968,9 +950,7 @@ operator{0,1} <<@ rcvbk(x,y)
                hp->empty++;
                while (hp->size==0 && (!peer || peer->alive>=0)){
                   CV_SIGNAL_FULLBLK(hp);
-                  DEC_NARTHREADS;
                   CV_WAIT_EMPTYBLK(hp);
-                  INC_NARTHREADS_CONTROLLED;
                   }
                hp->empty--;
 #endif                                  /* Concurrent */
@@ -1033,9 +1013,7 @@ operator{0,1} <<@ rcvbk(x,y)
             if (hp->size==0){
 #ifdef Concurrent
                hp->empty++;
-               DEC_NARTHREADS;
                CV_TIMEDWAIT_EMPTYBLK(hp, ts);
-               INC_NARTHREADS_CONTROLLED;
                hp->empty--;
 #endif                                  /* Concurrent */
                if (hp->size==0){

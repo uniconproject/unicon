@@ -902,7 +902,7 @@ word ncondvars;
 
 pthread_mutex_t **mutexes;
 word maxmutexes;
-word nmutexes;
+AtomicWord nmutexes;                    /* bounds-checked without MTX_MUTEXES */
 
 void init_threads()
 {
@@ -1028,7 +1028,7 @@ void thread_control(int action)
    static int tc_queue=0;        /* how many threads are waiting for TC */
    static int action_in_progress=TC_NONE;
    // Keep track of the thread who is in control
-   static word master_thread = 0;
+   static AtomicWord master_thread = 0;  /* read unlocked on entry */
 #ifdef GC_TIMING_TUNING
 /* timing for GC, for testing and performance tuning */
    struct timeval    tp;
@@ -1048,7 +1048,12 @@ void thread_control(int action)
    switch (action){
       case TC_ANSWERCALL:{
          /*---------------------------------*/
-         ATOMIC_FENCE_ACQUIRE();        /* pairs with the store of thread_call */
+         /*
+          * Acquire the store of thread_call, so the action published
+          * before it is visible.  A load rather than a fence, which
+          * ThreadSanitizer would not see.
+          */
+         (void) ATOMIC_LOAD_ACQUIRE(thread_call);
          switch (action_in_progress){
             case TC_KILLALLTHREADS:{
                #ifdef CoClean
@@ -1171,7 +1176,7 @@ void thread_control(int action)
         first_thread=0;
 #endif
 
-         master_thread = 0;
+         ATOMIC_STORE(master_thread, 0);
 
          /* broadcast a wakeup call to all threads waiting on cond_tc */
          pthread_cond_broadcast(&cond_tc);
@@ -1187,7 +1192,7 @@ void thread_control(int action)
          * a segfault in the middle of an ongoing GC.
          * If this is the case, we can safely return.
          */
-        if (master_thread == curtstate->c->id)
+        if (ATOMIC_LOAD(master_thread) == curtstate->c->id)
           return;
 
          /*
@@ -1271,14 +1276,14 @@ void thread_control(int action)
           * Now it is safe to proceed with TC with only the current thread running
           */
          tc_queue--;
-         master_thread = curtstate->c->id;
+         ATOMIC_STORE(master_thread, curtstate->c->id);
          return;
          }
       case TC_KILLALLTHREADS:{
          /*
           * Wait until only this thread is running.  Publish the action
           * before the call: a thread that sees the call reads the action
-          * after an acquire fence in TC_ANSWERCALL, and must not see
+          * after an acquire load in TC_ANSWERCALL, and must not see
           * TC_NONE and park as if for a collection.
           */
          action_in_progress = action;
@@ -1289,7 +1294,7 @@ void thread_control(int action)
             }
 
          /*action_in_progress = TC_NONE;*/
-         master_thread = curtstate->c->id;
+         ATOMIC_STORE(master_thread, curtstate->c->id);
          return;
          }
       default:{

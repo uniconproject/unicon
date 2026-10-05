@@ -79,7 +79,7 @@ extern int num_cpu_cores;
 
 #ifdef Concurrent
 extern pthread_mutex_t **mutexes;
-extern word nmutexes;
+extern AtomicWord nmutexes;
 extern word maxmutexes;
 
 extern pthread_mutexattr_t rmtx_attr;

@@ -1109,7 +1109,7 @@ struct b_coexpr {               /* co-expression stack block */
    pthread_t thread;    /* thread ID (thread handle) */
    sem_t sema;          /* synchronization semaphore (if unnamed) */
    sem_t *semp;         /* pointer to semaphore */
-   int alive;           /* set zero when thread is to die */
+   AtomicInt alive;     /* set zero when thread is to die; read by other threads */
 
    int tmplevel;
    int have_thread;

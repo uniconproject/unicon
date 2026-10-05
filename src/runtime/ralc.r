@@ -861,9 +861,18 @@ struct b_record *f(int nflds, union block *recptr)
    EVVal(sizeof(struct b_record) + (nflds-1)*sizeof(struct descrip),e_record);
    AlcVarBlk(blk, b_record, T_Record, nflds)
    blk->recdesc = trecptr;
+#if defined(Concurrent) && defined(HAVE_ATOMIC_BUILTINS)
+   /*
+    * The serial number shares a field of the constructor's procedure
+    * block, so it cannot be declared atomic; use an atomic add on it.
+    */
+   blk->id = __atomic_fetch_add(&(((struct b_proc *)recptr)->recid), 1,
+                                __ATOMIC_RELAXED);
+#else                                   /* Concurrent && HAVE_ATOMIC_BUILTINS */
    MUTEX_LOCKID(MTX_RECID);
    blk->id = (((struct b_proc *)recptr)->recid)++;
    MUTEX_UNLOCKID(MTX_RECID);
+#endif                                  /* Concurrent && HAVE_ATOMIC_BUILTINS */
    INIT_SHARED(blk);
    return blk;
    }

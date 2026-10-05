@@ -608,6 +608,23 @@ int main(void) {
     AC_DEFINE([HAVE_C11_ATOMICS], [1],
       [Define if the compiler provides C11 <stdatomic.h> atomics])
   fi
+  dnl Atomic operations on plain (non-_Atomic) words, for counters kept in
+  dnl fields shared with other data, such as a record's serial number.
+  AC_CACHE_CHECK([for atomic builtins on plain words],
+    [ac_cv_atomic_builtins],
+    [AC_LINK_IFELSE(
+      [AC_LANG_SOURCE([[
+static long ub_w;
+int main(void) {
+   return (int)__atomic_fetch_add(&ub_w, 1, __ATOMIC_RELAXED);
+}
+]])],
+      [ac_cv_atomic_builtins=yes],
+      [ac_cv_atomic_builtins=no])])
+  if test "x$ac_cv_atomic_builtins" = "xyes"; then
+    AC_DEFINE([HAVE_ATOMIC_BUILTINS], [1],
+      [Define if the compiler provides __atomic builtins on plain words])
+  fi
 fi
 
 if test x"$debug" = x"yes" ; then

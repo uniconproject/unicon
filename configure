@@ -9169,6 +9169,37 @@ printf "%s\n" "$ac_cv_c11_atomics" >&6; }
 printf "%s\n" "#define HAVE_C11_ATOMICS 1" >>confdefs.h
 
   fi
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for atomic builtins on plain words" >&5
+printf %s "checking for atomic builtins on plain words... " >&6; }
+if test ${ac_cv_atomic_builtins+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+static long ub_w;
+int main(void) {
+   return (int)__atomic_fetch_add(&ub_w, 1, __ATOMIC_RELAXED);
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_atomic_builtins=yes
+else $as_nop
+  ac_cv_atomic_builtins=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_atomic_builtins" >&5
+printf "%s\n" "$ac_cv_atomic_builtins" >&6; }
+  if test "x$ac_cv_atomic_builtins" = "xyes"; then
+
+printf "%s\n" "#define HAVE_ATOMIC_BUILTINS 1" >>confdefs.h
+
+  fi
 fi
 
 if test x"$debug" = x"yes" ; then

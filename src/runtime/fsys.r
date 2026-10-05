@@ -2514,9 +2514,13 @@ function{0,1} reads(f,i)
                   else
                      Maxread = MaxReadStr;
                   }
+               {
+               /* load the channel before counting out; f's block may move */
+               struct SSHfile *sshf = BlkD(f,File)->fd.sshf;
                DEC_NARTHREADS;
-               got = ssh_chan_read(BlkD(f,File)->fd.sshf, sbuf, Maxread, 1);
+               got = ssh_chan_read(sshf, sbuf, Maxread, 1);
                INC_NARTHREADS_CONTROLLED;
+               }
                if (got < 0) {
 #ifdef Concurrent
                   MUTEX_UNLOCKID(BlkD(f,File)->mutexid);

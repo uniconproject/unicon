@@ -328,6 +328,9 @@ int get_fd(struct descrip file, unsigned int errmask)
 int ssh_file_pending(struct b_file *fp)
 {
    struct SSHfile *sshf;
+#ifdef Concurrent
+   word mtx;
+#endif                                  /* Concurrent */
 
    if (fp == NULL || !(fp->status & Fs_SSH))
       return 0;
@@ -335,11 +338,16 @@ int ssh_file_pending(struct b_file *fp)
    if (sshf == NULL || sshf->closed)
       return 0;
 #ifdef Concurrent
-   MUTEX_LOCKID_CONTROLLED(fp->mutexid);
+   /*
+    * Keep the mutex id, not fp: the lock may wait through a collection,
+    * which can move the file block.
+    */
+   mtx = fp->mutexid;
+   MUTEX_LOCKID_CONTROLLED(mtx);
 #endif                                  /* Concurrent */
    if (sshf->nl_pending || sshf->q_stdout > 0) {
 #ifdef Concurrent
-      MUTEX_UNLOCKID(fp->mutexid);
+      MUTEX_UNLOCKID(mtx);
 #endif                                  /* Concurrent */
       return 1;
       }
@@ -348,7 +356,7 @@ int ssh_file_pending(struct b_file *fp)
    {
    int ready = (sshf->nl_pending || sshf->q_stdout > 0 || sshf->eof_seen);
 #ifdef Concurrent
-   MUTEX_UNLOCKID(fp->mutexid);
+   MUTEX_UNLOCKID(mtx);
 #endif                                  /* Concurrent */
    return ready;
    }

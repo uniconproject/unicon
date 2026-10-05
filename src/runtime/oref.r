@@ -1177,10 +1177,13 @@ operator{0,1} [] subsc(underef x -> dx,y)
             EVVal(y, E_Lsub);
 
             /*
-             * Make sure that subscript y is in range.
+             * Make sure that subscript y is in range.  Reload lp after
+             * locking: the lock may wait through a collection, which can
+             * move the list block.
              */
             lp = BlkD(dx, List);
             MUTEX_LOCKBLK_CONTROLLED(lp, "x[y]: lock list");
+            lp = BlkD(dx, List);
             i = cvpos((long)y, (long)lp->size);
             if (i == CvtFail || i > lp->size){
                MUTEX_UNLOCKBLK(lp, "x[y]: unlock list");

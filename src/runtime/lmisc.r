@@ -525,8 +525,14 @@ operator{0,1} @> snd(x,y)
    else if is:file(y) then inline {
       tended struct descrip t;
       union f f;
-      struct b_file *fblk = BlkD(y, File);
-      word status = fblk->status;
+#if defined(Concurrent) && defined(PosixFns)
+      /*
+       * Keep the file's mutex id, not a pointer to its block: the lock
+       * below may wait through a collection, which can move the block.
+       */
+      word fmtx = BlkD(y, File)->mutexid;
+#endif                                  /* Concurrent && PosixFns */
+      word status = BlkD(y, File)->status;
 
       f.fp = BlkLoc(y)->File.fd.fp;
 
@@ -542,12 +548,12 @@ operator{0,1} @> snd(x,y)
          */
 #ifdef PosixFns
         if (status & Fs_Socket) {
-           MUTEX_LOCKID_CONTROLLED(fblk->mutexid);
+           MUTEX_LOCKID_CONTROLLED(fmtx);
            if (sock_write(f.fd, StrLoc(t), StrLen(t)) < 0) {
-              MUTEX_UNLOCKID(fblk->mutexid);
+              MUTEX_UNLOCKID(fmtx);
               fail;
               }
-           MUTEX_UNLOCKID(fblk->mutexid);
+           MUTEX_UNLOCKID(fmtx);
            return C_integer 1;
         }
 #endif
@@ -617,8 +623,14 @@ operator{0,1} @>> sndbk(x,y)
    else if is:file(y) then inline {
       tended struct descrip t;
       union f f;
-      struct b_file *fblk = BlkD(y, File);
-      word status = fblk->status;
+#if defined(Concurrent) && defined(PosixFns)
+      /*
+       * Keep the file's mutex id, not a pointer to its block: the lock
+       * below may wait through a collection, which can move the block.
+       */
+      word fmtx = BlkD(y, File)->mutexid;
+#endif                                  /* Concurrent && PosixFns */
+      word status = BlkD(y, File)->status;
 
       f.fp = BlkLoc(y)->File.fd.fp;
 
@@ -634,16 +646,16 @@ operator{0,1} @>> sndbk(x,y)
          */
 #ifdef PosixFns
         if (status & Fs_Socket) {
-           MUTEX_LOCKID_CONTROLLED(fblk->mutexid);
+           MUTEX_LOCKID_CONTROLLED(fmtx);
            if (sock_write(f.fd, StrLoc(t), StrLen(t)) < 0) {
-              MUTEX_UNLOCKID(fblk->mutexid);
+              MUTEX_UNLOCKID(fmtx);
               fail;
               }
            if (sock_write(f.fd, "\n", 1) < 0){
-              MUTEX_UNLOCKID(fblk->mutexid);
+              MUTEX_UNLOCKID(fmtx);
               fail;
               }
-           MUTEX_UNLOCKID(fblk->mutexid);
+           MUTEX_UNLOCKID(fmtx);
            return C_integer 1;
         }
 #endif

@@ -1629,13 +1629,19 @@
           NARthreads--;                                 \
       } while (0)
 
+/*
+ * Copy the mutex id before counting out.  The argument is often a
+ * field of a heap block; evaluating it again on the blocking lock
+ * would read that block while a collection may be moving it.
+ */
 #define MUTEX_LOCKID_CONTROLLED_ALWAYS(mtx)             \
       do {                                              \
           int __rv;                                     \
-          MUTEX_TRYLOCKID_BASIC(mtx, __rv);             \
+          word __mtx = (mtx);                           \
+          MUTEX_TRYLOCKID_BASIC(__mtx, __rv);           \
           if (__rv==EBUSY){                             \
             DEC_NARTHREADS_BASIC;                       \
-            MUTEX_LOCKID_BASIC(mtx);                    \
+            MUTEX_LOCKID_BASIC(__mtx);                  \
             INC_NARTHREADS_CONTROLLED_BASIC;            \
           }                                             \
       } while (0)

@@ -1558,7 +1558,7 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
       blksiz = MinAbrSize;
 
    if((rp = reuse_region(strsiz, Strings)) != 0){
-      ts->Curstring =  curstring = rp;
+      ts->Curstring = rp;
       }
    else if ((rp = newregion(strsiz, strsiz)) != 0) {
       MUTEX_LOCKID_CONTROLLED(MTX_STRHEAP);
@@ -1594,7 +1594,7 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
       syserr(" init_threadheap: insufficient memory for string region");
 
    if((rp = reuse_region(blksiz, Blocks)) != 0) {
-      ts->Curblock =  curblock = rp;
+      ts->Curblock = rp;
       }
    else if ((rp = newregion(blksiz, blksiz)) != 0) {
       MUTEX_LOCKID_CONTROLLED(MTX_BLKHEAP);

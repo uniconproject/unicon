@@ -2,7 +2,7 @@
 
 include ../Makedefs
 
-PATTERNTST = ABCss assignss balss bigpss breaks expss failss fence fish lenss nspantst pairss pany parb parbno pimmed peval plen ppos prem ptab ralternate rasterisk rbasic rcurly rplus rquestion rtab sawss setcur unevalcharss unevalintss 
+PATTERNTST = ABCss assignss balss bigpss breaks expss failss fence fish lenss nspantst pairss pany parb parbno pcoexpr pimmed peval plen ppos prem ptab ralternate rasterisk rbasic rcurly rplus rquestion rtab sawss setcur unevalcharss unevalintss 
 
 PAT=$(shell $(UC) -features 2>/dev/null | grep -o "pattern type")
 

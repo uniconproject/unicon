@@ -488,6 +488,85 @@ jobs:
           echo "unicon-features.log: (not present)"
         fi
 
+  Threads:
+    runs-on: ${{ matrix.cfg.os }}
+    name: ${{ matrix.cfg.name }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        cfg:
+        # Data races in the runtime; tests/thread/tsan.supp lists what the tests do on purpose.
+        -  { os: ubuntu-latest,    name: 'Thread Sanitizer',    opt: '--enable-tsan --enable-debug', runs: 1, heap: '' }
+        # Small heaps make collections frequent, so threads keep meeting the collector.
+        -  { os: ubuntu-latest,    name: 'Thread Stress',       opt: '--enable-werror', runs: 5, heap: 300000 }
+        -  { os: ubuntu-24.04-arm, name: 'Thread Stress arm64', opt: '--enable-werror', runs: 5, heap: 300000 }
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Cache apt packages
+      uses: actions/cache@v5
+      with:
+        path: /var/cache/apt/archives/*.deb
+        key: apt-threads-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('debian/control') }}
+        restore-keys: apt-threads-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get install -q -y devscripts equivs
+        sudo mk-build-deps --install debian/control
+
+    - name: Sanitizer memory layout
+      if: contains(matrix.cfg.opt, 'tsan')
+      # TSan in GCC 13 cannot place its shadow memory when the kernel uses 32
+      # bits of mmap randomization, as recent Ubuntu kernels do.
+      run: sudo sysctl -w vm.mmap_rnd_bits=28
+
+    - name: Configure
+      run: ./configure ${{ matrix.cfg.opt }}
+
+    - name: Make
+      run: make
+
+    - name: Thread tests
+      working-directory: tests/thread
+      run: |
+        # No shell key means bash -e, without pipefail. A failing make
+        # would otherwise be hidden by tee, and the step would continue.
+        set -o pipefail
+        # One test at a time, so each sanitizer log is named after its test.
+        mkdir -p local tsan
+        if [ -n "${{ matrix.cfg.heap }}" ]; then
+          export BLKSIZE=${{ matrix.cfg.heap }} STRSIZE=${{ matrix.cfg.heap }}
+        fi
+        for run in $(seq ${{ matrix.cfg.runs }}); do
+          echo "--- run $run"
+          for f in *.icn; do
+            t=${f%.icn}
+            TSAN_OPTIONS="log_path=$PWD/tsan/$t suppressions=$PWD/tsan.supp report_thread_leaks=0" \
+              make -s $t
+          done
+        done 2>&1 | tee results.txt
+        status=0
+        if grep -q FAIL results.txt; then
+          cat *.diff 2>/dev/null
+          status=1
+        fi
+        # stress.icn races on globals on purpose; see tsan.supp.
+        for log in tsan/*; do
+          [ -f "$log" ] || continue
+          echo "=== $log"
+          cat "$log"
+          case "$log" in
+            tsan/stress.*) ;;
+            *) status=1 ;;
+          esac
+        done
+        exit $status
+
   FreeBSD:
    runs-on: ubuntu-latest
    name: FreeBSD

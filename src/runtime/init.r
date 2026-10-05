@@ -200,7 +200,6 @@ struct region *Public_blockregion;
 
 word mutexid_stringtotal;
 word mutexid_blocktotal;
-word mutexid_coll;
 #else                                   /* ConcurrentCOMPILER */
 struct progstate *curpstate;
 struct progstate rootpstate;

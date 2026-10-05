@@ -919,11 +919,9 @@ void init_threads()
 #if !ConcurrentCOMPILER
    rootpstate.mutexid_stringtotal = MTX_STRINGTOTAL;
    rootpstate.mutexid_blocktotal = MTX_BLOCKTOTAL;
-   rootpstate.mutexid_coll = MTX_COLL;
 #else
    mutexid_stringtotal = MTX_STRINGTOTAL;
    mutexid_blocktotal = MTX_BLOCKTOTAL;
-   mutexid_coll= MTX_COLL;
 #endif                                 /* ConcurrentCOMPILER */
 
    CV_INIT(&cond_tc, "init_threads()");

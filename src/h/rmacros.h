@@ -1426,15 +1426,14 @@
 
    #define MTX_STRINGTOTAL      34
    #define MTX_BLOCKTOTAL       35
-   #define MTX_COLL             36
 
 
    /* This should be the last mutex, becasue it has special initialization*/
-   #define MTX_INITIAL          37
+   #define MTX_INITIAL          36
 
 
    /* total is:  */
-   #define NUM_STATIC_MUTEXES   38
+   #define NUM_STATIC_MUTEXES   37
 
    /* used by wait4GC function*/
 

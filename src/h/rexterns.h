@@ -106,7 +106,6 @@ extern struct region *Public_blockregion;
 
 extern word mutexid_stringtotal;
 extern word mutexid_blocktotal;
-extern word mutexid_coll;
 extern AtomicWord list_ser;
 extern AtomicWord intern_list_ser;
 /*

@@ -1081,10 +1081,16 @@ void thread_control(int action)
                 * and atomically unlock mutex while it waits.
                 */
 
-               MUTEX_LOCKID(MTX_COND_TC);
+               /*
+                * Count out before taking MTX_COND_TC, not inside it: the
+                * thread ending the collection holds MTX_NARTHREADS when it
+                * takes MTX_COND_TC.  If the collection ends in between,
+                * thread_call is already clear and there is no wait.
+                */
                MUTEX_LOCKID(MTX_NARTHREADS);
                NARthreads--;
                MUTEX_UNLOCKID(MTX_NARTHREADS);
+               MUTEX_LOCKID(MTX_COND_TC);
                CV_WAIT_ON_EXPR(ATOMIC_LOAD(thread_call), &cond_tc, MTX_COND_TC);
                MUTEX_UNLOCKID(MTX_COND_TC);
 
@@ -1135,7 +1141,15 @@ void thread_control(int action)
           * reset (post) sem_gc to be ready for the next GC round
           */
 
-         ATOMIC_STORE(thread_call, 0);
+         /*
+          * Clear the call under MTX_COND_TC: the threads answering it test
+          * thread_call and wait on cond_tc while holding that mutex, so
+          * clearing it unlocked could fall between a thread's test and its
+          * wait, and the broadcast below would be lost.
+          */
+         MUTEX_LOCKID(MTX_COND_TC);
+         ATOMIC_STORE_SC(thread_call, 0);
+         MUTEX_UNLOCKID(MTX_COND_TC);
          NARthreads++;
          sem_post(sem_tcp);
          action_in_progress = TC_NONE;
@@ -1226,11 +1240,15 @@ void thread_control(int action)
          MUTEX_LOCKID(MTX_THREADCONTROL);
 
          TCthread = pthread_self();
-         ATOMIC_STORE(thread_call, 1);
-         /* NARthreads should reach and stay at zero during TC*/
+         ATOMIC_STORE_SC(thread_call, 1);
+         /*
+          * NARthreads should reach and stay at zero during TC.  The load
+          * pairs with DEC_NARTHREADS_BASIC: once a thread's decrement is
+          * seen, everything it wrote before counting out is visible.
+          */
          while (1) {
             MUTEX_LOCKID(MTX_NARTHREADS);
-            if (ATOMIC_LOAD(NARthreads) <= 0) break;  /* unlock MTX_NARTHREADS after GC*/
+            if (ATOMIC_LOAD_SC(NARthreads) <= 0) break;  /* unlock MTX_NARTHREADS after GC*/
             MUTEX_UNLOCKID(MTX_NARTHREADS);
             usleep(50);
             }
@@ -1268,7 +1286,7 @@ void thread_control(int action)
          action_in_progress = action;
          ATOMIC_STORE_RELEASE(thread_call, 1);
          while (1) {
-            if (ATOMIC_LOAD(NARthreads) <= 1) break;
+            if (ATOMIC_LOAD_SC(NARthreads) <= 1) break;
             usleep(50);
             }
 

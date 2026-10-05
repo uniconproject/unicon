@@ -672,6 +672,9 @@
    #define ATOMIC_STORE(x, v)           atomic_store_explicit(&(x), (v), memory_order_relaxed)
    #define ATOMIC_STORE_RELEASE(x, v)   atomic_store_explicit(&(x), (v), memory_order_release)
    #define ATOMIC_ADD(x, v)             atomic_fetch_add_explicit(&(x), (v), memory_order_relaxed)
+   #define ATOMIC_LOAD_SC(x)            atomic_load(&(x))
+   #define ATOMIC_STORE_SC(x, v)        atomic_store(&(x), (v))
+   #define ATOMIC_ADD_SC(x, v)          atomic_fetch_add(&(x), (v))
    #define ATOMIC_FENCE_ACQUIRE()       atomic_thread_fence(memory_order_acquire)
    #define ATOMIC_FENCE_RELEASE()       atomic_thread_fence(memory_order_release)
    #define SERIAL_LOCK(mtx)
@@ -684,6 +687,9 @@
    #define ATOMIC_STORE(x, v)           ((x) = (v))
    #define ATOMIC_STORE_RELEASE(x, v)   ((x) = (v))
    #define ATOMIC_ADD(x, v)             ((x) += (v), (x) - (v))
+   #define ATOMIC_LOAD_SC(x)            (x)
+   #define ATOMIC_STORE_SC(x, v)        ((x) = (v))
+   #define ATOMIC_ADD_SC(x, v)          ((x) += (v), (x) - (v))
    #define ATOMIC_FENCE_ACQUIRE()
    #define ATOMIC_FENCE_RELEASE()
    #define SERIAL_LOCK(mtx)             MUTEX_LOCKID(mtx)
@@ -1575,8 +1581,13 @@
  * MTX_NARTHREADS, which hold threads off while a collection runs.
  */
 #ifdef HAVE_C11_ATOMICS
+/*
+ * Sequentially consistent: the collector reads NARthreads (ATOMIC_LOAD_SC)
+ * and then scans this thread's stack and heap, so the thread's earlier
+ * writes must be visible once the decrement is.
+ */
 #define DEC_NARTHREADS_BASIC                            \
-          ATOMIC_ADD(NARthreads, -1);
+          ATOMIC_ADD_SC(NARthreads, -1);
 #else                                   /* HAVE_C11_ATOMICS */
 #define DEC_NARTHREADS_BASIC                            \
           MUTEX_LOCKID_BASIC(MTX_NARTHREADS);           \

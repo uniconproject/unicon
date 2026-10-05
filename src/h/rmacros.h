@@ -1549,12 +1549,29 @@
 #define INC_LOCKID(x, mtx) do {MUTEX_LOCKID(mtx);  x++; MUTEX_UNLOCKID(mtx);} while (0)
 #define DEC_LOCKID(x, mtx) do {MUTEX_LOCKID(mtx);  x--; MUTEX_UNLOCKID(mtx);} while (0)
 
+/*
+ * Counting back in must wait out a collection, so it takes
+ * MTX_THREADCONTROL, which the collector holds throughout.  With atomics,
+ * narthreads_inc_fast() first tries to count in without locking when no
+ * collection has been requested.
+ */
+#ifdef HAVE_C11_ATOMICS
+#define INC_NARTHREADS_CONTROLLED_BASIC                 \
+          if (!narthreads_inc_fast()) {                 \
+          MUTEX_LOCKID_BASIC(MTX_THREADCONTROL);        \
+          MUTEX_LOCKID_BASIC(MTX_NARTHREADS);           \
+          NARthreads++;                                 \
+          MUTEX_UNLOCKID_BASIC(MTX_NARTHREADS);         \
+          MUTEX_UNLOCKID_BASIC(MTX_THREADCONTROL);      \
+          }
+#else                                   /* HAVE_C11_ATOMICS */
 #define INC_NARTHREADS_CONTROLLED_BASIC                 \
           MUTEX_LOCKID_BASIC(MTX_THREADCONTROL);        \
           MUTEX_LOCKID_BASIC(MTX_NARTHREADS);           \
           NARthreads++;                                 \
           MUTEX_UNLOCKID_BASIC(MTX_NARTHREADS);         \
           MUTEX_UNLOCKID_BASIC(MTX_THREADCONTROL);
+#endif                                  /* HAVE_C11_ATOMICS */
 
 #define INC_NARTHREADS_CONTROLLED_ALWAYS                \
       do {                                              \

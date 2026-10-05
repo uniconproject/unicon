@@ -1294,7 +1294,7 @@ void thread_control(int action)
           * TC_NONE and park as if for a collection.
           */
          action_in_progress = action;
-         ATOMIC_STORE_RELEASE(thread_call, 1);
+         ATOMIC_STORE_SC(thread_call, 1);
          while (1) {
             if (ATOMIC_LOAD_SC(NARthreads) <= 1) break;
             usleep(50);
@@ -1352,6 +1352,30 @@ void howmanyblock()
 }
 #endif                                /* ConcurrentCOMPILER */
 #endif                                /* DEBUG */
+
+#ifdef HAVE_C11_ATOMICS
+/*
+ * Count the calling thread back in without locking if no collection has
+ * been requested.  Returns 0 if the caller must take the locked path.
+ *
+ * The collector stores thread_call and then reads NARthreads; this
+ * increments NARthreads and then reads thread_call.  With all four
+ * operations sequentially consistent, at least one side sees the other:
+ * either the collector counts this thread and waits for it to reach a
+ * safepoint and answer the call, or this thread sees the call, takes its
+ * increment back, and waits out the collection on MTX_THREADCONTROL.
+ */
+int narthreads_inc_fast(void)
+{
+   if (ATOMIC_LOAD_SC(thread_call))
+      return 0;
+   ATOMIC_ADD_SC(NARthreads, 1);
+   if (!ATOMIC_LOAD_SC(thread_call))
+      return 1;
+   ATOMIC_ADD_SC(NARthreads, -1);
+   return 0;
+}
+#endif                                  /* HAVE_C11_ATOMICS */
 
 void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp)
 {

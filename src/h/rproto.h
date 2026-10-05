@@ -1157,6 +1157,9 @@ void init_threadstate(struct threadstate *ts);
 struct threadstate *get_tstate();
 #endif                                  /* HAVE_KEYWORD__THREAD */
 void thread_control(int action);
+#ifdef HAVE_C11_ATOMICS
+int narthreads_inc_fast(void);
+#endif                                  /* HAVE_C11_ATOMICS */
 void clean_threads();
 void init_threads();
 int msg_receive( dptr dccp, dptr dncp, dptr msg, int timeout);

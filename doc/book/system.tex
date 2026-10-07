@@ -12,6 +12,8 @@ with the operating system. This chapter shows how to
     \index{server}server applications, including multicast and
     raw IP sockets
   \item Hash, sign, and encrypt data with OpenSSL-backed crypto handles
+  \item Create Linux \index{network namespace}network namespaces for
+    isolated test topologies
 \end{itemize}
 
 \section{The Role of the System Interface}
@@ -1038,6 +1040,35 @@ Ready-made programs in \texttt{uni/progs} exercise the same path:
 \texttt{uping} is an ICMP ping client, and \texttt{uigmp} is a raw
 IGMP sniffer. Both need privileges for \texttt{SOCK\_RAW}. See
 Chapter~14 for short usage notes.
+
+\subsection*{Network Namespaces}
+
+On Linux, when the feature string \texttt{Network namespaces} is
+present, mode \texttt{"j"} creates a \index{network namespace}network
+namespace: an isolated network stack for building lightweight test
+topologies. The value returned by \texttt{open()} is a file handle,
+not a stream for reading or writing. Closing it tears down the
+namespace's filesystem pins. An optional leading namespace file to
+\texttt{fork()}, \texttt{spawn()}, or \texttt{system()} runs the
+child inside that namespace. Status is peeked with
+\texttt{ns["name"]}, \texttt{ns["persist"]}, \texttt{ns["userns"]},
+and \texttt{ns["refcount"]}; \texttt{key(ns)} generates those names.
+Boolean peeks succeed with \texttt{"yes"} or \texttt{\&null}.
+
+\iconcode{
+procedure main() \\
+\>   ns := open("r1", "j") {\textbar} stop(\&errortext) \\
+\>   write(ns["name"], " userns=", \ns["userns"] {\textbar} "no") \\
+\>   system(ns, ["ip", "link", "show"]) \\
+\>   close(ns) \\
+end
+}
+
+Trailing attributes may include \texttt{persist=yes} (listable by
+\texttt{ip netns}), \texttt{bridge=yes}, and \texttt{userns=yes} for
+unprivileged bootstrap. Higher-level link helpers are in
+\texttt{package net} (\texttt{uni/lib/netns.icn}); see
+\texttt{uni/progs/unettopo.icn} and Chapter~14.
 
 \subsection*{Secure Sockets}
 

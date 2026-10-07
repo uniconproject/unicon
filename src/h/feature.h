@@ -183,6 +183,10 @@
    Feature(1, "_SSH", "secure shell")
 #endif                  /* HAVE_LIBSSH */
 
+#if HAVE_NETNS
+   Feature(1, "_NETNS", "Network namespaces")
+#endif                  /* HAVE_NETNS */
+
 #ifdef HAVE_VOICE
    Feature(1, "_VOIP", "Voice Over IP")
 #endif                  /* HAVE_VOICE */

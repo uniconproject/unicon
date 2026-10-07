@@ -265,6 +265,9 @@ struct b_coexpr *alccoexp()
    ep->tmplevel = 0;
    ep->have_thread = 0;
    ep->alive = 0;
+#if HAVE_NETNS
+   ep->pending_ns = NULL;
+#endif                                  /* HAVE_NETNS */
 
 }
 #endif                                  /* PthreadCoswitch */
@@ -405,6 +408,9 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
    ep->tmplevel = 0;
    ep->have_thread = 0;
    ep->alive = 0;
+#if HAVE_NETNS
+   ep->pending_ns = NULL;
+#endif                                  /* HAVE_NETNS */
 #ifdef Concurrent
 #ifdef MultiProgram
    if(icodesize>0){

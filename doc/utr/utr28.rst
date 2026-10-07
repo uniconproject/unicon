@@ -427,10 +427,10 @@ not. Callers who need every IPv6 interface must join per
 implementation refuses to walk interfaces for IPv6 source
 filters.
 
-**Loopback delivery.** Alpine (especially under QEMU) often
-does not deliver loopback multicast even when the join
-succeeds. ``tests/posix/mcast.icn`` still checks membership
-and treats a missing datagram as success on Alpine so CI stays
+**Loopback delivery.** Some environments do not deliver
+loopback multicast even when the join succeeds.
+``tests/posix/mcast.icn`` still checks membership and treats
+a missing datagram as success on those hosts so CI stays
 portable.
 
 **Windows IPv6 SSM.** Membership calls are attempted;

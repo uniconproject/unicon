@@ -273,8 +273,26 @@ union f {
 #if HAVE_LIBSSH
     struct SSHfile *sshf;
 #endif                                  /* HAVE_LIBSSH */
+#if HAVE_NETNS
+   struct NetnsFile *netns;     /*   Linux network namespace state */
+#endif                                  /* HAVE_NETNS */
    int fd;        /*   other int-based file descriptor */
    };
+
+#if HAVE_NETNS
+/*
+ * State for an open(...,"j") network-namespace handle.  Hung off
+ * File.fd.netns; freed by close().  The private bind-mount path pins
+ * the kernel namespace alive; persist optionally adds /var/run/netns/<name>.
+ */
+struct NetnsFile {
+   char *name;                  /* namespace name from open() */
+   char *path;                  /* private bind-mount path */
+   int persist;                 /* also mounted at /var/run/netns/<name> */
+   int userns;                  /* created after rootless userns bootstrap */
+   int refcount;                /* informational: live fork/spawn users */
+   };
+#endif                                  /* HAVE_NETNS */
 
 struct b_file {                 /* file block */
    word title;                  /*   T_File */
@@ -1118,6 +1136,9 @@ struct b_coexpr {               /* co-expression stack block */
    struct threadstate *tstate;
    int isProghead;
 #endif                                  /* Concurrent */
+#if HAVE_NETNS
+   struct NetnsFile *pending_ns; /* held NetnsFile for nctramp setns */
+#endif                                  /* HAVE_NETNS */
 #endif                                  /* PthreadCoswitch */
 
      word cstate[CStateSize];   /*   C state information (registers, etc.) */

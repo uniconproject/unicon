@@ -1,0 +1,42 @@
+#
+# Shared helpers for ASCII string microbenchmarks.
+# Compile from this directory so $include "common.icn" resolves.
+#
+
+procedure ascii_mode()
+   if &features == "Unicode" then
+      return "on"
+   return "off"
+end
+
+# CPU ms is &time; wall ms is gettimeofday() (same pairing as tests/bench).
+procedure stamp()
+   return [&time, gettimeofday()]
+end
+
+procedure wall_ms(t0, t1)
+   return ((t1.sec - t0.sec) * 1000000 + t1.usec - t0.usec) / 1000
+end
+
+procedure report_elapsed(name, n, t0)
+   local cpu, wall
+   cpu := &time - t0[1]
+   wall := wall_ms(t0[2], gettimeofday())
+   write("strascii.", name, "  unicode=", ascii_mode(),
+         "  n=", n, "  cpu_ms=", cpu, "  wall_ms=", wall)
+end
+
+procedure iters(argv, dflt)
+   local n
+   if *argv >= 1 then {
+      n := integer(argv[1])
+      if \n & n > 0 then
+         return n
+      }
+   return dflt
+end
+
+# n bytes of printable ASCII. Built once, outside the timed loop.
+procedure ascii(n)
+   return repl("abcdefghijklmnopqrstuvwxyz0123456789", n / 36 + 1)[1+:n]
+end

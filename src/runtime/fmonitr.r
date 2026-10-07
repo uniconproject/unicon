@@ -292,7 +292,7 @@ function{0,1} EvGet(cs,vmask,flag)
             register int c;
             c = wgetevent(_w_, &curpstate->eventval, -1);
             if (c == 0) {
-               StrLen(curpstate->eventcode) = 1;
+               SetStrLen(curpstate->eventcode, 1);
                StrLoc(curpstate->eventcode) =
                   (char *)&allchars[FromAscii(E_MXevent) & 0xFF];
                return curpstate->eventcode;
@@ -459,7 +459,7 @@ void EVVariable(dptr dx, int eventcode)
       StrLoc(parent->eventval) =
          alcstr(StrLoc(parent->eventval), StrLen(parent->eventval));
       alcstr("+",1);
-      StrLen(parent->eventval)++;
+      SetStrLen(parent->eventval, StrLen(parent->eventval) + 1);
       }
    else if ((i == StaticName) || (i == LocalName) || (i == ParamName)) {
       if (!reserve(Strings, StrLen(parent->eventval) + StrLen(*procname) + 1)) {
@@ -472,7 +472,7 @@ void EVVariable(dptr dx, int eventcode)
          alcstr(StrLoc(parent->eventval), StrLen(parent->eventval));
       alcstr(scopechars+i,1);
       alcstr(StrLoc(*procname), StrLen(*procname));
-      StrLen(parent->eventval) += StrLen(*procname) + 1;
+      SetStrLen(parent->eventval, StrLen(parent->eventval) + (StrLen(*procname) + 1));
       }
    else if (i == Failed) {
       /* parent->eventval = *dx; */

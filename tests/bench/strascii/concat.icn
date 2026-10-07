@@ -1,0 +1,16 @@
+# x || y of untagged ASCII strings (fixed operands, no growing).
+$include "common.icn"
+
+procedure main(argv)
+   local n, a, b, i, sink, t0
+   n := iters(argv, 40000000)
+   a := ascii(4096)
+   b := ascii(64)
+   sink := 0
+   t0 := stamp()
+   every i := 1 to n do
+      sink +:= *(a || b)
+   report_elapsed("concat", n, t0)
+   if sink <= 0 then
+      stop("checksum failed")
+end

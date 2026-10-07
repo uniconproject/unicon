@@ -1,0 +1,15 @@
+# match() of a short ASCII prefix against an untagged ASCII string.
+$include "common.icn"
+
+procedure main(argv)
+   local n, s, i, sink, t0
+   n := iters(argv, 70000000)
+   s := ascii(256)
+   sink := 0
+   t0 := stamp()
+   every i := 1 to n do
+      sink +:= match("abcdefghij", s)
+   report_elapsed("match", n, t0)
+   if sink <= 0 then
+      stop("checksum failed")
+end

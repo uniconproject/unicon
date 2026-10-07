@@ -1,0 +1,15 @@
+# reverse() of an untagged ASCII string.
+$include "common.icn"
+
+procedure main(argv)
+   local n, s, i, sink, t0
+   n := iters(argv, 14000000)
+   s := ascii(1024)
+   sink := 0
+   t0 := stamp()
+   every i := 1 to n do
+      sink +:= *reverse(s)
+   report_elapsed("reverse", n, t0)
+   if sink <= 0 then
+      stop("checksum failed")
+end

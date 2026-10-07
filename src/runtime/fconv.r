@@ -113,6 +113,9 @@ function{0,1} string(x[n])
       int i, j, len;
       char *tmp, *s, *s2;
       tended struct descrip t;
+#ifdef UniconUnicode
+      tended struct descrip uq_left;
+#endif                                  /* UniconUnicode */
       if (n == 0)
          return emptystr;
 
@@ -124,6 +127,7 @@ function{0,1} string(x[n])
       t = x[0];
 
       for (i = 1; i < n; i++) {
+
          /*
           * if t is not at the end of the string region, make it so
           */
@@ -132,15 +136,25 @@ function{0,1} string(x[n])
             }
          if (!cnv:string(x[i], x[i])) fail;
 
+#ifdef UniconUnicode
+         /*
+          * Snapshot the left operand before SetStrLen overwrites
+          * t's dword (SetStrLen does not preserve tag / cp_count).
+          * uq_concat_propagate may walk a short uncounted side
+          * instead of dropping a known count.
+          */
+         uq_left = t;
+#endif                                  /* UniconUnicode */
+
          /*
           * concatenate t and x[i] and store result in t
           */
          if (StrLoc(t) + StrLen(t) == StrLoc(x[i])) {
-            StrLen(t) += StrLen(x[i]);
+            SetStrLen(t, StrLen(t) + StrLen(x[i]));
             }
          else if ((StrLoc(t) + StrLen(t) == strfree) && (DiffPtrs(strend,strfree) > StrLen(x[i]))) {
             Protect(alcstr(StrLoc(x[i]), StrLen(x[i])), runerr(0));
-            StrLen(t) += StrLen(x[i]);
+            SetStrLen(t, StrLen(t) + StrLen(x[i]));
             }
          else {
             Protect(tmp = alcstr(NULL, StrLen(t)+StrLen(x[i])), runerr(0));
@@ -154,8 +168,12 @@ function{0,1} string(x[n])
             for (j = 0; j < len; j++)
                *s++ = *s2++;
             StrLoc(t) = tmp;
-            StrLen(t) += len;
+            SetStrLen(t, StrLen(t) + len);
             }
+
+#ifdef UniconUnicode
+         uq_concat_propagate(&uq_left, &x[i], &t);
+#endif                                  /* UniconUnicode */
          }
       return t;
       }

@@ -177,6 +177,9 @@ AC_ARG_ENABLE([iconcurrency],
 AC_ARG_ENABLE([ovld],
 	[AS_HELP_STRING([--enable-ovld], [Enable operator overloading])],
 			[ovld=yes], [ovld=no])
+AC_ARG_ENABLE([unicode],
+	[AS_HELP_STRING([--enable-unicode], [Native Unicode string support (64-bit)])],
+			[unicode=$enableval], [unicode=no])
 
 AC_ARG_ENABLE([udbtools],
 	[AS_HELP_STRING([--enable-udbtools], [Enable Unicon debugger tools])],
@@ -788,6 +791,10 @@ fi
 if test "x$ovld" = "xyes"; then
   AC_DEFINE([OVLD], [1], [Enable Operator Overloading])
 fi
+
+if test "x$unicode" = "xyes" || test "x$unicode" = "xon" ; then
+  AC_DEFINE([UniconUnicode], [1], [Native Unicode string support])
+fi
 #AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
 
 CHECK_ZLIB()
@@ -1358,6 +1365,12 @@ if test "x$ovld" = "xyes"  ||  test "x$ovld" = "xon" ; then
   echo " + Overloading" >> unicon-config.log
 else
   echo " ! Overloading" >> unicon-config.log
+fi
+
+if test "x$unicode" = "xyes" || test "x$unicode" = "xon" ; then
+  echo " + Unicode" >> unicon-config.log
+else
+  echo " ! Unicode" >> unicon-config.log
 fi
 
 cat unicon-config.log

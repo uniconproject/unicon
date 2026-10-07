@@ -122,24 +122,20 @@ int anycmpBase(dptr dp1,dptr dp2,int sortType)
          if (BlkLoc(*dp1)->File.status & Fs_Window) {
             wbp w = BlkLoc(*dp1)->File.fd.wb;
             if (w->window) {
-               StrLoc(s1) = w->window->windowlabel;
-               StrLen(s1) = strlen(StrLoc(s1));
+               MakeStr(w->window->windowlabel, strlen(StrLoc(s1)), &s1);
                }
             else {
-               StrLoc(s1) = "";
-               StrLen(s1) = 0;
+               MakeStr("", 0, &s1);
                }
             ps1 = &s1;
             }
          if (BlkLoc(*dp2)->File.status & Fs_Window) {
             wbp w = BlkLoc(*dp2)->File.fd.wb;
             if (w->window) {
-               StrLoc(s2) = w->window->windowlabel;
-               StrLen(s2) = strlen(StrLoc(s2));
+               MakeStr(w->window->windowlabel, strlen(StrLoc(s2)), &s2);
                }
             else {
-               StrLoc(s2) = "";
-               StrLen(s2) = 0;
+               MakeStr("", 0, &s2);
                }
             ps2 = &s2;
             }

@@ -1,0 +1,16 @@
+# s[i] sequential subscript of a long untagged ASCII string.
+$include "common.icn"
+
+procedure main(argv)
+   local n, s, i, sink, t0
+   n := iters(argv, 4000)
+   s := ascii(20000)
+   sink := 0
+   t0 := stamp()
+   every 1 to n do
+      every i := 1 to *s do
+         sink +:= ord(s[i])
+   report_elapsed("index", n, t0)
+   if sink <= 0 then
+      stop("checksum failed")
+end

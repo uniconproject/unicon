@@ -1,0 +1,64 @@
+# !s and ?s select whole codepoints on a tagged Unicon string.
+
+procedure main()
+   local s, x, n, i
+
+   s := "café"
+   every write(!s)
+   n := 0
+   every !s do n +:= 1
+   write(n)
+
+   i := 0
+   every x := !s do {
+      i +:= 1
+      if x ~== s[i] then
+         stop("bang mismatch at ", i, ": ", image(x))
+      }
+   write("bang-index-ok")
+
+   every write(!"naïve")
+
+   # Assign through each trap; the last replaces é as one codepoint.
+   s := "café"
+   i := 0
+   every !s := ["c", "a", "f", "Q"][i +:= 1]
+   write(s, " ", *s)
+
+   s := "你👋"
+   i := 0
+   every x := !s do {
+      i +:= 1
+      if x ~== s[i] then
+         stop("wide bang mismatch at ", i, ": ", image(x))
+      write(uord(x))
+      }
+   write(*s)
+
+   s := "你👋"
+   every !s := "X"
+   write(s, " ", *s)
+
+   s := "café"
+   every 1 to 40 do {
+      x := ?s
+      if not (x == "c" | x == "a" | x == "f" | x == "é") then
+         stop("random not a codepoint: ", image(x))
+      }
+   write("random-ok")
+
+   every 1 to 20 do {
+      x := ?"café"
+      if not (x == "c" | x == "a" | x == "f" | x == "é") then
+         stop("random lit not a codepoint: ", image(x))
+      }
+   write("random-lit-ok")
+
+   s := "你👋"
+   every 1 to 20 do {
+      x := ?s
+      if not (x == "你" | x == "👋") then
+         stop("wide random not a codepoint: ", image(x))
+      }
+   write("random-wide-ok")
+end

@@ -1,0 +1,20 @@
+# Repeated s ||:= piece, growing an untagged ASCII string.
+$include "common.icn"
+
+procedure main(argv)
+   local n, rounds, s, piece, i, t0, sink
+   n := iters(argv, 10000)
+   rounds := 8000
+   piece := "abcdefghij"
+   sink := 0
+   t0 := stamp()
+   every 1 to rounds do {
+      s := ""
+      every i := 1 to n do
+         s ||:= piece
+      sink +:= *s
+      }
+   report_elapsed("concat-grow", n * rounds, t0)
+   if sink ~= rounds * n * *piece then
+      stop("checksum failed")
+end

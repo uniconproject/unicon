@@ -1,0 +1,22 @@
+# open() "i" mode over a socket. fork() client/server like tests/posix/tcp.icn.
+
+procedure main()
+   sockname := "127.0.0.1:" || string(1234+?10000)
+
+   if fork() ~= 0 then {
+      # parent: listen, read the one connection with 'i', report
+      f := open(sockname, "nai") | stop("couldn't listen")
+      s := reads(f, 100)
+      write(*s)                  # 4 codepoints, not 5 bytes
+      write(s[4])                # é
+      close(f)
+      exit(0)
+      }
+
+   # child: connect and send raw UTF-8 bytes, silently
+   delay(500)
+   c := open(sockname, "n") | stop("couldn't connect")
+   writes(c, "café")
+   close(c)
+   exit(0)
+end

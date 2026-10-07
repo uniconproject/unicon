@@ -1,0 +1,15 @@
+# find() of a short ASCII needle in a long ASCII haystack.
+$include "common.icn"
+
+procedure main(argv)
+   local n, s, i, sink, t0
+   n := iters(argv, 400000)
+   s := ascii(20000) || "XYZ" || ascii(100)
+   sink := 0
+   t0 := stamp()
+   every i := 1 to n do
+      sink +:= find("XYZ", s)
+   report_elapsed("find", n, t0)
+   if sink <= 0 then
+      stop("checksum failed")
+end

@@ -40,7 +40,7 @@ default_target: allsrc
 
 # Optional $(wildcard config.status): do not require config.status before it exists
 # (e.g. debian/rules clean / dh_auto_clean runs make distclean without configuring).
-# Do not copy Makedefs.in in that case: it still contains @PACKAGE_VERSION@
+# Do not copy Makedefs.in in that case: it still contains 13.3
 # and would make the deb/rpm version string invalid.
 Makedefs: $(srcdir)/Makedefs.in $(wildcard config.status)
 	@if test -f ./config.status; then \

@@ -158,16 +158,27 @@ jobs:
           GH_REPO: ${{ github.repository }}
           # workflow_run carries the package run that just finished, and only when
           # that run was on master or main. A manual dispatch from another branch
-          # must not publish here. Other events leave this empty and the script
-          # looks up the latest success on master.
+          # must not publish here. Other events leave these empty and the script
+          # looks up the latest success on master. updated_at is taken from that
+          # same event or list entry, not a second API call: the date is optional
+          # page text and must not stop publication if it is missing.
           PACKAGE_RUN_ID: ${{ github.event_name == 'workflow_run' && (github.event.workflow_run.head_branch == 'master' || github.event.workflow_run.head_branch == 'main') && github.event.workflow_run.id || '' }}
+          PACKAGE_RUN_UPDATED: ${{ github.event_name == 'workflow_run' && (github.event.workflow_run.head_branch == 'master' || github.event.workflow_run.head_branch == 'main') && github.event.workflow_run.updated_at || '' }}
         run: |
           set -euo pipefail
           mkdir -p _site/downloads "${RUNNER_TEMP}/repo-incoming" "${RUNNER_TEMP}/repo-arch"
           run_id="${PACKAGE_RUN_ID}"
+          run_updated="${PACKAGE_RUN_UPDATED}"
           if [ -z "$run_id" ]; then
-            run_id=$(gh run list --workflow packages.yml --branch master --status success \
-              --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+            meta=$(gh run list --workflow packages.yml --branch master --status success \
+              --limit 1 --json databaseId,updatedAt \
+              --jq '.[0] | select(.databaseId != null) | "\(.databaseId) \(.updatedAt)"')
+            run_id=${meta%% *}
+            run_updated=${meta#* }
+            # No timestamp in the list entry: the remainder is the id itself.
+            if [ "$run_updated" = "$run_id" ]; then
+              run_updated=""
+            fi
           fi
           if [ -z "$run_id" ]; then
             echo "No successful Binary Packages run yet for master; downloads page will say so."
@@ -191,7 +202,12 @@ jobs:
               echo "No Windows artifacts"
             fi
             if [ "$got" -eq 1 ]; then
-              echo "$run_id" > _site/downloads/.run_id
+              # updatedAt is when the run finished, which is when these packages were published.
+              when=""
+              if [ -n "$run_updated" ]; then
+                when=$(date -u -d "$run_updated" '+%Y-%m-%d %H:%M UTC' || true)
+              fi
+              printf '%s\n%s\n' "$run_id" "$when" > _site/downloads/.run_id
             fi
           fi
           owner="${GITHUB_REPOSITORY%%/*}"
@@ -209,8 +225,13 @@ jobs:
           out=_site/downloads/index.html
           run_note='<p><em>No successful package build yet.</em></p>'
           if [ -f _site/downloads/.run_id ]; then
-            rid=$(cat _site/downloads/.run_id)
-            run_note="<p>From <a href=\"https://github.com/${GITHUB_REPOSITORY}/actions/runs/${rid}\">Binary Packages run ${rid}</a>.</p>"
+            rid=$(sed -n '1p' _site/downloads/.run_id)
+            when=$(sed -n '2p' _site/downloads/.run_id)
+            run_note="<p>From <a href=\"https://github.com/${GITHUB_REPOSITORY}/actions/runs/${rid}\">Binary Packages run ${rid}</a>"
+            if [ -n "$when" ]; then
+              run_note="${run_note}, updated ${when}"
+            fi
+            run_note="${run_note}.</p>"
             rm -f _site/downloads/.run_id
           fi
           {

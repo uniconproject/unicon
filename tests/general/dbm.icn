@@ -1,0 +1,86 @@
+#
+# Test DBM databases: open(f, "d"/"dr"), subscripting, insert(), fetch(),
+# member(), delete(), key() and *, with enough records to force bucket
+# splits and with binary values (CR, LF, ^Z and NUL bytes) that must
+# survive a round trip on every platform.
+#
+
+procedure main()
+   local d, i, n, k, bin, ks
+
+   name := "local/dbmtest"
+   cleanup()
+
+   bin := "a\rb\nc\^zd\x00e"
+
+   d := open(name, "d") | stop("can't create ", name)
+   every i := 1 to 2000 do
+      d["key" || i] := "value" || i
+   insert(d, "bin", bin)
+   d[42] := "integer keys are strings"
+   write("size after inserts: ", *d)
+   write("fetch key7: ", fetch(d, "key7"))
+   write("subscript key1999: ", d["key1999"])
+   write("member key2000: ", if member(d, "key2000") then "yes" else "no")
+   write("member nokey: ", if member(d, "nokey") then "yes" else "no")
+   write("missing key: ", image(d["nokey"]))
+   close(d)
+
+   write("files exist: ", if exists(name || ".pag") & exists(name || ".dir")
+                             then "yes" else "no")
+
+   d := open(name, "dr") | stop("can't reopen ", name, " read-only")
+   write("size after reopen: ", *d)
+   write("binary value intact: ", if fetch(d, "bin") == bin then "yes" else "no")
+   write("d[\"42\"]: ", d["42"])
+   n := 0
+   every k := key(d) do {
+      d[k] | write("can't fetch ", image(k))
+      n +:= 1
+      }
+   write("keys visited: ", n)
+   every i := 1 to 2000 do
+      if d["key" || i] ~== "value" || i then write("bad value for key", i)
+   close(d)
+
+   d := open(name, "d") | stop("can't reopen ", name, " read-write")
+   every i := 1 to 2000 by 2 do
+      delete(d, "key" || i)
+   d["key2"] := "replaced"
+   close(d)
+
+   d := open(name, "dr") | stop("can't reopen ", name, " read-only")
+   write("size after deletes: ", *d)
+   write("deleted key1: ", image(d["key1"]))
+   write("replaced key2: ", d["key2"])
+   ks := []
+   every put(ks, key(d) ? (="key" & integer(tab(0))))
+   ks := sort(ks)
+   write("key range: ", ks[1], "..", ks[-1], " (", *ks, " keyN keys)")
+   close(d)
+
+   # lock=no is the same database with no file lock.
+   d := open(name, "d", "lock=no") | stop("can't open ", name, " lock=no")
+   close(d)
+   d := open(name, "dr", "lock=no") | stop("can't reopen ", name, " lock=no")
+   if d["key2"] ~== "replaced" then write("unlocked read mismatch")
+   close(d)
+
+   d := open(name, "dr", 1000) | stop("can't reopen ", name, " with timeout")
+   if d["key2"] ~== "replaced" then write("timeout read mismatch")
+   close(d)
+
+   cleanup()
+   write("done")
+end
+
+global name
+
+procedure exists(f)
+   return close(open(f))
+end
+
+procedure cleanup()
+   remove(name || ".pag")
+   remove(name || ".dir")
+end

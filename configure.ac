@@ -750,6 +750,13 @@ AC_FUNC_FORK()
 AC_CHECK_LIB(dbm,main)
 AC_CHECK_LIB(ndbm,main)
 
+# Probes needed by the vendored GDBM in src/gdbm; its autoconf.h maps
+# these (and the generic checks above) onto the names GDBM expects.
+AC_CHECK_SIZEOF(off_t)
+AC_FUNC_MMAP
+AC_CHECK_FUNCS([msync lockf])
+AC_CHECK_MEMBERS([struct stat.st_blksize])
+
 # we don't need sqlite to be added to $LIBS, not yet at least
 saved_libs="$LIBS"
 AC_CHECK_HEADERS([sqlite3.h])

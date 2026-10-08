@@ -1924,17 +1924,13 @@ resolve}
 end}
 
 \goodbreak
-The database routines used by Unicon are {\em ancient}.
-The version string is
-\begin{quote}
-{\ttfamily\mdseries This is GDBM version 1.7.3, as of May 19,1994.}
-\end{quote}
-and modern GDBM tools cannot be used to display the contents of
-uniclass.dir (they complain of a ``Malformed database file header'').
-However, in the src/gdbm directory, there are two utilities that will
-display the contents of uniclass.dir: testgdbm and testndbm. They are
-not built by default but, if needed, can be built using the Makefile
-in src/gdbm.
+The database routines are those of GDBM (version 1.26 at the time of
+writing), included with the Unicon sources in src/gdbm and accessed
+through GDBM's NDBM compatibility interface. The database proper is
+uniclass.pag; uniclass.dir is only a 16-byte stamp recording the GDBM
+version that created it. Since the format is standard GDBM, the
+contents can be displayed with the regular GDBM utilities, for example
+{\tt gdbmtool -r uniclass.pag list} or {\tt gdbm\_dump uniclass.pag}.
 
 \subsection{Unicon's Progend() revisited}
 

@@ -133,6 +133,9 @@ print:
 zip:
 	zip -r udb.zip ../udb
 
+Pure: Clean
+	$(DEL) ../../bin/$(EXEs) 
+
 Clean: clean
 
 clean:
@@ -145,7 +148,6 @@ clean:
 	$(DEL) *~
 	cd $(LIB); $(MAKE) clean
 	cd $(DTA); $(MAKE) clean
-	$(DEL) ../../bin/$(EXEs) 
 	cd lib; $(MAKE) clean
 
 cleantools:

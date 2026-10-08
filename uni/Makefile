@@ -61,3 +61,4 @@ clean Clean Pure:
 	cd ide && $(MAKE) clean
 	cd 3d && $(MAKE) clean
 	cd ulsp && $(MAKE) clean
+	cd uflex && $(MAKE) clean

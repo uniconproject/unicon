@@ -43,6 +43,8 @@ graphics: gui
 	cd ide; $(MAKE)
 	cd 3d; $(MAKE)
 
+# clean, Clean, and Pure remove what this tree built, including copies
+# installed under bin/. Configure output is not here.
 clean Clean Pure:
 	cd unicon && $(MAKE) Clean
 	cd udb && $(MAKE) Clean
@@ -61,3 +63,4 @@ clean Clean Pure:
 	cd ide && $(MAKE) clean
 	cd 3d && $(MAKE) clean
 	cd ulsp && $(MAKE) clean
+	cd uflex && $(MAKE) clean

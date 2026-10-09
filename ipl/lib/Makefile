@@ -18,4 +18,4 @@ clean Clean Pure:
 	cd ../procs; $(MAKE) Clean
 	cd ../gprocs; $(MAKE) Clean
 	cd ../mprocs; $(MAKE) Clean
-	rm -f *.u
+	rm -f *.u *.u[0-9]

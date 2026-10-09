@@ -520,44 +520,32 @@ Benchmark-icont:
 # live in the source tree, so "make clean" from a build directory cleans under the source tree.
 # Revisit when objects and binaries are only written under UNICON_TOP_BUILDDIR.
 #
-# "make Clean" removes intermediate files, leaving executables and library.
-# "make Pure"  also removes binaries, library, and configured files.
+# clean and Clean are one target, the GNU clean: delete what the build
+# created, including executables and libraries. Configure output stays.
+# Two checked-in ucode files are the exception. uni/unicon keeps
+# unigram.u and idol.u because rebuilding them needs the translator
+# they exist to build.
+#
+# distclean and Pure are one target, the GNU distclean: clean, then
+# delete configure output. Pure is the older name for that.
+
+.PHONY: clean Clean distclean Pure
 
 clean Clean:
 		$(MAKE) seed-makedefs-uni
-		rm -rf icon.*
+		rm -rf icon.* $(TOPDIR)/bin/[A-Za-z]* $(TOPDIR)/lib/[a-z]*
+		cd $(TOPDIR)/uni;			$(MAKE) Clean
+		cd $(TOPDIR)/ipl;			$(MAKE) Clean
 		cd $(TOPDIR)/src;			$(MAKE) Clean
 		cd $(TOPDIR)/tests;		$(MAKE) Clean
 		cd $(TOPDIR)/plugins;		$(MAKE) Clean
 		cd $(TOPDIR)/doc;			$(MAKE) Clean
 
-distclean:
-		$(MAKE) seed-makedefs-uni
-		rm -rf icon.* $(TOPDIR)/bin/[A-Za-z]* $(TOPDIR)/lib/[a-z]*
-		cd $(TOPDIR)/uni;			$(MAKE) Pure
-		cd $(TOPDIR)/ipl;			$(MAKE) Pure
+distclean Pure: clean
 		cd $(TOPDIR)/src;			$(MAKE) Pure
 		cd $(TOPDIR)/tests;		$(MAKE) distclean
-		cd $(TOPDIR)/plugins;		$(MAKE) Pure
-		cd $(TOPDIR)/doc;			$(MAKE) Clean
 		rm -f $(TOPDIR)/src/common/rswitch.[csS]
-		$(RM) config.status config.cache
-		$(RM) config.log unicon-config.log
-
-
-Pure:
-		$(MAKE) seed-makedefs-uni
-		rm -rf icon.* $(TOPDIR)/bin/[A-Za-z]* $(TOPDIR)/lib/[a-z]*
-		cd $(TOPDIR)/uni;			$(MAKE) Pure
-		cd $(TOPDIR)/ipl;			$(MAKE) Pure
-		cd $(TOPDIR)/src;			$(MAKE) Pure
-		cd $(TOPDIR)/tests;		$(MAKE) Pure
-		cd $(TOPDIR)/plugins;		$(MAKE) Pure
-		cd $(TOPDIR)/doc;			$(MAKE) Clean
-		rm -f $(TOPDIR)/src/common/rswitch.[csS]
-#		rm -f Makedefs Makedefs.uni
-		$(RM) config.status config.cache config.log
-		$(RM) config.log unicon-config.log
+		$(RM) config.status config.cache config.log unicon-config.log
 
 #		rm -f \#*# *~ .#*
 #		rm -f */#*# */*~ */.#*

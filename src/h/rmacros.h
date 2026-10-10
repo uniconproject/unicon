@@ -634,6 +634,58 @@
 #define Deref0(d) if (Var(d)) deref_0(&d, &d)
 
 /*
+ * In-line fast paths for the common conversions.  rtt emits these names
+ * for cnv: and def: in operators and functions (see inline_cnv() in
+ * rttout.c): an argument that already has the wanted type, as most do, is
+ * copied here, and anything else goes to the conversion routine.
+ * The source is read once.  Callers pass expressions such as *dp++,
+ * and reading it again would skip values.
+ */
+#define CnvCInt(s, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Integer) ? (*_d = IntVal(*_s), 1) : cnv_c_int(_s, _d); \
+   })
+#define CnvECInt(s, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Integer) ? (*_d = IntVal(*_s), 1) : cnv_ec_int(_s, _d); \
+   })
+#define CnvEInt(s, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Integer) ? (*_d = *_s, 1) : cnv_eint(_s, _d); \
+   })
+#define DefCInt(s, df, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Integer) ? (*_d = IntVal(*_s), 1) : def_c_int(_s, (df), _d); \
+   })
+#ifdef DescriptorDouble
+#define CnvCDbl(s, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Real) ? (*_d = _s->vword.realval, 1) : \
+   (_s->dword == D_Integer) ? (*_d = (double)IntVal(*_s), 1) : \
+   cnv_c_dbl(_s, _d); \
+   })
+#define DefCDbl(s, df, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Real) ? (*_d = _s->vword.realval, 1) : \
+   def_c_dbl(_s, (df), _d); \
+   })
+#else                                   /* DescriptorDouble */
+#define CnvCDbl(s, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Integer) ? (*_d = (double)IntVal(*_s), 1) : \
+   cnv_c_dbl(_s, _d); \
+   })
+#define DefCDbl(s, df, d) def_c_dbl(s, df, d)
+#endif                                  /* DescriptorDouble */
+
+/*
  * Construct a substring trapped variable.
  */
 #define SubStr(dest,var,len,pos)\

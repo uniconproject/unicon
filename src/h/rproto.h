@@ -452,6 +452,7 @@ int             bigtoreal       (dptr da, double *result);
    void         bigprint        (FILE *f, dptr da);
    int          cpbignum        (dptr da, dptr db);
    int          bigadd          (dptr da, dptr db, dptr dx);
+   int          big_int_op      (int op, C_integer x, C_integer y, dptr r);
    int          bigsub          (dptr da, dptr db, dptr dx);
    int          bigmul          (dptr da, dptr db, dptr dx);
    int          bigdiv          (dptr da, dptr db, dptr dx);

@@ -9551,6 +9551,39 @@ printf "%s\n" "#define HAVE_TLS 1" >>confdefs.h
   fi
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __builtin_add_overflow" >&5
+printf %s "checking for __builtin_add_overflow... " >&6; }
+if test ${ac_cv_builtin_overflow+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int main(void) {
+   long a = 1, b = 2, r;
+   return __builtin_add_overflow(a, b, &r) | __builtin_sub_overflow(a, b, &r) |
+          __builtin_mul_overflow(a, b, &r);
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_builtin_overflow=yes
+else $as_nop
+  ac_cv_builtin_overflow=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_builtin_overflow" >&5
+printf "%s\n" "$ac_cv_builtin_overflow" >&6; }
+if test "x$ac_cv_builtin_overflow" = "xyes"; then
+
+printf "%s\n" "#define HAVE_BUILTIN_OVERFLOW 1" >>confdefs.h
+
+fi
+
 if test x"$debug" = x"yes" ; then
   STRIP="@\#strip"
 else

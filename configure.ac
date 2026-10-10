@@ -666,6 +666,24 @@ int main(int argc, char **argv) {
   fi
 fi
 
+dnl Overflow-checked integer arithmetic, for the arithmetic operators.
+AC_CACHE_CHECK([for __builtin_add_overflow],
+  [ac_cv_builtin_overflow],
+  [AC_LINK_IFELSE(
+    [AC_LANG_SOURCE([[
+int main(void) {
+   long a = 1, b = 2, r;
+   return __builtin_add_overflow(a, b, &r) | __builtin_sub_overflow(a, b, &r) |
+          __builtin_mul_overflow(a, b, &r);
+}
+]])],
+    [ac_cv_builtin_overflow=yes],
+    [ac_cv_builtin_overflow=no])])
+if test "x$ac_cv_builtin_overflow" = "xyes"; then
+  AC_DEFINE([HAVE_BUILTIN_OVERFLOW], [1],
+    [Define if the compiler provides __builtin_add_overflow and relatives])
+fi
+
 if test x"$debug" = x"yes" ; then
   STRIP="@\#strip"
 else

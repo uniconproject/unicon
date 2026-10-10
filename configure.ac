@@ -635,6 +635,35 @@ int main(void) {
     AC_DEFINE([HAVE_ATOMIC_BUILTINS], [1],
       [Define if the compiler provides __atomic builtins on plain words])
   fi
+
+  dnl Thread-local variables, to find the current thread's state without
+  dnl calling pthread_getspecific().  Only worth it where reading one is an
+  dnl ordinary load: with emulated TLS (MinGW GCC), Darwin's TLV thunk or
+  dnl __tls_get_addr() every access is a call, no cheaper than
+  dnl pthread_getspecific(), so look for those in the linked program.
+  AC_CHECK_TOOL([NM], [nm], [nm])
+  AC_CACHE_CHECK([for thread-local variables read in line],
+    [ac_cv_tls],
+    [AC_LINK_IFELSE(
+      [AC_LANG_SOURCE([[
+__thread int tls_x;
+int main(int argc, char **argv) {
+   (void)argv;
+   tls_x = argc;
+   return tls_x == 0;
+}
+]])],
+      [if $NM conftest$ac_exeext 2>/dev/null |
+          grep -E 'emutls|tls_get_addr|tlv_bootstrap' >/dev/null; then
+         ac_cv_tls="no, accessed through a call"
+       else
+         ac_cv_tls=yes
+       fi],
+      [ac_cv_tls=no])])
+  if test "x$ac_cv_tls" = "xyes"; then
+    AC_DEFINE([HAVE_TLS], [1],
+      [Define if __thread variables are read without a function call])
+  fi
 fi
 
 if test x"$debug" = x"yes" ; then

@@ -120,7 +120,7 @@ FILE *OpenConsole()
 
          init_threadstate(curtstate);
          pthread_key_create(&tstate_key, NULL);
-         pthread_setspecific(tstate_key, (void *) curtstate);
+         TSTATE_SET(curtstate);
          curtstate->Curstring = curstring;
          curtstate->Curblock = curblock;
          curtstate->c = (struct b_coexpr *) malloc((msize) 1000);

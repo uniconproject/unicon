@@ -739,16 +739,29 @@
 #else
 */
 
-#define SYNC_GLOBAL_CURTSTATE()  do if (!is_concurrent) global_curtstate = \
-      (struct threadstate *) pthread_getspecific(tstate_key); while (0)
+/*
+ * A thread's state is kept under tstate_key, and also, where the compiler
+ * supports them, in a thread-local variable, which is much cheaper to read
+ * than pthread_getspecific().  TSTATE_SET() sets both.
+ */
+#ifdef HAVE_TLS
+#define TSTATE_GET()  tls_curtstate
+#define TSTATE_SET(ts) do { struct threadstate *ts__ = (ts); \
+      pthread_setspecific(tstate_key, (void *) ts__); \
+      tls_curtstate = ts__; } while (0)
+#else                                   /* HAVE_TLS */
+#define TSTATE_GET()  ((struct threadstate *) pthread_getspecific(tstate_key))
+#define TSTATE_SET(ts) pthread_setspecific(tstate_key, (void *) (ts))
+#endif                                  /* HAVE_TLS */
 
-#define TLS_CURTSTATE_ONLY()  struct threadstate *curtstate = \
-      (struct threadstate *) pthread_getspecific(tstate_key);
+#define SYNC_GLOBAL_CURTSTATE()  do if (!is_concurrent) global_curtstate = \
+      TSTATE_GET(); while (0)
+
+#define TLS_CURTSTATE_ONLY()  struct threadstate *curtstate = TSTATE_GET();
 
 
 #define GET_CURTSTATE()  struct threadstate *curtstate = \
-    global_curtstate? global_curtstate: \
-    (struct threadstate *) pthread_getspecific(tstate_key);
+    global_curtstate? global_curtstate: TSTATE_GET();
 
 #define CURTSTATE_CE() struct b_coexpr *curtstate_ce = curtstate->c;
 

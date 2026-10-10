@@ -1165,6 +1165,9 @@ void init_threadstate(struct threadstate *ts);
 struct threadstate *get_tstate();
 #endif                                  /* HAVE_KEYWORD__THREAD */
 void thread_control(int action);
+#ifdef SerialBatches
+word serial_batch(void *ctr, int isatomic);
+#endif                                  /* SerialBatches */
 #ifdef HAVE_C11_ATOMICS
 int narthreads_inc_fast(void);
 #endif                                  /* HAVE_C11_ATOMICS */

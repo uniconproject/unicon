@@ -753,6 +753,12 @@ struct threadstate {
   uword blocktotal;                     /* cumulative total allocation */
 #endif                                  /* DescripAmpAllocated */
 
+#ifdef SerialBatches
+  /* serial-number batches, by counter address; see serial_batch() */
+  void *Ser_key[SER_SLOTS];
+  word Ser_next[SER_SLOTS], Ser_end[SER_SLOTS];
+#endif                                  /* SerialBatches */
+
 #ifdef SoftThreads
   int sthrd_tick;
   int sthrd_size;

@@ -601,6 +601,15 @@ void init_threadstate( struct threadstate *ts)
 #ifdef Concurrent
    ts->tid = pthread_self();
    ts->Pollctr=0;
+#ifdef SerialBatches
+   {
+   int i;
+   for (i = 0; i < SER_SLOTS; i++) {
+      ts->Ser_key[i] = NULL;
+      ts->Ser_next[i] = ts->Ser_end[i] = 0;
+      }
+   }
+#endif                                  /* SerialBatches */
 
    /* used in fmath.r, log() */
    ts->Lastbase=0.0;

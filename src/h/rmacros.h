@@ -704,6 +704,34 @@
    #define SERIAL_UNLOCK(mtx)           MUTEX_UNLOCKID(mtx)
 #endif                                  /* Concurrent && HAVE_C11_ATOMICS */
 
+/*
+ * Serial numbers.  Every list, set, table, record, pattern and
+ * co-expression takes the next number from a counter shared by all
+ * threads.  Once threads are running, an atomic add on that one word for
+ * every allocation makes the cores fight over its cache line, so each
+ * thread instead takes SER_BATCH numbers at a time (serial_batch() in
+ * ralc.r).  Numbers stay unique and, within a thread, in creation order;
+ * a program that never starts a thread numbers 1, 2, 3, ... as before.
+ */
+#ifdef SerialBatches
+   #define NEXT_SERIAL(ctr) (is_concurrent ? \
+      serial_batch((void *)&(ctr), 1) : ATOMIC_ADD(ctr, 1))
+   #define NEXT_RECID(ctr) (is_concurrent ? \
+      serial_batch((void *)&(ctr), 0) : \
+      __atomic_fetch_add(&(ctr), 1, __ATOMIC_RELAXED))
+#elif defined(Concurrent) && defined(HAVE_ATOMIC_BUILTINS)
+   /*
+    * No C11 atomics, so no batches, but alcrecd() still skips its lock
+    * when the builtins are available.  A plain increment would lose ids.
+    */
+   #define NEXT_SERIAL(ctr) ((ctr)++)
+   #define NEXT_RECID(ctr) \
+      __atomic_fetch_add(&(ctr), 1, __ATOMIC_RELAXED)
+#else
+   #define NEXT_SERIAL(ctr) ((ctr)++)
+   #define NEXT_RECID(ctr) ((ctr)++)
+#endif
+
 #ifdef Concurrent
 
    #define CE_INBOX_SIZE        1024

@@ -1,0 +1,35 @@
+Micro-benchmarks for the interpreter and the threaded runtime.
+
+These are not part of "make Test": timings depend on the machine and vary
+from run to run.  Each benchmark runs in its own process; runperf runs
+each one several times and reports the median of every measurement.
+
+   make                         run every benchmark
+   make RUNPERF="-r 3 -s 0.5"   fewer runs, half the work
+   ./runperf call deref         run only some benchmarks
+
+To compare two builds, either save and compare results:
+
+   make Save OUT=before.txt     (with the old build)
+   make Compare BASE=before.txt (with the new build)
+
+or run both interpreters in turn on every repetition, which is fairer on
+a busy machine:
+
+   ./runperf -x /old/bin/iconx -x /new/bin/iconx
+
+Benchmarks:
+
+   call           procedure call and return
+   deref          reading locals, globals, record fields and list elements
+   intarith       small-integer arithmetic
+   realarith      real arithmetic
+   strings        concatenation and string scanning
+   records        record allocation
+   lists          list allocation
+   tables         table allocation
+   queens         generators, list subscripts and calls (11 queens)
+   queens-mt      the same, after a thread has run in the process
+   msg            blocking messages from one thread to another
+   scale-*        the same work in one thread, then in each of two threads;
+                  -speedup is 2 * (one thread) / (two threads), 2.0 ideal

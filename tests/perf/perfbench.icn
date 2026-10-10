@@ -1,0 +1,190 @@
+#
+# perfbench.icn -- micro-benchmarks for the interpreter and the threaded
+# runtime.  Each run measures one benchmark, named on the command line,
+# and writes lines of the form
+#
+#    name value unit
+#
+# runperf runs this program several times per benchmark and reports the
+# medians.  Each benchmark runs in its own process because starting a
+# thread changes how the rest of the process runs.
+#
+#    perfbench name [scale]
+#
+# scale (default 1.0) multiplies the amount of work.
+#
+
+record point(x, y, z)
+
+global scale, gvar
+
+procedure main(args)
+   local name
+   name := args[1] | stop("usage: perfbench name [scale]")
+   scale := real(args[2]) | 1.0
+   case name of {
+      "call":      report("call", wall(call_work, n(3000000)), "ms")
+      "deref":     report("deref", wall(deref_work, n(3000000)), "ms")
+      "intarith":  report("intarith", wall(int_work, n(4000000)), "ms")
+      "realarith": report("realarith", wall(real_work, n(3000000)), "ms")
+      "strings":   report("strings", wall(string_work, n(1000000)), "ms")
+      "records":   report("records", wall(records, n(2000000)), "ms")
+      "lists":     report("lists", wall(lists, n(1500000)), "ms")
+      "tables":    report("tables", wall(tables, n(500000)), "ms")
+      "queens":    report("queens", wall(queens_work, 11), "ms")
+      "queens-mt": {
+         # the same work, after a thread has run in this process
+         wait(thread 1)
+         report("queens-mt", wall(queens_work, 11), "ms")
+         }
+      "msg":       report("msg", wall(msg_work, n(300000)), "ms")
+      "scale-cpu":     scaling("scale-cpu", cpu_work, n(6000000))
+      "scale-records": scaling("scale-records", records, n(2000000))
+      "scale-lists":   scaling("scale-lists", lists, n(1500000))
+      "scale-tables":  scaling("scale-tables", tables, n(500000))
+      "list": every write(!benchmarks())
+      default: stop("perfbench: unknown benchmark ", name)
+      }
+end
+
+procedure benchmarks()
+   return ["call", "deref", "intarith", "realarith", "strings", "records",
+           "lists", "tables", "queens", "queens-mt", "msg", "scale-cpu",
+           "scale-records", "scale-lists", "scale-tables"]
+end
+
+procedure n(base)
+   return integer(base * scale)
+end
+
+procedure report(name, value, unit)
+   write(name, " ", value, " ", unit)
+   return
+end
+
+# wall-clock milliseconds for f(arg)
+procedure wall(f, arg)
+   local t0, t1
+   t0 := gettimeofday()
+   f(arg)
+   t1 := gettimeofday()
+   return (t1.sec - t0.sec) * 1000 + (t1.usec - t0.usec) / 1000
+end
+
+# k threads each doing f(arg); wall-clock milliseconds
+procedure threads(f, arg, k)
+   local T, t0, t1
+   t0 := gettimeofday()
+   T := []
+   every 1 to k do put(T, thread f(arg))
+   every wait(!T)
+   t1 := gettimeofday()
+   return (t1.sec - t0.sec) * 1000 + (t1.usec - t0.usec) / 1000
+end
+
+# one thread, then two threads each doing the same work
+procedure scaling(name, f, arg)
+   local t1, t2
+   t1 := threads(f, arg, 1)
+   t2 := threads(f, arg, 2)
+   report(name || "-1", t1, "ms")
+   report(name || "-2", t2, "ms")
+   report(name || "-speedup", (2.0 * t1 / (0 < t2)) | 0, "x")
+end
+
+procedure ident(x)
+   return x
+end
+
+procedure call_work(k)                  # procedure call and return
+   every ident(1 to k)
+end
+
+procedure deref_work(k)                 # locals, globals, fields, elements
+   local a, b, r, L, s
+   a := 1; b := 2; r := point(1, 2, 3); L := [1, 2, 3]; gvar := 4
+   every 1 to k do
+      s := a + r.y + L[2] + gvar + b
+   return s
+end
+
+procedure int_work(k)                   # small-integer arithmetic
+   local x
+   x := 0
+   every i := 1 to k do
+      x := (i * 3 + x - 2) % 1000003
+   return x
+end
+
+procedure real_work(k)                  # real arithmetic
+   local x, y
+   x := 0.5; y := 1.25
+   every 1 to k do {
+      x := x * 1.0000001 + y / 3.0
+      y := y - x * 0.0000001
+      }
+   return x
+end
+
+procedure string_work(k)               # strings: concatenation, scanning
+   local s, c
+   c := 0
+   every i := 1 to k do {
+      s := "abc" || i || "def"
+      s ? if tab(upto(&digits)) then c +:= *tab(many(&digits))
+      }
+   return c
+end
+
+procedure records(k)                    # record allocation
+   every 1 to k do point(1, 2, 3)
+end
+
+procedure lists(k)                      # list allocation
+   every 1 to k do [1, 2]
+end
+
+procedure tables(k)                     # table allocation
+   every 1 to k do table()
+end
+
+procedure cpu_work(k)                   # no allocation at all
+   local s
+   s := 0
+   every s +:= 1 to k
+   return s
+end
+
+procedure msg_work(k)                   # blocking messages to a thread
+   local T
+   T := thread consumer()
+   every i := 1 to k do i @>> T
+   0 @>> T
+   return <<@ T
+end
+
+procedure consumer()
+   local c
+   c := 0
+   while (<<@) ~= 0 do c +:= 1
+   return c
+end
+
+procedure queens_work(k)                # generators, lists, calls
+   local count
+   count := 0
+   every place(1, k, list(k, 0), list(2 * k, 0), list(2 * k, 0)) do
+      count +:= 1
+   return count
+end
+
+procedure place(r, k, cols, d1, d2)
+   local c
+   if r > k then return
+   every c := 1 to k do
+      if cols[c] = 0 & d1[r + c] = 0 & d2[r - c + k] = 0 then {
+         cols[c] := d1[r + c] := d2[r - c + k] := 1
+         suspend place(r + 1, k, cols, d1, d2)
+         cols[c] := d1[r + c] := d2[r - c + k] := 0
+         }
+end

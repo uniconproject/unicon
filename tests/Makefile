@@ -50,6 +50,10 @@ all: Hdr
 	@$(MAKE) -s aggregate-summary
 	@echo ""
 
+# Performance micro-benchmarks; not part of Test.  See perf/README.
+Perf:
+	$(MAKE) -C perf
+
 Hdr:
 	@echo ""
 	@echo "Unicon Test Suite"

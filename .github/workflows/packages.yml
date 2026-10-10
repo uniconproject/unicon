@@ -348,7 +348,7 @@ jobs:
               libjpeg8-devel libpng16-devel libX11-devel \
               Mesa-libGL-devel glu-devel \
               libopenssl-3-devel libssh-devel unixODBC-devel \
-              freetype2-devel libXft-devel \
+              freetype2-devel libXft-devel libXpm-devel \
               openal-soft-devel freealut-devel libogg-devel libvorbis-devel
             ;;
           *)
@@ -359,7 +359,7 @@ jobs:
             dnf -y $enablerepo install rpm-build rpmdevtools gcc make diffutils \
               libjpeg-turbo-devel libpng-devel libX11-devel \
               mesa-libGL-devel mesa-libGLU-devel \
-              openssl-devel libssh-devel unixODBC-devel freetype-devel libXft-devel
+              openssl-devel libssh-devel unixODBC-devel freetype-devel libXft-devel libXpm-devel
             case "${{ matrix.cfg.image }}" in
               fedora*) dnf -y install openal-soft-devel freealut-devel libogg-devel libvorbis-devel ;;
             esac
@@ -480,7 +480,7 @@ jobs:
     - name: Install dependencies
       run: |
         pacman -Syu --needed --noconfirm git base-devel \
-          libx11 libxft freetype2 mesa glu libpng libjpeg-turbo \
+          libx11 libxft libxpm freetype2 mesa glu libpng libjpeg-turbo \
           openssl libssh unixodbc openal freealut libvorbis libogg
 
     - name: Checkout

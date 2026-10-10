@@ -291,6 +291,7 @@ install Install:
 #	install unicon/rt
 	@echo "Installing unicon/rt to $(DESTDIR)$(RTDIR) ..."
 	@$(INST) -m 644 $(TOPDIR)/rt/lib/* $(DESTDIR)$(RTDIR)/lib
+	@$(RM) $(DESTDIR)$(RTDIR)/lib/libXpm.a
 	@$(INST) -m 644 $(TOPDIR)/rt/include/*.h $(DESTDIR)$(RTDIR)/include
 	@$(INST) -m 644 $(TOPDIR)/rt/include/uri/*.h $(DESTDIR)$(RTDIR)/include/uri
 #	install unicon/ipl

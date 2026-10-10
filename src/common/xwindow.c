@@ -16,9 +16,6 @@ typedef struct {
 
 #if VMS
    #undef UNIX
-   #ifdef XpmFormat
-      #include "../xpm/xpm.h"
-   #endif               /* XpmFormat */
    #include "decw$include:Xlib.h"
    #include "decw$include:Xutil.h"
    #include "decw$include:Xos.h"
@@ -27,12 +24,8 @@ typedef struct {
    #include "decw$include:keysym.h"
    #define UNIX 0
 #else                   /* VMS */
-   #ifdef XpmFormat
-      #include "../xpm/xpm.h"
-   #else                /* XpmFormat */
-      #include <X11/Xlib.h>
-      #include <X11/Xutil.h>
-   #endif               /* XpmFormat */
+   #include <X11/Xlib.h>
+   #include <X11/Xutil.h>
    #include <X11/Xos.h>
    #include <X11/Xatom.h>
    #include <X11/cursorfont.h>

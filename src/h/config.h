@@ -450,11 +450,9 @@
 #endif
 
 #ifdef Graphics
-   #ifndef NoXpmFormat
-      #if UNIX
-         #undef HAVE_LIBXPM
-         #define HAVE_LIBXPM
-      #endif                            /* UNIX */
+   /* configure defines HAVE_LIBXPM when it finds the system's libXpm */
+   #ifdef NoXpmFormat
+      #undef HAVE_LIBXPM
    #endif                               /* NoXpmFormat */
 
    #ifndef MSWindows

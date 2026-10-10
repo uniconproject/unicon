@@ -25,7 +25,10 @@ Common: libs
 	$(MAKE) -C rtt
 
 
-libs:  $(XPM) gdbm tp
+# Drop a libXpm.a left by an older build. iconc and the runtime search
+# rt/lib before system directories, and install copies every archive there.
+libs:  gdbm tp
+	$(RM) ../rt/lib/libXpm.a
 
 # libtp includes <ndbm.h> via sys.h (-I rt/include). gdbm copies that
 # header; with -j, tp used to compile before the copy finished.
@@ -37,9 +40,6 @@ tp: gdbm-headers
 
 gdbm: gdbm-headers
 	$(MAKE) -C gdbm
-
-xpm:
-	$(MAKE) -C xpm/lib
 
 
 iyacc: Icont
@@ -101,7 +101,7 @@ FreshIconc:
 	$(MAKE) -C iconc
 	$(MAKE) -C common doincl
 
-.PHONY: Common Icont Iconx Iconc Clean Pure tp gdbm gdbm-headers xpm iyacc libs \
+.PHONY: Common Icont Iconx Iconc Clean Pure tp gdbm gdbm-headers iyacc libs \
 	Wiconx wiconx wuniconx Wicont wicont wunicont
 
 clean Clean:
@@ -114,12 +114,11 @@ clean Clean:
 	cd rtt;		$(RM) *.o rtt$(EXE)
 	cd runtime;	$(RM) *.o *.c rt.db rt.a rttcur.lst rttfull.lst compiler-rtl-stamp $(UNICONX)$(EXE) $(UNICONWX)$(EXE)
 	cd icont;	$(RM) *.o $(UNICONT)$(EXE) $(UNICONWT)$(EXE)
-	cd xpm;		$(RM) *.o *.a
-	cd xpm/lib;	$(RM) *.o *.a
 	cd libtp;	$(RM) *.o *.a config.cache
 	cd libtp/uri;	$(RM) *.o *.a
 	make -C libtp/tests Pure
 	cd gdbm;        $(RM) *.o *.a
+	$(RM) ../rt/lib/libXpm.a
 
 
 Pure: Clean

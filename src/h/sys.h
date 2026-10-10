@@ -225,7 +225,7 @@
       #include "decw$include:Xatom.h"
 
       #ifdef HAVE_LIBXPM
-         #include "../xpm/xpm.h"
+         #include "decw$include:xpm.h"
       #endif                            /* HAVE_LIBXPM */
 
       #undef UNIX
@@ -245,10 +245,9 @@
 #endif
 #endif                                  /* Redhat71 */
 
+      #include <X11/Xlib.h>
       #ifdef HAVE_LIBXPM
-         #include "../xpm/xpm.h"
-      #else                             /* HAVE_LIBXPM */
-         #include <X11/Xlib.h>
+         #include <X11/xpm.h>
       #endif                            /* HAVE_LIBXPM */
 
       #include <X11/Xutil.h>

@@ -49,7 +49,7 @@ license=('GPL-2.0-or-later')
 # "can I run a binary?" test on other packaging builds.
 options=('!debug' '!lto')
 makedepends=(
-  'libx11' 'libxft' 'freetype2' 'mesa' 'glu' 'libpng' 'libjpeg-turbo'
+  'libx11' 'libxft' 'libxpm' 'freetype2' 'mesa' 'glu' 'libpng' 'libjpeg-turbo'
   'openssl' 'libssh' 'unixodbc' 'openal' 'freealut' 'libvorbis' 'libogg'
 )
 
@@ -160,6 +160,8 @@ package_unicon-runtime() {
   local stage=$srcdir/stage-gfx
   local defs=$srcdir/unicon/Makedefs
   pkgdesc='Unicon virtual machine'
+  # The graphics VM links the system libXpm. The no-graphics package does not.
+  depends=('libxpm')
   provides=('unicon-vm')
   conflicts=('unicon-runtime-nographics')
   move_bin "$stage" "$(makedef UNICONX "$defs")"
@@ -209,7 +211,8 @@ package_unicon-compiler() {
   local stage=$srcdir/stage-gfx
   local defs=$srcdir/unicon/Makedefs
   pkgdesc='Unicon compiler'
-  depends=('unicon-vm')
+  # iconc includes <X11/xpm.h> and links -lXpm. libxpm ships both.
+  depends=('unicon-vm' 'libxpm')
   move_bin "$stage" "$(makedef UNICONC "$defs")"
   move_path "$stage" usr/lib/unicon/rt
   install_license unicon-compiler

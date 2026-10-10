@@ -926,9 +926,11 @@ void    cotrace         (struct b_coexpr *ccp, struct b_coexpr *ncp,
                            int swtch_typ, dptr valloc);
 #ifdef MultiProgram
 void    deref_0         (dptr dp1, dptr dp2);
+void    deref_0_slow    (dptr dp1, dptr dp2);
 void    deref_1         (dptr dp1, dptr dp2);
 #else                                   /* MultiProgram */
 void    deref           (dptr dp1, dptr dp2);
+void    deref_slow      (dptr dp1, dptr dp2);
 #endif                                  /* MultiProgram */
 void    envset          (void);
 int     eq              (dptr dp1,dptr dp2);

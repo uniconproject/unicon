@@ -141,8 +141,12 @@ void co_init(struct b_coexpr *sblkp)
    *((struct pf_marker *)dsp) = rblkp->pfmkr;
    sblkp->es_pfp = (struct pf_marker *)dsp;
 #ifdef PatternType
- if (!is_in_a_block_region((char *)(sblkp->es_pfp->pattern_cache)) ||
-     (sblkp->es_pfp->pattern_cache->title != T_Table))
+   /*
+    * The marker is a copy of the creator's, made when the co-expression
+    * was created.  Its pattern cache resolves patterns against the
+    * creator's locals, not the copies below, and it may be shared with
+    * another thread, so start with an empty cache.
+    */
    sblkp->es_pfp->pattern_cache = NULL;
 #endif                                  /* PatternType */
    sblkp->es_tend = NULL;
@@ -280,16 +284,14 @@ int co_chng(struct b_coexpr *ncp,
             hp->full++;
             while (hp->size>=hp->max){
                CV_SIGNAL_EMPTYBLK(hp);
-               DEC_NARTHREADS;
                CV_WAIT_FULLBLK(hp);
-               INC_NARTHREADS_CONTROLLED;
                hp = BlkD(BlkD(k_current,Coexpr)->outbox, List);
                }
             hp->full--;
             }
          c_put(&(BlkD(k_current,Coexpr)->outbox), valloc);
-         MUTEX_UNLOCKBLK(BlkD(BlkD(k_current,Coexpr)->outbox, List), "co_chng(): list mutex");
          CV_SIGNAL_EMPTYBLK(BlkD(BlkD(k_current,Coexpr)->outbox, List));
+         MUTEX_UNLOCKBLK(BlkD(BlkD(k_current,Coexpr)->outbox, List), "co_chng(): list mutex");
          if (IS_TS_THREAD(ccp->status) &&
             (swtch_typ == A_Coret || swtch_typ == A_Cofail)){
             /*
@@ -750,12 +752,10 @@ void coclean(struct b_coexpr *cp) {
 
     /*
      * Finish with the co-expression block while still counted in: once
-     * counted out, a collection may sweep it and join this thread.
+     * counted out, a collection may sweep it and join this thread.  The
+     * semaphore stays open until then: signal() may still post to it.
      */
     cp->alive = -1;
-#ifndef NO_COEXPR_SEMAPHORE_FIX
-    if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
-#endif                  /* NO_COEXPR_SEMAPHORE_FIX */
     DEC_NARTHREADS;
     pthread_exit(NULL);
   }
@@ -902,7 +902,7 @@ word ncondvars;
 
 pthread_mutex_t **mutexes;
 word maxmutexes;
-word nmutexes;
+AtomicWord nmutexes;                    /* bounds-checked without MTX_MUTEXES */
 
 void init_threads()
 {
@@ -913,11 +913,9 @@ void init_threads()
 #if !ConcurrentCOMPILER
    rootpstate.mutexid_stringtotal = MTX_STRINGTOTAL;
    rootpstate.mutexid_blocktotal = MTX_BLOCKTOTAL;
-   rootpstate.mutexid_coll = MTX_COLL;
 #else
    mutexid_stringtotal = MTX_STRINGTOTAL;
    mutexid_blocktotal = MTX_BLOCKTOTAL;
-   mutexid_coll= MTX_COLL;
 #endif                                 /* ConcurrentCOMPILER */
 
    CV_INIT(&cond_tc, "init_threads()");
@@ -1028,9 +1026,15 @@ void clean_threads()
 void thread_control(int action)
 {
    static int tc_queue=0;        /* how many threads are waiting for TC */
-   static int action_in_progress=TC_NONE;
+   /*
+    * A collection clears this, and c_exit() publishes TC_KILLALLTHREADS.
+    * Both stores take MTX_COND_TC.  The variable is atomic because
+    * TC_ANSWERCALL reads it without that mutex, after it has seen
+    * thread_call.
+    */
+   static AtomicInt action_in_progress=TC_NONE;
    // Keep track of the thread who is in control
-   static word master_thread = 0;
+   static AtomicWord master_thread = 0;  /* read unlocked on entry */
 #ifdef GC_TIMING_TUNING
 /* timing for GC, for testing and performance tuning */
    struct timeval    tp;
@@ -1050,8 +1054,13 @@ void thread_control(int action)
    switch (action){
       case TC_ANSWERCALL:{
          /*---------------------------------*/
-         ATOMIC_FENCE_ACQUIRE();        /* pairs with the store of thread_call */
-         switch (action_in_progress){
+         /*
+          * Acquire the store of thread_call, so the action published
+          * before it is visible.  A load rather than a fence, which
+          * ThreadSanitizer would not see.
+          */
+         (void) ATOMIC_LOAD_ACQUIRE(thread_call);
+         switch (ATOMIC_LOAD_ACQUIRE(action_in_progress)){
             case TC_KILLALLTHREADS:{
                #ifdef CoClean
                coclean(BlkD(k_current, Coexpr));
@@ -1081,10 +1090,16 @@ void thread_control(int action)
                 * and atomically unlock mutex while it waits.
                 */
 
-               MUTEX_LOCKID(MTX_COND_TC);
+               /*
+                * Count out before taking MTX_COND_TC, not inside it: the
+                * thread ending the collection holds MTX_NARTHREADS when it
+                * takes MTX_COND_TC.  If the collection ends in between,
+                * thread_call is already clear and there is no wait.
+                */
                MUTEX_LOCKID(MTX_NARTHREADS);
                NARthreads--;
                MUTEX_UNLOCKID(MTX_NARTHREADS);
+               MUTEX_LOCKID(MTX_COND_TC);
                CV_WAIT_ON_EXPR(ATOMIC_LOAD(thread_call), &cond_tc, MTX_COND_TC);
                MUTEX_UNLOCKID(MTX_COND_TC);
 
@@ -1135,10 +1150,25 @@ void thread_control(int action)
           * reset (post) sem_gc to be ready for the next GC round
           */
 
-         ATOMIC_STORE(thread_call, 0);
+         /*
+          * Clear the call under MTX_COND_TC: the threads answering it test
+          * thread_call and wait on cond_tc while holding that mutex, so
+          * clearing it unlocked could fall between a thread's test and its
+          * wait, and the broadcast below would be lost.
+          */
+         MUTEX_LOCKID(MTX_COND_TC);
+         /*
+          * c_exit() may already have published TC_KILLALLTHREADS under
+          * this same mutex.  Clearing the call or the action then would
+          * undo the shutdown.
+          */
+         if (ATOMIC_LOAD(action_in_progress) != TC_KILLALLTHREADS) {
+            ATOMIC_STORE_SC(thread_call, 0);
+            ATOMIC_STORE(action_in_progress, TC_NONE);
+            }
+         MUTEX_UNLOCKID(MTX_COND_TC);
          NARthreads++;
          sem_post(sem_tcp);
-         action_in_progress = TC_NONE;
          MUTEX_UNLOCKID(MTX_NARTHREADS);
          MUTEX_UNLOCKID(MTX_THREADCONTROL);
 
@@ -1159,7 +1189,7 @@ void thread_control(int action)
         first_thread=0;
 #endif
 
-         master_thread = 0;
+         ATOMIC_STORE(master_thread, 0);
 
          /* broadcast a wakeup call to all threads waiting on cond_tc */
          pthread_cond_broadcast(&cond_tc);
@@ -1175,7 +1205,7 @@ void thread_control(int action)
          * a segfault in the middle of an ongoing GC.
          * If this is the case, we can safely return.
          */
-        if (master_thread == curtstate->c->id)
+        if (ATOMIC_LOAD(master_thread) == curtstate->c->id)
           return;
 
          /*
@@ -1226,11 +1256,15 @@ void thread_control(int action)
          MUTEX_LOCKID(MTX_THREADCONTROL);
 
          TCthread = pthread_self();
-         ATOMIC_STORE(thread_call, 1);
-         /* NARthreads should reach and stay at zero during TC*/
+         ATOMIC_STORE_SC(thread_call, 1);
+         /*
+          * NARthreads should reach and stay at zero during TC.  The load
+          * pairs with DEC_NARTHREADS_BASIC: once a thread's decrement is
+          * seen, everything it wrote before counting out is visible.
+          */
          while (1) {
             MUTEX_LOCKID(MTX_NARTHREADS);
-            if (ATOMIC_LOAD(NARthreads) <= 0) break;  /* unlock MTX_NARTHREADS after GC*/
+            if (ATOMIC_LOAD_SC(NARthreads) <= 0) break;  /* unlock MTX_NARTHREADS after GC*/
             MUTEX_UNLOCKID(MTX_NARTHREADS);
             usleep(50);
             }
@@ -1255,25 +1289,28 @@ void thread_control(int action)
           * Now it is safe to proceed with TC with only the current thread running
           */
          tc_queue--;
-         master_thread = curtstate->c->id;
+         ATOMIC_STORE(master_thread, curtstate->c->id);
          return;
          }
       case TC_KILLALLTHREADS:{
          /*
           * Wait until only this thread is running.  Publish the action
-          * before the call: a thread that sees the call reads the action
-          * after an acquire fence in TC_ANSWERCALL, and must not see
+          * before the call, under the mutex a collection holds while it
+          * clears both.  A thread that sees the call reads the action
+          * after an acquire load in TC_ANSWERCALL, and must not see
           * TC_NONE and park as if for a collection.
           */
-         action_in_progress = action;
-         ATOMIC_STORE_RELEASE(thread_call, 1);
+         MUTEX_LOCKID(MTX_COND_TC);
+         ATOMIC_STORE_RELEASE(action_in_progress, action);
+         ATOMIC_STORE_SC(thread_call, 1);
+         MUTEX_UNLOCKID(MTX_COND_TC);
          while (1) {
-            if (ATOMIC_LOAD(NARthreads) <= 1) break;
+            if (ATOMIC_LOAD_SC(NARthreads) <= 1) break;
             usleep(50);
             }
 
          /*action_in_progress = TC_NONE;*/
-         master_thread = curtstate->c->id;
+         ATOMIC_STORE(master_thread, curtstate->c->id);
          return;
          }
       default:{
@@ -1324,6 +1361,30 @@ void howmanyblock()
 }
 #endif                                /* ConcurrentCOMPILER */
 #endif                                /* DEBUG */
+
+#ifdef HAVE_C11_ATOMICS
+/*
+ * Count the calling thread back in without locking if no collection has
+ * been requested.  Returns 0 if the caller must take the locked path.
+ *
+ * The collector stores thread_call and then reads NARthreads; this
+ * increments NARthreads and then reads thread_call.  With all four
+ * operations sequentially consistent, at least one side sees the other:
+ * either the collector counts this thread and waits for it to reach a
+ * safepoint and answer the call, or this thread sees the call, takes its
+ * increment back, and waits out the collection on MTX_THREADCONTROL.
+ */
+int narthreads_inc_fast(void)
+{
+   if (ATOMIC_LOAD_SC(thread_call))
+      return 0;
+   ATOMIC_ADD_SC(NARthreads, 1);
+   if (!ATOMIC_LOAD_SC(thread_call))
+      return 1;
+   ATOMIC_ADD_SC(NARthreads, -1);
+   return 0;
+}
+#endif                                  /* HAVE_C11_ATOMICS */
 
 void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp)
 {
@@ -1510,7 +1571,7 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
       blksiz = MinAbrSize;
 
    if((rp = reuse_region(strsiz, Strings)) != 0){
-      ts->Curstring =  curstring = rp;
+      ts->Curstring = rp;
       }
    else if ((rp = newregion(strsiz, strsiz)) != 0) {
       MUTEX_LOCKID_CONTROLLED(MTX_STRHEAP);
@@ -1546,7 +1607,7 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
       syserr(" init_threadheap: insufficient memory for string region");
 
    if((rp = reuse_region(blksiz, Blocks)) != 0) {
-      ts->Curblock =  curblock = rp;
+      ts->Curblock = rp;
       }
    else if ((rp = newregion(blksiz, blksiz)) != 0) {
       MUTEX_LOCKID_CONTROLLED(MTX_BLKHEAP);

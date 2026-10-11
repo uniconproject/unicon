@@ -79,7 +79,7 @@ extern int num_cpu_cores;
 
 #ifdef Concurrent
 extern pthread_mutex_t **mutexes;
-extern word nmutexes;
+extern AtomicWord nmutexes;
 extern word maxmutexes;
 
 extern pthread_mutexattr_t rmtx_attr;
@@ -106,7 +106,6 @@ extern struct region *Public_blockregion;
 
 extern word mutexid_stringtotal;
 extern word mutexid_blocktotal;
-extern word mutexid_coll;
 extern AtomicWord list_ser;
 extern AtomicWord intern_list_ser;
 /*
@@ -137,7 +136,6 @@ extern int improbable;
 extern char typech[];
 extern word oldsum;
 extern struct descrip csetdesc;         /* cset descriptor */
-extern struct descrip eventdesc;        /* event descriptor */
 extern struct b_iproc mt_llist;
 extern struct descrip rzerodesc;        /* real descriptor */
 extern struct b_real realzero;          /* real zero block */

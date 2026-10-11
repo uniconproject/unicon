@@ -200,7 +200,6 @@ struct region *Public_blockregion;
 
 word mutexid_stringtotal;
 word mutexid_blocktotal;
-word mutexid_coll;
 #else                                   /* ConcurrentCOMPILER */
 struct progstate *curpstate;
 struct progstate rootpstate;
@@ -768,8 +767,8 @@ void init_progstate(struct progstate *pstate);
     * If this is one-time program initialization and no concurrent threads
     * are possible, I am not sure how these mutexes can be needed.
     */
-MUTEX_LOCKID(MTX_PUBLICSTRHEAP);
-MUTEX_LOCKID(MTX_PUBLICBLKHEAP);
+MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
+MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
    Public_stringregion = NULL;
    Public_blockregion = NULL;
 MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
@@ -1664,7 +1663,7 @@ static word unicon_getrandom(void)
  *   &random := map("sSmMhH", "Hh:Mm:Ss", &clock) +
  *    map("YyXxMmDd", "YyXx/Mm/Dd", &date) + &time + 1009 * ncalls
  */
-   static int ncalls = 0;
+   static AtomicInt ncalls = 0;
    word krandom;
    time_t t;
    struct tm *ct;
@@ -1700,8 +1699,7 @@ static word unicon_getrandom(void)
    /* + map &time */
 
 #ifndef HAVE_KEYWORD__THREAD
-   ncalls++;
-   krandom += millisec() + 1009 * ncalls;
+   krandom += millisec() + 1009 * (ATOMIC_ADD(ncalls, 1) + 1);
 #else
    krandom += millisec() + 1009 * (int) curtstate;
 #endif

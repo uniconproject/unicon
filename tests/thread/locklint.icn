@@ -1,0 +1,499 @@
+#
+# locklint.icn -- static checks for the locking rules of the concurrent
+# runtime.
+#
+# The runtime stops the world for a garbage collection by waiting until
+# every thread is counted out (NARthreads).  These rules follow from that,
+# and each one has been broken by a real bug:
+#
+#  1. A mutex that is taken CONTROLLED anywhere (MUTEX_LOCKID_CONTROLLED)
+#     is taken CONTROLLED everywhere.  A thread that waited for a CONTROLLED
+#     lock can hold it while it waits out a collection; a thread that takes
+#     the same mutex plainly blocks while still counted in, and the
+#     collector waits for it forever.
+#
+#  2. A count-out window (DEC_NARTHREADS ... INC_NARTHREADS_CONTROLLED)
+#     does not count out again, does not call a function that counts out
+#     itself, and is not left by return, fail, or a run-time error (or a
+#     goto to a label that does not count back in) before the thread
+#     counts back in.  Either way the running count goes wrong and a
+#     collection can start while a thread is still running.  Nor does the
+#     window touch a heap block (BlkD, BlkLoc, ...): a collection may be
+#     moving it.
+#
+#  3. A pointer to a heap block that is not tended is not used after the
+#     thread may have been counted out (a count-out window, a CONTROLLED
+#     lock, or a condition wait) unless it is reloaded first: a collection
+#     may have moved the block in the meantime.
+#
+# The checks read the C text of src/runtime/*.r and *.ri line by line,
+# with comments and string contents removed.  They are heuristics, not a
+# parser: a finding that has been reviewed and is safe goes in the allow
+# list below, with the reason.
+#
+# Usage: locklint [dir]       (dir defaults to ../../src/runtime)
+#
+# Prints each finding that is not allowed and "locklint: ok" if there are
+# none.  Exits with status 1 if there are findings.
+#
+
+global idc              # identifier characters
+global findings         # list of finding messages
+global allowed          # table: key -> reason
+global used_allow       # set of allow keys that matched
+global rtl_names        # names of RTL functions, operators, and keywords
+
+procedure main(args)
+   local dir, files, f, code, fn, k
+
+   idc := &letters ++ &digits ++ '_'
+   findings := []
+   used_allow := set()
+   rtl_names := set()
+   allowed := allow_list()
+
+   dir := args[1] | "../../src/runtime"
+   files := source_files(dir) | stop("locklint: cannot read directory ", dir)
+   if *files = 0 then stop("locklint: no runtime sources in ", dir)
+
+   code := table()      # file -> list of code lines
+   fn := table()        # file -> list of function names, one per line
+   every f := !files do {
+      code[f] := strip_comments(read_lines(dir || "/" || f))
+      fn[f] := function_names(code[f])
+      }
+
+   check_lock_styles(files, code, fn)
+   check_countout_windows(files, code, fn)
+   check_stale_pointers(files, code, fn)
+
+   every k := key(allowed) do
+      if not member(used_allow, k) then
+         put(findings, "allow list entry no longer needed: " || k)
+
+   if *findings = 0 then
+      write("locklint: ok")
+   else {
+      every write(!findings)
+      write("locklint: ", *findings, " finding(s)")
+      exit(1)
+      }
+end
+
+#
+# Reviewed findings that are safe, keyed as each finding prints its key
+# in brackets ("rule file function detail"), with the reason:
+#
+#    t["stale rsys.r getstrg fbp"] := "fbp is reloaded after counting in"
+#
+# An entry that no longer matches anything is reported, so the list
+# cannot go stale.  It is empty: every finding so far was a real bug.
+#
+procedure allow_list()
+   local t
+   t := table()
+   return t
+end
+
+#
+# Report a finding unless it is allowed.
+#
+procedure report(rule, file, func, detail, msg)
+   local k
+   k := rule || " " || file || " " || func || " " || detail
+   if member(allowed, k) then {
+      insert(used_allow, k)
+      fail
+      }
+   put(findings, msg || "  [" || k || "]")
+end
+
+# ---------------------------------------------------------------------
+# Rule 1: one lock style per mutex.
+# ---------------------------------------------------------------------
+
+procedure check_lock_styles(files, code, fn)
+   local plain, controlled, f, i, lk, mtx, kind, m, site, first
+
+   plain := table()          # mutex -> list of [file, line, func]
+   controlled := table()
+   every f := !files do
+      every i := 1 to *code[f] do
+         every lk := lock_site(code[f][i]) do {
+            kind := lock_kind(lk[1]) | next
+            mtx := lk[2]
+            /plain[mtx] := []
+            /controlled[mtx] := []
+            put(if kind == "plain" then plain[mtx] else controlled[mtx],
+                [f, i, fn[f][i]])
+            }
+
+   every m := key(plain) do
+      if *plain[m] > 0 & *controlled[m] > 0 then {
+         first := controlled[m][1]
+         every site := !plain[m] do
+            report("plain-lock", site[1], site[3], m,
+                   site[1] || ":" || site[2] || ": " || m ||
+                   " is taken plainly in " || site[3] ||
+                   "(), but CONTROLLED in " || first[1] || ":" || first[2])
+         }
+end
+
+#
+# Generate [macro, mutex] for each lock of a static mutex (a literal MTX_
+# name) on line s.
+#
+procedure lock_site(s)
+   local m, a
+   s ? while tab(find("MUTEX_LOCKID")) do {
+      if &pos > 1 & any(idc, s, &pos - 1) then { move(1); next }
+      m := tab(many(idc))
+      tab(many(' \t'))
+      if ="(" then {
+         tab(many(' \t'))
+         a := tab(many(idc)) | ""
+         if match("MTX_", a) then suspend [m, a]
+         }
+      }
+end
+
+procedure lock_kind(macro)
+   case macro of {
+      "MUTEX_LOCKID" | "MUTEX_LOCKID_ALWAYS" | "MUTEX_LOCKID_BASIC":
+         return "plain"
+      "MUTEX_LOCKID_CONTROLLED" | "MUTEX_LOCKID_CONTROLLED_ALWAYS":
+         return "controlled"
+      }
+end
+
+# ---------------------------------------------------------------------
+# Rule 2: count-out windows.
+# ---------------------------------------------------------------------
+
+procedure check_countout_windows(files, code, fn)
+   local countsout, f, i, j, s, c
+
+   # C functions that count the calling thread out somewhere in their
+   # body.  RTL functions are not called by their Unicon names from C
+   # (select() in C is the library's, not Unicon's).
+   countsout := table()
+   every f := !files do
+      every i := 1 to *code[f] do
+         if not is_define(code[f][i]) & counts_out(code[f][i]) &
+            not member(rtl_names, fn[f][i]) then
+            /countsout[fn[f][i]] := f || ":" || i
+
+   every f := !files do
+      every i := 1 to *code[f] do {
+         s := code[f][i]
+         if is_define(s) | not counts_out(s) | fn[f][i] == "" then next
+         # a window opened and closed on the same line
+         if s ? (tab(find("DEC_NARTHREADS")) & find("INC_NARTHREADS")) then
+            next
+         every j := i + 1 to *code[f] do {
+            s := code[f][j]
+            if fn[f][j] ~== fn[f][i] then break
+            if find("INC_NARTHREADS", s) | has_word(s, "pthread_exit") then
+               break
+            if counts_out(s) then
+               report("nested", f, fn[f][i], "-",
+                      f || ":" || j || ": counts out again inside the " ||
+                      "count-out window opened at line " || i ||
+                      " in " || fn[f][i] || "()")
+            every c := calls(s) do
+               if c ~== fn[f][i] & \countsout[c] then
+                  report("calls", f, fn[f][i], c,
+                         f || ":" || j || ": " || c ||
+                         "() counts out itself (" || countsout[c] ||
+                         "), but is called inside the count-out window " ||
+                         "opened at line " || i || " in " || fn[f][i] || "()")
+            if leaves(s) & not goto_counts_in(s, code[f], fn[f], j) then
+               report("leaves", f, fn[f][i], "-",
+                      f || ":" || j || ": leaves the count-out window " ||
+                      "opened at line " || i || " in " || fn[f][i] ||
+                      "() without counting back in")
+            if touches_heap(s) then
+               report("heap", f, fn[f][i], "-",
+                      f || ":" || j || ": touches a heap block inside the " ||
+                      "count-out window opened at line " || i || " in " ||
+                      fn[f][i] || "()")
+            }
+         }
+end
+
+#
+# Succeed if line j of code is "goto L" and label L (in the same function)
+# counts the thread back in.
+#
+procedure goto_counts_in(s, code, fn, j)
+   local lab, k, m
+   if not (s ? (tab(find("goto")) & move(4) & tab(many(' \t')) &
+                lab := tab(many(idc)))) then
+      fail
+   every k := 1 to *code do {
+      if fn[k] ~== fn[j] then next
+      if code[k] ? ((tab(many(' \t')) | &null) & =lab &
+                    (tab(many(' \t')) | &null) & =":") then {
+         every m := k to k + 2 do
+            if find("INC_NARTHREADS", \code[m]) then return
+         fail
+         }
+      }
+end
+
+procedure touches_heap(s)
+   return has_word(s, "BlkD" | "BlkLoc" | "Blk" | "BlkMask" | "BlkType")
+end
+
+procedure counts_out(s)
+   return has_word(s, "DEC_NARTHREADS" | "DEC_NARTHREADS_ALWAYS" |
+                      "DEC_NARTHREADS_BASIC")
+end
+
+procedure leaves(s)
+   return has_word(s, "return" | "fail" | "Fail" | "Return" | "goto" |
+                      "runerr" | "irunerr" | "errorfail" | "ReturnErrNum")
+end
+
+# ---------------------------------------------------------------------
+# Rule 3: untended block pointers across a wait.
+# ---------------------------------------------------------------------
+
+procedure check_stale_pointers(files, code, fn)
+   local f, i, j, v, s, func, assigned, waited, done
+
+   every f := !files do
+      every i := 1 to *code[f] do {
+         func := fn[f][i]
+         if func == "" | is_define(code[f][i]) then next
+         every v := block_pointers(code[f][i]) do {
+            assigned := waited := done := &null
+            # a parameter, or a declaration with an initializer, has a value
+            if header_name(code[f][i]) |
+               first_is_assignment(code[f][i], v) then
+               assigned := 1
+            every j := i + 1 to *code[f] do {
+               s := code[f][j]
+               if fn[f][j] ~== func then break
+               # declared again: a different variable in another block
+               if v == block_pointers(s) then break
+               if has_word(s, v) then {
+                  if first_is_assignment(s, v) then {
+                     assigned := 1
+                     waited := &null
+                     }
+                  else if \waited then {
+                     report("stale", f, func, v,
+                            f || ":" || j || ": " || v || " in " || func ||
+                            "() may point to a moved block: it was set " ||
+                            "before the thread could be counted out " ||
+                            "(line " || waited || ")")
+                     break
+                     }
+                  else assigned := 1   # a parameter or an earlier assignment
+                  }
+               if \assigned & /waited & may_wait(s) then
+                  waited := j
+               }
+            }
+         }
+end
+
+#
+# Generate the names declared on line s as untended pointers to heap
+# blocks (blocks the collector can move).
+#
+procedure block_pointers(s)
+   local t, name
+   static movable
+   initial movable := set(["list", "lelem", "set", "selem", "table",
+                           "telem", "tvtbl", "record", "file", "slots",
+                           "real", "cset", "bignum", "external", "intarray",
+                           "realarray", "tvsubs", "refresh", "cons",
+                           "pattern", "pelem"])
+   if find("tended", s) then fail
+   s ? while tab(find("struct b_")) do {
+      move(9)
+      t := tab(many(idc))
+      if not member(movable, t) then next
+      while {
+         tab(many(' \t'))
+         ="*"
+         } do {
+         tab(many(' \t*'))
+         name := tab(many(idc)) | break
+         suspend name
+         tab(many(' \t'))
+         tab(upto(',;)=') | 0)
+         if not ="," then break
+         }
+      }
+end
+
+#
+# Succeed if line s can leave the thread counted out or waiting with
+# the thread counted out, so that a collection may run.
+#
+procedure may_wait(s)
+   return find("MUTEX_LOCKID_CONTROLLED" | "MUTEX_LOCKBLK_CONTROLLED" |
+               "INC_NARTHREADS_CONTROLLED" | "CV_WAIT" |
+               "pthread_cond_wait" | "pthread_cond_timedwait", s) |
+          counts_out(s)
+end
+
+#
+# Succeed if the first occurrence of v on line s is assigned to (v = ...,
+# but not v == ...).
+#
+procedure first_is_assignment(s, v)
+   s ? {
+      while tab(find(v)) do {
+         if (&pos = 1 | not any(idc, s, &pos - 1)) &
+            not any(idc, s, &pos + *v) then {
+            move(*v)
+            tab(many(' \t'))
+            return ="=" & not match("=")
+            }
+         move(1)
+         }
+      }
+end
+
+# ---------------------------------------------------------------------
+# Reading the sources.
+# ---------------------------------------------------------------------
+
+procedure source_files(dir)
+   local d, f, L
+   d := open(dir) | fail
+   L := []
+   while f := read(d) do
+      if f[-2:0] == ".r" | f[-3:0] == ".ri" then put(L, f)
+   close(d)
+   return sort(L)
+end
+
+procedure read_lines(path)
+   local f, L
+   f := open(path) | stop("locklint: cannot open ", path)
+   L := []
+   while put(L, read(f))
+   close(f)
+   return L
+end
+
+#
+# Remove comments and the contents of string and character literals,
+# keeping one entry per line.
+#
+procedure strip_comments(lines)
+   local out, incomment, s, r, q, c
+   out := []
+   every s := !lines do {
+      r := ""
+      s ? while not pos(0) do {
+         if \incomment then {
+            if tab(find("*/")) then {
+               move(2)
+               incomment := &null
+               }
+            else tab(0)
+            next
+            }
+         r ||:= tab(upto('/"\'') | 0)
+         if pos(0) then break
+         if ="/*" then incomment := 1
+         else if ="//" then tab(0)
+         else if q := tab(any('"\'')) then {
+            while c := move(1) do
+               if c == "\\" then move(1)
+               else if c == q then break
+            r ||:= q || q
+            }
+         else r ||:= move(1)
+         }
+      put(out, r)
+      }
+   return out
+end
+
+#
+# Name the function each line belongs to: "" outside functions.  Handles C
+# function definitions and RTL function, operator, and keyword
+# definitions.
+#
+procedure function_names(code)
+   local names, cur, s, n
+   names := []
+   cur := ""
+   every s := !code do {
+      if n := header_name(s) then cur := n
+      put(names, cur)
+      if s == "end" | match("}", s) then cur := ""
+      }
+   return names
+end
+
+procedure header_name(s)
+   local kw, n
+   if s == "" | any(' \t#{}', s) then fail
+   # RTL: function{...} name(...), operator{...} op name(...), keyword{...} name
+   if s ? (kw := (="function" | ="operator" | ="keyword") & any('{ \t')) then
+      s ? {
+         tab(upto('}') + 1) | fail
+         tab(many(' \t'))
+         if kw == "operator" then {
+            tab(upto(' \t'))
+            tab(many(' \t'))
+            }
+         n := tab(many(idc)) | fail
+         insert(rtl_names, n)
+         return n
+         }
+   # C: a definition starts at column 0 and has a parameter list
+   if not any(&letters ++ '_', s) | not find("(", s) | trim(s)[-1] == ";" then
+      fail
+   if find("=", s[1:upto('(', s)]) then fail
+   s := trim(s[1:upto('(', s)], ' \t')
+   s ? {
+      while tab(upto(idc)) & n := tab(many(idc))
+      }
+   if member(set(["if", "while", "for", "switch", "return", "else", "do",
+                  "case", "sizeof"]), \n) then fail
+   return \n
+end
+
+# ---------------------------------------------------------------------
+# Small helpers.
+# ---------------------------------------------------------------------
+
+procedure is_define(s)
+   return s ? ((tab(many(' \t')) | &null) & ="#")
+end
+
+#
+# Succeed if word w occurs in s as a whole identifier.
+#
+procedure has_word(s, w)
+   s ? while tab(find(w)) do {
+      if (&pos = 1 | not any(idc, s, &pos - 1)) &
+         not any(idc, s, &pos + *w) then return
+      move(1)
+      }
+end
+
+#
+# Generate the names of the functions called on line s.
+#
+procedure calls(s)
+   local id
+   s ? while tab(upto(&letters ++ '_')) do {
+      if &pos > 1 & any(idc, s, &pos - 1) then {
+         tab(many(idc))
+         next
+         }
+      id := tab(many(idc))
+      tab(many(' \t'))
+      if match("(") then suspend id
+      }
+end

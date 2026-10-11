@@ -183,15 +183,13 @@ int activate(dptr val, struct b_coexpr *ncp, dptr result)
          hp->full++;
          while (hp->size>=hp->max){
             CV_SIGNAL_EMPTYBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_FULLBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->full--;
          }
       c_put(&(ncp->outbox), val);
-      MUTEX_UNLOCKBLK(hp, "activate: list mutex");
       CV_SIGNAL_EMPTYBLK(hp);
+      MUTEX_UNLOCKBLK(hp, "activate: list mutex");
       }
 
       /* receive */
@@ -202,21 +200,19 @@ int activate(dptr val, struct b_coexpr *ncp, dptr result)
          hp->empty++;
          while (hp->size==0){
             CV_SIGNAL_FULLBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_EMPTYBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->empty--;
          if (hp->size==0){ /* This shouldn't be the case, but.. */
-            MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
             CV_SIGNAL_FULLBLK(hp);
+            MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
             return A_Resume;
             }
          }
       c_get(hp, result);
-      MUTEX_UNLOCKBLK(hp, "activate: list mutex");
       if (hp->size <= hp->max/50+1)
          CV_SIGNAL_FULLBLK(hp);
+      MUTEX_UNLOCKBLK(hp, "activate: list mutex");
 
       return A_Continue;
       }
@@ -238,15 +234,13 @@ int activate(dptr val, struct b_coexpr *ncp, dptr result)
          /* a dead thread will never drain its inbox */
          while (hp->size>=hp->max && ncp->alive>=0){
             CV_SIGNAL_EMPTYBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_FULLBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->full--;
          }
       c_put(&(ncp->inbox), val);
-      MUTEX_UNLOCKBLK(hp, "activate: list mutex");
       CV_SIGNAL_EMPTYBLK(hp);
+      MUTEX_UNLOCKBLK(hp, "activate: list mutex");
       }
 
       /* receive */
@@ -260,21 +254,19 @@ int activate(dptr val, struct b_coexpr *ncp, dptr result)
           */
          while (hp->size==0 && ncp->alive>=0){
             CV_SIGNAL_FULLBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_EMPTYBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->empty--;
          if (hp->size==0){ /* the producer is gone and left nothing */
-            MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
             CV_SIGNAL_FULLBLK(hp);
+            MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
             return A_Resume;
             }
          }
       c_get(hp, result);
-      MUTEX_UNLOCKBLK(hp, "activate: list mutex");
       if (hp->size <= hp->max/50+1)
          CV_SIGNAL_FULLBLK(hp);
+      MUTEX_UNLOCKBLK(hp, "activate: list mutex");
 
       return A_Continue;
    }
@@ -320,23 +312,17 @@ int msg_receive(dptr dccp, dptr dncp,
 
    switch (timeout){
           case 0  :
-             if (hp->size==0){
-                CV_SIGNAL_FULLBLK(hp);
-                *msg = nulldesc;
-                Fail;
-                }
-
              MUTEX_LOCKBLK_CONTROLLED(hp, "receive(): list mutex");
              if (hp->size==0){
                 *msg = nulldesc;
-                MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
                 CV_SIGNAL_FULLBLK(hp);
+                MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
                 Fail;
                 }
              c_get(hp, msg);
-             MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
              if (hp->size <= hp->max/50+1)
                 CV_SIGNAL_FULLBLK(hp);
+             MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
 
              Return;
              break;
@@ -348,21 +334,19 @@ int msg_receive(dptr dccp, dptr dncp,
                 /* stop waiting once the producing thread is gone */
                 while (hp->size==0 && (!dncp || ncp->alive>=0)){
                    CV_SIGNAL_FULLBLK(hp);
-                   DEC_NARTHREADS;
                    CV_WAIT_EMPTYBLK(hp);
-                   INC_NARTHREADS_CONTROLLED;
                    }
                 hp->empty--;
                 if (hp->size==0){ /* This shouldn't be the case, but.. */
-                   MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
                    CV_SIGNAL_FULLBLK(hp);
+                   MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
                    Fail;
                    }
                 }
              c_get(hp, msg);
-             MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
              if (hp->size <= hp->max/50+1)
                 CV_SIGNAL_FULLBLK(hp);
+             MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
 
              Return;
              break;
@@ -402,20 +386,18 @@ int msg_receive(dptr dccp, dptr dncp,
                 ts.tv_sec += timeout / 1000;
 
                 hp->empty++;
-                DEC_NARTHREADS;
                 CV_TIMEDWAIT_EMPTYBLK(hp, ts);
-                INC_NARTHREADS_CONTROLLED;
                 hp->empty--;
                 if (hp->size==0){
-                   MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
                    CV_SIGNAL_FULLBLK(hp);
+                   MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
                    Fail;
                    }
                 }
              c_get(hp, msg);
-             MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
              if (hp->size <= hp->max/50+1)
                 CV_SIGNAL_FULLBLK(hp);
+             MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
 
              Return;
       }
@@ -443,16 +425,14 @@ int msg_send( dptr dccp, dptr dncp,
          /* a dead thread will never drain its inbox */
          while (hp->size>=hp->max && ncp->alive>=0){
             CV_SIGNAL_EMPTYBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_FULLBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->full--;
          }
       c_put(ncpRQ, msg);
-      MUTEX_UNLOCKBLK(hp, "msg_send(): list mutex");
       CV_SIGNAL_EMPTYBLK(hp);
       MakeInt(hp->size, msg);
+      MUTEX_UNLOCKBLK(hp, "msg_send(): list mutex");
       Return;
       }
 
@@ -460,13 +440,15 @@ int msg_send( dptr dccp, dptr dncp,
    hp = BlkD(ccp->cequeue, List);
    if (hp->size>0){
       tended struct descrip d;
+      word n;
       MUTEX_LOCKBLK_CONTROLLED(hp, "send(): list mutex");
       c_get(hp, &d);
       BlkD(d, Coexpr)->handdata = msg;
+      n = hp->size;
       MUTEX_UNLOCKBLK(hp, "send(): list mutex");
       if (BlkD(d, Coexpr)->alive > 0){
          sem_post(BlkD(d, Coexpr)->semp);
-         MakeInt(hp->size, msg);
+         MakeInt(n, msg);
          Return;
          }
       }
@@ -482,16 +464,14 @@ int msg_send( dptr dccp, dptr dncp,
          hp->full++;
          while (hp->size>=hp->max){
             CV_SIGNAL_EMPTYBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_FULLBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->full--;
          }
    c_put(&(ccp->outbox), msg);
-   MUTEX_UNLOCKBLK(hp, "send(): list mutex");
    CV_SIGNAL_EMPTYBLK(hp);
    MakeInt(hp->size, msg);
+   MUTEX_UNLOCKBLK(hp, "send(): list mutex");
    Return;
 }
 
@@ -541,8 +521,14 @@ operator{0,1} @> snd(x,y)
    else if is:file(y) then inline {
       tended struct descrip t;
       union f f;
-      struct b_file *fblk = BlkD(y, File);
-      word status = fblk->status;
+#if defined(Concurrent) && defined(PosixFns)
+      /*
+       * Keep the file's mutex id, not a pointer to its block: the lock
+       * below may wait through a collection, which can move the block.
+       */
+      word fmtx = BlkD(y, File)->mutexid;
+#endif                                  /* Concurrent && PosixFns */
+      word status = BlkD(y, File)->status;
 
       f.fp = BlkLoc(y)->File.fd.fp;
 
@@ -558,12 +544,12 @@ operator{0,1} @> snd(x,y)
          */
 #ifdef PosixFns
         if (status & Fs_Socket) {
-           MUTEX_LOCKID_CONTROLLED(fblk->mutexid);
+           MUTEX_LOCKID_CONTROLLED(fmtx);
            if (sock_write(f.fd, StrLoc(t), StrLen(t)) < 0) {
-              MUTEX_UNLOCKID(fblk->mutexid);
+              MUTEX_UNLOCKID(fmtx);
               fail;
               }
-           MUTEX_UNLOCKID(fblk->mutexid);
+           MUTEX_UNLOCKID(fmtx);
            return C_integer 1;
         }
 #endif
@@ -575,23 +561,20 @@ operator{0,1} @> snd(x,y)
       runerr(118, y)
 
    body{
+      word n;
 #ifdef Concurrent
-     if (hp->size>=hp->max){
-         CV_SIGNAL_EMPTYBLK(hp);
-         fail;
-         }
-
       MUTEX_LOCKBLK_CONTROLLED(hp, "snd(): list mutex");
       if (hp->size>=hp->max){
-         MUTEX_UNLOCKBLK(hp, "snd(): list mutex");
          CV_SIGNAL_EMPTYBLK(hp);
+         MUTEX_UNLOCKBLK(hp, "snd(): list mutex");
          fail;
          }
 #endif                                  /* Concurrent */
       c_put(&L, &x);
-      MUTEX_UNLOCKBLK(hp, "snd(): list mutex");
       CV_SIGNAL_EMPTYBLK(hp);
-      return C_integer hp->size;
+      n = hp->size;
+      MUTEX_UNLOCKBLK(hp, "snd(): list mutex");
+      return C_integer n;
       }
 end
 
@@ -633,8 +616,14 @@ operator{0,1} @>> sndbk(x,y)
    else if is:file(y) then inline {
       tended struct descrip t;
       union f f;
-      struct b_file *fblk = BlkD(y, File);
-      word status = fblk->status;
+#if defined(Concurrent) && defined(PosixFns)
+      /*
+       * Keep the file's mutex id, not a pointer to its block: the lock
+       * below may wait through a collection, which can move the block.
+       */
+      word fmtx = BlkD(y, File)->mutexid;
+#endif                                  /* Concurrent && PosixFns */
+      word status = BlkD(y, File)->status;
 
       f.fp = BlkLoc(y)->File.fd.fp;
 
@@ -650,16 +639,16 @@ operator{0,1} @>> sndbk(x,y)
          */
 #ifdef PosixFns
         if (status & Fs_Socket) {
-           MUTEX_LOCKID_CONTROLLED(fblk->mutexid);
+           MUTEX_LOCKID_CONTROLLED(fmtx);
            if (sock_write(f.fd, StrLoc(t), StrLen(t)) < 0) {
-              MUTEX_UNLOCKID(fblk->mutexid);
+              MUTEX_UNLOCKID(fmtx);
               fail;
               }
            if (sock_write(f.fd, "\n", 1) < 0){
-              MUTEX_UNLOCKID(fblk->mutexid);
+              MUTEX_UNLOCKID(fmtx);
               fail;
               }
-           MUTEX_UNLOCKID(fblk->mutexid);
+           MUTEX_UNLOCKID(fmtx);
            return C_integer 1;
         }
 #endif
@@ -671,6 +660,7 @@ operator{0,1} @>> sndbk(x,y)
       runerr(106, y)
 
    body{
+      word n;
 #ifdef Concurrent
       /* the receiving thread, if any; a dead one will never drain y */
       struct b_coexpr *peer = (is:coexpr(y) ? BlkD(y, Coexpr) : NULL);
@@ -679,17 +669,16 @@ operator{0,1} @>> sndbk(x,y)
          hp->full++;
          while (hp->size>=hp->max && (!peer || peer->alive>=0)){
             CV_SIGNAL_EMPTYBLK(hp);
-            DEC_NARTHREADS;
             CV_WAIT_FULLBLK(hp);
-            INC_NARTHREADS_CONTROLLED;
             }
          hp->full--;
          }
 #endif                                  /* Concurrent */
       c_put(&L, &x);
-      MUTEX_UNLOCKBLK(hp, "send(): list mutex");
       CV_SIGNAL_EMPTYBLK(hp);
-      return C_integer hp->size;
+      n = hp->size;
+      MUTEX_UNLOCKBLK(hp, "send(): list mutex");
+      return C_integer n;
       }
 end
 
@@ -809,14 +798,17 @@ operator{0,1} <@ rcv(x,y)
             if (i == 0) i = tb;
             else if (tb < i) i = tb;
             Protect(sbuf = alcstr(NULL, i), runerr(0));
-            DEC_NARTHREADS;
+            /*
+             * No counting out: the data is already there, so the read does
+             * not block, and sbuf is in the string region, which a
+             * collection could move while this thread was counted out.
+             */
 #if NT
             status = ReadFile(pt->master_read, sbuf, i, &tb, NULL);
 #else
             tb = read(pt->master_fd, sbuf, i);
             status = (tb != -1);
 #endif
-            INC_NARTHREADS_CONTROLLED;
             if (!status) fail;
             StrLoc(desc) = sbuf;
             StrLen(desc) = tb;
@@ -838,24 +830,18 @@ operator{0,1} <@ rcv(x,y)
       runerr(118, y)
 
    body{
-
-      if (hp->size==0){
-         CV_SIGNAL_FULLBLK(hp);
-         fail;
-         }
-
       MUTEX_LOCKBLK_CONTROLLED(hp, "rcv(): list mutex");
       if (hp->size==0){
-         MUTEX_UNLOCKBLK(hp, "rcv(): list mutex");
          CV_SIGNAL_FULLBLK(hp);
+         MUTEX_UNLOCKBLK(hp, "rcv(): list mutex");
          fail;
          }
       c_get(hp, &d);
-      MUTEX_UNLOCKBLK(hp, "rcv(): list+ mutex");
 #ifdef Concurrent
       if (hp->size <= hp->max/50+1)
          CV_SIGNAL_FULLBLK(hp);
 #endif                                  /* Concurrent */
+      MUTEX_UNLOCKBLK(hp, "rcv(): list+ mutex");
 
       return d;
       }
@@ -968,44 +954,37 @@ operator{0,1} <<@ rcvbk(x,y)
                hp->empty++;
                while (hp->size==0 && (!peer || peer->alive>=0)){
                   CV_SIGNAL_FULLBLK(hp);
-                  DEC_NARTHREADS;
                   CV_WAIT_EMPTYBLK(hp);
-                  INC_NARTHREADS_CONTROLLED;
                   }
                hp->empty--;
 #endif                                  /* Concurrent */
                if (hp->size==0){ /* This shouldn't be the case, but.. */
-                  MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
                   CV_SIGNAL_FULLBLK(hp);
+                  MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
                   fail;
                   }
                }
             c_get(hp, &d);
-            MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
 #ifdef Concurrent
             if (hp->size <= hp->max/50+1)
                   CV_SIGNAL_FULLBLK(hp);
 #endif                                  /* Concurrent */
+            MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
             return d;
 
          case 0  :
-            if (hp->size==0){
-               CV_SIGNAL_FULLBLK(hp);
-               fail;
-               }
-
             MUTEX_LOCKBLK_CONTROLLED(hp, "rcvbk(): list mutex");
             if (hp->size==0){
-               MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
                CV_SIGNAL_FULLBLK(hp);
+               MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
                fail;
                }
             c_get(hp, &d);
-            MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
 #ifdef Concurrent
             if (hp->size <= hp->max/50+1)
                CV_SIGNAL_FULLBLK(hp);
 #endif                                  /* Concurrent */
+            MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
             return d;
 
          default :{
@@ -1033,23 +1012,21 @@ operator{0,1} <<@ rcvbk(x,y)
             if (hp->size==0){
 #ifdef Concurrent
                hp->empty++;
-               DEC_NARTHREADS;
                CV_TIMEDWAIT_EMPTYBLK(hp, ts);
-               INC_NARTHREADS_CONTROLLED;
                hp->empty--;
 #endif                                  /* Concurrent */
                if (hp->size==0){
-                  MUTEX_UNLOCKBLK(hp, "rcv(): list mutex");
                   CV_SIGNAL_FULLBLK(hp);
+                  MUTEX_UNLOCKBLK(hp, "rcv(): list mutex");
                   fail;
                   }
                }
             c_get(hp, &d);
-            MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
 #ifdef Concurrent
             if (hp->size <= hp->max/50+1)
                CV_SIGNAL_FULLBLK(hp);
 #endif                                  /* Concurrent */
+            MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
             return d;
             } /* default */
          } /* switch */

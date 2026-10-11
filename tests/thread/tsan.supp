@@ -1,0 +1,19 @@
+# ThreadSanitizer suppressions for the thread tests, used by the
+# "Thread Sanitizer" job in .github/workflows/build.yml:
+#
+#   TSAN_OPTIONS="suppressions=$PWD/tsan.supp" make -C tests/thread Test
+#
+# Keep this list short.  Every entry is something a test does on purpose,
+# never a race in the runtime; fix those instead.
+#
+# stress.icn is not listed here: its interference threads assign shared
+# globals with no lock, on purpose, so it reports races in the
+# assignment and dereference code that are the program's, not the
+# runtime's.  The job runs it but does not check its log.
+
+# misuse.icn unlocks a mutex it does not hold, and waits on a condition
+# variable without its mutex, to check that unlock() and wait() fail with
+# an error.  The runtime's mutexes are error-checking, so the pthread
+# calls return EPERM, but TSan reports the attempts.
+mutex:unlock_mutexid
+mutex:Zwait

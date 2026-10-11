@@ -1,3 +1,13 @@
 This directory contains tests related to the various extensions to the
 co-expression facilities.  These include MultiProgram (synchronous,
 dynamically loaded) and Threads (true concurrent, based on pthreads).
+
+To look for data races, build with ThreadSanitizer and run the tests
+with the suppressions in tsan.supp (see the Threads job in
+.github/workflows/build.yml, which does this one test at a time):
+
+   ./configure --enable-tsan --enable-debug && make
+   cd tests/thread
+   TSAN_OPTIONS="suppressions=$PWD/tsan.supp report_thread_leaks=0" make Test
+
+stress.icn races on shared globals on purpose and always reports.

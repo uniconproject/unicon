@@ -1,0 +1,14 @@
+# pcoexpr.icn - an unevaluated variable in a pattern refers to the
+#   co-expression's own copy of the variable, even after the creating
+#   procedure has matched the same pattern.
+# Tests: `x` in create
+
+procedure main()
+   local x, p, c
+   x := "a"
+   p := `x`
+   write("main: ", ("a" ?? p) | "no match")
+   c := create { x := "b"; ("b" ?? p) | "no match" }
+   write("co-expression: ", @c)
+   write("main again: ", ("a" ?? p) | "no match")
+end

@@ -930,7 +930,7 @@ int     getch           (void);
 int     getche          (void);
 double  getdbl          (dptr dp);
 int     getimage        (dptr dp1, dptr dp2);
-int     getstrg         (char *buf, int maxi, struct b_file *fbp);
+int     getstrg         (char *buf, int maxi, dptr file);
 void    hgrow           (union block *bp);
 void    hshrink         (union block *bp);
 C_integer iipow         (C_integer n1, C_integer n2, int *over_flowp);
@@ -1157,6 +1157,9 @@ void init_threadstate(struct threadstate *ts);
 struct threadstate *get_tstate();
 #endif                                  /* HAVE_KEYWORD__THREAD */
 void thread_control(int action);
+#ifdef HAVE_C11_ATOMICS
+int narthreads_inc_fast(void);
+#endif                                  /* HAVE_C11_ATOMICS */
 void clean_threads();
 void init_threads();
 int msg_receive( dptr dccp, dptr dncp, dptr msg, int timeout);

@@ -1,0 +1,48 @@
+#
+# Operations on threads that have finished, and on a thread's message
+# queues: signal() and wait() on a finished thread, several wait()s on one
+# thread, and the queue size and limit attributes.
+#
+
+$include "threadh.icn"
+
+procedure main()
+   local T, W, R, n, i
+
+   if not (&features == "concurrent threads") then
+      stop("This program requires concurrent threads.")
+
+   T := thread 1
+   delay(200)
+   write("signal a finished thread: ", (signal(T) & "succeeded") | "failed")
+
+   # of several wait()s on one thread, exactly one joins it
+   n := 0
+   every 1 to 100 do {
+      T := thread delay(5)
+      W := thread ((wait(T) & 1) | 0)
+      n +:= ((wait(T) & 1) | 0) + <<@W
+      }
+   write("two waiters, 100 threads: ", n, " joins")
+   write("wait again: ", (wait(T) & "succeeded") | "failed")
+   write("wait on a co-expression that never ran: ",
+         (wait(create 1) & "succeeded") | "failed")
+
+   # queue sizes are read-only; limits are set pair by pair
+   &error := -1
+   T := thread 1
+   (Attrib(T, INBOX_SIZE, 5) & write("set the inbox size: succeeded")) |
+      write("set the inbox size: error ", &errornumber)
+   &error := 0
+   write("inbox size: ", Attrib(T, INBOX_SIZE))
+   write("set both limits: ", Attrib(T, INBOX_LIMIT, 2, OUTBOX_LIMIT, 7))
+   write("limits: ", Attrib(T, INBOX_LIMIT), " ", Attrib(T, OUTBOX_LIMIT))
+
+   # raising a limit wakes a sender blocked on the old one
+   T := thread { delay(400); n := 0; while 200 <<@ do n +:= 1; n }
+   Attrib(T, INBOX_LIMIT, 2)
+   R := thread { delay(150); Attrib(T, INBOX_LIMIT, 10); "raised" }
+   every i := 1 to 3 do i @>> T
+   write("blocked sender woke after the limit was ", <<@R)
+   write("receiver got ", <<@T, " values")
+end

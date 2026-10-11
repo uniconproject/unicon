@@ -2297,7 +2297,7 @@ function{0,1} read(f)
          else
 #endif                                  /* PseudoPty */
 
-         if ((slen = getstrg(sbuf, MaxReadStr, BlkD(f,File))) == -1) {
+         if ((slen = getstrg(sbuf, MaxReadStr, &f)) == -1) {
 #ifdef PosixFns
             set_syserrortext(errno);
 #endif                                  /* PosixFns */
@@ -2514,9 +2514,13 @@ function{0,1} reads(f,i)
                   else
                      Maxread = MaxReadStr;
                   }
+               {
+               /* load the channel before counting out; f's block may move */
+               struct SSHfile *sshf = BlkD(f,File)->fd.sshf;
                DEC_NARTHREADS;
-               got = ssh_chan_read(BlkD(f,File)->fd.sshf, sbuf, Maxread, 1);
+               got = ssh_chan_read(sshf, sbuf, Maxread, 1);
                INC_NARTHREADS_CONTROLLED;
+               }
                if (got < 0) {
 #ifdef Concurrent
                   MUTEX_UNLOCKID(BlkD(f,File)->mutexid);
@@ -2570,14 +2574,12 @@ function{0,1} reads(f,i)
                   StrLen(s) = 0;
                   StrLoc(s) = "";
                   for (;;) {
-                     DEC_NARTHREADS;
+                     /* u_read() counts out around its blocking reads */
                      if (u_read(&f, MaxReadStr, status, &chunk) == 0) {
-                        INC_NARTHREADS_CONTROLLED;
                         if (StrLen(s) == 0)
                            fail;
                         return s;
                         }
-                     INC_NARTHREADS_CONTROLLED;
                      Protect(reserve(Strings, StrLen(s) + StrLen(chunk)),
                              runerr(0));
                      if (StrLen(s) > 0 &&
@@ -2594,12 +2596,8 @@ function{0,1} reads(f,i)
                         }
                      }
                   }
-               DEC_NARTHREADS;
-               if (u_read(&f, i, status, &s) == 0) {
-                  INC_NARTHREADS_CONTROLLED;
+               if (u_read(&f, i, status, &s) == 0)
                   fail;
-                  }
-               INC_NARTHREADS_CONTROLLED;
                /* reads(f, 0): nonblocking; fail if nothing available */
                if (i == 0 && StrLen(s) == 0)
                   fail;
@@ -2762,13 +2760,12 @@ function{0,1} reads(f,i)
 #ifdef PosixFns
       /* Remember, sockets are always unbuffered */
       if ((status & Fs_Unbuf) && !(status & Fs_BPipe)) {
-         /* We do one read(2) call here to avoid interactions with stdio */
-         DEC_NARTHREADS;
-         if (u_read(&f, i, status, &s) == 0) { /* EOF, or sets errortext */
-            INC_NARTHREADS_CONTROLLED;
+         /*
+          * We do one read(2) call here to avoid interactions with stdio.
+          * u_read() counts out around the read itself.
+          */
+         if (u_read(&f, i, status, &s) == 0)    /* EOF, or sets errortext */
             fail;
-            }
-         INC_NARTHREADS_CONTROLLED;
          return s;
       }
 #endif                                  /* PosixFns */
@@ -4039,8 +4036,16 @@ function {1} name(x[nargs])
 #ifdef Concurrent
                      if (fblk)
                         MUTEX_UNLOCKID(fblk->mutexid);
+                     fblk = NULL;
 #endif                                  /* Concurrent */
                      }
+#else                                   /* nl */
+#ifdef Concurrent
+                  /* writes(): release the file being switched away from */
+                  if (fblk)
+                     MUTEX_UNLOCKID(fblk->mutexid);
+                  fblk = NULL;
+#endif                                  /* Concurrent */
 #endif                                  /* nl */
 
                   /*

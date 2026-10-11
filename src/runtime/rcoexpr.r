@@ -1026,7 +1026,13 @@ void clean_threads()
 void thread_control(int action)
 {
    static int tc_queue=0;        /* how many threads are waiting for TC */
-   static int action_in_progress=TC_NONE;
+   /*
+    * A collection clears this, and c_exit() publishes TC_KILLALLTHREADS.
+    * Both stores take MTX_COND_TC.  The variable is atomic because
+    * TC_ANSWERCALL reads it without that mutex, after it has seen
+    * thread_call.
+    */
+   static AtomicInt action_in_progress=TC_NONE;
    // Keep track of the thread who is in control
    static AtomicWord master_thread = 0;  /* read unlocked on entry */
 #ifdef GC_TIMING_TUNING
@@ -1054,7 +1060,7 @@ void thread_control(int action)
           * ThreadSanitizer would not see.
           */
          (void) ATOMIC_LOAD_ACQUIRE(thread_call);
-         switch (action_in_progress){
+         switch (ATOMIC_LOAD_ACQUIRE(action_in_progress)){
             case TC_KILLALLTHREADS:{
                #ifdef CoClean
                coclean(BlkD(k_current, Coexpr));
@@ -1151,11 +1157,18 @@ void thread_control(int action)
           * wait, and the broadcast below would be lost.
           */
          MUTEX_LOCKID(MTX_COND_TC);
-         ATOMIC_STORE_SC(thread_call, 0);
+         /*
+          * c_exit() may already have published TC_KILLALLTHREADS under
+          * this same mutex.  Clearing the call or the action then would
+          * undo the shutdown.
+          */
+         if (ATOMIC_LOAD(action_in_progress) != TC_KILLALLTHREADS) {
+            ATOMIC_STORE_SC(thread_call, 0);
+            ATOMIC_STORE(action_in_progress, TC_NONE);
+            }
          MUTEX_UNLOCKID(MTX_COND_TC);
          NARthreads++;
          sem_post(sem_tcp);
-         action_in_progress = TC_NONE;
          MUTEX_UNLOCKID(MTX_NARTHREADS);
          MUTEX_UNLOCKID(MTX_THREADCONTROL);
 
@@ -1282,12 +1295,15 @@ void thread_control(int action)
       case TC_KILLALLTHREADS:{
          /*
           * Wait until only this thread is running.  Publish the action
-          * before the call: a thread that sees the call reads the action
+          * before the call, under the mutex a collection holds while it
+          * clears both.  A thread that sees the call reads the action
           * after an acquire load in TC_ANSWERCALL, and must not see
           * TC_NONE and park as if for a collection.
           */
-         action_in_progress = action;
+         MUTEX_LOCKID(MTX_COND_TC);
+         ATOMIC_STORE_RELEASE(action_in_progress, action);
          ATOMIC_STORE_SC(thread_call, 1);
+         MUTEX_UNLOCKID(MTX_COND_TC);
          while (1) {
             if (ATOMIC_LOAD_SC(NARthreads) <= 1) break;
             usleep(50);

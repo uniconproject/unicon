@@ -858,8 +858,8 @@ if ! test "x$graphics" = "xno"; then
     GRAPHICS=graphics
 
     if test "ms$unicon_os" != "mswindows" ; then
-       XL="-lXpm \$(XLIBS)"
-       XPM=xpm
+       CHECK_XPM()
+       XL="\$(XLIBS)"
     fi
 
     if test "$cv_libftgl" = "yes"; then
@@ -872,14 +872,14 @@ if ! test "x$graphics" = "xno"; then
      *linux*)
         ;;
      *solaris*)
-        XLIBS="-L/usr/X11R6/lib/64 -R/usr/X11R6/lib/64 -lXpm -lX11"
+        XLIBS="-L/usr/X11R6/lib/64 -R/usr/X11R6/lib/64 -lX11"
         ;;
      *aix*)
         ;;
      *bsd*)
         ;;
      *macos*)
-        XLIBS="-L/opt/X11/lib -L/usr/X11R6/lib -L/usr/local/lib -lXpm -lX11"
+        XLIBS="-L/opt/X11/lib -L/usr/X11R6/lib -L/usr/local/lib -lX11"
 	;;
      *windows*)
         ;;
@@ -899,7 +899,6 @@ fi
   AC_SUBST(XLIBS)
   AC_SUBST(GRAPHICS)
   AC_SUBST(XL)
-  AC_SUBST(XPM)
   AC_SUBST(DRAWSTRING)
   AC_SUBST(COMMONDRAWSTRING)
   AC_SUBST(CMNT)
@@ -1087,6 +1086,9 @@ if test "x$graphics" = "xyes" || test "x$graphics" = "xon" ; then
   if test "x$cv_libpng"  = "xyes" ; then gtmp="$gtmp +PNG " ; else gtmp="$gtmp -PNG " ; fi
 
   if test "x$cv_libXft"   = "xyes" ; then gtmp="$gtmp +XFT " ; else gtmp="$gtmp -XFT " ; fi
+  if test "ms$unicon_os" != "mswindows" ; then
+    if test "x$cv_libXpm" = "xyes" ; then gtmp="$gtmp +XPM " ; else gtmp="$gtmp -XPM " ; fi
+  fi
   if test "x$cv_libfreetype"   = "xyes" ; then
     gtmp="$gtmp+Freetype " ; else gtmp="$gtmp-FreeType " ; fi
 else

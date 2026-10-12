@@ -28,11 +28,11 @@ Source0: %{tarball}
 %if 0%{?suse_version}
 BuildRequires: libjpeg8-devel, libpng16-devel, libX11-devel
 BuildRequires: Mesa-libGL-devel, glu-devel
-BuildRequires: libXft-devel, freetype2-devel
+BuildRequires: libXft-devel, libXpm-devel, freetype2-devel
 %else
 BuildRequires: libjpeg-turbo-devel, libpng-devel, libX11-devel
 BuildRequires: mesa-libGL-devel, mesa-libGLU-devel
-BuildRequires: libXft-devel, freetype-devel
+BuildRequires: libXft-devel, libXpm-devel, freetype-devel
 %endif
 %endif
 %if 0%{?suse_version}
@@ -115,12 +115,12 @@ Summary: Unicon virtual machine
 Requires: libopenssl3, unixODBC
 Requires: libjpeg8, libpng16-16, libX11-6
 Requires: Mesa-libGL1, libGLU1
-Requires: libXft2, libfreetype6
+Requires: libXft2, libXpm4, libfreetype6
 %else
 Requires: openssl, unixODBC
 Requires: libjpeg-turbo, libpng, libX11
 Requires: mesa-libGL, mesa-libGLU
-Requires: libXft, freetype
+Requires: libXft, libXpm, freetype
 %endif
 Provides: unicon-vm
 Conflicts: unicon-runtime-nographics
@@ -169,6 +169,11 @@ patched binaries.
 %package compiler
 Summary: Unicon compiler
 Requires: (unicon-runtime-nographics or unicon-runtime)
+%if %{with_graphics}
+# iconc includes <X11/xpm.h> and links -lXpm. The runtime package
+# supplies the shared library, not the header or the linker name.
+Requires: libXpm-devel
+%endif
 Obsoletes: unicon < 13.3~prerelease-1
 
 %description compiler

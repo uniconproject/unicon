@@ -20,7 +20,8 @@ Build-Depends:
 	libvorbis-dev,
 	unixodbc-dev,
 	libfreetype6-dev,
-	libxft-dev
+	libxft-dev,
+	libxpm-dev
 Standards-Version: 3.9.8
 Homepage: http://www.unicon.org
 
@@ -148,7 +149,7 @@ Description: Unicon translator
 Package: unicon-compiler
 Architecture: any
 Build-Profiles: <!pkg.unicon.nographics>
-Depends: unicon-runtime-nographics | unicon-runtime, ${misc:Depends}, ${shlibs:Depends}
+Depends: unicon-runtime-nographics | unicon-runtime, libxpm-dev, ${misc:Depends}, ${shlibs:Depends}
 Replaces: unicon (<< 13.3~prerelease-1)
 Breaks: unicon (<< 13.3~prerelease-1)
 Description: Unicon compiler
@@ -156,8 +157,10 @@ Description: Unicon compiler
  selected by configure. Also ships rt/, the library and headers used
  when compiling.
  .
- Depends on either virtual machine. unicon-runtime-nographics is
- preferred when neither is installed.
+ Depends on either virtual machine and on libxpm-dev. iconc's
+ generated code includes <X11/xpm.h> and links -lXpm.
+ unicon-runtime-nographics is preferred when neither virtual machine
+ is installed.
 
 Package: unicon-patchstr
 Architecture: any

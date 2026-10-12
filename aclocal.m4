@@ -72,9 +72,17 @@ then
 	save_flags([-I$2/include], [-L$2/lib], [])
 	cv_libthislib_h=yes
 	AC_CHECK_HEADERS([$3], [], [cv_libthislib_h=no], [])
-	if test x$cv_libthislib_h == xno ;  then
+	if test x$cv_libthislib_h = xno ;  then
 	   restore_flags()
 	   save_flags([-I$2], [-L$2], [])
+	   # dash rejects == in test and skips this branch, so a header that
+	   # lives directly under DIR is never tried. Also drop the cached
+	   # miss for $2/include; the check below must compile with -I$2.
+	   for ac_header in $3
+	   do
+	     as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
+	     as_fn_unset $as_ac_Header
+	   done
 	fi
 else
 	save_flags([], [], [])
@@ -529,6 +537,37 @@ AC_DEFUN([CHECK_XFT],
 do_arg_with([Xft])
 if test "x$with_Xft" != "xno"; then
   do_lib_check([Xft], [${Xft_HOME}], [X11/Xft/Xft.h], [XftFontOpenPattern], [HAVE_LIBXFT], [C])
+fi
+])
+
+# libXpm is usually installed next to libX11, so look where CHECK_XLIB
+# found that unless --with-xpm=DIR says otherwise.
+AC_DEFUN([CHECK_XPM],
+[
+do_arg_with([xpm])
+if test "x$with_xpm" != "xno"; then
+  if test "x$xpm_HOME" = "x" ; then
+    xpm_HOME=$XLIB_HOME
+  fi
+  do_lib_check([Xpm], [${xpm_HOME}], [X11/xpm.h], [XpmReadFileToPixmap], [HAVE_LIBXPM], [C])
+  if test "x$cv_libXpm" = "xyes" ; then
+    # iconc compiles user programs that include <X11/xpm.h> and links -lXpm.
+    # Those compiles do not see the -I/-L saved for this build. When the
+    # header is under xpm_HOME, pass that prefix through. A hit on the
+    # compiler default path leaves xpm_HOME pointing at a prefix that does
+    # not contain the header, and iconc keeps its default search path.
+    if test -f "${xpm_HOME}/include/X11/xpm.h" ; then
+      AC_DEFINE_UNQUOTED([ICONC_XPM_FLAGS],
+        ["-I${xpm_HOME}/include -L${xpm_HOME}/lib"],
+        [Include and library paths so iconc can find libXpm.])
+    elif test -f "${xpm_HOME}/X11/xpm.h" ; then
+      AC_DEFINE_UNQUOTED([ICONC_XPM_FLAGS],
+        ["-I${xpm_HOME} -L${xpm_HOME}"],
+        [Include and library paths so iconc can find libXpm.])
+    fi
+  else
+    AC_MSG_WARN([libXpm not found: building without XPM image support])
+  fi
 fi
 ])
 

@@ -1,0 +1,44 @@
+#
+# tojson.icn -- tojson() (plain JSON, no Unicon metadata) for each
+#  structure type, and that its output parses back.
+#
+
+import json
+
+record R(x, y)
+
+class C(p, q)
+end
+
+procedure main()
+   local x, j
+   every x := set([1]) | 'ab' | C(1, 2) | R(1, "two") | table() |
+         [set(["s"]), 'c', C([], 3.5)] do {
+      j := tojson(x) | "FAILED"
+      write(left(type(x), 10), j)
+      write(left("", 10), vimage(jtous(j)) | "does not parse")
+      }
+end
+
+#
+# Print x without serial numbers, so the output does not depend on
+# allocation order.  Table keys are sorted by their printed form.
+#
+procedure vimage(x)
+   local s, L, k
+   case type(x) of {
+      "list": {
+         s := ""
+         every s ||:= ", " || vimage(!x)
+         return "[" || (s[3:0] | "") || "]"
+         }
+      "table": {
+         L := []
+         every k := key(x) do put(L, vimage(k) || ": " || vimage(x[k]))
+         s := ""
+         every s ||:= ", " || !sort(L)
+         return "{" || (s[3:0] | "") || "}"
+         }
+      default: return image(x)
+      }
+end

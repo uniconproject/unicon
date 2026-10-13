@@ -273,14 +273,14 @@ procedure _utoj(u,jerror, raw)
             i +:= 1
             }
          if \raw then
-            s := "]"
+            s ||:= "]"
          else
             s ||:= "]}"
          return s
          }
       "cset": { # {"__unicset__":"..."}
          if \raw then
-            s := jsonify_string(string(u),jerror)
+            return jsonify_string(string(u),jerror)
          else
             return "{\"__unicset__\":"||jsonify_string(string(u),jerror)||"}"
          }
@@ -318,6 +318,7 @@ procedure _utoj(u,jerror, raw)
                   s ||:= jsonify_string(k,jerror)||":"||_utoj(u[k],jerror, raw)|fail
                else
                   s ||:= ","||jsonify_string(k,jerror)||":"||_utoj(u[k],jerror, raw)|fail
+               first := 1
                }
             s ||:= "}"
             return s

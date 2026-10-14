@@ -877,23 +877,19 @@ link fullimag
 #</p>
 #
 procedure jsf_validate(jfname, sfname, strict, error)
-   local json_date, json_schema
+   local json_data, json_schema
 
-   #jerror := ErrorHandler(error,strict)
-
-   json_data   := jtou(jfname , "f", strict, error)
-   json_schema := jtou(sfname , "f", strict, error)
+   json_data   := jtou(jfname, strict, "f", error)
+   json_schema := jtou(sfname, strict, "f", error)
 
    return _jsvalidation(json_data, json_schema, json_schema)
 end
 
 procedure jss_validate(data, schema, strict, error)
-   local json_date, json_schema
+   local json_data, json_schema
 
-   #jerror := ErrorHandler(error,strict)
-
-   json_data   := jtou(data , "s", strict, error)
-   json_schema := jtou(schema , "s", strict, error)
+   json_data   := jtou(data, strict, "s", error)
+   json_schema := jtou(schema, strict, "s", error)
 
    return _jsvalidation(json_data, json_schema, json_schema)
 end
@@ -1054,7 +1050,7 @@ procedure validate_property(x, val)
                   return val || " is not equal to the constant: " || const
 
             if integer(multipleOf := x["multipleOf"]) then
-               if val % mulitpleOf ~= 0 then
+               if val % multipleOf ~= 0 then
                   return val || " must be a multiple of: " || multipleOf
 
             if integer(maximum := x["maximum"]) then
@@ -1062,7 +1058,7 @@ procedure validate_property(x, val)
                   return val || " is greater than the maximum: " || maximum
 
             if integer(exclusiveMaximum := x["exclusiveMaximum"]) then
-               if val >= exlusiveMaximum then
+               if val >= exclusiveMaximum then
                   return val || " is greater than or equal to the exclusiveMaximum: " || exclusiveMaximum
 
             if integer(minimum := x["minimum"]) then

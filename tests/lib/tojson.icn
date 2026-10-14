@@ -1,6 +1,7 @@
 #
 # tojson.icn -- tojson() (plain JSON, no Unicon metadata) for each
-#  structure type, and that its output parses back.
+#  structure type, and that its output parses back; utoj() for record
+#  and class names containing "_".
 #
 
 import json
@@ -10,6 +11,11 @@ record R(x, y)
 class C(p, q)
 end
 
+record my_rec(a)
+
+class My_Box(w)
+end
+
 procedure main()
    local x, j
    every x := set([1]) | 'ab' | C(1, 2) | R(1, "two") | table() |
@@ -17,6 +23,10 @@ procedure main()
       j := tojson(x) | "FAILED"
       write(left(type(x), 10), j)
       write(left("", 10), vimage(jtous(j)) | "does not parse")
+      }
+   every x := my_rec(1) | My_Box(2) do {
+      j := utoj(x)
+      write(j, " -> ", type(jtous(j)))
       }
 end
 

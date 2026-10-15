@@ -142,8 +142,10 @@ procedure escapeseq_test(s)
    y := jtous(X)
    dwrite("\nAfter encoding:",ximage(y),"\n")
 
-   every k := key(y) do
-      if k ~== y[k] then {
+   # Backslashes in a value are data: each key and value must come
+   # back unchanged.
+   every k := key(t) do
+      if not member(y, k) | y[k] ~== t[k] then {
          write(msg,"FAILURE")
          fail
          }

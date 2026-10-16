@@ -104,7 +104,9 @@ int yylex()
 
    if (yytext == NULL) {
       yytext = malloc(256);
+      yytext[0] = 0;
       savedyytext = malloc(256);
+      savedyytext[0] = 0;
       yytextsize = 256;
       }
 

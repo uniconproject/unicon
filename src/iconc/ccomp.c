@@ -9,6 +9,7 @@
 #include "ccode.h"
 #include "csym.h"
 #include "cproto.h"
+#include "ccomp_param.h"
 
 extern char *refpath;
 
@@ -267,6 +268,9 @@ Deliberate Syntax Error
 #endif                                  /* MacOS */
 #endif                                  /* Graphics */
 
+   /* Compile flags before the source file; link flags with the -l tail. */
+   buf = growcat(buf, &buflen, 3, ICONC_CPPFLAGS, ICONC_CFLAGS, ICONCCFLAGS);
+
    buf = growcat(buf, &buflen, 6, " ", ExeFlag, " ", exename, " ", srcname);
 
 #if 0
@@ -274,6 +278,7 @@ Deliberate Syntax Error
       buf = growcat(buf, &buflen, 2, " ", dlrgint);
       }
 #endif
+   buf = growcat(buf, &buflen, 1, ICONC_LDFLAGS);
    for (l = liblst; l != NULL; l = l->next) {
       buf = growcat(buf, &buflen, 2, " ", l->libname);
       }

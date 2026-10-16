@@ -555,13 +555,52 @@ procedure _jp_string(jerror, raw)
 end
 
 #
+# Called just after the opening quote of a __unicset__ value.  \u00XX is
+# one byte, not a UTF-8 character, and other escapes are one byte too.
+#
+procedure _jp_cset_string(jerror)
+   local str, c, cp
+   str := tab(upto('"\\')) |
+      return _jp_err(jerror,
+                "JSON string missing terminating double-quotes: " || tab(0))
+   while ="\\" do {
+      c := move(1) | return _jp_err(jerror, "Incomplete JSON escape sequence")
+      case c of {
+         "n":  str ||:= "\n"
+         "\"": str ||:= "\""
+         "\\": str ||:= "\\"
+         "t":  str ||:= "\t"
+         "/":  str ||:= "/"
+         "r":  str ||:= "\r"
+         "b":  str ||:= "\b"
+         "f":  str ||:= "\f"
+         "u":  {
+            cp := _jp_hex4() |
+               return _jp_err(jerror, "JSON \\u escape needs 4 hex digits")
+            if cp > 255 then
+               return _jp_err(jerror, "JSON cset escape is not a byte")
+            str ||:= char(cp)
+            }
+         default:
+            return _jp_err(jerror,
+                      "JSON string has invalid escape sequence: " ||
+                      c || _jp_rest(' \t\r\n"{}[]:,'))
+         }
+      str ||:= tab(upto('"\\')) |
+         return _jp_err(jerror,
+                   "JSON string missing terminating double-quotes: " ||
+                   str || tab(0))
+      }
+   move(1)
+   return str
+end
+
+#
 # Called just after a backslash in a string; returns the Unicon string for
 # the JSON escape sequence.
 #
 procedure _jp_escape(jerror)
-   static hex
-   local c, ns, i
-   initial hex := '0123456789abcdefABCDEF'
+   local c, cp, lo, p
 
    case c := move(1) of {
       "n":  return "\n"
@@ -573,25 +612,50 @@ procedure _jp_escape(jerror)
       "b":  return "\b"
       "f":  return "\f"
       "u":  {
-         #
-         # JSON supports unicode from 0020-10FFFF, but this code restricts
-         # unicode to 16-bits to remove ambiguity from Unicon and JSON
-         # escape conversion.  If the code is extended ASCII, return the
-         # character; otherwise return a Unicon unicode escape.
-         #
-         ns := tab(many(hex)) | ""
-         if (i := *ns) > 4 then {
-            ns := ns[1:5]
-            move(*ns - i)
+         # \uXXXX, or a UTF-16 surrogate pair \uD8XX\uDCXX, as UTF-8
+         cp := _jp_hex4() |
+            return _jp_err(jerror, "JSON \\u escape needs 4 hex digits")
+         if 16rD800 <= cp <= 16rDBFF then {
+            p := &pos
+            if ="\\u" & (lo := _jp_hex4()) & 16rDC00 <= lo <= 16rDFFF then
+               return _jutf8(16r10000 + (cp - 16rD800) * 1024 + (lo - 16rDC00))
+            &pos := p
             }
-         ns := ns[many('0', ns):0]
-         if *ns > 2 then return "\\u" || right(ns, 4, "0")
-         return char(integer("16r" || ns) | 0)
+         if 16rD800 <= cp <= 16rDFFF then {
+            if \jerror.strict then
+               return _jp_err(jerror, "JSON string has an unpaired surrogate")
+            cp := 16rFFFD
+            }
+         return _jutf8(cp)
          }
       }
    if /c then return _jp_err(jerror, "Incomplete JSON escape sequence")
    return _jp_err(jerror, "JSON string has invalid escape sequence: " ||
                   c || _jp_rest(' \t\r\n"{}[]:,'))
+end
+
+#
+# Return the value of the 4 hex digits at &pos, moving past them.
+#
+procedure _jp_hex4()
+   local h
+   h := move(4) | fail
+   if upto(~'0123456789abcdefABCDEF', h) then fail
+   return integer("16r" || h)
+end
+
+#
+# Return the UTF-8 encoding of code point cp.
+#
+procedure _jutf8(cp)
+   if cp < 16r80 then return char(cp)
+   if cp < 16r800 then
+      return char(16rC0 + cp / 64) || char(16r80 + cp % 64)
+   if cp < 16r10000 then
+      return char(16rE0 + cp / 4096) || char(16r80 + (cp / 64) % 64) ||
+             char(16r80 + cp % 64)
+   return char(16rF0 + cp / 262144) || char(16r80 + (cp / 4096) % 64) ||
+          char(16r80 + (cp / 64) % 64) || char(16r80 + cp % 64)
 end
 
 #
@@ -700,7 +764,14 @@ procedure _jp_object(jerror)
       if any('}]:,') then
          return _jp_err(jerror, "Expected JSON value in JSON pair, got: " ||
                         _jp_next())
-      v := _jp_value(jerror) | fail
+      # A cset encoding is the first pair, {"__unicset__":"..."}.  Its
+      # string is bytes: ordinary \u decoding would turn \u00e9 into two
+      # UTF-8 bytes.  The same name later in the object is an ordinary
+      # string.  === does not convert, so a list or set key is not an error.
+      if \first & k === "__unicset__" & ="\"" then
+         v := _jp_cset_string(jerror) | fail
+      else
+         v := _jp_value(jerror) | fail
 
       # Unicon type encodings are recognized only in the first pair.
       skip := &null

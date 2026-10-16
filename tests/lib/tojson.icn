@@ -1,7 +1,7 @@
 #
 # tojson.icn -- tojson() (plain JSON, no Unicon metadata) for each
 #  structure type, and that its output parses back; utoj() for record
-#  and class names containing "_".
+#  and class names containing "_", and for a non-ASCII cset.
 #
 
 import json
@@ -28,6 +28,16 @@ procedure main()
       j := utoj(x)
       write(j, " -> ", type(jtous(j)))
       }
+
+   # A non-ASCII cset is one byte per member, not the UTF-8 of that byte.
+   x := cset(char(233))
+   y := jtous(utoj(x))
+   write(utoj(x), " -> ", *y, " ", ord(!y))
+   x := cset(char(195) || char(169))
+   y := jtous(utoj(x))
+   j := ""
+   every j ||:= " " || ord(!y)
+   write(*y, j)
 end
 
 #

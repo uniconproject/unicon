@@ -243,7 +243,7 @@ end
 # TODO: Check for fails that need error messages
 #
 procedure _utoj(u,jerror, raw)
-   local s, tmp, first
+   local s, tmp, first, i, x, k, ks
    case type(u) of {
       "null": return type(u)
       "string": {
@@ -294,13 +294,16 @@ procedure _utoj(u,jerror, raw)
          every k := key(u) do {
             if s[-1] ~== "{" then s ||:= ","
             if type(k) == "string" then
-               s ||:= jsonify_string(k,jerror, raw)||":"|| _utoj(u[k],jerror, raw) | fail
-            else {
-               if \(jerror.strict) then
-                  s ||:= "\""||image(k)||"\":"||_utoj(u[k],jerror, raw) | fail
-               else
-                  s ||:= _utoj(k,jerror)||":"||_utoj(u[k],jerror, raw) | fail
+               ks := jsonify_string(k, jerror)
+            else if \raw | \jerror.strict then {
+               # standard JSON: keys are strings, so use the key's string
+               # value, or else its JSON text
+               ks := jsonify_string(string(k) | (_utoj(k, jerror, raw) | fail))
                }
+            else
+               # Unicon JSON (non-strict): any value can be a key
+               ks := _utoj(k, jerror) | fail
+            s ||:= ks || ":" || (_utoj(u[k], jerror, raw) | fail)
             }
          s ||:= "}"
          return s
@@ -532,11 +535,9 @@ procedure _jp_value(jerror)
 end
 
 #
-# Called just after the opening double-quote.  Returns a Unicon string,
-# or a cset if the contents are delimited by single-quotes.  If raw is
-# not null the result is always a string (strict-mode object keys).
+# Called just after the opening double-quote.  Returns the Unicon string.
 #
-procedure _jp_string(jerror, raw)
+procedure _jp_string(jerror)
    local str
    str := tab(upto('"\\')) |
       return _jp_err(jerror,
@@ -549,8 +550,6 @@ procedure _jp_string(jerror, raw)
                    str || tab(0))
       }
    move(1)                                   # closing double-quote
-   if /raw & str[1] == "'" & str[-1] == "'" then
-      return cset(str[2:-1])
    return str
 end
 
@@ -743,7 +742,7 @@ procedure _jp_object(jerror)
          return _jp_err(jerror, "Unexpected comma in JSON object after: " ||
                         (if \first then "{" else ","))
       if ="\"" then
-         k := _jp_string(jerror, jerror.strict) | fail
+         k := _jp_string(jerror) | fail
       else if \jerror.strict then
          return _jp_err(jerror, "Expecting JSON string for object key, got " ||
                         _jp_next())

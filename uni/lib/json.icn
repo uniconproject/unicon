@@ -156,8 +156,7 @@ end
 procedure jtous(s,strict,error)
    local jerror
 
-   #jerror := ErrorHandler(error,strict) # defaults error to &errout
-   jerror := ErrorHandler(error) # defaults error to &errout
+   jerror := ErrorHandler(error,strict) # defaults error to &errout
    suspend _jparse(s, jerror)
    jerror.get_err()
 end
@@ -204,7 +203,7 @@ end
 # <[return a string; a JSON encoding of the structure including Unicon meta data>
 #</p>
 procedure utoj(x,strict,error)
-   local j;
+   local j, jerror
    jerror := ErrorHandler(error,strict)
 
    if j := _utoj(x,jerror) then
@@ -224,7 +223,7 @@ end
 #</p>
 
 procedure tojson(x,strict,error)
-   local j;
+   local j, jerror
    jerror := ErrorHandler(error,strict)
 
    if j := _utoj(x,jerror,"r") then
@@ -954,7 +953,8 @@ end
 procedure validate_property(x, val)
    local z, c, cr, i, const, enum, minimum, maxLength, minLength,
       req, prop, exclusiveMaximum, multipleOf, maxProperties,
-      minProperties, dependentRequired
+      minProperties, dependentRequired, maximum, exclusiveMinimum,
+      maxItems, minItems, maxContains, minContains, pattern
    z := ""
    case x["type"] of {
 
@@ -1140,6 +1140,7 @@ end
 #</p>
 
 procedure _jsvalidation(obj, sch, schRoot)
+   local pf, k, check, inc, refitem
    if type(obj) == "table" then {
       pf := validate_property(sch, obj)
       if pf ~== "" then return pf

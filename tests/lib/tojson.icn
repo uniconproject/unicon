@@ -38,6 +38,17 @@ procedure main()
    j := ""
    every j ||:= " " || ord(!y)
    write(*y, j)
+
+   # A later "__unicset__" property is a string, decoded as UTF-8.
+   # U+4E2D is three bytes; U+00E9 is two, not the single byte 233.
+   x := jtous("{\"__unitable__\":1,\"__unicset__\":\"\\u4e2d\"}")
+   j := ""
+   every j ||:= " " || ord(!x["__unicset__"])
+   write("table property", j)
+   x := jtous("{\"__unitable__\":1,\"__unicset__\":\"\\u00e9\"}")
+   j := ""
+   every j ||:= " " || ord(!x["__unicset__"])
+   write("table e9", *x["__unicset__"], j)
 end
 
 #

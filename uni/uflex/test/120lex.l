@@ -36,7 +36,7 @@
 # * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # */
 
-$include "parser.icn"
+$include "120lex.tab.icn"
 
 global yylineno
 

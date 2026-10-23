@@ -265,6 +265,9 @@ Deliberate Syntax Error
    buf = growcat(buf, &buflen, 2, " ", ICONC_FREETYPE_CPPFLAGS);
 #endif                                  /* ICONC_FREETYPE_CPPFLAGS */
 #endif                                  /* MacOS */
+#ifdef ICONC_XPM_FLAGS
+   buf = growcat(buf, &buflen, 2, " ", ICONC_XPM_FLAGS);
+#endif                                  /* ICONC_XPM_FLAGS */
 #endif                                  /* Graphics */
 
    buf = growcat(buf, &buflen, 6, " ", ExeFlag, " ", exename, " ", srcname);
@@ -287,7 +290,9 @@ Deliberate Syntax Error
 #endif                                  /* Dbm */
 
 #ifdef Graphics
+#ifdef HAVE_LIBXPM
    buf = growcat(buf, &buflen, 1, " -lXpm");
+#endif                                  /* HAVE_LIBXPM */
 #ifdef Graphics3D
    buf = growcat(buf, &buflen, 1, " -lGL -lGLU");
 #endif                                  /* Graphics3D */

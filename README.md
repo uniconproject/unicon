@@ -112,14 +112,14 @@ Most of these libraries are listed below for common Linux distributions.
 Debian/Ubuntu:
 ```
 apt install libgl1-mesa-dev libssl-dev libssh-dev libx11-dev libjpeg-dev libpng-dev libglu1-mesa-dev
-            libxft-dev libopenal-dev libalut-dev libogg-dev libvorbis-dev unixodbc-dev
+            libxft-dev libxpm-dev libopenal-dev libalut-dev libogg-dev libvorbis-dev unixodbc-dev
 	    libfreetype6-dev
 ```
 Fedora/Centos (Depending on your Centos version, you may need to replace dnf with yum):
 ```
 dnf install libjpeg-turbo-devel libpng-devel libX11-devel mesa-libGL-devel mesa-libGLU-devel
             freetype-devel openal-soft-devel freealut-devel libogg-devel libvorbis-devel
-	    openssl-devel libssh-devel unixODBC-devel libXft-devel
+	    openssl-devel libssh-devel unixODBC-devel libXft-devel libXpm-devel
 ```
 
 Go into the Unicon directory and run:

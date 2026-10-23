@@ -6,7 +6,10 @@ UNICON_TOP_BUILDDIR ?= $(BASE)
 include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 UFLEX=../uflex
 
-tests: nnws.tst j0.tst toy.tst k0.tst go.tst fec.tst ucc.tst 120.tst ubug.tst uniflex.tst punylex.tst
+%.icn: %.l
+	$(UFLEX) $<
+
+tests: nnws.tst j0.tst toy.tst k0.tst go.tst fec.tst ucc.tst 120.tst ubug.tst uniflex.tst punylex.tst stringinput.tst
 
 timetst:
 	time make runtests
@@ -23,21 +26,6 @@ runtests:
 	./ubug foo.icn > local/ubug.out
 	./uniflex -p hello.icn > local/uniflex.out
 	./punylex hello.py > local/punylex.out
-
-numbers.u: numbers.icn
-	$(UNICON) -c numbers.icn
-
-numbers.icn: numbers.l
-	$(UFLEX) numbers.l
-
-wc: wc.u
-	$(UNICON) wc.u
-
-wc.u: wc.icn
-	$(UNICON) $(UFLAGS) -c wc
-
-wc.icn: wc.l
-	$(UFLEX) wc.l
 
 calcscan.u: calcscan.icn
 	$(UNICON) $(UFLAGS) -c calcscan
@@ -120,5 +108,14 @@ punylex punylex.tst: punylex.l Makefile
 	./punylex hello.py > local/punylex.out
 	@if diff --strip-trailing-cr local/punylex.out stand/punylex.std ; then echo "++++++++++++++++++++ Passed"; else echo "-------------------- Failed"; fi
 
+stringinput.tst: wc.l wcs.l Makefile
+	$(UFLEX) wc.l
+	$(UNICON) -s wc
+	$(UFLEX) wcs.l
+	$(UNICON) -s wcs
+	./wc$(EXE) < hellohello > local/wc.out
+	./wcs$(EXE) hellohello > local/wcs.out
+	@if diff --strip-trailing-cr local/wc.out local/wcs.out ; then echo "++++++++++++++++++++ Passed"; else echo "-------------------- Failed"; fi
+
 clean:
-	$(RM) *.u nnws$(EXE) j0$(EXE) toy$(EXE) k0$(EXE) go$(EXE) fec$(EXE) ucc$(EXE) 120$(EXE) ubug$(EXE) uniflex$(EXE) punylex$(EXE) local/j0.out local/nnws.out local/toy.out local/k0.out local/go.out local/fec.out local/c.out local/cpp.out local/ubug.out local/uniflex.out local/punylex.out
+	$(RM) *.u nnws$(EXE) j0$(EXE) toy$(EXE) k0$(EXE) go$(EXE) fec$(EXE) ucc$(EXE) 120$(EXE) ubug$(EXE) uniflex$(EXE) punylex$(EXE) local/j0.out local/nnws.out local/toy.out local/k0.out local/go.out local/fec.out local/c.out local/cpp.out local/ubug.out local/uniflex.out local/punylex.out local/wc.out local/wcs.out wc$(EXE) wcs$(EXE)

@@ -560,6 +560,24 @@ do_arg_with([SDL3])
 if test "x$with_SDL3" != "xno"; then
   pkg_home([SDL3], [sdl3])
   do_lib_check([SDL3], [${SDL3_HOME}], [SDL3/SDL.h], [SDL_CreateWindow], [HAVE_LIBSDL3], [C])
+  # Windows builds link with --static, which skips SDL3's DLL import
+  # library unless it is named outright
+  if test "x$cv_libSDL3" != "xyes" -a "ms$unicon_os" = "mswindows" ; then
+    if test "x$SDL3_HOME" != "x" ; then
+      save_flags([-I${SDL3_HOME}/include], [-L${SDL3_HOME}/lib], [])
+    else
+      save_flags([], [], [])
+    fi
+    LIBS="-l:libSDL3.dll.a $LIBS"
+    AC_MSG_CHECKING([for SDL3 through its import library])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <SDL3/SDL.h>]],
+                                    [[SDL_CreateWindow("", 1, 1, 0);]])],
+      [cv_libSDL3=yes
+       AC_MSG_RESULT([yes])
+       AC_DEFINE([HAVE_LIBSDL3], [1], [Define to 1 if you have lib SDL3])],
+      [AC_MSG_RESULT([no])
+       restore_flags()])
+  fi
 fi
 ])
 

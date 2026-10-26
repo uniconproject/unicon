@@ -3457,9 +3457,9 @@ extern char *ArgvToCmdline(char **);
                   }
                g2 = ArgvToCmdline(garbage);
 
-#ifdef MSWindows
+#if defined(MSWindows) || defined(SDLWindows)
                i = (C_integer)mswinsystem(g2);
-#else                                   /* MSWindows */
+#else                                   /* MSWindows || SDLWindows */
                i = (C_integer)system(g2);
 #endif                                  /* MSWindows */
                free(garbage);
@@ -3485,9 +3485,9 @@ extern char *ArgvToCmdline(char **);
                   }
                --p;
                *p = '\0';
-#ifdef MSWindows
+#if defined(MSWindows) || defined(SDLWindows)
                i = (C_integer)mswinsystem(s);
-#else                                   /* MSWindows */
+#else                                   /* MSWindows || SDLWindows */
                i = (C_integer)system(s);
 #endif                                  /* MSWindows */
                free(margv);

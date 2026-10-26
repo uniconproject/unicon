@@ -56,6 +56,7 @@ jobs:
       matrix:
         cfg:
         -  { os: windows-latest,  name: 'Windows 64-bit', pkg: 'Windows_64-bit',  opt: '--enable-werror' }
+        -  { os: windows-latest,  name: 'Windows 64-bit SDL', pkg: 'Windows_64-bit_SDL', opt: '--enable-werror --enable-sdl-graphics' }
         #-  { os: windows-latest,  name: 'Windows 32-bit', opt: '--build=i686-w64-mingw32 --host=i686-w64-mingw32' }
 
     defaults:
@@ -76,6 +77,10 @@ jobs:
           mingw-w64-ucrt-x86_64-libjpeg-turbo
           make
           git
+
+    - name: Install SDL3
+      if: contains(matrix.cfg.opt, 'sdl-graphics')
+      run: pacman -S --noconfirm mingw-w64-ucrt-x86_64-sdl3 mingw-w64-ucrt-x86_64-freetype
 
     - run: git config --global core.autocrlf input
       shell: bash

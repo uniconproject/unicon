@@ -1098,7 +1098,7 @@ struct ucfont {
    struct ucfont *next;
    int refcount;
    char *path;
-   int index, size, synth;              /* synth: 1 bold, 2 italic */
+   int fidx, size, synth;               /* synth: 1 bold, 2 italic */
    int scale;                           /* device pixels per logical */
    FT_Face face;
    int ascent, descent, maxwidth;       /* logical pixels */
@@ -1160,13 +1160,13 @@ static int strihas(const char *s, const char *sub)
  * How well does face (of a file) match the requested style?  Higher is
  * better; -1 means the file cannot be read.
  */
-static int face_score(char *path, int index, int flags, long *nfaces)
+static int face_score(char *path, int fidx, int flags, long *nfaces)
 {
    FT_Face face;
    int score = 0, bold, italic;
    const char *st;
 
-   if (FT_New_Face(ftlib, path, index, &face) != 0)
+   if (FT_New_Face(ftlib, path, fidx, &face) != 0)
       return -1;
    if (nfaces) *nfaces = face->num_faces;
    if (!FT_IS_SCALABLE(face) && face->num_fixed_sizes == 0) {
@@ -1196,16 +1196,16 @@ static int face_score(char *path, int index, int flags, long *nfaces)
 
 /*
  * Choose the best face in a font file (collections hold several).
- * Returns the score, and sets *index; -1 if unusable.
+ * Returns the score, and sets *fidx; -1 if unusable.
  */
-static int best_face(char *path, int flags, int *index)
+static int best_face(char *path, int flags, int *fidx)
 {
    long nfaces = 1, i;
    int best = -1, s;
-   *index = 0;
+   *fidx = 0;
    for (i = 0; i < nfaces && i < 64; i++) {
       s = face_score(path, (int)i, flags, &nfaces);
-      if (s > best) { best = s; *index = (int)i; }
+      if (s > best) { best = s; *fidx = (int)i; }
       }
    return best;
 }
@@ -1214,6 +1214,10 @@ static int best_face(char *path, int flags, int *index)
  * Directories searched when fontconfig is not available or finds nothing.
  */
 static char *font_dirs[] = {
+#ifdef _WIN32
+   "$WINDIR/Fonts",
+   "$LOCALAPPDATA/Microsoft/Windows/Fonts",
+#endif                                  /* _WIN32 */
 #ifdef __APPLE__
    "/System/Library/Fonts",
    "/System/Library/Fonts/Supplemental",
@@ -1239,22 +1243,40 @@ static char *font_dirs[] = {
  */
 static char *mono_files[] = {
    "Menlo", "SFNSMono", "Monaco", "DejaVuSansMono", "LiberationMono",
-   "FreeMono", "Courier New", "Andale Mono", NULL };
+   "FreeMono", "Courier New", "Andale Mono", "consola", "lucon", "cour",
+   NULL };
 static char *typewriter_files[] = {
    "Courier", "Courier New", "LiberationMono", "FreeMono",
-   "DejaVuSansMono", "Menlo", NULL };
+   "DejaVuSansMono", "Menlo", "cour", NULL };
 static char *sans_files[] = {
    "Helvetica", "HelveticaNeue", "Arial", "Geneva", "DejaVuSans",
-   "LiberationSans", "FreeSans", NULL };
+   "LiberationSans", "FreeSans", "arial", "segoeui", NULL };
 static char *serif_files[] = {
    "Times", "Times New Roman", "NewYork", "Georgia", "DejaVuSerif",
-   "LiberationSerif", "FreeSerif", NULL };
+   "LiberationSerif", "FreeSerif", "times", NULL };
 
+/* expand ~ (the home directory) or $NAME (an environment variable) */
 static void expand_home(char *dir, char *buf, int len)
 {
    if (dir[0] == '~') {
       char *home = getenv("HOME");
+#ifdef _WIN32
+      if (home == NULL) home = getenv("USERPROFILE");
+#endif                                  /* _WIN32 */
       snprintf(buf, len, "%s%s", home ? home : "", dir + 1);
+      }
+   else if (dir[0] == '$') {
+      char name[64], *val;
+      int n = 0;
+      for (dir++; *dir && *dir != '/' && n < (int)sizeof(name) - 1; dir++)
+         name[n++] = *dir;
+      name[n] = '\0';
+      val = getenv(name);
+      if (val == NULL) {
+         buf[0] = '\0';                 /* no such directory */
+         return;
+         }
+      snprintf(buf, len, "%s%s", val, dir);
       }
    else
       snprintf(buf, len, "%s", dir);
@@ -1262,20 +1284,26 @@ static void expand_home(char *dir, char *buf, int len)
 
 /*
  * Look for a file named after stem in the font directories and return
- * the best-matching face in *path / *index.  Returns the score or -1.
+ * the best-matching face in *path / *fidx.  Returns the score or -1.
  */
-static int find_file(char *stem, int flags, char *path, int len, int *index)
+static int find_file(char *stem, int flags, char *path, int len, int *fidx)
 {
    static char *exts[] = { ".ttc", ".ttf", ".otf", ".dfont", NULL };
    static char *styles[] = { "", " Regular", "-Regular", " Bold", "-Bold",
                              " Italic", "-Italic", "-Oblique",
                              " Bold Italic", "-BoldItalic",
-                             "-BoldOblique", NULL };
+                             "-BoldOblique",
+#ifdef _WIN32
+                             /* Windows: arialbd, ariali, arialbi, consolaz */
+                             "bd", "b", "i", "bi", "z",
+#endif                                  /* _WIN32 */
+                             NULL };
    char dir[512], cand[1024];
    int d, e, s, best = -1, idx, sc;
 
    for (d = 0; font_dirs[d]; d++) {
       expand_home(font_dirs[d], dir, sizeof(dir));
+      if (dir[0] == '\0') continue;
       for (s = 0; styles[s]; s++) {
          /* only look at styled files that could help this request */
          if (strihas(styles[s], "bold") && !(flags & UC_FONT_BOLD))
@@ -1291,7 +1319,7 @@ static int find_file(char *stem, int flags, char *path, int len, int *index)
             if (sc > best) {
                best = sc;
                snprintf(path, len, "%s", cand);
-               *index = idx;
+               *fidx = idx;
                }
             }
          }
@@ -1319,7 +1347,7 @@ static void squash(const char *s, char *buf, int len)
  * spaces and punctuation.
  */
 static int scan_dirs(char *family, int flags, char *path, int len,
-                     int *index)
+                     int *fidx)
 {
    char dir[512], want[128], have[256], cand[1024];
    int d, best = -1, idx, sc;
@@ -1332,7 +1360,7 @@ static int scan_dirs(char *family, int flags, char *path, int len,
    if (wl == 0) return -1;
    for (d = 0; font_dirs[d]; d++) {
       expand_home(font_dirs[d], dir, sizeof(dir));
-      if ((dp = opendir(dir)) == NULL) continue;
+      if (dir[0] == '\0' || (dp = opendir(dir)) == NULL) continue;
       while ((de = readdir(dp)) != NULL) {
          size_t nl = strlen(de->d_name);
          if (nl < 5) continue;
@@ -1349,7 +1377,7 @@ static int scan_dirs(char *family, int flags, char *path, int len,
          if (sc > best) {
             best = sc;
             snprintf(path, len, "%s", cand);
-            *index = idx;
+            *fidx = idx;
             }
          }
       closedir(dp);
@@ -1364,7 +1392,7 @@ static int scan_dirs(char *family, int flags, char *path, int len,
  * one requested (fontconfig always returns something).
  */
 static int find_fontconfig(char *family, int flags, int size, int exact,
-                           char *path, int len, int *index)
+                           char *path, int len, int *fidx)
 {
    static int fc_ready;
    FcPattern *pat, *match;
@@ -1396,14 +1424,14 @@ static int find_fontconfig(char *family, int flags, int size, int exact,
          FcPatternGetInteger(match, FC_INDEX, 0, &idx);
          if (!exact || strieq((char *)fam, family)) {
             snprintf(path, len, "%s", (char *)file);
-            *index = idx;
+            *fidx = idx;
             ok = 1;
             }
          }
       FcPatternDestroy(match);
       }
    FcPatternDestroy(pat);
-   return ok ? face_score(path, *index, flags, NULL) : -1;
+   return ok ? face_score(path, *fidx, flags, NULL) : -1;
 }
 #endif                                  /* HAVE_LIBFONTCONFIG */
 
@@ -1411,7 +1439,7 @@ static int find_fontconfig(char *family, int flags, int size, int exact,
  * Resolve a family name to a font file and face index.
  */
 static int resolve_font(char *family, int flags, int size, char *path,
-                        int len, int *index)
+                        int len, int *fidx)
 {
    char **stems = NULL;
    char *fcname = NULL;
@@ -1420,12 +1448,16 @@ static int resolve_font(char *family, int flags, int size, char *path,
    size_t flen = strlen(family);
 
    /* an explicit font file */
-   if (strchr(family, '/') || (flen > 4 &&
+   if (strchr(family, '/') ||
+#ifdef _WIN32
+       strchr(family, '\\') || strchr(family, ':') ||
+#endif                                  /* _WIN32 */
+       (flen > 4 &&
        (strieq(family + flen - 4, ".ttf") || strieq(family + flen - 4, ".otf")
         || strieq(family + flen - 4, ".ttc")))) {
       if (!file_exists(family)) return -1;
       snprintf(path, len, "%s", family);
-      return best_face(path, flags, index);
+      return best_face(path, flags, fidx);
       }
 
    if (strieq(family, "mono") || strieq(family, "fixed")) {
@@ -1449,18 +1481,18 @@ static int resolve_font(char *family, int flags, int size, char *path,
                                "Nimbus Mono PS", "FreeMono", NULL };
          for (i = 0; tw[i]; i++) {
             sc = find_fontconfig(tw[i], flags | UC_FONT_MONO, size, 1,
-                                 path, len, index);
+                                 path, len, fidx);
             if (sc >= 0) return sc;
             }
          fcname = "monospace";
          }
       sc = find_fontconfig(fcname, flags |
                            ((stems == mono_files) ? UC_FONT_MONO : 0),
-                           size, 0, path, len, index);
+                           size, 0, path, len, fidx);
       if (sc >= 0) return sc;
       }
    else {
-      sc = find_fontconfig(family, flags, size, 1, path, len, index);
+      sc = find_fontconfig(family, flags, size, 1, path, len, fidx);
       if (sc >= 0) return sc;
       }
 #else                                   /* HAVE_LIBFONTCONFIG */
@@ -1473,15 +1505,15 @@ static int resolve_font(char *family, int flags, int size, char *path,
          if (sc > best) {
             best = sc;
             snprintf(path, len, "%s", cand);
-            *index = idx;
+            *fidx = idx;
             if (best >= 20) break;
             }
          }
       return best;
       }
-   sc = find_file(family, flags, path, len, index);
+   sc = find_file(family, flags, path, len, fidx);
    if (sc < 0)
-      sc = scan_dirs(family, flags, path, len, index);
+      sc = scan_dirs(family, flags, path, len, fidx);
    return sc;
 }
 
@@ -1493,14 +1525,14 @@ static int ceil26(long v)
 struct ucfont *uc_font_open(char *family, int flags, int size)
 {
    char path[1024];
-   int index = 0, score, synth = 0;
+   int fidx = 0, score, synth = 0;
    struct ucfont *f;
    FT_Face face;
 
    font_err[0] = '\0';
    if (!ft_init()) return NULL;
    if (size <= 0) size = 14;
-   score = resolve_font(family, flags, size, path, sizeof(path), &index);
+   score = resolve_font(family, flags, size, path, sizeof(path), &fidx);
    if (score < 0) {
       snprintf(font_err, sizeof(font_err), "no font found for \"%s\"",
                family);
@@ -1508,7 +1540,7 @@ struct ucfont *uc_font_open(char *family, int flags, int size)
       }
 
    /* synthesize styles the chosen face lacks */
-   if (FT_New_Face(ftlib, path, index, &face) != 0) {
+   if (FT_New_Face(ftlib, path, fidx, &face) != 0) {
       snprintf(font_err, sizeof(font_err), "cannot open font %s", path);
       return NULL;
       }
@@ -1522,7 +1554,7 @@ struct ucfont *uc_font_open(char *family, int flags, int size)
       synth |= 2;
 
    for (f = fonts; f; f = f->next)
-      if (f->size == size && f->index == index && f->synth == synth &&
+      if (f->size == size && f->fidx == fidx && f->synth == synth &&
           f->scale == dscale && !strcmp(f->path, path)) {
          FT_Done_Face(face);
          f->refcount++;
@@ -1532,7 +1564,7 @@ struct ucfont *uc_font_open(char *family, int flags, int size)
    f = calloc(1, sizeof(struct ucfont));
    if (f == NULL) { FT_Done_Face(face); return NULL; }
    f->path = strdup(path);
-   f->index = index;
+   f->fidx = fidx;
    f->size = size;
    f->synth = synth;
    f->scale = dscale;

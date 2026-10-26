@@ -2115,7 +2115,7 @@ getenv_r(const char *name, char *buf, size_t len)
 
 #endif                                  /* HAVE_LIBPTHREAD */
 
-#ifdef MSWindows
+#if defined(MSWindows) || defined(SDLWindows)
 int mswinsystem(char *s)
 {
    int i, rv, j, background = 0;
@@ -2173,7 +2173,7 @@ int mswinsystem(char *s)
       free(argv);
       return rv;
 }
-#endif                                  /* MSWindows */
+#endif                                  /* MSWindows || SDLWindows */
 
 #if NT && defined(PosixFns)
 /*

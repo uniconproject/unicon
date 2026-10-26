@@ -445,6 +445,20 @@
    #define Graphics 1
    #endif                               /* SDLGraphics */
 
+   /*
+    * On MS Windows it replaces the native (GDI) backend that MSWindows
+    * selects; the GUI build (wiconx) still has a console window, now an
+    * SDL one.  SDLWindows marks the rest of what MSWindows means there.
+    */
+   #if defined(SDLGraphics) && defined(MSWindows)
+   #undef MSWindows
+   #define SDLWindows 1
+   #ifndef NTConsole
+      #define ConsoleWindow 1
+   #endif                               /* NTConsole */
+   #define FAttrib 1
+   #endif                               /* SDLGraphics && MSWindows */
+
 #if defined(MSWindows) || defined(WICONT)
    #undef Graphics
    #define Graphics 1
@@ -480,10 +494,12 @@
       #define ICONC_XLIB "-L/usr/X11R6/lib -lX11"
    #endif                               /* ICONC_XLIB */
 
-   #if defined(ConsoleWindow) || (NT && !defined(Rttx) && !defined(NTConsole))
+   #if defined(ConsoleWindow) || \
+       (NT && !defined(Rttx) && !defined(NTConsole) && !defined(SDLGraphics))
       /*
        * Knock out fprintf and putc; these are here so that consoles
-       * may be used in icont and rtt, not just iconx.
+       * may be used in icont and rtt, not just iconx.  (With SDL graphics
+       * only the GUI builds, which define ConsoleWindow, have a console.)
        */
       #undef fprintf
       #define fprintf Consolefprintf

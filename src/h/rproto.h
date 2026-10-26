@@ -907,12 +907,18 @@ int checkOpenConsole( FILE *w, char *s );
 
 #endif                          /* MSWindows */
 
+#ifdef SDLWindows
+      /* the console window of the GUI build */
+      void waitkey(FILE *w);
+      void closelog();
+#endif                          /* SDLWindows */
+
 #endif                                  /* Graphics */
 
 /* Used by system() on Windows with or without the graphics subsystem. */
-#ifdef MSWindows
+#if defined(MSWindows) || defined(SDLWindows)
 int mswinsystem(char *s);
-#endif                                  /* MSWindows */
+#endif                                  /* MSWindows || SDLWindows */
 
 #ifdef Audio
 int StartAudioThread(char filename[]);

@@ -13,10 +13,10 @@ fprintf(f, "%s",
    global yychar, yytext, yyin, yyleng\n_
    \n_
    #\n_
-   # matchstrings reads from a specified input file and calls the simulate\n_
-   # function repeatedly on smaller and smaller pieces of the input until\n_
-   # it finds a match. It reports what parts of the input\n_
-   # it could parse and what rule accepted the string.\n_
+   # yyulex reads from a specified input file or string and calls the\n_
+   # simulate function repeatedly on larger and larger pieces of the\n_
+   # input until it fails to find a match. It reports the (largest) parts\n_
+   # of the input that it could parse.\n_
    #\n_
    \n_
    global stringseq\n_
@@ -24,21 +24,32 @@ fprintf(f, "%s",
    global accepttable\n\n")
 
 fprintf(f, "%s",
-  "procedure yyulex(aut)\n_
+  "procedure yysetyyin(in)\n_
+   \   stringseq := &null\n_
+   \   return yyin := in\n_
+   end\n_
+   \n_
+   procedure yyulex(aut)\n_
    local rulenum, readfrom, position, less, currstring, getln\n_
    local maxrule, maxleng\n_
+   static stringinput\n_
    \n_
-   initial {\n_
-      \ \ \ if /yyin then yyin := &input\n_
-      \ \ \ readfrom := yyin\n_
-      \ \ \ do_create()\n_
-      \ \ \ stringseq := read(readfrom) || \"\\n\"\n_
+   initial {  do_create(); stringseq:= &null}\n_
    \n_
-      \ \ \ while getln := read(readfrom) do\n_
-         \ \ \ \ \ \ stringseq ||:= getln || \"\\n\"\n_
+   \   if /stringseq then {\n_  
+   \      /yyin := &input\n_
+   \      if type(yyin) == \"string\" then {\n_
+   \         stringinput := stringseq := yyin\n_
+   \      } else {\n_
+   \         readfrom := yyin\n_
+   \         stringseq := read(readfrom) || \"\\n\"\n_
    \n_
-      \ \ \ close(readfrom)\n_
-      \ \ \ }\n_
+   \         while getln := read(readfrom) do\n_
+   \            stringseq ||:= getln || \"\\n\"\n_
+   \n_
+   \         close(readfrom)\n_
+   \      }\n_
+   \   }\n_
    \n_
    \   repeat {\n_
    \      maxrule := &null\n_

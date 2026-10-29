@@ -88,7 +88,7 @@ end
 
 procedure open_dialog_Vdialog(self, x, y, values, def_str)
    local i, c, e, newfocus, tid, rv, now, val
-   local entry, r, def, sel, v, args, parent, posn
+   local entry, r, def, sel, v, args, parent, posn, closer
    static xytable, type
 
    initial {
@@ -134,6 +134,7 @@ procedure open_dialog_Vdialog(self, x, y, values, def_str)
       put(args, "fg=" || c)
    if (c := Bg(self.win))[1] ~== "-" then
       put(args, "bg=" || c)
+   put(args, "inputmask=c")		# the close button is handled below
    parent := self.win
    if not (self.win := WOpen ! args) then {
       write(&errout, "can't open window for dialog")
@@ -164,6 +165,16 @@ procedure open_dialog_Vdialog(self, x, y, values, def_str)
             break
             }
 
+## The window's close button presses the Cancel button, if there is one,
+## or else the default button.
+   # A text prompt can also be named Cancel. Only a button dismisses.
+   every i := !self.lookup do
+      if type(i) == "Vbutton_rec" & map(\i["s"]) == "cancel" then {
+         closer := i
+         break
+         }
+   /closer := def
+
    self.F.focus := self.F.entries[self.F.text_entries[1]]
    newfocus := \self.F.focus | \sel[1][2] | &null
    (\self.F.focus).T.block(self.F.focus)
@@ -185,6 +196,15 @@ procedure open_dialog_Vdialog(self, x, y, values, def_str)
             Enqueue(def.win, &lrelease, def.ax + 1, def.ay + 1)
          }
          else next
+      }
+      if e === -11 then {		# close button
+         if \closer then {
+            e := &lpress
+            &x := closer.ax + 1
+            &y := closer.ay + 1
+            Enqueue(closer.win, &lrelease, closer.ax + 1, closer.ay + 1)
+         }
+         else break			# no buttons: just cancel
       }
       if integer(e) < 0 then {
          newfocus := self.V.lookup(self, &x, &y) | self.F.focus

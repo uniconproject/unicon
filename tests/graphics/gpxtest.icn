@@ -1367,7 +1367,7 @@ end
 #   These routines interpret window events and respond by calling user code:
 #       sensor() registers the events of interest
 #       evhandle() reads and responds to the next event
-#       evmux() loops forever, handling events
+#       evmux() loops handling events until the window closes
 #
 #   Two other little routines help build event-driven programs:
 #       quitsensor() registers a standardized response to ^C, DEL, etc.
@@ -1399,9 +1399,10 @@ end
 #   evmux(win) -- loop forever, calling event handlers as appropriate.
 #   evhandle(win) -- wait for the next event, and handle it.
 #
-#       evmux(win) is an infinite loop that calls user routines in response
-#       to window events.  It is for programs that don't need to do other
-#       work while waiting for window input.
+#       evmux(win) is a loop that calls user routines in response to window
+#       events.  It is for programs that don't need to do other work while
+#       waiting for window input.  It returns when the window is closed,
+#       for example by the window manager's close button.
 #
 #       evhandle(win) processes one event and then returns to its caller,
 #       allowing external loop control.  evhandle returns the outcome of
@@ -1516,8 +1517,12 @@ end
 #                   produce result of the handler proc; fail if nobody handles.
 
 procedure evmux(win)
-   repeat
+   repeat {
       evhandle(win)
+      # stop when the window has been closed (by the window manager or
+      # by a handler); a closed window has no more events to read
+      WAttrib(win, "canvas") | return
+      }
 end
 
 procedure evhandle(win)
@@ -2318,7 +2323,7 @@ end
 
 procedure open_dialog_Vdialog(self, x, y, values, def_str)
 local i, c, e, newfocus, tid, rv, now, val
-local entry, r, def, sel, v, args, parent, posn
+local entry, r, def, sel, v, args, parent, posn, closer
 static xytable
 initial xytable := table()
 
@@ -2359,6 +2364,7 @@ initial xytable := table()
       put(args, "fg=" || c)
    if (c := Bg(self.win))[1] ~== "-" then
       put(args, "bg=" || c)
+   put(args, "inputmask=c")		# the close button is handled below
    parent := self.win
    if not (self.win := WOpen ! args) then {
       write(&errout, "can't open window for dialog")
@@ -2394,6 +2400,16 @@ initial xytable := table()
             break
             }
 
+## The window's close button presses the Cancel button, if there is one,
+## or else the default button.
+   # A text prompt can also be named Cancel. Only a button dismisses.
+   every i := !self.lookup do
+      if type(i) == "Vbutton_rec" & map(\i["s"]) == "cancel" then {
+         closer := i
+         break
+         }
+   /closer := def
+
    self.F.focus := self.F.entries[self.F.text_entries[1]]
    newfocus := \self.F.focus | \sel[1][2] | &null
    (\self.F.focus).T.block(self.F.focus)
@@ -2411,6 +2427,15 @@ initial xytable := table()
             Enqueue(def.win, &lrelease, def.ax + 1, def.ay + 1)
          }
          else next
+      }
+      if e === -11 then {		# close button
+         if \closer then {
+            e := &lpress
+            &x := closer.ax + 1
+            &y := closer.ay + 1
+            Enqueue(closer.win, &lrelease, closer.ax + 1, closer.ay + 1)
+         }
+         else break			# no buttons: just cancel
       }
       if integer(e) < 0 then {
          newfocus := self.V.lookup(self, &x, &y) | self.F.focus

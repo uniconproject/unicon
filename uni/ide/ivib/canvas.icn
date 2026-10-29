@@ -6,14 +6,11 @@
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
 
-# Note :- some instances of parent_dialog have been changed for
-#         ivib integration purposes. May cause issues with ivib's
-#         stand alone version.
-#
-#         Further development of canvas should reflect similar
-#         changes to allow canvas to be built to whatever parent may
-#         be rather than expecting the parent to be the dialog itself.
-#         Otherwise, the UI/ivib integrated state will break.
+# Note: the canvas reaches its owner through self.parent rather than
+# self.parent_dialog.  In standalone ivib the two are the same Main
+# dialog; when the canvas is embedded in the Unicon IDE (ui), its parent
+# is an IvibTab component inside the IDE's dialog.  The owner must
+# provide the methods used here (push_undo, info_label, pos_label, ...).
 
 import lang
 import gui
@@ -191,6 +188,8 @@ class Canvas : Component : SelectiveClassCoding(
       something_selected() | fail
 
       fd := FileDialog()
+      if \self.parent_dialog === \self.parent then   # standalone ivib
+         fd.set_fields(self.parent_dialog.global_attribs)
       fd.show_modal(parent_dialog)
 
       s := fd.get_result() | fail
@@ -720,7 +719,13 @@ class Canvas : Component : SelectiveClassCoding(
    #
    method set_wTitle()
       local star := if \self.modified then "*" else ""
-      WAttrib(self.get_parent_win(), "label=Ivib: "||star||(\self.filename|""))
+      #
+      # Only retitle the window when the canvas sits directly in its
+      # dialog (standalone ivib), not when it is embedded in another
+      # application's window, such as the Unicon IDE.
+      #
+      if \self.parent_dialog === \self.parent then
+         WAttrib(self.get_parent_win(), "label=Ivib: "||star||(\self.filename|""))
    end
 
    #
@@ -802,7 +807,7 @@ class Canvas : Component : SelectiveClassCoding(
    method dup()
       local c
       c := Canvas()
-      c.parent_dialog := self.parent
+      c.parent_dialog := self.parent_dialog
       c.button_groups := self.button_groups.dup(c)
       c.checkbox_groups := self.checkbox_groups.dup(c)
       c.gen_indent := self.gen_indent
@@ -854,15 +859,17 @@ class Canvas : Component : SelectiveClassCoding(
    # Called on resize - resize temporary window.
    #
    method resize()
-      local parent_dlg
+      local parent_dlg, tw, th
       self.Component.resize()
       parent_dlg := self.get_parent_dialog()
-      if ( parent_dlg.get_h_reference() - self.y + 2 * EDGE > 0 ) || ( parent_dlg.get_w_reference() - self.x + 2 * EDGE > 0 ) then
-      WAttrib(Canvas_temp_win, "size=" || parent_dlg.get_w_reference() -
-              self.x + 2 * EDGE || "," || parent_dlg.get_h_reference() -
-              self.y + 2 * EDGE)
-      else
-        WAttrib(Canvas_temp_win, "size=" || parent_dlg.get_w_reference() || "," || parent_dlg.get_h_reference() )
+      #
+      # The temporary window must have a positive size, even when the
+      # canvas is (temporarily) positioned outside the dialog, as happens
+      # when the IDE hides its ivib panel.
+      #
+      tw := parent_dlg.get_w_reference() - self.x + 2 * EDGE
+      th := parent_dlg.get_h_reference() - self.y + 2 * EDGE
+      WAttrib(Canvas_temp_win, "size=" || (0 < tw | 1) || "," || (0 < th | 1))
    end
 
    #
@@ -884,7 +891,9 @@ class Canvas : Component : SelectiveClassCoding(
       # in its attrib list; so reset the pointer to normal just in case it's
       # changed.
       #
-      WAttrib(self.get_parent_win(), "pointer=top left arrow", "label=Ivib")
+      WAttrib(self.get_parent_win(), "pointer=top left arrow")
+      if \self.parent_dialog === \self.parent then   # standalone ivib
+         WAttrib(self.get_parent_win(), "label=Ivib")
    end
 
    #

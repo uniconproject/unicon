@@ -213,7 +213,6 @@ class Dialog : Component(
    method resize_win(w, h)
       WAttrib(self.win, "size=" || w || "," || h)
       Enqueue(self.win, &resize)
-      if \self.uidlog.ivib_maindialog.canvas then self.uidlog.ivib_maindialog.canvas.restore()
    end
 
    method init()
@@ -552,11 +551,11 @@ $endif
             put(lines, line)
             ="\n"
             numlines +:= 1
-	    tooltip_w <:= TextWidth(line) + 20
+            tooltip_w <:= TextWidth(line) + 4
             }
          if line := tab(0) & *line > 0 then {
             put(lines, line)
-	    tooltip_w <:= TextWidth(line) + 20
+            tooltip_w <:= TextWidth(line) + 4
             }
          }
       tooltip_h := fh*numlines +  6
@@ -778,7 +777,6 @@ $endif
       WAttrib(self.buffer_win, "height=" || nh)
       EraseArea(self.win, 0, 0, nw, nh)
       self.resize()
-      if \uidlog then uidlog.ivib_maindialog.canvas.restore()
    end
 
    #

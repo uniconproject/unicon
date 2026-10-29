@@ -257,6 +257,12 @@ linearsearch:
             }
          else {
             Arg0 = md;
+            /*
+             * Mark this stack copy so invoke() can tell it was planted
+             * here.  A procedure whose first parameter happens to be
+             * named self is not a method call.
+             */
+            Arg0.dword |= F_Method;
             if (!strcmp(StrLoc(rp->recdesc->Proc.lnames[0]), "__s"))
                *((&(Arg0))+1) = rp->fields[0];
             else

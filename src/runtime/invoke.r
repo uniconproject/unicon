@@ -131,6 +131,22 @@ int apply(dptr callee, dptr strct, dptr rslt, continuation succ_cont)
 
 
 /*
+ * is_method_below -- succeed if the descriptor below the object being
+ *  invoked at argp[0] is a method Ofield() planted for o.m(args).
+ *  The mark is cleared before the method is called.  An ordinary
+ *  procedure, even one whose first parameter is named self, has no mark.
+ */
+static int is_method_below(dptr argp)
+{
+   if ((argp[-1].dword & ~F_Method) != D_Proc)
+      return 0;
+   if (!(argp[-1].dword & F_Method))
+      return 0;
+   argp[-1].dword &= ~F_Method;
+   return 1;
+}
+
+/*
  * invoke -- Perform setup for invocation.
  */
 int invoke(int nargs, dptr *cargp, int *n)
@@ -226,8 +242,15 @@ int invoke(int nargs, dptr *cargp, int *n)
                    (!strcmp(StrLoc(Blk(bp,Proc)->lnames[0]), "__m")) ||
                    (!strcmp(StrLoc(Blk(bp,Proc)->lnames[
                                     Blk(bp,Proc)->nfields-1]), "__m"))) {
-                  /* its an object */
-                  return invoke(nargs+1, cargp, n);
+                  /*
+                   * It's an object.  For a method call o.m(args), Ofield()
+                   * leaves the method below the object it inserted as the
+                   * method's self argument, so invoke the method instead.
+                   * Anything else (an object value called directly) is an
+                   * error; the slot below is then unrelated to the call.
+                   */
+                  if (is_method_below(newargp))
+                     return invoke(nargs+1, cargp, n);
                   }
                }
 

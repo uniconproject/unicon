@@ -3,7 +3,6 @@ $include "guih.icn"
 #link graphics
 
 link io, noncase, findre, printdlg
-link ivibtab
 
 # $define lpr "enscript -b \" \" -1 -Plexnormal"
 #----------------------------------------------
@@ -21,8 +20,7 @@ global targs,browser,
    opened_files_set,
    tab_label,
    fileCompiled, overwrite,
-   lst, ide, file_contents, dialogFor,
-   ivib_maindialogwindow
+   lst, ide, file_contents, dialogFor
 
 #
 # Class IDE
@@ -78,14 +76,10 @@ class IDE (
    method on_new_btn(ev)
       new_tabitem( , 0, "", "", CurrentTabItem().filedirectory)
 
-      uidlog.ivib_maindialog.op_new()
       uidlog.tab_item_1.set_label("Messages:")
       uidlog.DevTabSet.set_which_one(uidlog.tab_item_1)
       uidlog.tab_item_1.init()
       uidlog.DevTabSet.resize()
-      uidlog.FileTabSet.resize()
-      uidlog.ivib_maindialog.resize()
-      uidlog.ivib_maindialog.canvas.resize()
    end
 
    method on_open_btn(ev)
@@ -95,9 +89,6 @@ class IDE (
       uidlog.DevTabSet.set_which_one(uidlog.tab_item_1)
       uidlog.tab_item_1.init()
       uidlog.DevTabSet.resize()
-      uidlog.FileTabSet.resize()
-      uidlog.ivib_maindialog.resize()
-      uidlog.ivib_maindialog.canvas.resize()
    end
 
    #
@@ -107,8 +98,7 @@ class IDE (
       local line, L, nchars, fd, dwidth, dheight, dposx, dposy,
          ufile, tab_label, found,
          which_tab, c, filedirectory
-      #########################################################
-      # Get filename and filedirectory if in Unix based system.
+
       if /filename then {
 $ifdef _UNIX
          fd := HFileDialog()
@@ -151,7 +141,7 @@ $endif
          put(file_contents, line)
          nchars +:= *line + 1
          }
-     #######################################################
+
       # We don't have a file open with the same name, so
       # add a new tab with the file name
       if not member(opened_files_set, filename) then {
@@ -171,14 +161,12 @@ $endif
          c := uidlog.FileTabSet.get_tabitem(file_name(filename))
          uidlog.FileTabSet.set_which_one(\c)
          }
-      uidlog.ivib_maindialog.op_open_file(filename)
       CurrentTabItem().filename := file_name(filename)
       CurrentTabItem().filedirectory := filename[1:-*CurrentTabItem().filename]
       uidlog.FileBrowser.addreplace(CurrentEditBox().contents,
                                     uidlog.FileTabSet.which_one.filename, 0)
       uidlog.FileTabSet.resize()
-      uidlog.IvibTabPanel.resize()
-      uidlog.ivib_maindialog.canvas.resize()
+      (\uidlog.ivib_maindialog).sync_with_tab()
       uidlog.menubar.set_font()
    end
 
@@ -209,7 +197,9 @@ $endif
       if \decision == "Cancel" then return "Cancel"
       if \decision == "Save" then on_save_btn(, c)
 
-      if *uidlog.FileTabSet.children = 1 then new_tabitem( , 0, "Untitled.icn", "", CurrentTabItem().filedirectory)
+      # Keep an empty buffer rather than exit when the last one is closed.
+      if *uidlog.FileTabSet.children = 1 then
+         new_tabitem( , 0, "Untitled", "")
 
       if /modified then { # close a non-modified buffer (no * suffix)
          uidlog.FileTabSet.remove(c)
@@ -225,7 +215,6 @@ $endif
       uidlog.FileTabSet.set_which_one(uidlog.FileTabSet.children[-1])
       handle_update()
       uidlog.FileTabSet.resize()
-      uidlog.ivib_maindialog.canvas.erase_and_display()
    end
 
    method on_save_btn(ev, c)
@@ -240,11 +229,10 @@ $endif
                c.label := c.label[1:-1]
                if not (save_file(c)) then c.label ||:= "*"
                }
-             else save_file(c)
+            else
+                save_file(c)
             }
          }
-      # Check for modifications in ivib tab.
-      if /uidlog.ivib_maindialog.canvas.modified || \uidlog.ivib_maindialog.canvas.new_file_flag then save_file(c)
    end
 
    method on_saveas_btn(ev)
@@ -282,7 +270,8 @@ $endif
              filename ||:= ".icn"
          }
       else {
-          filename := WinSaveDialog(&window, "Save File As:", "", 50,,,
+         filename := WinSaveDialog(
+                     &window, "Save File As:", "", 50,,,
                      chdir(CurrentTabItem().filedirectory)
                      ) | fail
          if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
@@ -298,10 +287,9 @@ $endif
          if file_name(filename) === fileslist[i] then {
                oldwindow := &window
                &window := win
-            warntxt := UpdatedTextDialog ("Overwrite file? ",
-                                             "A file named "||
-                                          file_name(filename) ||
-                                          " already" ||
+               warntxt := UpdatedTextDialog (
+                         "Overwrite file? ",
+                         "A file named "|| file_name(filename) || " already" ||
                          " exists. Are you sure you want to overwrite it?")
                warntxt.show_modal()
                &window := oldwindow
@@ -366,6 +354,8 @@ $endif
    method save_file(c)
       local ufile, l
       chdir(c.filedirectory)
+      # Put pending changes of the integrated ivib's layout in the buffer.
+      (\uidlog.ivib_maindialog).generate_if_modified(c)
       l := CurrentEditBox().get_contents() | []
       ufile := open(c.filename, "cu") | {
          \uidlog.MsgBox.set_contents([c.filename ||
@@ -377,8 +367,6 @@ $endif
       every write(ufile,trim(!l,'\^m'),
                   if \linebreak=="CRLF" then "\^m" else "")
       close(ufile)
-
-      uidlog.ivib_maindialog.op_save_ivib(c.filename)
 
       \uidlog.MsgBox.set_contents([c.label || " saved."])
 
@@ -857,8 +845,6 @@ $endif
       #     }
 
       uidlog.FileTabSet.resize()
-      uidlog.ivib_maindialog.canvas.resize()
-
       opened_file := projectname
 
       uidlog.FileBrowser.addreplace(CurrentEditBox().contents,
@@ -1319,98 +1305,16 @@ $endif
    # IVIB
    #
    method on_ivib(ev)
-      local L := [1], my_ui
+      local L := []
       if CurrentTabItem().label==="Untitled" then {
-          #system("ivib " || \tab_label || "&", L) | uidlog.MsgBox.set_contents(L)
-         #write("Prior to Ivib Creation - If")
-         ivib_maindialogwindow := Main()
-         ivib_maindialogwindow.show_modal()
-         #We could open a "scratch" of ivib but that may be useless.
-         #L[1] := "Untitled"
-         #ivib_maindialogwindow.custom_show()
-          #write("Ivib Created - If")
-       }
-      else if CurrentTabItem().label==="scratch" then {
-          #if not system("ivib &", L) then
-            #uidlog.MsgBox.set_contents(["System Failed"])
-          #write("Prior to Ivib Creation - Else If")
-          ivib_maindialogwindow := Main()
-         ivib_maindialogwindow.show_modal()
-#         #write("Ivib Created - Else If")
-         #This would open ivib with "scratch"
-         #Also this breaks ivib because of the args.
-         #We could open a "scratch" of ivib but that may be useless.
-         #L[1] := "scratch"
-         #ivib_maindialogwindow.custom_show()
-         }
-      else {
-          #if not system("ivib " || CurrentTabItem().label || "&", L) then
-            #uidlog.MsgBox.set_contents(["System Failed"])
-         #write("Prior Ivib Creation - Else")
-         ivib_maindialogwindow := Main(my_ui := self)
-         L[1] := CurrentTabItem().label
-         ivib_maindialogwindow.custom_show(L)
-         #write("Ivib Created - Else")
-         #ivib_maindialogwindow.custom_show(CurrentTabItem().label || L)
-        }
-       updatefile(CurrentTabItem().label)
-   end
-
-   #
-   # Update file method: Update IDE file to show changes from ivib.
-   #
-   method updatefile(filename)
-      local found, nchars, ufile, line, c, currentFile
+         system("ivib " || \tab_label, L) | uidlog.MsgBox.set_contents(L)
          handle_closefile()
-      if /filename | filename=="" | filename[-1]==("\\"|"/") then {
-         uidlog.MsgBox.set_contents(["Error - file name missing"])
-         filename := CurrentTabItem().filename
-         }
-      if filename[-2:0]==(".*") then filename := filename[1:-2]
-      tab_label := file_name(filename)
-      found := 1
-      file_contents := []
-      nchars := 0
-      if ufile := open(filename, "ru") then
-      while line := read(ufile) do {
-        if line[-1] == "\^m" then line := line[1:-1]
-        put(file_contents, line)
-        nchars +:= *line + 1
-        }
-    # We don't have a file open with the same name, so
-    # add a new tab with the file name
-      if not member(opened_files_set, filename) then {
-        if is_binary(filename) then
-          uidlog.MsgBox.set_contents(["Cannot open binary "||filename])
-        else {
-          new_tabitem(,1,file_name(filename),file_contents, filedirectory)
-          \uidlog.MsgBox.set_contents(["opened " || filename || ", " ||
-              *file_contents || " lines, " ||
-              nchars || " characters"])
-          uidlog.FileTabSet.set_which_one(CurrentTabItem())
-          handle_update()
-          insert(opened_files_set, filename)
-          }
+         handle_openfile( , tab_label)
          }
       else {
-        c := uidlog.FileTabSet.get_tabitem(file_name(filename))
-        uidlog.FileTabSet.set_which_one(\c)
-        }
-      CurrentTabItem().filename := file_name(filename)
-      CurrentTabItem().filedirectory := filename[1:-*CurrentTabItem().filename]
-      uidlog.FileBrowser.addreplace(CurrentEditBox().contents,
-          uidlog.FileTabSet.which_one.filename, 0)
-      if \CurrentTabItem().filename then {
-         if \CurrentTabItem().filedirectory then {
-            currentFile := CurrentTabItem().filedirectory || CurrentTabItem().filename
-         } else {
-            currentFile := CurrentTabItem().filename
+         if not system("ivib " || CurrentTabItem().label, L) then
+            uidlog.MsgBox.set_contents(["System Failed"])
          }
-         uidlog.ivib_maindialog.op_open_file(currentFile)
-         uidlog.ivib_maindialog.canvas.restore()
-         }
-      uidlog.FileTabSet.resize()
-      uidlog.menubar.set_font()
    end
 
    #
@@ -1418,7 +1322,8 @@ $endif
    #
    method Toolbar(pnlToolbar)
       local save_btn, saveas_btn, makeexe_btn, run_btn
-      local viewfilesmsgs_btn, viewall_btn, viewfiles_btn, viewfilesbrowser_btn, viewfilesivib_btn
+      local viewfilesmsgs_btn, viewall_btn, viewfiles_btn, viewfilesbrowser_btn,
+         viewfilesivib_btn
 
       new_btn := IconButton()
       new_btn.set_pos("0.5%", "5%")
@@ -1521,7 +1426,7 @@ $endif
       find_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>~~~>>>~~~~~~~>6>~~~>6>~~~~~~~>>>~~~>>>~~~~~~>>>>>~>>>>>~~~~~>6>>>~>6>>>~~~~>>>>>>>>>>>>>~~>>6>>>5>>6>>>>>~>>6>>>5>>6>>>>>~>>6>>>5>>6>>>>>~>>>>>>>~>>>>>>>~>6>>>~~~~~>6>>>~>6>>>~~~~~>6>>>~>>>>>~~~~~>>>>>~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(find_btn)
       toggle_find_dir_btn := IconButton()
-      toggle_find_dir_btn.set_pos("76.5%", "5%")
+      toggle_find_dir_btn.set_pos("80.5%", "5%")
       toggle_find_dir_btn.set_size("4.5%", "90%")
       toggle_find_dir_btn.set_draw_border()
       toggle_find_dir_btn.set_tooltip("Toggle Search Direction")
@@ -1623,8 +1528,8 @@ $endif
       uidlog.pnlToolbar.add(run_btn)
 
       text_field_search := TextField()
-      text_field_search.set_pos("80.5%", "7%")
-      text_field_search.set_size("16%", "90%")
+      text_field_search.set_pos("84.5%", "7%")
+      text_field_search.set_size("12%", "90%")
       text_field_search.set_draw_border()
       text_field_search.set_tooltip("Find this")
       text_field_search.connect(self, "on_text_field_search", ACTION_EVENT)

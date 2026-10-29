@@ -4,42 +4,6 @@ BASE=../..
 UNICON_TOP_BUILDDIR ?= $(BASE)
 include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 
-ICONDIR=ivib/icon
-
-ICONS=$(ICONDIR)/icn1.icon \
-      $(ICONDIR)/icn2.icon \
-      $(ICONDIR)/icn3.icon \
-      $(ICONDIR)/icn4.icon \
-      $(ICONDIR)/icn5.icon \
-      $(ICONDIR)/icn6.icon \
-      $(ICONDIR)/icn7.icon \
-      $(ICONDIR)/icn8.icon \
-      $(ICONDIR)/icn9.icon \
-      $(ICONDIR)/icn10.icon \
-      $(ICONDIR)/icn11.icon \
-      $(ICONDIR)/icn12.icon \
-      $(ICONDIR)/icn13.icon \
-      $(ICONDIR)/icn14.icon \
-      $(ICONDIR)/icn15.icon \
-      $(ICONDIR)/icn16.icon \
-      $(ICONDIR)/icn17.icon \
-      $(ICONDIR)/icn18.icon \
-      $(ICONDIR)/icn19.icon \
-      $(ICONDIR)/icn20.icon \
-      $(ICONDIR)/icn21.icon \
-      $(ICONDIR)/icn22.icon \
-      $(ICONDIR)/icn23.icon \
-      $(ICONDIR)/icn24.icon \
-      $(ICONDIR)/icn25.icon \
-      $(ICONDIR)/icn26.icon \
-      $(ICONDIR)/icn27.icon \
-      $(ICONDIR)/icn28.icon \
-      $(ICONDIR)/icn29.icon \
-      $(ICONDIR)/icn30.icon \
-      $(ICONDIR)/icn31.icon \
-      $(ICONDIR)/icn32.icon \
-      $(ICONDIR)/icon.icon
-
 # needed to link idol.u
 export IPATH:=$(UNI)/unicon
 
@@ -55,21 +19,24 @@ SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 	qu_replace.icn online.icn about.icn is_binary.icn ptyDispatcher.icn \
 	shelletl.icn funclookup.icn ivibtab.icn
 
-
 OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	mainbar.u modified.u preferences.u templates.u definitions.u \
 	uproject.u classbrowser.u imgs.u utags.u matchparen.u qu_replace.u \
-	online.u about.u is_binary.u ptyDispatcher.u shelletl.u funclookup.u\
+	online.u about.u is_binary.u ptyDispatcher.u shelletl.u funclookup.u \
 	ivibtab.u
 
-.PHONY: ivib
+.PHONY: ivib FORCE
 
 all: ivib ui
 
-ivib:
+ivib: ivib/ivib$(EXE)
+
+# The ivib program is rebuilt whenever any of its ucode files change.
+ivib/ivib$(EXE): FORCE
 	cd ivib && $(MAKE)
 
-ui:	$(OBJ) #$(UFILES)
+# ui links the ivib ucode files (see ivibtab.icn).
+ui:	$(OBJ) ivib/ivib$(EXE)
 	$(UC) $(DASHG) -o ui $(OBJ)
 	$(CP) ui$(EXE) ../../bin
 
@@ -156,22 +123,6 @@ ui.u: ui.icn
 	$(UC) $(UFLAGS) ui
 
 ui.exe: ui
-
-icons: $(ICONS)
-
-cleanicons:
-	cd $(ICONDIR) ; \
-	$(RM) xpmtoims *.icon
-
-
-# Program to translate xpm to Icon image format.
-$(ICONDIR)/xpmtoims: $(ICONDIR)/xpmtoims.icn
-	$(UNICON) -o $(ICONDIR)/xpmtoims $(ICONDIR)/xpmtoims.icn
-
-
-# Rule to translate xpm to icon image format.
-$(ICONDIR)/%.icon: $(ICONDIR)/%.xpm $(ICONDIR)/xpmtoims
-	$(ICONDIR)/xpmtoims $< >$@
 
 clean :
 	$(RM) *.u uniclass.dir uniclass.pag uniclass.db ui$(EXE)

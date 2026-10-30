@@ -5,7 +5,10 @@
 
 //#define GL2D_DRAWARRAYS 1 /* Punt this off as a TODO item */
 
-#define GL2D_DEBUG
+/*
+ * Define GL2D_DEBUG (e.g. CFLAGS=-DGL2D_DEBUG) to get glprintf() tracing
+ * of the OpenGL 2D implementation on stderr.
+ */
 
 #ifdef GL2D_DEBUG
 #define glprintf(s, ...) fprintf(stderr, "%s:%s:%d: " s, __FILE__, __func__, __LINE__, ##__VA_ARGS__)

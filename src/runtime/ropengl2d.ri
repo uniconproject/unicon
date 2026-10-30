@@ -2535,7 +2535,16 @@ int drawstringhelper(wbp w, double x, double y, double z, char *s, int len,
    int fheight, fdescent, textwidth;
    double startx, penx, peny;
    char *ptr = s;
-   FT_Face face = wf->face;
+   FT_Face face;
+   CURTSTATE();
+
+   /*
+    * No OpenGL (FreeType) font: the default font could not be loaded, and
+    * the window fell back to a native font that OpenGL cannot render.
+    */
+   if (!wf || !wf->face)
+      ReturnErrNum(156, RunError);
+   face = wf->face;
 
    fheight = FT_FHEIGHT(face);
    fdescent = FT_DESCENT(face);

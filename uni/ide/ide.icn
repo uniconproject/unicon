@@ -177,7 +177,9 @@ $endif
    #
    # Close File Menu Item Method
    #
-   method handle_closefile(ev, c)
+   # exiting is set when called from on_exit(), so the last tab is not
+   # replaced with a new Untitled buffer.
+   method handle_closefile(ev, c, exiting)
       local modified, decision, fname, r
       /c := CurrentTabItem()
       /c.filedirectory := chdir()
@@ -195,10 +197,15 @@ $endif
          }
 
       if \decision == "Cancel" then return "Cancel"
-      if \decision == "Save" then on_save_btn(, c)
+      # A failed save must leave the tab open.  on_save_btn() fails when
+      # the user cancels Save As or the write (including UI generation) fails.
+      if \decision == "Save" then
+         on_save_btn(, c) | return "Cancel"
 
       # Keep an empty buffer rather than exit when the last one is closed.
-      if *uidlog.FileTabSet.children = 1 then
+      # While exiting, do not replace it: on_exit() would close the
+      # replacement and never finish.
+      if /exiting & *uidlog.FileTabSet.children = 1 then
          new_tabitem( , 0, "Untitled", "")
 
       if /modified then { # close a non-modified buffer (no * suffix)
@@ -211,28 +218,34 @@ $endif
          uidlog.MsgBox.set_contents(["closed " || c.filename])
          delete(opened_files_set, fname)
          }
-      uidlog.FileBrowser.nodereplace(ide.CurrentTabItem().filename)
-      uidlog.FileTabSet.set_which_one(uidlog.FileTabSet.children[-1])
-      handle_update()
-      uidlog.FileTabSet.resize()
+      if *uidlog.FileTabSet.children > 0 then {
+         uidlog.FileBrowser.nodereplace(ide.CurrentTabItem().filename)
+         uidlog.FileTabSet.set_which_one(uidlog.FileTabSet.children[-1])
+         handle_update()
+         uidlog.FileTabSet.resize()
+         }
+      return
    end
 
    method on_save_btn(ev, c)
       if /c then c := CurrentTabItem()
       # if not .icn (i.e. unmodified .icn source), save if asked
       # .icn's get turned into .icn*'s but other extensions do not.
-      if not (c.label[-4:0] == ".icn") then {
-         if c.label == (("Untitled"||(""|"*"))|("scratch"||(""|"*"))) then
-            on_saveas_btn()
-         else {
-            if c.label[-5:0] == ".icn*" then {
-               c.label := c.label[1:-1]
-               if not (save_file(c)) then c.label ||:= "*"
-               }
-            else
-                save_file(c)
-            }
+      if c.label[-4:0] == ".icn" then return
+      if c.label == (("Untitled"||(""|"*"))|("scratch"||(""|"*"))) then {
+         on_saveas_btn() | fail
+         return
          }
+      if c.label[-5:0] == ".icn*" then {
+         c.label := c.label[1:-1]
+         if not (save_file(c)) then {
+            c.label ||:= "*"
+            fail
+            }
+         return
+         }
+      save_file(c) | fail
+      return
    end
 
    method on_saveas_btn(ev)
@@ -316,7 +329,17 @@ $endif
          uidlog.FileBrowser.addreplace(L, file_name(filename), 0)
          CurrentTabItem().filename := file_name(filename)
          CurrentTabItem().filedirectory := filename[1:-*file_name(filename)]
-         save_file(CurrentTabItem())
+         # set_label() above dropped the modified mark.  Put it back unless
+         # generation and the write both succeed, or a later Save returns
+         # immediately and Exit will not ask.
+         save_file(CurrentTabItem()) | {
+            c := CurrentTabItem()
+            if c.label[-1] ~== "*" then {
+               c.label ||:= "*"
+               uidlog.FileTabSet.resize()
+               }
+            fail
+            }
 
          # If we changed from non-.icn to .icn extension, do a close/reopen
          # to enable syntax coloring. Open first, so whole IDE doesn't exit
@@ -333,6 +356,7 @@ $endif
          if CurrentTabItem().filename === project then updateproject()
 
          handle_update()
+         return
          }
    end
 
@@ -352,10 +376,16 @@ $endif
    # Save File Menu Item Method
    #
    method save_file(c)
-      local ufile, l
+      local ufile, l, d
       chdir(c.filedirectory)
       # Put pending changes of the integrated ivib's layout in the buffer.
-      (\uidlog.ivib_maindialog).generate_if_modified(c)
+      # Failure here means the canvas changes would be discarded by the write.
+      if d := \uidlog.ivib_maindialog then
+         d.generate_if_modified(c) | {
+            \uidlog.MsgBox.set_contents(["Couldn't generate UI code for " ||
+                                         c.filename])
+            fail
+            }
       l := CurrentEditBox().get_contents() | []
       ufile := open(c.filename, "cu") | {
          \uidlog.MsgBox.set_contents([c.filename ||

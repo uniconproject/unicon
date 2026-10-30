@@ -94,6 +94,8 @@ global v1_marker, v2_marker, ivib_maindialog
 #
 # Tool bar holding the ivib object and command buttons.  Buttons are laid
 # out per_row to a row; the bar's size follows the number of buttons.
+# The Files/IVIB panel is half the IDE window, so the default row is short
+# enough that 44-pixel icons stay inside a 1024-pixel-wide IDE.
 #
 class IvibToolBar : ToolBar(x1, y1, img_w, img_h, bg, per_row, count)
    method add_button(t)
@@ -106,6 +108,7 @@ class IvibToolBar : ToolBar(x1, y1, img_w, img_h, bg, per_row, count)
          x1 := 0
       }
       t.set_pos(x1, y1)
+      # Mouse tools.  Keyboard focus stays in the editor.
       t.set_no_keyboard()
       bg.add(t)
       self.add(t)
@@ -116,7 +119,7 @@ class IvibToolBar : ToolBar(x1, y1, img_w, img_h, bg, per_row, count)
 
    initially(n)
       self.ToolBar.initially()
-      per_row := \n | 16
+      per_row := \n | 8
       x1 := y1 := count := 0
       bg := ButtonGroup()
 end
@@ -171,7 +174,8 @@ class IvibTab : Component(
    source,                  # Used by ivib/code.icn
    uis,                     # The CanvasComponentUIs (also used by Mainbar)
    editor_tab,              # Editor tab the canvas belongs to
-   layouts                  # Saved state of other tabs: tab -> [canvas, undo, redo]
+   layouts,                 # Saved state of other tabs: tab -> [canvas, undo, redo]
+   temp_dir                 # Private directory for code-generation scratch files
    )
 
 ########################################################
@@ -354,6 +358,50 @@ class IvibTab : Component(
    #
    method is_shown()
       return (\(\uidlog).menubar).ivib_shown()
+   end
+
+   #
+   # The dialog hands every event to every child.  While this panel is
+   # hidden, drop them.  The canvas moves or resizes the selected control
+   # on an arrow key and does not itself check who has the keyboard, so
+   # those keys are forwarded only when the canvas has focus.  Other keys
+   # are forwarded only then too: a keystroke in the editor must not clear
+   # a run of arrow moves.  Mouse events are always forwarded; the canvas
+   # and the toolbar act only when the pointer is over them.  A press on
+   # the canvas, including its resize corner, gives the canvas the keyboard.
+   #
+   method handle_event(e)
+      local c, f
+      is_shown() | return
+      if e === (&lpress | &rpress) &
+         (self.canvas.in_region() | self.canvas.in_resize_corner()) then
+         (\self.parent_dialog).set_focus(self.canvas, e)
+      f := (\self.parent_dialog).focus
+      every c := !self.children do {
+         if \c.is_shaded_flag then
+            next
+         if c === self.canvas then {
+            if self.canvas_wants_event(e, f) then
+               c.handle_event(e)
+            }
+         else
+            c.handle_event(e)
+         if /self.parent_dialog.is_open | \self.parent_dialog.unique_flag then
+            break
+         }
+   end
+
+   #
+   # Succeed if e should be delivered to the canvas.  Mouse button events
+   # always are.  Keys are, only while the canvas has the keyboard.
+   #
+   method canvas_wants_event(e, f)
+      if e === (&lpress | &rpress | &mpress |
+                &ldrag | &rdrag | &mdrag |
+                &lrelease | &rrelease | &mrelease) then
+         return
+      if f === self.canvas then
+         return
    end
 
    #
@@ -690,8 +738,257 @@ class IvibTab : Component(
    end
 
    #
+   # Succeed if s is a class declaration.  When name is given, it must
+   # be that class and not a longer name that merely starts the same way.
+   #
+   method is_class_line(s, name)
+      s := trim(s, ' \t\r')
+      s ? {
+         if ="class " then {
+            tab(many(' \t'))
+            if /name then
+               return
+            if =name & (pos(0) | any(' \t:(')) then
+               return
+            }
+         }
+   end
+
+   #
+   # Succeed if s opens a class, procedure, or method.  Leading
+   # whitespace is ignored so an indented method pairs with its end.
+   # initially is not a block: the class's end closes it too.  Counting
+   # it leaves the class open, and the next generation appends another.
+   #
+   method is_block_start(s)
+      s := trim(s, ' \t\r')
+      s ? {
+         tab(many(' \t')) | &pos
+         if ="class " | ="procedure " | ="method " then
+            return
+         }
+   end
+
+   #
+   # Succeed if s is an end of a class, procedure, or method.  Leading
+   # whitespace is ignored, and a trailing comment is allowed.
+   #
+   method is_end_line(s)
+      s := trim(s, ' \t\r')
+      s ? {
+         tab(many(' \t')) | &pos
+         if ="end" then {
+            tab(many(' \t'))
+            if pos(0) | ="#" then
+               return
+            }
+         }
+   end
+
+   #
+   # Index of the end that closes the class at class_i, or fail.
+   #
+   method class_end(lines, class_i)
+      local i, depth
+      depth := 0
+      every i := class_i to *lines do {
+         if is_block_start(lines[i]) then
+            depth +:= 1
+         else if is_end_line(lines[i]) then
+            depth -:= 1
+         if depth = 0 then
+            return i
+         }
+   end
+
+   #
+   # Succeed if s is blank or a comment.
+   #
+   method is_comment_or_blank(s)
+      s := trim(s, ' \t\r')
+      if s == "" | s[1] == "#" then
+         return
+   end
+
+   #
+   # Succeed if s can sit directly above a generated class without being
+   # part of an earlier procedure: a declaration interpose_code must see
+   # so it does not emit a second copy.
+   #
+   method is_preamble(s)
+      local t
+      t := trim(s, ' \t\r')
+      if t == "" | t[1] == "#" | t[1] == "$" then
+         return
+      t ? {
+         if ="import " | ="link " | ="global " | ="invocable " | ="record " then
+            return
+         }
+   end
+
+   #
+   # First line of the preamble that belongs to the class at class_i.
+   #
+   method preamble_start(lines, class_i)
+      local start
+      start := class_i
+      while start > 1 & is_preamble(lines[start - 1]) do
+         start -:= 1
+      return start
+   end
+
+   #
+   # Index of the dialog class that owns the marker.  Prefer the canvas's
+   # own class name, so a helper inserted before the marker is not rewritten.
+   # Otherwise use the class that ends closest to the marker.
+   #
+   method find_dialog_class(lines, marker_i)
+      local i, name, best, best_end, end_i
+      name := (\self.canvas).get_name()
+      if \name then
+         every i := marker_i - 1 to 1 by -1 do
+            if is_class_line(lines[i], name) &
+               (end_i := class_end(lines, i)) & end_i < marker_i then
+               return i
+      every i := 1 to marker_i - 1 do
+         if is_class_line(lines[i]) &
+            (end_i := class_end(lines, i)) & end_i < marker_i &
+            (/best_end | end_i > best_end) then {
+            best := i
+            best_end := end_i
+            }
+      return \best
+   end
+
+   #
+   # Lines after the encoded layout.  The encoding is the run of "#"
+   # lines that follows the marker; a blank line ends it, as in parse_layout.
+   #
+   method layout_suffix(lines, marker_i)
+      local j, s, tail
+      tail := []
+      j := marker_i + 1
+      while j <= *lines do {
+         s := trim(lines[j], ' \t\r')
+         if *s > 0 & s[1] == "#" then
+            j +:= 1
+         else
+            break
+         }
+      every put(tail, lines[j to *lines])
+      return tail
+   end
+
+   #
+   # Split lines into the text before the dialog, the dialog class that
+   # interpose_code may rewrite, and the text that must be kept verbatim.
+   # Fails if the marker has no class that closes before it.
+   #
+   method split_dialog(lines, marker_i)
+      local class_i, end_i, start, src_end, i, src, prefix, tail
+      class_i := find_dialog_class(lines, marker_i) | fail
+      end_i := class_end(lines, class_i) | fail
+      end_i < marker_i | fail
+      start := preamble_start(lines, class_i)
+      #
+      # Comments between the class and the marker stay with the class.
+      # Real code there is not rewritten; it is returned in the tail.
+      #
+      src_end := marker_i
+      every i := end_i + 1 to marker_i - 1 do {
+         if not is_comment_or_blank(lines[i]) then {
+            src_end := i
+            break
+            }
+         }
+      src := lines[start:src_end]
+      put(src, v2_marker)
+      prefix := lines[1:start]
+      tail := []
+      if src_end < marker_i then
+         every put(tail, lines[src_end to marker_i - 1])
+      every put(tail, !layout_suffix(lines, marker_i))
+      return [prefix, src, tail]
+   end
+
+   #
+   # Record each name imported by s.  Fails if s is not an import line.
+   #
+   method import_names(s, names)
+      local name
+      s := trim(s, ' \t\r')
+      s ? {
+         if ="import " then {
+            tab(many(' \t'))
+            while name := tab(many(&letters ++ &digits ++ '_')) do {
+               names[name] := 1
+               tab(many(' \t,')) | break
+               }
+            return
+            }
+         }
+   end
+
+   #
+   # Succeed if every name on this import line is already in have.
+   #
+   method imports_covered(s, have)
+      local names, n, any
+      names := table()
+      import_names(s, names) | fail
+      every n := key(names) do {
+         any := 1
+         if /have[n] then
+            fail
+         }
+      return \any
+   end
+
+   #
+   # Succeed if s is the gui header include that imports_out emits.
+   #
+   method is_guih_include(s)
+      s := trim(s, ' \t\r')
+      s ? {
+         if ="$include" then {
+            tab(many(' \t'))
+            if ="\"guih.icn\"" | ="'guih.icn'" then
+               return
+            }
+         }
+   end
+
+   #
+   # Drop a generated import or guih include that the prefix already has.
+   # Declarations above an earlier procedure are outside the rewritten
+   # slice, so interpose_code would otherwise write them again.
+   #
+   method drop_repeated_imports(prefix, res)
+      local have, guih, s, out, seen_class
+      have := table()
+      every s := !prefix do
+         import_names(s, have) | (is_guih_include(s) & (guih := 1))
+      out := []
+      every s := !res do {
+         if /seen_class & is_class_line(s) then
+            seen_class := 1
+         if /seen_class & imports_covered(s, have) then
+            next
+         if /seen_class & \guih & is_guih_include(s) then
+            next
+         put(out, s)
+         }
+      return out
+   end
+
+   #
    # Return the Canvas encoded at the end of lines.  Fails, with a
    # message for a damaged layout, if there is none.
+   #
+   # The encoder splits the string every 70 characters, and field names
+   # in that string contain spaces, so a space or tab at the end of a
+   # line is part of the data.  Only a trailing carriage return is
+   # removed.
    #
    method parse_layout(lines)
       local i, marker, s, t, c, d
@@ -699,8 +996,8 @@ class IvibTab : Component(
       marker := trim(lines[i], ' \t\r')
       t := ""
       every s := lines[i + 1 to *lines] do {
-         s := trim(s, ' \t\r')
-         if s[1] == "#" then
+         s := trim(s, '\r')
+         if *s > 0 & s[1] == "#" then
             t ||:= s[2:0]
          else
             break
@@ -775,17 +1072,52 @@ class IvibTab : Component(
    end
 
    #
-   # Succeed if lines contain a setup method for ivib to replace.
+   # Succeed for a path that does not depend on the current directory.
+   # save_file() calls chdir() before generation, so a cached relative
+   # scratch directory would point somewhere else on the next save.
    #
-   method has_setup(lines)
-      local s
-      every s := !lines do
-         s ? {
-            tab(many(' \t'))
-            if ="method" & tab(many(' \t')) & ="setup" &
-               not any(&letters ++ &digits ++ '_') then
-               return
+   method path_is_absolute(p)
+      if *p > 0 & p[1] == ("/" | "\\") then return
+      if *p >= 3 & any(&letters, p) & p[2] == ":" & any('/\\', p[3]) then
+         return
+      fail
+   end
+
+   #
+   # Absolute form of p.  p must already exist.  The caller's working
+   # directory is restored.
+   #
+   method absolute_path(p)
+      local cwd, abs
+      path_is_absolute(p) & return p
+      cwd := chdir() | fail
+      if not chdir(p) then fail
+      abs := chdir()
+      chdir(cwd)
+      return abs
+   end
+
+   #
+   # A private directory for scratch files.  Mode 0700 so another local
+   # user cannot plant symlinks in it.  mkdir fails if the name exists,
+   # which also rejects a symlink planted under that name.  The cached
+   # path is absolute.
+   #
+   method ensure_temp_dir()
+      local base, d, i, abs
+      \self.temp_dir & return self.temp_dir
+      base := ("" ~== getenv("TMPDIR" | "TEMP" | "TMP")) |
+              (if &features == "MS Windows" then "." else "/tmp")
+      every i := 1 to 100 do {
+         d := base || "/uivib-" || ?999999
+         if mkdir(d, 8r700) then {
+            abs := absolute_path(d) |
+               return alert_error("Couldn't resolve " || d)
+            self.temp_dir := abs
+            return abs
          }
+      }
+      return alert_error("Couldn't create a temporary directory")
    end
 
    #
@@ -793,8 +1125,7 @@ class IvibTab : Component(
    #
    method temp_name()
       local dir, s
-      dir := ("" ~== getenv("TMPDIR" | "TEMP" | "TMP")) |
-             (if &features == "MS Windows" then "." else "/tmp")
+      dir := ensure_temp_dir() | fail
       repeat {
          s := dir || "/uivib" || ?999999 || ".icn"
          if not close(open(s)) then
@@ -805,19 +1136,37 @@ class IvibTab : Component(
    #
    # Return lines with the code and layout for the current canvas put
    # in place.  Code generation (ivib/code.icn) works on files, so this
-   # goes through scratch files.
+   # goes through scratch files.  An existing file is rewritten only when
+   # it already contains an ivib layout marker; a setup() method alone is
+   # not enough, or a normal class would be treated as a dialog.  Only the
+   # dialog class is passed to interpose_code.  The rest of the buffer,
+   # including a helper class and any code after the encoded layout, is
+   # copied through unchanged.
    #
    method gen_into_lines(lines)
-      local src, prefix, in_name, out_name, f, res, ok
-      if has_setup(lines) then
-         src := lines
+      local src, prefix, tail, in_name, out_name, f, res, ok, i, parts
+      tail := []
+      if i := find_marker(lines) then {
+         if parts := split_dialog(lines, i) then {
+            prefix := parts[1]
+            src := parts[2]
+            tail := parts[3]
+         }
+         else {
+            # Marker without a usable class: keep the buffer and append
+            # a new dialog.  Code after the old encoding is kept too.
+            src := skeleton()
+            prefix := lines[1:i]
+            tail := layout_suffix(lines, i)
+         }
+      }
       else {
          # No ivib dialog yet: generate one and append it.
          src := skeleton()
          prefix := lines
       }
 
-      in_name := temp_name()
+      in_name := temp_name() | fail
       out_name := in_name[1:-4] || "-out.icn"
       if f := open(in_name, "w") then {
          every write(f, trim(!src, '\r'))
@@ -835,6 +1184,7 @@ class IvibTab : Component(
       every remove(in_name | out_name | (out_name || ".temp"))
       \ok | fail
 
+      res := drop_repeated_imports(prefix, res)
       if \prefix then {
          prefix := copy(prefix)
          while *prefix > 0 & trim(prefix[-1], ' \t\r') == "" do
@@ -842,6 +1192,13 @@ class IvibTab : Component(
          if *prefix > 0 then
             put(prefix, "")
          res := prefix ||| res
+      }
+      while *\tail > 0 & trim(tail[1], ' \t\r') == "" do
+         pop(tail)
+      if *\tail > 0 then {
+         if *res > 0 & trim(res[-1], ' \t\r') ~== "" then
+            put(res, "")
+         res |||:= tail
       }
       return res
    end
@@ -867,7 +1224,9 @@ class IvibTab : Component(
       t === \self.editor_tab | return alert_error("Show the Files/IVIB view first")
       eb := ide.CurrentEditBox() | fail
       res := gen_into_lines(eb.get_contents() | []) | fail
-      eb.set_contents(res)
+      # set_contents() clears the editor undo list, so a layout save
+      # would drop earlier source edits.  Record this replacement instead.
+      eb.replace_contents(res)
       self.canvas.clear_modified()
       if /saving & not (t.label[-1] == "*") then {
          t.label ||:= "*"
@@ -883,10 +1242,39 @@ class IvibTab : Component(
    # in the buffer yet, generate them into the buffer.  Used before t is
    # saved.
    #
+   # Succeeds when there is nothing to generate.  Fails only when the
+   # canvas has changes and generation fails, so the caller can refuse
+   # to save or close over the lost layout.
    method generate_if_modified(t)
-      if t === \self.editor_tab === (\ide).CurrentTabItem() &
-         \self.canvas.modified then
+      local st, prev
+      t === (\ide).CurrentTabItem() | return
+      if t === \self.editor_tab then {
+         if /self.canvas.modified then return
          return generate_code(1)
+      }
+      # The panel was hidden, or another tab is showing, so this tab's
+      # canvas is stored rather than current.
+      st := \layouts[t] | return
+      if /st[1].modified then return
+      prev := [self.canvas, self.editor_tab, self.undo_list, self.redo_list]
+      self.canvas := st[1]
+      self.editor_tab := t
+      self.undo_list := st[2]
+      self.redo_list := st[3]
+      generate_code(1) | {
+         self.canvas := prev[1]
+         self.editor_tab := prev[2]
+         self.undo_list := prev[3]
+         self.redo_list := prev[4]
+         fail
+      }
+      layouts[t] := [self.canvas, self.undo_list, self.redo_list]
+      self.canvas := prev[1]
+      self.editor_tab := prev[2]
+      self.undo_list := prev[3]
+      self.redo_list := prev[4]
+      update_undo_shading()
+      return
    end
 
 ########################################################

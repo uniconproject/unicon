@@ -141,7 +141,8 @@ class Code(
    # in dest_name.
    #
    method interpose_code(src_name, dest_name)
-      local f, part1, t, reading_class, id, method_name, part2, temp_name, s
+      local f, part1, t, reading_class, id, method_name, part2, temp_name, s,
+            rewritten
       static idchars
       initial idchars := &letters++&digits++'_'
 
@@ -240,7 +241,11 @@ class Code(
       reading_class := &null
       every s := !part1 do {
          s ? {
-            if ="class " then {
+            #
+            # Rename only the first class.  A later class before setup()
+            # belongs to the user; renaming it would merge it into the dialog.
+            #
+            if /rewritten & ="class " then {
                # Substitute our own class and superclass name
                s := "class " || self.parent_Canvas.name || " : " ||
                   self.parent_Canvas.superclass_name || "("
@@ -249,6 +254,7 @@ class Code(
                s ||:= tab(0)
                &subject := s
                reading_class := 1
+               rewritten := 1
             }
             if \reading_class then {
                # Look for the end of the class variables and insert our

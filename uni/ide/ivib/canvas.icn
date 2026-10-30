@@ -1019,6 +1019,16 @@ class Canvas : Component : SelectiveClassCoding(
    #
    # Handle event - just pass onto other methods.
    #
+   #
+   # Keep arrow keys while focused, so the dialog does not also use them
+   # to move focus.  IvibTab only gives this component focus when the
+   # pointer is in the canvas.
+   #
+   method keeps(e)
+      if e === (Key_Up | Key_Down | Key_Left | Key_Right) then
+         return
+   end
+
    method handle_event(e)
       if e === (Key_Up | Key_Down | Key_Left | Key_Right) then
          handle_key_move(e)

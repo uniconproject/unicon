@@ -101,18 +101,26 @@ class Mainbar(
             if \decision == "Cancel" then fail
             tab_item := uidlog.FileTabSet.children[i]
             if not (tab_item.label == ("scratch" | "scratch*")) then
-               decision := ide.handle_closefile(, tab_item)
+               decision := ide.handle_closefile(, tab_item, 1)
             else i +:= 1
             }
-         if ide.CurrentTabItem().label == "scratch*" then {
+         if *uidlog.FileTabSet.children > 0 &
+            ide.CurrentTabItem().label == "scratch*" then {
             decision := asksave("scratch")
-            if decision == "Save" then ide.on_save_btn(, ide.CurrentTabItem())
+            if decision == "Save" then
+               ide.on_save_btn(, ide.CurrentTabItem()) | fail
             else if decision == "Cancel" then fail
             }
          }
       else {
+         # Save All.  save_file() writes the current buffer, and a pending
+         # layout is generated only for the current tab, so select each one
+         # first.  Otherwise every modified file receives the current buffer.
          every tab_item := !uidlog.FileTabSet.children do
-            if tab_item.label[-1] == "*" then ide.on_save_btn(, tab_item)
+            if tab_item.label[-1] == "*" then {
+               uidlog.FileTabSet.set_which_one(tab_item)
+               ide.on_save_btn(, tab_item) | fail
+               }
          }
       exit(0)
    end

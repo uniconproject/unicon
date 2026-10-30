@@ -1,0 +1,12 @@
+link glsnap
+# Run twice by the driver: native 2D, and with UNICONGL2D=1 (GL-2D).
+procedure main()
+   w := open("2d","g","size=320,240","bg=white") | stop("open: ",&errortext)
+   Fg(w,"red"); FillRectangle(w,10,10,100,50)
+   Fg(w,"blue"); DrawCircle(w,200,60,40); FillArc(w,150,120,80,80,0,&pi)
+   Fg(w,"black"); DrawLine(w,0,239,319,0)
+   WAttrib(w,"linewidth=4"); Fg(w,"green"); DrawPolygon(w,250,150,300,230,200,230)
+   ReadImage(w, "unicon.gif", 10, 80)
+   Fg(w,"black"); DrawString(w,200,20,"Unicon 2D")
+   snap(w,"t10_2d" || (if getenv("UNICONGL2D") then "_gl" else ""))
+end

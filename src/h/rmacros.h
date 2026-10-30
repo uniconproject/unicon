@@ -619,6 +619,14 @@
 #define OffsetMask      (~(D_Var)) /* offset mask for variables */
 
 /*
+ * Set only on the stack copy of a method procedure that Ofield() plants
+ * under the object it inserts as self.  Invoke trusts this, not the
+ * parameter name "self", and clears it before calling the method.
+ * Bit 6 is outside TypeMask and the flag bits.
+ */
+#define F_Method        ((word)0x40)
+
+/*
  * "In place" dereferencing. The 2nd version generates no E_Deref event;
  * it is for use during other events, to avoid spurious extra E_Deref's.
  */

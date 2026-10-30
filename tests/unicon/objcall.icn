@@ -1,0 +1,59 @@
+#
+# Invoking an object value directly must be run-time error 106 (as for a
+# record), not a call of whatever lies below it on the interpreter stack;
+# method calls, which rely on that stack layout, must keep working.
+#
+class A(v, tab)
+   method get()
+      return v
+   end
+   method sum(a[])
+      local t := 0
+      every t +:= !a
+      return t
+   end
+   method scan(s)
+      # the field tab hides the function tab(); calling it calls the object
+      s ? return tab(3)
+   end
+end
+
+class B : A()
+   method get()
+      return "B/" || self.A.get()
+   end
+end
+
+procedure p(x, y)
+   write("p called with ", image(x), ", ", image(y))
+   return
+end
+
+# Same shape as a method, but not one: the parameter name is not proof
+# that Ofield() inserted the object.
+procedure q(self, y)
+   write("q called with ", image(self), ", ", image(y))
+   return
+end
+
+procedure try(label, e)
+   &error := 1
+   if @e then
+      write(label, ": succeeded")
+   else if &errornumber = 106 then
+      write(label, ": error 106, offending value ", type(&errorvalue))
+   else
+      write(label, ": failed")
+end
+
+procedure main()
+   local b
+   b := B(7, B(1))
+   write(b.get(), " ", b.sum(1, 2, 3), " ", A(1).get())
+   try("o(3)", create b(3))
+   try("p(o(3))", create p(b(3)))
+   try("q(o(3))", create q(b(3)))
+   try("write(o(3))", create write(b(3)))
+   try("field tab(3)", create b.scan("abcdef"))
+   write(b.get())
+end

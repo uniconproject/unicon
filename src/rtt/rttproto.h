@@ -32,6 +32,8 @@ void           free_tend (void);
 void           full_lst  ();
 void           func_def  (struct node *dcltor);
 void           id_def    (struct node *dcltor, struct node *x);
+char          *dir_body  (struct token *t);
+void           hostdir   (struct token *t);
 void           keepdir   (struct token *s);
 int            icn_typ   (struct node *n);
 struct il_c   *ilc_dcl   (struct node *tqual, struct node *dcltor,

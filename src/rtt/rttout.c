@@ -1181,6 +1181,13 @@ int c_walk(struct node *n, int indent, int brace)
                prt_str(";", indent);
                does_break = 1;
                return 0;
+            case HostDir:
+               /*
+                * A directive for the C compiler; it does not change
+                *  whether control can reach what follows.
+                */
+               hostdir(t);
+               return 1;
             default:
                /*
                 * Other "primary" expressions are just their token image,
@@ -3811,15 +3818,13 @@ void keyconst(struct token *t)
    }
 
 /*
- * keepdir - A preprocessor directive to be kept has been encountered.
- *   If it is a raw-output directive, print just the body of the directive,
- *   otherwise print the whole thing.
+ * dir_body - the text of a kept directive without its keyword: just the
+ *   body for the raw-output directives, otherwise the whole thing.
  */
-void keepdir(struct token *t)
+char *dir_body(struct token *t)
    {
    char *s;
 
-   tok_line(t, 0);
    s = t->image;
    if (strncmp(s, "#passthru", 9) == 0) {
       s = s + 9;
@@ -3831,8 +3836,33 @@ void keepdir(struct token *t)
       if (*s == ' ' || *s == '\t')
          ++s;
       }
-   fprintf(out_file, "%s\n", s);
+   return s;
+   }
+
+/*
+ * keepdir - A preprocessor directive to be kept has been encountered.
+ *   It is printed as soon as the lexer reads it, so inside a function
+ *   it comes out ahead of the whole function (see hostdir()).
+ */
+void keepdir(struct token *t)
+   {
+   tok_line(t, 0);
+   fprintf(out_file, "%s\n", dir_body(t));
    line += 1;
+   }
+
+/*
+ * hostdir - output a #host directive where it appears in the code: as a
+ *   statement inside a function body, or between external declarations.
+ *   It always starts a line of its own at column 0, and so does whatever
+ *   follows it.
+ */
+void hostdir(struct token *t)
+   {
+   ForceNl();
+   tok_line(t, 0);
+   fprintf(out_file, "%s", dir_body(t));
+   ForceNl();
    }
 
 /*

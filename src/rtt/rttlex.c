@@ -395,11 +395,18 @@ int yylex()
       }
    else if (yylval.t->tok_id == PpKeep) {
       /*
-       * This is a non-standard preprocessor directive that must be
-       *  passed on to the output.
+       * #host directives are tokens for the grammar, which accepts them
+       *  between statements and between external declarations, so they
+       *  come out where they were written (see hostdir() in rttout.c).
+       *  Other non-standard directives are passed on to the output as
+       *  soon as they are read.
        */
-      keepdir(yylval.t);
-      return yylex();
+      if (strncmp(yylval.t->image, "#host", 5) == 0)
+         yylval.t->tok_id = HostDir;
+      else {
+         keepdir(yylval.t);
+         return yylex();
+         }
       }
    else if (lex_state == OpHead && yylval.t->tok_id != '}' &&
      GoodChar((int)yylval.t->image[0])) {

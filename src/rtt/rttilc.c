@@ -551,6 +551,15 @@ static void ilc_walk(struct node *n, int may_mod, int const_cast)
                 */
                ilc_goto(cont_lbl);
                break;
+            case HostDir:
+               /*
+                * A #host directive: keep it on a line of its own for the
+                *  C compiler.
+                */
+               insert_nl = 1;
+               ilc_str(dir_body(t));
+               insert_nl = 1;
+               break;
             default:
                /*
                 * No special processing is needed for this primary

@@ -53,7 +53,7 @@ extern int yydebug;
     YYEMPTY = -2,
     YYEOF = 0,                     /* "end of file"  */
     YYerror = 256,                 /* error  */
-    YYUNDEF = 368,                 /* "invalid token"  */
+    YYUNDEF = 372,                 /* "invalid token"  */
     Identifier = 257,              /* Identifier  */
     StrLit = 258,                  /* StrLit  */
     LStrLit = 259,                 /* LStrLit  */
@@ -167,7 +167,8 @@ extern int yydebug;
     B_IProc_Type = 367,            /* B_IProc_Type  */
     Offsetof = 369,                /* Offsetof  */
     Thread_local = 370,            /* Thread_local  */
-    IfStmt = 371                   /* IfStmt  */
+    HostDir = 371,                 /* HostDir  */
+    IfStmt = 373                   /* IfStmt  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -183,7 +184,7 @@ union YYSTYPE
    long i;
    
 
-#line 187 "rttgram.tab.h"
+#line 188 "rttgram.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

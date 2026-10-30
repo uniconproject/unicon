@@ -27,6 +27,7 @@ Global int verbose      Init(1);        /* -s, -v: level of verbosity */
 Global int pponly       Init(0);        /* -E: preprocess only */
 Global int dbgsyms Init(0); /* -g: emit debugging symbols in output */
 Global char *c_comp     Init(CComp);    /* -C: C compiler */
+Global int c_comp_explicit Init(0);     /* -C was given */
 Global char *c_opts     Init(COpts);    /* -p: options for C compiler */
 Global int unicon_mode Init(0); /* translating unicon code? */
 /*

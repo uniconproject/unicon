@@ -254,6 +254,7 @@ int main(int argc, char **argv)
             break;
          case 'C': /* -C C-comp: C compiler*/
             c_comp = optarg;
+            c_comp_explicit = 1;
             break;
          case 'E': /* -E: preprocess only */
             pponly = 1;

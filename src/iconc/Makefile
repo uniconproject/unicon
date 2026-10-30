@@ -31,9 +31,10 @@ $(OBJS):	../h/config.h ../h/cpuconf.h ../h/cstructs.h ../h/define.h\
 	$(CMNT)@echo "   [ICONC] $<"
 	$(SLNT)$(CC) $(CFLAGS) $(CPPFLAGS) -c $<
 
-# ccomp_param.h is generated under UNICON_TOP_BUILDDIR (out-of-tree safe).
+# ccomp_param.h is generated under UNICON_TOP_BUILDDIR.  -I comes first so
+# that header is chosen over one left in the source tree.
 ccomp.o:	ccomp.c $(UNICON_TOP_BUILDDIR)/src/iconc/ccomp_param.h
-		$(CC) $(CFLAGS) $(CPPFLAGS) -I$(UNICON_TOP_BUILDDIR)/src/iconc \
+		$(CC) $(CFLAGS) -I$(UNICON_TOP_BUILDDIR)/src/iconc $(CPPFLAGS) \
 			-DICONC_LIB="\"$(LIBS)\"" -c ccomp.c
 
 ccode.o:	../h/lexdef.h ctoken.h

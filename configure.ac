@@ -443,8 +443,10 @@ if test x"$CC" = x"clang" || test x"$unicon_os" = x"macos" || test x"$unicon_os"
 fi
 
 # Warning suppressions for iconc-generated C only (not Unicon's own CFLAGS).
-# Skip -Wno-parentheses-equality here (already gated above / hardcoded on MacOS).
+# -Wno-parentheses-equality is repeated here because the gate above only
+# matches CC=clang literally (not clang-18, /usr/bin/clang, ...).
 ICONCCFLAGS=
+AC_CFLAG([-Werror -Wno-parentheses-equality], [], [ICONCCFLAGS="$ICONCCFLAGS -Wno-parentheses-equality"])
 AC_CFLAG([-Werror -Wno-deprecated-non-prototype], [], [ICONCCFLAGS="$ICONCCFLAGS -Wno-deprecated-non-prototype"])
 AC_CFLAG([-Werror -Wno-unused-value], [], [ICONCCFLAGS="$ICONCCFLAGS -Wno-unused-value"])
 AC_CFLAG([-Werror -Wno-return-type], [], [ICONCCFLAGS="$ICONCCFLAGS -Wno-return-type"])
@@ -1065,10 +1067,12 @@ dnl Leading space keeps growcat concatenation spacing simple.
 iconc_c_escape() {
   printf ' %s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
 }
+ICONC_CC_STR=`iconc_c_escape "$CC"`
 ICONC_CPPFLAGS_STR=`iconc_c_escape "$CPPFLAGS"`
 ICONC_CFLAGS_STR=`iconc_c_escape "$CFLAGS"`
 ICONCCFLAGS_STR=`iconc_c_escape "$ICONCCFLAGS"`
 ICONC_LDFLAGS_STR=`iconc_c_escape "$LDFLAGS"`
+AC_SUBST([ICONC_CC_STR])
 AC_SUBST([ICONC_CPPFLAGS_STR])
 AC_SUBST([ICONC_CFLAGS_STR])
 AC_SUBST([ICONCCFLAGS_STR])

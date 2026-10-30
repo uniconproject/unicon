@@ -1232,6 +1232,14 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
          set_errortext(145); /* maybe out of memory, probably bad DISPLAY var. */
          return NULL;
          }
+      if ((gl_alc_display_font(ws->display)) == NULL) {
+         if (!is_3d) {
+            *err_index = -1;
+            free_binding(w);
+            set_errortext(145);
+            return NULL;
+            }
+         }
       }
    else
 #endif                                  /* GraphicsGL */

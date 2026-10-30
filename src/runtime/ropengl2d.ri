@@ -7463,60 +7463,45 @@ int gl_wputc(int ci, wbp w)
 
 
 /*
- * allocate a display on machine s
+ * OpenGL-specific initialization of a display that the native window
+ * system has already allocated (alc_display()).  Displays are shared
+ * between windows, so this only does work the first time.  The default
+ * font is needed for 2D rendering; a 3D-only window can live without it
+ * (alc_context() falls back to the native font).
  */
-wdp gl_alc_display(char *s)
+int gl_init_display(wdp wd, int need_font)
    {
-   wdp wd;
-
-   wd = alc_display(s); /* platform-specific init */
-   if (!wd) return NULL;
-
-   /*
-    * Init OpenGL-specific display fields
-    */
    if (!wd->texIds) {
       /*
        * Array for non-standard pattern textures. See macros for allocating
        * more as needed
        */
+      wd->texIds = (unsigned int *)calloc(256, sizeof(unsigned int));
+      if (!wd->texIds)
+         return Failed;
       wd->maxTexIds = 256;
       wd->numTexIds = 0;
-      wd->texIds = (unsigned int *)malloc(wd->maxTexIds*sizeof(unsigned int));
-      if (!wd->texIds) {
-          free(wd);
-          return NULL;
-         }
       }
-   return wd;
-   }
 
-/*
- * allocate font for a display
- */
-wdp gl_alc_display_font(wdp wd)
-{
    if (!wd->glfonts) {
       wd->numFonts = 1;
       wd->glfonts = loadfont(wd,DEFAULTFONTNAME,strlen(DEFAULTFONTNAME));
-      if (!wd->glfonts) {
-         fprintf(stderr,"Failed to find default font in dat/fonts\n");
-         return NULL; /* should this be a runerr? */
+      if (!wd->glfonts && need_font) {
+         glprintf("failed to load the default OpenGL font\n");
+         return Failed;
          }
       }
-   return wd;
-}
+   return Succeeded;
+   }
 
 
 
 /*
- * allocate a window state structure
+ * OpenGL-specific initialization of a window state that the native
+ * window system has already allocated (alc_winstate()).
  */
-wsp gl_alc_winstate()
+void gl_init_winstate(wsp ws)
    {
-   wsp ws = alc_winstate(); /* platform-specific init */
-   if (!ws) return NULL;
-
 #ifdef XWindows
    ws->pix = (Pixmap) NULL; /* OpenGL impl. doesn't use backing store */
    ws->ctx = (GLXContext) NULL;
@@ -7546,61 +7531,40 @@ wsp gl_alc_winstate()
    /* Set viewing volume defaults */
    ws->projection = UGL_PERSPECTIVE;
    ws->camwidth = DEFAULT_CWIDTH;
-
-   return ws;
    }
 
 
 
 /*
- * free a display
+ * Release the OpenGL-specific parts of a display.  Called by the native
+ * free_display() when the last reference goes away, before it destroys
+ * the GL contexts.  GL objects (textures) are not deleted here: there may
+ * be no current context, and destroying the contexts releases them.
  */
-void gl_free_display(wdp wd)
+void gl_free_display_resources(wdp wd)
    {
-   /* pre-emptively check refcount for deallocation */
-   if (wd->refcount == 1) {
-      int i;
-      wfp wf = wd->glfonts;
+   wfp wf, next;
 
-      /*
-       * Free all 2d facility textures
-       */
-      for (i = 0; i < 16; i++) {
-         if (wd->stdPatTexIds[i])
-            glDeleteTextures(1, &(wd->stdPatTexIds[i]));
-         wd->stdPatTexIds[i] = 0;
-         }
-      delete_first_tex(wd, wd->numTexIds);
-      free(wd->texIds);
-      wd->texIds = NULL;
+   free(wd->texIds);
+   wd->texIds = NULL;
+   wd->numTexIds = wd->maxTexIds = 0;
+   memset(wd->stdPatTexIds, 0, sizeof(wd->stdPatTexIds));
 
-      /*
-       * Free mutable colors
-       */
-      free_mutables(wd);
+   free_mutables(wd);
 
+   for (wf = wd->glfonts; wf; wf = next) {
+      next = wf->next;
 #if HAVE_LIBFREETYPE
-      /*
-       * Free FreeType font fields
-       */
-      while (wf) { /* free fonts */
-         FT_Done_Face(wf->face);
-         FT_Done_FreeType(wf->library);
-         for (i = 0; i < 256; i++) {
-            if (wf->chars[i].pixmap) {
-               free(wf->chars[i].pixmap);
-               wf->chars[i].pixmap = NULL;
-               }
-            }
-         wf = wf->next;
-         }
-      wd->glfonts = NULL;
+      int i;
+      if (wf->face) FT_Done_Face(wf->face);
+      if (wf->library) FT_Done_FreeType(wf->library);
+      for (i = 0; i < 256; i++)
+         free(wf->chars[i].pixmap);
 #endif                                  /* HAVE_LIBFREETYPE */
+      free(wf->name);
+      free(wf);
       }
-#ifdef XWindows
-   /* Why doesn't Windows need to allocate a display? */
-   free_display(wd);
-#endif                                  /* XWindows */
+   wd->glfonts = NULL;
    }
 
 
@@ -7620,13 +7584,6 @@ int gl_wgetq(wbp w, dptr res, int t)
       ws->redraw_flag = 0;
       }
    return wgetq(w, res, t);
-   }
-
-
-
-FILE *gl_wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int is_3d)
-   {
-   return wopen(name, lp, attr,  n, err_index, is_3d, 1);
    }
 
 

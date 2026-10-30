@@ -1218,32 +1218,6 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
       return NULL;
       }
 
-#ifdef GraphicsGL
-   if (is_gl) {
-      if ((ws = w->window = gl_alc_winstate()) == NULL) {
-         *err_index = -2;
-         free_binding(w);
-         set_errortext(145);
-         return NULL;
-         }
-      if ((ws->display = gl_alc_display(display)) == NULL) {
-         *err_index = -1;
-         free_binding(w);
-         set_errortext(145); /* maybe out of memory, probably bad DISPLAY var. */
-         return NULL;
-         }
-      if ((gl_alc_display_font(ws->display)) == NULL) {
-         if (!is_3d) {
-            *err_index = -1;
-            free_binding(w);
-            set_errortext(145);
-            return NULL;
-            }
-         }
-      }
-   else
-#endif                                  /* GraphicsGL */
-   {
    if ((ws = w->window = alc_winstate()) == NULL) {
       *err_index = -2;
       free_binding(w);
@@ -1257,8 +1231,20 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
       set_errortext(145); /* maybe out of memory, probably bad DISPLAY var. */
       return NULL;
       }
+
+#ifdef GraphicsGL
+   if (is_gl) {
+      gl_init_winstate(ws);
+      if (gl_init_display(ws->display, !is_3d) != Succeeded) {
+         *err_index = -1;
+         free_binding(w);
+         set_errortext(145);
+         return NULL;
+         }
+      }
+   else
+#endif                                  /* GraphicsGL */
       ws->vis = DefaultVisual(ws->display->display, ws->display->screen);
-   }
 
    ws->children=NULL;
    ws->parent = NULL;
@@ -3015,7 +3001,11 @@ int setdisplay(wbp w, char *s)
       /* can't change display for mapped window! */
       if (ws->iconic != HiddenState) return Failed;
 
-      Protect(d = gl_alc_display(s), return 0);
+      Protect(d = alc_display(s), return 0);
+      if (gl_init_display(d, !ws->is_3D) != Succeeded) {
+         free_display(d);
+         return 0;
+         }
       ws->display = d;
 
       strcpy(wc->glfg.name, "black");

@@ -5284,15 +5284,17 @@ char child_window_generic(wbp w, wbp wp, int child_window)
    /*
     * allocate a window state, and a context
     */
-#ifdef GraphicsGL
-   if (wp->window->is_gl || is_3d) {
-      Protect(w->window = gl_alc_winstate(), { free_binding(w); return 0; });
-      //if (!wp->window->is_gl) w->window->is_gl = 0;
-      }
-   else
-#endif                                  /* GraphicsGL */
    Protect(w->window = alc_winstate(), { free_binding(w); return 0; });
    ws = w->window;
+#ifdef GraphicsGL
+   if (GL_CHILD(wp, child_window)) {
+      gl_init_winstate(ws);
+      if (gl_init_display(wd, !is_3d) != Succeeded) {
+         free_binding(w);
+         return 0;
+         }
+      }
+#endif                                  /* GraphicsGL */
    ws->display = wd;
     CLRTITLEBAR(ws);
 
@@ -5301,7 +5303,7 @@ char child_window_generic(wbp w, wbp wp, int child_window)
    wc = w->context;
    wc->display = wd;
 #ifdef GraphicsGL
-   if (wp->window->is_gl)
+   if (ws->is_gl && wd->glfonts)
       wc->font = wd->glfonts;
    else
 #endif                                  /* GraphicsGL */

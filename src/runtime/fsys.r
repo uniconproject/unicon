@@ -1254,12 +1254,12 @@ Deliberate Syntax Error
             }
 #ifdef Graphics3D
          if (status & Fs_Window3D)
-            f = gl_wopen(fnamestr, hp, attr, n, &err_index, 1);
+            f = wopen(fnamestr, hp, attr, n, &err_index, 1, 1);
          else
 #endif                                  /* Graphics3D */
 #ifdef GraphicsGL
          if (status & Fs_WinGL2D)
-            f = gl_wopen(fnamestr, hp, attr, n, &err_index, 0);
+            f = wopen(fnamestr, hp, attr, n, &err_index, 0, 1);
          else
 #endif                                  /* GraphicsGL */
             f = wopen(fnamestr, hp, attr, n, &err_index, 0, 0);

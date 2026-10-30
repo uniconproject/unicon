@@ -937,12 +937,10 @@ int checkOpenConsole( FILE *w, char *s );
       /*
        * Windowing functions (platform-specific)
        */
-      wdp gl_alc_display(char *s);
-      wdp gl_alc_display_font(wdp wd);
-      wsp gl_alc_winstate();
-      void gl_free_display(wdp wd);
+      int gl_init_display(wdp wd, int need_font);
+      void gl_init_winstate(wsp ws);
+      void gl_free_display_resources(wdp wd);
       int gl_wgetq(wbp w, dptr res, int t);
-      FILE *gl_wopen(char *name, struct b_list *lp, dptr attrs, int n, int *err_index, int is_3d);
       int gl_wmap(wbp w);
    #endif                                       /* GraphicsGL */
 

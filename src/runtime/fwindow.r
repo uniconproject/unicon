@@ -280,7 +280,7 @@ function{1} Clone(argv[argc])
       else {
 #ifdef GraphicsGL
          /* Allow legacy X11 to work with OpenGL 3D windows */
-         if (w->window->is_gl || child_window==CHILD_WIN3D) {
+         if (GL_CHILD(w, child_window)) {
             if (!gl_child_window_stuff(new_w, w, child_window)) runerr(0);
             }
          else
@@ -320,7 +320,10 @@ function{1} Clone(argv[argc])
          else
             MakeCurrent(new_w);
          }
+      else
 #endif                                  /* GraphicsGL */
+      if (child_window)
+         my_wmap(new_w);
 
       Protect(BlkLoc(result) =
               (union block *)alcfile((FILE *)new_w, Fs_Window|Fs_Read|Fs_Write
@@ -328,7 +331,7 @@ function{1} Clone(argv[argc])
                              | (w->context->rendermode == UGL3D?Fs_Window3D:0)
 #endif                                  /* Graphics3D */
 #ifdef GraphicsGL
-                             | (w->window->is_gl?Fs_WinGL2D:0)
+                             | (new_w->window->is_gl?Fs_WinGL2D:0)
 #endif                                  /* GraphicsGL */
                                    , &emptystr),runerr(0));
       result.dword = D_File;

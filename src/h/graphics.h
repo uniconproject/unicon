@@ -517,6 +517,17 @@ typedef struct childcontrol {
 #define CHILD_WIN3D      2
 #define CHILD_WINTEXTURE 3
 
+#ifdef GraphicsGL
+/*
+ * Is a child window of parent wp rendered with OpenGL?  3D and texture
+ * children are.  A 2D child is only if its parent is an OpenGL 2D window;
+ * a 2D child of a 3D window is a native window, as before OpenGL 2D.
+ */
+#define GL_CHILD(wp, child_window) \
+   ((child_window) != CHILD_WIN2D || \
+    ((wp)->window->is_gl && !(wp)->window->is_3D))
+#endif                                  /* GraphicsGL */
+
 #define TEXTURE_RECORD   1
 #define TEXTURE_WINDOW   2
 

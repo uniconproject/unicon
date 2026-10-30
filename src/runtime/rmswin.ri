@@ -259,32 +259,6 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
       return NULL;
       }
 
-#ifdef GraphicsGL
-   if (is_gl) {
-      if ((ws = w->window = gl_alc_winstate()) == NULL) {
-         *err_index = -2;
-         free_binding(w);
-         set_errortext(145); /* maybe out of memory */
-         return NULL;
-         }
-      if ((ws->display = gl_alc_display(NULL)) == NULL) {
-         *err_index = -1;
-         free_binding(w);
-         set_errortext(145);
-         return NULL;
-         }
-      if ((gl_alc_display_font(ws->display)) == NULL) {
-         if (!is_3d) {
-            *err_index = -1;
-            free_binding(w);
-            set_errortext(145);
-            return NULL;
-            }
-         }
-      }
-   else
-#endif                                  /* GraphicsGL */
-   {
    if ((ws = w->window = alc_winstate()) == NULL) {
       *err_index = -2;
       free_binding(w);
@@ -298,7 +272,18 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
       set_errortext(145);
       return NULL;
       }
-   }
+
+#ifdef GraphicsGL
+   if (is_gl) {
+      gl_init_winstate(ws);
+      if (gl_init_display(ws->display, !is_3d) != Succeeded) {
+         *err_index = -1;
+         free_binding(w);
+         set_errortext(145);
+         return NULL;
+         }
+      }
+#endif                                  /* GraphicsGL */
 
    ws->children=NULL;
    ws->parent = NULL;

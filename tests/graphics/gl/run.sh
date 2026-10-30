@@ -30,11 +30,19 @@ cp "$HERE"/*.icn "$HERE"/unicon.gif "$OUT"/
 cd "$OUT" || exit 1
 
 XPID=
-if [ -z "$DISPLAY" ] && command -v Xvfb >/dev/null; then
-   Xvfb :97 -screen 0 1280x1024x24 +extension GLX >/dev/null 2>&1 &
+if [ -z "$DISPLAY" ]; then
+   command -v Xvfb >/dev/null || { echo "DISPLAY is unset and Xvfb is not installed"; exit 1; }
+   d=97
+   while [ -e /tmp/.X$d-lock ]; do d=$((d+1)); done
+   Xvfb :$d -screen 0 1280x1024x24 +extension GLX >/dev/null 2>&1 &
    XPID=$!
-   DISPLAY=:97; export DISPLAY
-   n=0; until xdpyinfo >/dev/null 2>&1 || [ $n -ge 50 ]; do sleep 0.1; n=$((n+1)); done
+   trap 'kill $XPID 2>/dev/null' EXIT
+   DISPLAY=:$d; export DISPLAY
+   n=0
+   until [ -S /tmp/.X11-unix/X$d ]; do
+      kill -0 $XPID 2>/dev/null && [ $n -lt 300 ] || { echo "Xvfb :$d did not start"; exit 1; }
+      sleep 0.1; n=$((n+1))
+   done
 fi
 
 unicon -s -c glsnap.icn >/dev/null 2>&1 || { echo "cannot compile glsnap.icn"; exit 1; }
@@ -54,6 +62,5 @@ for f in t*.icn; do
 done
 run t10_2d _gl UNICONGL2D=1
 
-[ -n "$XPID" ] && kill "$XPID"
 echo "Result: $pass passed, $fail failed"
 [ $fail -eq 0 ]

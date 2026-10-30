@@ -337,6 +337,7 @@ fi
 %files nographics
 
 %files runtime -f %{_builddir}/unicon/runtime.files
+%{_libdir}/unicon/dat
 
 %files plugins
 %if %{with plugins}

@@ -323,6 +323,14 @@ install Install:
 	done
 #       plugins
 	@$(INST) -m 644 $(TOPDIR)/plugins/lib/*.* $(DESTDIR)$(UPLUGINS)/ || true
+#	fonts for OpenGL graphics (found via uniroot, see find_fontfile())
+#	calibri*.ttf are not redistributable and are not used.
+	@echo "Installing dat/fonts to $(DESTDIR)$(ULROT)/dat/fonts ..."
+	@mkdir -p $(DESTDIR)$(ULROT)/dat/fonts
+	@for f in $(TOPDIR)/dat/fonts/*; do \
+	  case "$$f" in */calibri*) continue;; esac; \
+	  $(INST) -m 644 $$f $(DESTDIR)$(ULROT)/dat/fonts; \
+	done
 #	docs and man
 	@echo "Installing $(DESTDIR)$(mandir)/man1/unicon.1 ..."
 	@$(INST) -m 644 $(TOPDIR)/doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1/

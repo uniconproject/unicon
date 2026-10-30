@@ -6831,9 +6831,24 @@ char *find_fontfile(char *family, int flags) {
     * Get path to unicon/dat/fonts
     */
    if (!(fontdir[0])) {
+#if UNIX
+      /*
+       * Same lookup as the ipl/uni libraries: relative to the patched
+       * library root in an installed Unicon, or to the iconx binary in a
+       * build tree.  imain() has already located iconx for relfile().
+       */
+      char *dir = unirootfile(UNICONX_EXE, "/../../dat/fonts");
+      if (!dir || strlen(dir) >= MAX_LEN) {
+         free(dir);
+         glprintf("fonts directory name is too long\n");
+         return NULL;
+         }
+      strcpy(fontdir, dir);
+      free(dir);
+#else                                   /* UNIX */
       /* NOTE: findonpath() does not support '~' */
       if (!findonpath(UNICONX_EXE, fontdir, MAX_LEN)) {
-         fprintf(stderr,"could not find iconx on path\n");
+         glprintf("could not find iconx on path\n");
          return NULL;
          }
 
@@ -6854,6 +6869,7 @@ char *find_fontfile(char *family, int flags) {
             }
          }
       sprintf(ptr+1,"..%cdat%cfonts",PS,PS);
+#endif                                  /* UNIX */
       }
 
 

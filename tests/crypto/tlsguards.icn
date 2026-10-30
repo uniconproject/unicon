@@ -1,0 +1,53 @@
+#
+# TLS behavior that depends on rcrypto.ri's OpenSSL version tests seeing
+# the real OPENSSL_VERSION_NUMBER (they used to see 0 and always took the
+# pre-1.1 branch): TLS 1.3 as a minimum, TLS 1.3 ciphersuite selection,
+# certificate host-name checks, and ISO 8601 certificate times.
+#
+
+link tlsutil
+
+procedure main()
+   local port, host, skey, scert, ca, sock, t
+
+   if not (&features == "secure sockets layer encryption") then
+      stop("needs SSL")
+   if not (&features == "concurrent threads") then
+      stop("needs concurrent threads")
+
+   skey := "key=./data/unicon-server.key"
+   scert := "cert=./data/unicon-server.crt"
+   ca := "ca=./data/unicon-ca.crt"
+
+   port := tls_port()
+   tls_start([port, "nae", skey, scert, ca], 3)
+   # The test certificate names localhost as a DNS SAN.  The server listens
+   # on 127.0.0.1, so connect over IPv4 ("4") in case localhost is ::1 first.
+   host := "localhost:" || port[find(":", port) + 1:0]
+
+   if sock := open(host, "ne4", 5000, ca, "minProto=TLS1.3") then {
+      write("minProto TLS1.3: ", sock["version"])
+      close(sock)
+      }
+   else
+      write("minProto TLS1.3: fail ", &errortext)
+
+   if sock := open(host, "ne4", 5000, ca,
+                   "ciphers1.3=TLS_AES_128_GCM_SHA256") then {
+      write("ciphers1.3: ", sock["cipher"])
+      close(sock)
+      }
+   else
+      write("ciphers1.3: fail ", &errortext)
+
+   if sock := open(host, "ne4", 5000, ca) then {
+      write("hostnamematch: ", image(sock["hostnamematch"]))
+      t := sock["notafter"]
+      write("notafter: ",
+            if t ? (tab(many(&digits)) & ="-" & move(2) & ="-" & move(2) &
+                    ="T" & move(8) & ="Z" & pos(0)) then "iso" else image(t))
+      close(sock)
+      }
+   else
+      write("connect: fail ", &errortext)
+end

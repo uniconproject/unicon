@@ -132,6 +132,9 @@ AC_ARG_ENABLE([graphics],
 AC_ARG_ENABLE([graphics3d],
 	[AS_HELP_STRING([--disable-graphics3d], [No 3D graphics support])],
 		        [graphics3d=$enableval], [graphics3d=on])
+AC_ARG_ENABLE([opengl2d],
+	[AS_HELP_STRING([--enable-opengl2d], [Experimental: render 2D graphics with OpenGL (needs OpenGL and FreeType)])],
+		        [opengl2d=$enableval], [opengl2d=no])
 AC_ARG_ENABLE([multiprograms],
 	[AS_HELP_STRING([--disable-multiprograms], [No multi programs support])],
 			[multiprograms=$enableval], [multiprograms=on])
@@ -854,6 +857,14 @@ if ! test "x$graphics" = "xno"; then
       AC_DEFINE([NoGraphics3D], [1], [No Graphics3D])
     fi
 
+    if test "x$opengl2d" = "xyes" ; then
+       if test "x$cv_opengl" = "xyes" && test "x$cv_libfreetype" = "xyes" ; then
+          AC_DEFINE([GraphicsGL2D], [1], [OpenGL 2D graphics])
+       else
+          AC_MSG_ERROR([--enable-opengl2d requires 3D graphics (OpenGL) and FreeType])
+       fi
+    fi
+
     echo "Building with graphics..."
     GRAPHICS=graphics
 
@@ -1120,6 +1131,7 @@ if test "x$graphics3d" = "xyes" || test "x$graphics3d" = "xon" ; then
   fi
 
   if test "x$cv_libftgl"   = "xyes" ; then gdtmp="$gdtmp +FTGL "   ; else gdtmp="$gdtmp -FTGL " ; fi
+  if test "x$opengl2d"     = "xyes" ; then gdtmp="$gdtmp +OpenGL2D " ; else gdtmp="$gdtmp -OpenGL2D " ; fi
 
   if test "x$cv_opengl" = "xyes" ; then
     gdtmp=" + Graphics3D         : $gdtmp"

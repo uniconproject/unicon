@@ -815,21 +815,14 @@ Deliberate Syntax Error
 #ifdef XWindows
                XInitThreads();
 #endif                                  /* XWindows */
-#ifdef GraphicsGL
-               /* for enabling OpenGL 2D implementation in a convenient way */
-               if (getenv("UNICONGL2D")) {
-                  /*
-                  * FreeType is a requirement for OpenGL 2D
-                  */
-#if !HAVE_LIBFREETYPE
-                  set_errortext(1045);
-                  fail;
-#endif                                  /* HAVE_LIBFREETYPE */
-                  if (status & Fs_Window) {
-                     status |= Fs_WinGL2D;
-                  }
-               }
-#endif                                  /* GraphicsGL */
+#ifdef GraphicsGL2D
+               /*
+                * Experimental OpenGL 2D rendering, selected at run time.
+                * configure --enable-opengl2d requires FreeType for it.
+                */
+               if (getenv("UNICONGL2D"))
+                  status |= Fs_WinGL2D;
+#endif                                  /* GraphicsGL2D */
                continue;
 #else                                   /* Graphics */
                set_errortext(148);
@@ -1257,11 +1250,11 @@ Deliberate Syntax Error
             f = wopen(fnamestr, hp, attr, n, &err_index, 1, 1);
          else
 #endif                                  /* Graphics3D */
-#ifdef GraphicsGL
+#ifdef GraphicsGL2D
          if (status & Fs_WinGL2D)
             f = wopen(fnamestr, hp, attr, n, &err_index, 0, 1);
          else
-#endif                                  /* GraphicsGL */
+#endif                                  /* GraphicsGL2D */
             f = wopen(fnamestr, hp, attr, n, &err_index, 0, 0);
          if (f == NULL) {
             if (err_index >= 0) runerr(145, attr[err_index]);

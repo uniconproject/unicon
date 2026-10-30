@@ -3580,9 +3580,13 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          }
 #ifdef Graphics3D
       case A_RENDERMODE:
+#ifdef GraphicsGL2D
+         /* 2D drawing on a 3D window is done by the OpenGL 2D renderer */
          if (!strcmp(val,"2d"))
             wc->rendermode = UGL2D;
-         else if (!strcmp(val,"3d"))
+         else
+#endif                                  /* GraphicsGL2D */
+         if (!strcmp(val,"3d"))
             wc->rendermode = UGL3D;
          else
             return Failed;

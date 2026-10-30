@@ -40,17 +40,8 @@ void free_binding(wbp w)
    {
    w->refcount--;
    if(w->refcount == 0) {
-#ifdef GraphicsGL
-      if (w->context && w->window->is_gl) {
-         if (w->window) gl_free_window(w->window);
-         if (w->context) gl_free_context(w->context);
-         }
-      else
-#endif                                  /* GraphicsGL */
-      {
       if (w->window) free_window(w->window);
       if (w->context) free_context(w->context);
-      }
       GRFX_UNLINK(w, wbndngs);
       }
    }

@@ -1267,7 +1267,6 @@ int updaterendercontext(wbp w, int intcode)
 
 
 
-
 /*
  * Function for setting the OpenGL capabilities needed for the Unicon
  * 2D facilities
@@ -1393,7 +1392,6 @@ int init_canvas(wbp w)
 
 
 
-
 /*
  * Can make this a macro
  */
@@ -1458,7 +1456,6 @@ int init_2dcontext(wcp wc)
 
    return Succeeded;
    }
-
 
 
 
@@ -2340,7 +2337,6 @@ int drawblimage2d(wbp w, struct b_record *rp)
    UGLBindTexture(GL_TEXTURE_2D, 0); /* unbind */
    return Succeeded;
    }
-
 
 
 
@@ -3464,7 +3460,6 @@ int gl_blimage(wbp w, int x, int y, int width, int height, int ch,
    ws->busy_flag = 0;
    return Succeeded;
    }
-
 
 
 
@@ -5163,7 +5158,6 @@ char *load_xpm(wbp w, char *filename, unsigned int *width, unsigned int *height)
 
 
 
-
 /*
  * dumpimage -- write an image to a disk file in an X format.
  *
@@ -5221,8 +5215,6 @@ int gl_dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
    free(tmp);
    return rv;
    }
-
-
 
 
 
@@ -5914,7 +5906,6 @@ int gl_isetfg(wbp w, int mindex)
 
 
 
-
 /*
  * Creates a display list item
  */
@@ -5932,7 +5923,6 @@ int gl_setfg(wbp w, char *s)
    {
    return gl_color(w, GL2D_FG, 0, s); /* not mutable */
    }
-
 
 
 
@@ -7293,17 +7283,6 @@ int gl_setleading(wbp w, int leading)
 
 
 
-int gl_allowresize(wbp w, int on)
-   {
-   if (on)
-      SETRESIZABLE(w);
-   else
-      CLRRESIZABLE(w);
-   return Succeeded;
-   }
-
-
-
 wcp gl_clone_context(wbp w)
    {
    wcp wc, rv;
@@ -7478,8 +7457,6 @@ int gl_wputc(int ci, wbp w)
 
 
 
-
-
 /*******************************************************
  * (5) Window management functions (platform specific) *
  *******************************************************/
@@ -7532,7 +7509,6 @@ wdp gl_alc_display_font(wdp wd)
 
 
 
-
 /*
  * allocate a window state structure
  */
@@ -7572,14 +7548,6 @@ wsp gl_alc_winstate()
    ws->camwidth = DEFAULT_CWIDTH;
 
    return ws;
-   }
-
-
-
-
-void gl_free_context(wcp wc)
-   {
-   return free_context(wc);
    }
 
 
@@ -7637,253 +7605,6 @@ void gl_free_display(wdp wd)
 
 
 
-int gl_free_window(wsp ws)
-   {
-   return free_window(ws);
-   }
-
-
-
-/*
- * OpenGL doesn't need to allocate many colors, but this might come in handy
- */
-void gl_freecolor(wbp w, char *s)
-   {
-   return freecolor(w, s);
-   }
-
-
-
-int gl_do_config(wbp w, int status)
-   {
-   return do_config(w, status);
-   }
-
-
-
-/*
- * from rxwin.ri
- */
-void gl_getcanvas(wbp w, char *s)
-   {
-   return getcanvas(w, s);
-   }
-
-
-
-
-/*
- * from rxwin.ri...
- */
-int gl_getdefault(wbp w, char *prog, char *opt, char *answer)
-   {
-   return getdefault(w, prog, opt, answer);
-   }
-
-
-
-
-void gl_getdisplay(wbp w, char *s)
-   {
-   return getdisplay(w, s);
-   }
-
-
-
-
-void gl_geticonic(wbp w, char *s)
-   {
-   return geticonic(w, s);
-   }
-
-
-
-int gl_geticonpos(wbp w, char *s)
-   {
-   return geticonpos(w, s);
-   }
-
-
-
-
-void gl_getpointername(wbp w, char *s)
-   {
-   return getpointername(w, s);
-   }
-
-
-
-int gl_getpos(wbp w)
-   {
-   return getpos(w);
-   }
-
-
-
-int gl_getvisual(wbp w, char *s)
-   {
-   return getvisual(w, s);
-   }
-
-
-
-int gl_nativecolor(wbp w, char *s, long *r, long *g, long *b)
-   {
-   return nativecolor(w, s, r, g, b);
-   }
-
-
-
-int gl_lowerWindow(wbp w)
-   {
-   return lowerWindow(w);
-   }
-
-
-
-int gl_raiseWindow(wbp w)
-   {
-   return raiseWindow(w);
-   }
-
-
-
-int gl_setcanvas(wbp w, char *s)
-   {
-   return setcanvas(w, s);
-   }
-
-
-
-int gl_setdisplay(wbp w, char *s)
-   {
-   return setdisplay(w, s);
-   }
-
-
-
-int gl_seticonicstate(wbp w, char *s)
-   {
-   return seticonicstate(w, s);
-   }
-
-
-
-int gl_seticonimage(wbp w, dptr dp)
-   {
-   return seticonimage(w, dp);
-   }
-
-
-
-int gl_seticonlabel(wbp w, char *s)
-   {
-   return seticonlabel(w, s);
-   }
-
-
-
-int gl_seticonpos(wbp w, char *s)
-   {
-   return seticonpos(w, s);
-   }
-
-
-
-int gl_setimage(wbp w, char *s)
-   {
-   return setimage(w, s);
-   }
-
-
-
-int gl_setpointer(wbp w, char *s)
-   {
-   return setpointer(w, s);
-   }
-
-
-
-int gl_setwidth(wbp w, SHORT new_width)
-   {
-   return setwidth(w, new_width);
-   }
-
-
-
-
-int gl_setheight(wbp w, SHORT new_height)
-   {
-   return setheight(w, new_height);
-   }
-
-
-
-int gl_setgeometry(wbp w, char *s)
-   {
-   return setgeometry(w, s);
-   }
-
-
-
-
-int gl_setwindowlabel(wbp w, char *s)
-   {
-   return setwindowlabel(w, s);
-   }
-
-
-
-int gl_query_pointer(wbp w, XPoint *xp)
-   {
-   return query_pointer(w, xp);
-   }
-
-
-
-int gl_query_rootpointer(XPoint *xp)
-   {
-   return query_rootpointer(xp);
-   }
-
-
-int gl_walert(wbp w, int volume)
-   {
-   return walert(w, volume);
-   }
-
-
-
-void gl_warpPointer(wbp w, int x, int y)
-   {
-   return warpPointer(w, x, y);
-   }
-
-
-
-int gl_wclose(wbp w)
-   {
-   return wclose(w);
-   }
-
-
-
-void gl_wflush(wbp w)
-   {
-   return wflush(w);
-   }
-
-
-
-#ifdef XWindows
-void gl_wflushall()
-   {
-   return wflushall();
-   }
-#endif                                  /* XWindows */
-
-
-
 int gl_wgetq(wbp w, dptr res, int t)
    {
    wsp ws = w->window;
@@ -7923,7 +7644,3 @@ int gl_wmap(wbp w)
 
 
 
-void gl_wsync(wbp w)
-   {
-   return wsync(w);
-   }

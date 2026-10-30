@@ -562,11 +562,6 @@ static int setpos(wbp w, char *s)
       }
    w->window->real_posx = posx;
    w->window->real_posy = posy;
-#ifdef GraphicsGL
-   if (w->window->is_gl)
-      return gl_setgeometry(w,tmp);
-   else
-#endif                                  /* GraphicsGL */
    return setgeometry(w,tmp);
    }
 
@@ -598,11 +593,6 @@ int setsize(wbp w, char *s)
       }
    if (*s2) return RunError;
    sprintf(tmp,"%dx%d",width,height);
-#ifdef GraphicsGL
-   if (w->window->is_gl)
-      return gl_setgeometry(w,tmp);
-   else
-#endif                                  /* GraphicsGL */
    return setgeometry(w,tmp);
    }
 
@@ -962,15 +952,6 @@ normalized:
 #endif                                  /* Graphics3D */
 
    /* try interpreting as a color phrase or as a native color spec */
-#ifdef GraphicsGL
-   if (w->window->is_gl) {
-      if (colorphrase(buf, r, g, b, a) || gl_nativecolor(w, buf, r, g, b))
-         return Succeeded;
-      else
-         return Failed;
-      }
-   else
-#endif                                  /* GraphicsGL */
    if (colorphrase(buf, r, g, b, a) || nativecolor(w, buf, r, g, b))
       return Succeeded;
    else
@@ -3576,12 +3557,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          new_height = ROWTOY(w, new_height);
          new_height += MAXDESCENDER(w);
          }
-#ifdef GraphicsGL
-         if (ws->is_gl) {
-            if (gl_setheight(w, new_height) == Failed) return Failed;
-            }
-         else
-#endif                                  /* GraphicsGL */
          if (setheight(w, new_height) == Failed) return Failed;
          break;
          }
@@ -3593,7 +3568,7 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
 #ifdef GraphicsGL
          if (ws->is_gl) {
             new_width = GL_COLTOX(w, new_width + 1);
-            if (gl_setwidth(w, new_width) == Failed) return Failed;
+            if (setwidth(w, new_width) == Failed) return Failed;
             }
          else
 #endif                                  /* GraphicsGL */
@@ -3735,12 +3710,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          if (!cnv:C_integer(d, tmp))
             return Failed;
          if ((new_height = tmp) < 1) return Failed;
-#ifdef GraphicsGL
-         if (ws->is_gl) {
-            if (gl_setheight(w, new_height) == Failed) return Failed;
-            }
-         else
-#endif                                  /* GraphicsGL */
          if (setheight(w, new_height) == Failed) return Failed;
          break;
          }
@@ -3748,12 +3717,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          if (!cnv:C_integer(d, tmp))
             return Failed;
          if ((new_width = tmp) < 1) return Failed;
-#ifdef GraphicsGL
-         if (ws->is_gl) {
-            if (gl_setwidth(w, new_width) == Failed) return Failed;
-            }
-         else
-#endif                                  /* GraphicsGL */
          if (setwidth(w, new_width) == Failed) return Failed;
          break;
          }
@@ -3762,22 +3725,12 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          break;
          }
       case A_GEOMETRY: {
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            AttemptAttr(gl_setgeometry(w, val));
-         else
-#endif                                  /* GraphicsGL */
          AttemptAttr(setgeometry(w, val));
          break;
          }
       case A_SELECTION: {
          if (setselection(w, &d) == Succeeded) {
             *answer = d;
-#ifdef GraphicsGL
-            if (ws->is_gl)
-               gl_wflush(w);
-            else
-#endif                                  /* GraphicsGL */
             wflush(w);
             return Succeeded;
             }
@@ -3790,11 +3743,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
       case A_RESIZE: {
          if (strcmp(val, "on") & strcmp(val, "off"))
             return Failed;
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            gl_allowresize(w, ATOBOOL(val));
-         else
-#endif                                  /* GraphicsGL */
          allowresize(w, ATOBOOL(val));
          break;
          }
@@ -3833,58 +3781,28 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          break;
          }
       case A_CANVAS: {
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            AttemptAttr(gl_setcanvas(w,val));
-         else
-#endif                                  /* GraphicsGL */
          AttemptAttr(setcanvas(w,val));
          break;
          }
       case A_ICONIC: {
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            AttemptAttr(gl_seticonicstate(w,val));
-         else
-#endif                                  /* GraphicsGL */
          AttemptAttr(seticonicstate(w,val));
          break;
          }
       case A_ICONIMAGE: {
          if (!val[0]) return Failed;
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            AttemptAttr(gl_seticonimage(w, &d));
-         else
-#endif                                  /* GraphicsGL */
          AttemptAttr(seticonimage(w, &d));
          break;
          }
       case A_ICONLABEL: {
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            AttemptAttr(gl_seticonlabel(w, val));
-         else
-#endif                                  /* GraphicsGL */
          AttemptAttr(seticonlabel(w, val));
          break;
          }
       case A_ICONPOS: {
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            AttemptAttr(gl_seticonpos(w,val));
-         else
-#endif                                  /* GraphicsGL */
          AttemptAttr(seticonpos(w,val));
          break;
          }
       case A_LABEL:
       case A_WINDOWLABEL: {
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            AttemptAttr(gl_setwindowlabel(w, val));
-         else
-#endif                                  /* GraphicsGL */
          AttemptAttr(setwindowlabel(w, val));
          break;
          }
@@ -4040,11 +3958,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          break;
          }
       case A_POINTER: {
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            AttemptAttr(gl_setpointer(w, val));
-         else
-#endif                                  /* GraphicsGL */
          AttemptAttr(setpointer(w, val));
          break;
          }
@@ -4058,11 +3971,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          break;
          }
       case A_DISPLAY: {
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            AttemptAttr(gl_setdisplay(w,val));
-         else
-#endif                                  /* GraphicsGL */
          AttemptAttr(setdisplay(w,val));
          break;
          }
@@ -4126,8 +4034,8 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          if (r == Succeeded) {
 #ifdef GraphicsGL
             if (ws->is_gl) {
-               gl_setwidth(w, ws->initimage.width);
-               gl_setheight(w, ws->initimage.height);
+               setwidth(w, ws->initimage.width);
+               setheight(w, ws->initimage.height);
                }
             else
 #endif                                  /* GraphicsGL */
@@ -4136,11 +4044,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
              setheight(w, ws->initimage.height);
             }}
          else {
-#ifdef GraphicsGL
-            if (ws->is_gl)
-               r = gl_setimage(w, val);
-            else
-#endif                                  /* GraphicsGL */
             r = setimage(w, val);
             }
 
@@ -4212,11 +4115,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          if (!cnv:C_integer(d, tmp))
             return Failed;
          ws->pointerx = tmp + wc->dx;
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            gl_warpPointer(w, ws->pointerx, ws->pointery);
-         else
-#endif                                  /* GraphicsGL */
          warpPointer(w, ws->pointerx, ws->pointery);
          break;
          }
@@ -4224,11 +4122,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          if (!cnv:C_integer(d, tmp))
             return Failed;
          ws->pointery = tmp + wc->dy;
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            gl_warpPointer(w, ws->pointerx, ws->pointery);
-         else
-#endif                                  /* GraphicsGL */
          warpPointer(w, ws->pointerx, ws->pointery);
          break;
          }
@@ -4238,7 +4131,7 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
 #ifdef GraphicsGL
          if (ws->is_gl) {
             ws->pointerx = GL_COLTOX(w, tmp) + wc->dx;
-            gl_warpPointer(w, ws->pointerx, ws->pointery);
+            warpPointer(w, ws->pointerx, ws->pointery);
             }
          else
 #endif                                  /* GraphicsGL */
@@ -4254,7 +4147,7 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
 #ifdef GraphicsGL
          if (ws->is_gl) {
             ws->pointery = GL_ROWTOY(w, tmp) + wc->dy;
-            gl_warpPointer(w, ws->pointerx, ws->pointery);
+            warpPointer(w, ws->pointerx, ws->pointery);
             }
          else
 #endif                                  /* GraphicsGL */
@@ -4466,12 +4359,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          }
 #endif                                  /* Graphics3D */
       case A_VISUAL:
-#ifdef GraphicsGL
-         if (ws->is_gl) {
-            if (gl_getvisual(w, abuf) == Failed) return Failed;
-            }
-         else
-#endif                                  /* GraphicsGL */
          if (getvisual(w, abuf) == Failed) return Failed;
          MakeStr(abuf, strlen(abuf), answer);
          break;
@@ -4479,11 +4366,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          MakeInt(SCREENDEPTH(w), answer);
          break;
       case A_DISPLAY:
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            gl_getdisplay(w, abuf);
-         else
-#endif                                  /* GraphicsGL */
          getdisplay(w, abuf);
          MakeStr(abuf, strlen(abuf), answer);
          break;
@@ -4556,7 +4438,7 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          XPoint xp;
 #ifdef GraphicsGL
          if (ws->is_gl) {
-            gl_query_pointer(w, &xp);
+            query_pointer(w, &xp);
             MakeInt(GL_YTOROW(w, xp.y - wc->dy), answer);
             }
          else
@@ -4571,7 +4453,7 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          XPoint xp;
 #ifdef GraphicsGL
          if (ws->is_gl) {
-            gl_query_pointer(w, &xp);
+            query_pointer(w, &xp);
             MakeInt(1 + GL_XTOCOL(w, xp.x - wc->dx), answer);
             }
          else
@@ -4600,13 +4482,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          MakeInt(XTOCOL(w,ws->width), answer);
          break;
       case A_POS: case A_POSX: case A_POSY:
-#ifdef GraphicsGL
-         if (ws->is_gl) {
-            if (gl_getpos(w) == Failed)
-               return Failed;
-            }
-         else
-#endif                                  /* GraphicsGL */
          if (getpos(w) == Failed)
             return Failed;
          switch (a) {
@@ -4716,32 +4591,17 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
       case A_LEADING: MakeInt(LEADING(w), answer); break;
       case A_POINTERX: {
          XPoint xp;
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            gl_query_pointer(w, &xp);
-         else
-#endif                                  /* GraphicsGL */
          query_pointer(w, &xp);
          MakeInt(xp.x - wc->dx, answer);
          break;
          }
       case A_POINTERY: {
          XPoint xp;
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            gl_query_pointer(w, &xp);
-         else
-#endif                                  /* GraphicsGL */
          query_pointer(w, &xp);
          MakeInt(xp.y - wc->dy, answer);
          break;
          }
       case A_POINTER:
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            gl_getpointername(w, abuf);
-         else
-#endif                                  /* GraphicsGL */
          getpointername(w, abuf);
          MakeStr(abuf, strlen(abuf), answer);
          break;
@@ -4755,11 +4615,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          MakeStr(abuf, strlen(abuf), answer);
          break;
       case A_GEOMETRY:
-#ifdef GraphicsGL
-         if (ws->is_gl)
-       { if (gl_getpos(w) == Failed) return Failed; }
-         else
-#endif                                  /* GraphicsGL */
          if (getpos(w) == Failed) return Failed;
          if (ws->win)
            sprintf(abuf, "%dx%d+%d+%d",
@@ -4769,20 +4624,10 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          MakeStr(abuf, strlen(abuf), answer);
          break;
       case A_CANVAS:
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            gl_getcanvas(w, abuf);
-         else
-#endif                                  /* GraphicsGL */
          getcanvas(w, abuf);
          MakeStr(abuf, strlen(abuf), answer);
          break;
       case A_ICONIC:
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            gl_geticonic(w, abuf);
-         else
-#endif                                  /* GraphicsGL */
          geticonic(w, abuf);
          MakeStr(abuf, strlen(abuf), answer);
          break;
@@ -4806,14 +4651,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          MakeStr(abuf, strlen(abuf), answer);
          break;
       case A_ICONPOS: {
-#ifdef GraphicsGL
-         if (ws->is_gl)
-            switch (gl_geticonpos(w,abuf)) {
-               case Failed: return Failed;
-               case RunError:  return Failed;
-            }
-         else
-#endif                                  /* GraphicsGL */
          switch (geticonpos(w,abuf)) {
             case Failed: return Failed;
             case RunError:  return Failed;
@@ -4861,11 +4698,6 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          ReturnErrNum(145, RunError);
          }
    }
-#ifdef GraphicsGL
-   if (ws->is_gl)
-      gl_wflush(w);
-   else
-#endif                                  /* GraphicsGL */
    wflush(w);
    return Succeeded;
    }
@@ -5425,12 +5257,6 @@ char * watt(wbp w, char *s)
       }
 
    if (config) {
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if (gl_do_config(w, config) == Failed) return NULL;
-         }
-      else
-#endif                                  /* GraphicsGL */
       if (do_config(w, config) == Failed) return NULL;
       }
 

@@ -190,11 +190,6 @@ function{0,1} close(f)
          if (BlkLoc(f)->File.status != Fs_Window) { /* not already closed? */
             BlkLoc(f)->File.status = Fs_Window;
             SETCLOSED((wbp) fp);
-#ifdef GraphicsGL
-            if (((wbp)fp)->window->is_gl)
-               gl_wclose((wbp) fp);
-            else
-#endif                                  /* GraphicsGL */
             wclose((wbp) fp);
             }
          return f;
@@ -3948,10 +3943,8 @@ function {1} name(x[nargs])
                      pollctr++;
                      if (status & Fs_Window) {
 #ifdef GraphicsGL
-                        if ((f.wb)->window->is_gl) {
+                        if ((f.wb)->window->is_gl)
                            gl_wputc('\n', f.wb);
-                           gl_wflush(f.wb);
-                           }
                         else
 #endif                                  /* GraphicsGL */
                         wputc('\n', f.wb);
@@ -4455,11 +4448,6 @@ function{1} flush(f)
       pollctr++;
 
       if (status & Fs_Window) {
-#ifdef GraphicsGL
-         if (((wbp)fp)->window->is_gl)
-            gl_wflush((wbp)fp);
-         else
-#endif                                  /* GraphicsGL */
          wflush((wbp)fp);
          }
       else

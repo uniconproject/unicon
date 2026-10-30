@@ -647,7 +647,6 @@ int checkOpenConsole( FILE *w, char *s );
    int  wgetq           (wbp w, dptr res, int t);
    FILE *wopen          (char *nm, struct b_list *hp, dptr attr, int n, int *e, int is_3d, int is_gl);
 #ifdef Graphics3D
-   FILE *wopengl        (char *nm, struct b_list *hp, dptr attr, int n,int *e);
 #endif                                  /* Graphics3D */
 
    int  wputc           (int ci, wbp w);
@@ -928,7 +927,6 @@ int checkOpenConsole( FILE *w, char *s );
       /*
        * Windowing functions (platform-neutral)
        */
-      int gl_allowresize(wbp w, int on);
       char gl_child_window_stuff(wbp w, wbp wp, int child_window);
       wcp gl_clone_context(wbp w);
       int gl_rebind(wbp w, wbp w2);
@@ -942,45 +940,10 @@ int checkOpenConsole( FILE *w, char *s );
       wdp gl_alc_display(char *s);
       wdp gl_alc_display_font(wdp wd);
       wsp gl_alc_winstate();
-      void gl_free_context(wcp wc);
       void gl_free_display(wdp wd);
-      int gl_free_window(wsp ws);
-      void gl_freecolor(wbp w, char *s);
-      int gl_do_config(wbp w, int status);
-      void gl_getcanvas(wbp w, char *s);
-      int gl_getdefault(wbp w, char *prog, char *opt, char *answer);
-      void gl_getdisplay(wbp w, char *s);
-      void gl_geticonic(wbp w, char *s);
-      int gl_geticonpos(wbp w, char *s);
-      void gl_getpointername(wbp w, char *s);
-      int gl_getpos(wbp w);
-      int gl_getvisual(wbp w, char *s);
-      int gl_nativecolor(wbp w, char *s, long *r, long *g, long *b);
-      int gl_lowerWindow(wbp w);
-      int gl_raiseWindow(wbp w);
-      int gl_setcanvas(wbp w, char *s);
-      int gl_setdisplay(wbp w, char *s);
-      int gl_seticonicstate(wbp w, char *s);
-      int gl_seticonimage(wbp w, dptr dp);
-      int gl_seticonlabel(wbp w, char *s);
-      int gl_seticonpos(wbp w, char *s);
-      int gl_setimage(wbp w, char *s);
-      int gl_setpointer(wbp w, char *s);
-      int gl_setwidth(wbp w, SHORT new_width);
-      int gl_setheight(wbp w, SHORT new_height);
-      int gl_setgeometry(wbp w, char *s);
-      int gl_setwindowlabel(wbp w, char *s);
-      int gl_query_pointer(wbp w, XPoint *xp);
-      int gl_query_rootpointer(XPoint *xp);
-      int gl_walert(wbp w, int volume);
-      void gl_warpPointer(wbp w, int x, int y);
-      int gl_wclose(wbp w);
-      void gl_wflush(wbp w);
-      void gl_wflushall();
       int gl_wgetq(wbp w, dptr res, int t);
       FILE *gl_wopen(char *name, struct b_list *lp, dptr attrs, int n, int *err_index, int is_3d);
       int gl_wmap(wbp w);
-      void gl_wsync(wbp w);
    #endif                                       /* GraphicsGL */
 
    #ifdef MSWindows

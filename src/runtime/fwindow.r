@@ -44,11 +44,6 @@ function{1} Alert(argv[argc])
       if (argc == warg) volume = 0;
       else if (!def:C_integer(argv[warg], 0, volume))
         runerr(101, argv[warg]);
-#ifdef GraphicsGL
-      if (w->window->is_gl)
-         gl_walert(w, volume);
-      else
-#endif                                  /* GraphicsGL */
       walert(w, volume);
       ReturnWindow;
       }
@@ -2298,11 +2293,6 @@ function{1} FreeColor(argv[argc])
          else {
             if (!cnv:C_string(argv[i], s))
                runerr(103,argv[i]);
-#ifdef GraphicsGL
-            if (!w->window->is_gl)
-               gl_freecolor(w, s);
-            else
-#endif                                  /* GraphicsGL */
             freecolor(w, s);
             }
          }
@@ -2379,11 +2369,6 @@ function{1} Lower(argv[argc])
       wbp w;
       int warg = 0;
       OptWindow(w);
-#ifdef GraphicsGL
-      if (w->window->is_gl)
-         gl_lowerWindow(w);
-      else
-#endif                                  /* GraphicsGL */
       lowerWindow(w);
       ReturnWindow;
       }
@@ -2629,11 +2614,6 @@ function{0,1} Pending(argv[argc])
 
       ws = w->window;
       if (isclosed == 0) {
-#ifdef GraphicsGL
-         if (w->window->is_gl)
-            gl_wsync(w);
-         else
-#endif                                  /* GraphicsGL */
          wsync(w);
          }
 
@@ -2806,11 +2786,6 @@ function{0,2} QueryPointer(w)
       else {
          if (!is:file(w) || !(BlkD(w,File)->status & Fs_Window))
             runerr(140, w);
-#ifdef GraphicsGL
-         if ((BlkD(w,File)->fd.wb)->window->is_gl)
-            gl_query_pointer(BlkLoc(w)->File.fd.wb, &xp);
-         else
-#endif                                  /* GraphicsGL */
          query_pointer(BlkLoc(w)->File.fd.wb, &xp);
          }
       suspend C_integer xp.x;
@@ -2830,11 +2805,6 @@ function{1} Raise(argv[argc])
       wbp w;
       int warg = 0;
       OptWindow(w);
-#ifdef GraphicsGL
-      if (w->window->is_gl)
-         gl_raiseWindow(w);
-      else
-#endif                                  /* GraphicsGL */
       raiseWindow(w);
       ReturnWindow;
       }
@@ -2983,11 +2953,6 @@ function{1} WSync(w)
          _w_ = BlkLoc(w)->File.fd.wb;
          }
 
-#ifdef GraphicsGL
-      if (_w_ != NULL &&_w_->window->is_gl)
-         gl_wsync(_w_);
-      else
-#endif                                  /* GraphicsGL */
       wsync(_w_);
 #endif
       pollevent();
@@ -3067,12 +3032,6 @@ function{*} WAttrib(argv[argc])
       for (pass = 1; pass <= 2; pass++) {
          w = wsave;
          if (config && pass == 2) {
-#ifdef GraphicsGL
-            if (w->window->is_gl) {
-               if (gl_do_config(w, config) == Failed) fail;
-               }
-            else
-#endif                                  /* GraphicsGL */
             if (do_config(w, config) == Failed) fail;
             }
          for (n = warg; n < argc; n++) {
@@ -3086,12 +3045,6 @@ function{*} WAttrib(argv[argc])
                   runerr(140,argv[n]);
                w = BlkLoc(argv[n])->File.fd.wb;
                if (config && pass == 2) {
-#ifdef GraphicsGL
-                  if (w->window->is_gl) {
-                     if (gl_do_config(w, config) == Failed) fail;
-                     }
-                  else
-#endif                                  /* GraphicsGL */
                   if (do_config(w, config) == Failed) fail;
                   }
                }
@@ -3271,12 +3224,6 @@ function{0,1} WDefault(argv[argc])
       if (!cnv:C_string(argv[warg+1],opt))
          runerr(103,argv[warg+1]);
 
-#ifdef GraphicsGL
-      if (w->window->is_gl) {
-         if (gl_getdefault(w, prog, opt, sbuf1) == Failed) fail;
-         }
-      else
-#endif                                  /* GraphicsGL */
       if (getdefault(w, prog, opt, sbuf1) == Failed) fail;
       l = strlen(sbuf1);
       Protect(prog = alcstr(sbuf1,l),runerr(0));
@@ -3295,11 +3242,6 @@ function{1} WFlush(argv[argc])
       wbp w;
       int warg = 0;
       OptWindow(w);
-#ifdef GraphicsGL
-      if (w->window->is_gl)
-         gl_wflush(w);
-      else
-#endif                                  /* GraphicsGL */
       wflush(w);
       ReturnWindow;
       }

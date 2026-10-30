@@ -16,53 +16,6 @@ int traversefunclist(wbp w);
 
 
 /*
- * Replaced by gl_wopen(). Should remove? Do some testing
- */
-FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
-{
-   FILE *f;
-   wbp  w;
-   wcp  wc;
-
-#ifdef XWindows
-   /*
-    * Allocate a display structure. Note that this is just to check
-    * whether the X server has GLX; wopen() will call it again and
-    * initialize ws->display and wc->display. So this is under #ifdef XWindows.
-    * The redundant calls to alc_display() is harmless as it will just return
-    * pointer to already-allocated connection but:
-    *
-    * BUG: this code looks to be ignoring any explicit display= assignment
-    * in attr, if anyone still uses non-local displays any more then we
-    * should fix it.  alc_display() honors/uses a DISPLAY environment variable.
-    */
-   wdp wd = alc_display(NULL);
-   if (wd==NULL) {
-      fprintf(stderr, "can't allocate a new display: ");
-      return NULL;
-      }
-
-    if (setglXVisual(wd) == 0)
-       return NULL;
-#endif                                  /* XWindows */
-
-   /*
-    * Even for 2D opengl mode, make is_3d = 1. That way, there is a good way
-    * to distinguish between opengl 2D mode vs X Windows 2D
-    */
-   f = gl_wopen(name, lp, attr, n, err_index, 1);
-
-   if (!f) return NULL;
-   w = (wbp) f;
-   wc = w->context;
-
-   if (init_3dcontext(wc) == Failed) return NULL;
-   if (init_3dcanvas(w) == Failed) return NULL;
-
-   return f;
-}
-
-/*
  * Initialize texture names.
  */
 

@@ -580,16 +580,29 @@ the pieces fit together as follows:
 \end{itemize}
 
 Which of these Unicon uses depends on the graphics backend and how
-the binary was configured (\texttt{unicon -features} reports
-\texttt{+XFT} and \texttt{+Freetype} when present):
+the binary was configured (\texttt{unicon -features} lists
+\texttt{Xft} and configure's summary shows \texttt{+Freetype}
+when those libraries were found):
 
 \begin{itemize}\itemsep0pt
-\item \textbf{2D X11} (\texttt{open(..., "g")}): when built with
-  Xft (\texttt{HAVE\_LIBXFT} / \texttt{+XFT}), text is drawn with
-  Xft and fontconfig. Portable names such as \texttt{sans,12} become
-  Xft patterns; antialiased scalable faces are preferred when the
-  system provides them. Without Xft, Unicon falls back to classic
-  core X / XLFD fonts.
+\item \textbf{2D X11} (\texttt{open(..., "g")}): a build that
+  includes Xft lists \texttt{Xft} in \texttt{unicon -features}
+  (configure's summary shows \texttt{+XFT}). Text still uses classic
+  core X / XLFD fonts unless the window attribute \texttt{aa} is
+  \texttt{on}. \texttt{aa=on} draws that window with Xft and
+  fontconfig; \texttt{aa=off} keeps the classic fonts. The default
+  comes from \texttt{UNICON\_XFT} (\texttt{on}, \texttt{1},
+  \texttt{yes}, or \texttt{true}); unset, \texttt{0}, and
+  \texttt{off} mean \texttt{aa=off}, because Xft metrics do not
+  match the faces existing programs were laid out for. Each window
+  chooses for itself, including after it is open:
+  \texttt{WAttrib("aa=on")}. Unicon sizes stay pixel heights.
+  With \texttt{aa=on}, \texttt{Font(w)} returns the string last
+  requested, so saving it and passing it back restores the same face
+  and size. A raw fontconfig pattern takes an \texttt{fc:} prefix
+  (\texttt{font=fc:Arial:pixelsize=18}); \texttt{Font(w)} keeps that
+  prefix.
+  \texttt{./configure --without-Xft} leaves Xft out of the binary.
 \item \textbf{2D/3D OpenGL} (\texttt{"gl"} / OpenGL 2D): FreeType
   rasterizes fonts for the GL path. The font string may name a
   TrueType or OpenType \emph{file}, for example

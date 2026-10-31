@@ -30,9 +30,24 @@
 #define XLFD_CharSet    13
 
 #ifdef HAVE_LIBXFT
+extern int unicon_xft;
 #define TEXTWIDTH(w,s,n) textwidth(w, s, n)
+#define GC_FONT(wd, fp) ((fp)->xft ? (wd)->xfont->fid : (fp)->fsp->fid)
+#define ICON_ASCENT(wd) (unicon_xft ? (wd)->xfont->ascent \
+                         : (wd)->fonts->fsp->max_bounds.ascent)
+#define ICON_FHEIGHT(wd) (unicon_xft \
+                          ? ((wd)->xfont->ascent + (wd)->xfont->descent) \
+                          : ((wd)->fonts->ascent + (wd)->fonts->descent))
+#define ICON_FWIDTH(wd, s, n) (unicon_xft \
+                               ? XTextWidth((wd)->xfont, (s), (n)) \
+                               : XTextWidth((wd)->fonts->fsp, (s), (n)))
 #else                                   /* HAVE_LIBXFT */
+#define unicon_xft 0
 #define TEXTWIDTH(w,s,n) XTextWidth((w)->context->font->fsp, s, n)
+#define GC_FONT(wd, fp) ((fp)->fsp->fid)
+#define ICON_ASCENT(wd) ((wd)->fonts->fsp->max_bounds.ascent)
+#define ICON_FHEIGHT(wd) ((wd)->fonts->ascent + (wd)->fonts->descent)
+#define ICON_FWIDTH(wd, s, n) XTextWidth((wd)->fonts->fsp, (s), (n))
 #endif                                  /* HAVE_LIBXFT */
 #define SCREENDEPTH(w)\
         DefaultDepth((w)->window->display->display, w->window->display->screen)

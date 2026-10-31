@@ -536,7 +536,8 @@ int checkOpenConsole( FILE *w, char *s );
    int  setselection    (wbp w, dptr val);
    int  setsize         (wbp w, char *s);
    int  ulcmp           (pointer p1, pointer p2);
-   int  wattrib         (wbp w, char *s, long len, dptr answer, char *abuf);
+   int  wattrib         (wbp w, char *s, long len, dptr answer, char *abuf,
+                          int abuflen);
    int  wgetche         (wbp w, dptr res);
    int  wgetchne        (wbp w, dptr res);
    int  wgetevent       (wbp w, dptr res, int t);
@@ -580,7 +581,7 @@ int checkOpenConsole( FILE *w, char *s );
    void getdisplay      (wbp w, char *answer);
    void getdrawop       (wbp w, char *answer);
    void getfg           (wbp w, char *answer);
-   void getfntnam       (wbp w, char *answer);
+   void getfntnam       (wbp w, char *answer, int n);
    void geticonic       (wbp w, char *answer);
    int  geticonpos      (wbp w, char *s);
    int  getimstr        (wbp w, int x, int y, int width, int hgt,
@@ -693,7 +694,7 @@ int checkOpenConsole( FILE *w, char *s );
       wdp       alc_display             (char *s);
       void      free_display            (wdp wd);
       wfp       alc_font                (wbp w, char **s);
-      wfp       tryfont                 (wbp w, char *s);
+      wfp       tryfont                 (wbp w, char *s, int use_xft);
       wclrp     alc_rgb                 (wbp w, char *s, unsigned int r,
                                            unsigned int g, unsigned int b,
                                            int is_iconcolor);
@@ -717,11 +718,12 @@ int checkOpenConsole( FILE *w, char *s );
       void      scrubcursor             (wbp);
       void      mkfont                  (char *s, char is_3D);
 #ifdef HAVE_LIBXFT
+      void      xft_init                (void);
+      int       setaa                   (wbp w, char *val);
       void      drawstrng               (wbp w, int x, int y, char *str, int slen);
       int       textwidth               (wbp w, char *s, int n);
       void      ensure_xftdraw          (wbp w);
       char     *convert_spec            (char *s);
-      void      xft_font_metrics        (wdp wd, wfp rv);
 #endif                                  /* HAVE_LIBXFT */
 
    #endif                               /* XWindows */

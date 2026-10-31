@@ -3951,7 +3951,7 @@ int parsegeometry(char *buf, SHORT *x, SHORT *y, SHORT *width, SHORT *height)
  * wattrib() - get/set a single attribute in a window, return the result attr
  *  string.
  */
-int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
+int wattrib(wbp w, char *s, long len, dptr answer, char * abuf, int abuflen)
    {
    char val[256], *valptr;
    struct descrip d;
@@ -4198,6 +4198,14 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          }
       case A_FONT: {
          AttemptAttr(setfont(w, &valptr));
+         break;
+         }
+      case A_AA: {
+#ifdef HAVE_LIBXFT
+         AttemptAttr(setaa(w, val));
+#else                                   /* HAVE_LIBXFT */
+         return Failed;
+#endif                                  /* HAVE_LIBXFT */
          break;
          }
       case A_PATTERN: {
@@ -4739,7 +4747,15 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          MakeStr(abuf, strlen(abuf), answer);
          break;
       case A_FONT:
-         getfntnam(w, abuf);
+         getfntnam(w, abuf, abuflen);
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
+      case A_AA:
+#ifdef HAVE_LIBXFT
+         sprintf(abuf, "%s", w->context->aa ? "on" : "off");
+#else                                   /* HAVE_LIBXFT */
+         sprintf(abuf, "off");
+#endif                                  /* HAVE_LIBXFT */
          MakeStr(abuf, strlen(abuf), answer);
          break;
       case A_X:  MakeInt(ws->x - wc->dx, answer); break;
@@ -5168,6 +5184,7 @@ int ulcmp(pointer p1, pointer p2)
 
 stringint attribs[] = {
    { 0,                 NUMATTRIBS},
+   {"aa",               A_AA},
    {"ascent",           A_ASCENT},
    {"bg",               A_BG},
    {"buffer",           A_BUFFERMODE},
@@ -5345,7 +5362,7 @@ char * watt(wbp w, char *s)
    int config=0, len = strlen(s);
    struct descrip throw;
    char foo[256];
-   wattrib(w, s, strlen(s), &throw, foo);
+   wattrib(w, s, strlen(s), &throw, foo, sizeof foo);
 
    if (len > 4) {
       if (!strncmp(s, "pos=", 4)) config |= 1;

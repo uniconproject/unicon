@@ -1007,7 +1007,7 @@ class IvibTab : Component(
 
       if marker == v1_marker then {
          t := migrate(t) | return alert_error("Unable to migrate ivib v1 layout")
-         c := lang::decode(t) | return alert_error("Invalid ivib layout")
+         c := layout_decode(t) | return alert_error("Invalid ivib layout")
          d := InfoDialog(["Ivib v1 layout successfully loaded.",
                           "",
                           "NB - some manual editing may be needed after",
@@ -1023,10 +1023,65 @@ class IvibTab : Component(
          c.modified := 1
       }
       else
-         c := lang::decode(t) | return alert_error("Invalid ivib layout")
+         c := layout_decode(t) | return alert_error("Invalid ivib layout")
 
       instanceof(c, "Canvas") | return alert_error("Invalid ivib layout")
       return c
+   end
+
+   #
+   # The editor undid or redid a generated buffer.  Rebuild the canvas
+   # from that text.  A canvas left as it was before the undo still
+   # holds the controls the user just removed, and the next save writes
+   # them back.  A canvas cached for another tab is dropped so showing
+   # that tab reloads the editor text.
+   #
+   method layout_replaced(lines, eb)
+      local t, c, keep
+      t := tab_owning(eb) | return
+      if t ~=== \self.editor_tab then {
+         delete(layouts, t)
+         return
+         }
+      self.clear_undo()
+      self.clear_redo()
+      if c := parse_layout(lines) then {
+         # init() during undo_to can set modified.  Remember the flag
+         # the layout itself carried (a migrated v1 file).  A null flag
+         # must not fail this method, or the canvas stays on the undone
+         # controls.
+         keep := &null
+         if \c.modified then
+            keep := c.modified
+         c.set_size(c.w, c.h)
+         reset_canvas_pos(c)
+         self.undo_to(c)
+         if \keep then
+            self.canvas.set_modified()
+         else
+            self.canvas.clear_modified()
+      } else {
+         new_canvas()
+         self.canvas.clear_modified()
+         }
+      update_filename()
+      if is_shown() then {
+         self.canvas.erase_and_display()
+         self.canvas.update_pos_label()
+         }
+      return
+   end
+
+   #
+   # The editor tab whose text list is eb.
+   #
+   method tab_owning(eb)
+      local t, kids
+      every t := !(\(\uidlog).FileTabSet).children do {
+         kids := \t.children
+         if *kids > 0 & kids[1] === eb then
+            return t
+         }
    end
 
 ########################################################
@@ -1226,7 +1281,9 @@ class IvibTab : Component(
       res := gen_into_lines(eb.get_contents() | []) | fail
       # set_contents() clears the editor undo list, so a layout save
       # would drop earlier source edits.  Record this replacement instead.
-      eb.replace_contents(res)
+      # Undo and redo of that step call layout_replaced so the canvas
+      # matches the text; otherwise the next save writes the undone layout.
+      eb.replace_contents(res, self)
       self.canvas.clear_modified()
       if /saving & not (t.label[-1] == "*") then {
          t.label ||:= "*"
@@ -1292,7 +1349,10 @@ class IvibTab : Component(
       s := fd.get_result() | fail
       last_layout_dir := fd.get_directory()
       f := ::open(s) | return alert_error("Couldn't open " || s)
-      c := lang::decode(read(f))
+      c := layout_decode(read(f)) | {
+         close(f)
+         return alert_error("Invalid file format")
+         }
       close(f)
       instanceof(c, "CanvasComponent") | return alert_error("Invalid file format")
 
@@ -1371,7 +1431,7 @@ class IvibTab : Component(
       local f
       self.prefs := Prefs()
       if f := ::open(get_config_file_name()) then {
-         self.prefs := lang::decode(read(f))
+         self.prefs := layout_decode(read(f))
          close(f)
          if not instanceof(self.prefs, "Prefs") then {
             self.prefs := Prefs()
@@ -1634,4 +1694,75 @@ class IvibTab : Component(
       self.add(canvas)
 
       update_undo_shading()
+end
+
+#
+# Decode a layout, a saved component, or the ivib config file.
+# lang::decode() would call whatever procedure the file names, so a
+# comment of the form class|exit| closes the IDE.  Only the classes a
+# real layout contains are constructed, and a builtin is never called.
+#
+procedure layout_decode(s)
+   local d
+   d := LayoutDecode(s)
+   return d.decode()
+end
+
+class LayoutDecode : Decode()
+   #
+   # Succeed if cname is one of the classes written into a layout.
+   # Older files prefixed those names with ivib__.
+   #
+   method is_layout_class(cname)
+      local base, p
+      if *cname = 0 then fail
+      base := cname
+      if *cname > 6 & cname[1:7] == "ivib__" then
+         base := cname[7:0]
+      if not (base == ("CDialog" | "ButtonGroupSet" | "CheckBoxGroupSet" |
+                       "Group" | "GroupSet" | "Prefs") |
+              (*base >= 6 & base[1:7] == "Canvas")) then
+         fail
+      # proc(name, 0) is a builtin.  exit and system are builtins.
+      if ::proc(cname, 0) then fail
+      p := ::proc(cname) | fail
+      ::proc(cname || "__methods") | fail
+      ::image(p) ? {
+         if ="procedure " then
+            return
+         }
+   end
+
+   method decode_class()
+      local cname, p, res
+      cname := line_in() | fail
+      is_layout_class(cname) | fail
+      p := ::proc(cname) | fail
+      res := p()
+      seen[tag_count +:= 1] := res
+      res.decode_obj(self) | fail
+      res.post_decode()
+      return res
+   end
+
+   #
+   # A record name is looked up and called the same way.  Layouts do
+   # not encode records; only a real record constructor may be called.
+   #
+   method decode_record()
+      local rname, n, res, i, p
+      (rname := line_in() &
+       n := ::integer(line_in())) | fail
+      p := ::proc(rname) | fail
+      ::image(p) ? {
+         if ="record constructor " then
+            res := p() | fail
+         else
+            fail
+         }
+      seen[tag_count +:= 1] := res
+      every i := 1 to n do
+         res[i] := decode() | fail
+      return res
+   end
 end

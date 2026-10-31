@@ -1,0 +1,12 @@
+# Open and close OpenGL windows repeatedly so the display is released
+# and re-initialized (gl_free_display_resources / gl_init_display).
+procedure main()
+   every i := 1 to 15 do {
+      w := open("r" || i, "gl", "size=100,100") | stop("open gl ", i, ": ", &errortext)
+      DrawSphere(w, 0, 0, -3, 0.5)
+      WAttrib(w, "dim=2"); GotoXY(w, 5, 20); writes(w, "x"); WAttrib(w, "dim=3")
+      Refresh(w)
+      close(w)
+      }
+   write("ok")
+end

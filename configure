@@ -783,6 +783,7 @@ ac_user_opts='
 enable_option_checking
 enable_graphics
 enable_graphics3d
+enable_opengl2d
 enable_multiprograms
 enable_native_coswitch
 enable_concurrency
@@ -1470,6 +1471,8 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-graphics      No graphics subsystem
   --disable-graphics3d    No 3D graphics support
+  --enable-opengl2d       Experimental: render 2D graphics with OpenGL (needs
+                          OpenGL and FreeType)
   --disable-multiprograms No multi programs support
   --disable-native-coswitch
                           Use pthread-based coswitch instead of native rswitch
@@ -3624,6 +3627,14 @@ then :
   enableval=$enable_graphics3d; graphics3d=$enableval
 else $as_nop
   graphics3d=on
+fi
+
+# Check whether --enable-opengl2d was given.
+if test ${enable_opengl2d+y}
+then :
+  enableval=$enable_opengl2d; opengl2d=$enableval
+else $as_nop
+  opengl2d=no
 fi
 
 # Check whether --enable-multiprograms was given.
@@ -13241,6 +13252,16 @@ printf "%s\n" "#define NoGraphics3D 1" >>confdefs.h
 
     fi
 
+    if test "x$opengl2d" = "xyes" ; then
+       if test "x$cv_opengl" = "xyes" && test "x$cv_libfreetype" = "xyes" ; then
+
+printf "%s\n" "#define GraphicsGL2D 1" >>confdefs.h
+
+       else
+          as_fn_error $? "--enable-opengl2d requires 3D graphics (OpenGL) and FreeType" "$LINENO" 5
+       fi
+    fi
+
     echo "Building with graphics..."
     GRAPHICS=graphics
 
@@ -20422,6 +20443,7 @@ if test "x$graphics3d" = "xyes" || test "x$graphics3d" = "xon" ; then
   fi
 
   if test "x$cv_libftgl"   = "xyes" ; then gdtmp="$gdtmp +FTGL "   ; else gdtmp="$gdtmp -FTGL " ; fi
+  if test "x$opengl2d"     = "xyes" ; then gdtmp="$gdtmp +OpenGL2D " ; else gdtmp="$gdtmp -OpenGL2D " ; fi
 
   if test "x$cv_opengl" = "xyes" ; then
     gdtmp=" + Graphics3D         : $gdtmp"

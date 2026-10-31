@@ -312,6 +312,7 @@ struct errtab errtab[] = {
 /*#else*/                                       /* Graphics3D */
    155,  "3D graphics is not enabled in this virtual machine",
 /*#endif*/                                      /* Graphics3D */
+   156,  "no OpenGL font available to draw text",
 
 #ifdef PatternType
    160,  "nonexistent variable name",

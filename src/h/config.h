@@ -960,6 +960,7 @@ Deliberate Syntax Error
 
 #if HAVE_LIBGL
 #define Graphics3D 1
+#define GraphicsGL 1
 #else                                   /* HAVE_LIBGL */
 #if HAVE_FTGL
 #undef HAVE_FTGL
@@ -975,6 +976,14 @@ Deliberate Syntax Error
 #ifndef Graphics
 #undef Graphics3D
 #endif                                  /* Graphics */
+
+/*
+ * OpenGL 2D graphics (configure --enable-opengl2d) is built on the
+ * OpenGL support that 3D graphics uses.
+ */
+#if !defined(GraphicsGL) || !defined(Graphics3D)
+#undef GraphicsGL2D
+#endif                                  /* !GraphicsGL || !Graphics3D */
 
 #if HAVE_LIBIODBC || HAVE_LIBODBC
 #define ISQL 1

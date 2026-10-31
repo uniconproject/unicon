@@ -319,7 +319,7 @@ function{0,1} open(fname, spec, attr[n])
 #else                                           /* Graphics */
 "open(fname, spec) - open file fname with specification spec."
 function{0,1} open(fname, spec)
-#endif                                  /* Graphics */
+#endif                                          /* Graphics */
    declare {
       tended struct descrip filename;
       }
@@ -815,12 +815,19 @@ Deliberate Syntax Error
 #ifdef XWindows
                XInitThreads();
 #endif                                  /* XWindows */
+#ifdef GraphicsGL2D
+               /*
+                * Experimental OpenGL 2D rendering, selected at run time.
+                * configure --enable-opengl2d requires FreeType for it.
+                */
+               if (getenv("UNICONGL2D"))
+                  status |= Fs_WinGL2D;
+#endif                                  /* GraphicsGL2D */
                continue;
 #else                                   /* Graphics */
                set_errortext(148);
                fail;
 #endif                                  /* Graphics */
-
             case 'l':
             case 'L':
 #ifdef PosixFns
@@ -1240,11 +1247,15 @@ Deliberate Syntax Error
             }
 #ifdef Graphics3D
          if (status & Fs_Window3D)
-            f = wopengl(fnamestr, hp, attr, n, &err_index);
+            f = wopen(fnamestr, hp, attr, n, &err_index, 1, 1);
          else
 #endif                                  /* Graphics3D */
-            f = wopen(fnamestr, hp, attr, n, &err_index,0);
-
+#ifdef GraphicsGL2D
+         if (status & Fs_WinGL2D)
+            f = wopen(fnamestr, hp, attr, n, &err_index, 0, 1);
+         else
+#endif                                  /* GraphicsGL2D */
+            f = wopen(fnamestr, hp, attr, n, &err_index, 0, 0);
          if (f == NULL) {
             if (err_index >= 0) runerr(145, attr[err_index]);
             else if (err_index == -1) {
@@ -3668,8 +3679,14 @@ end
 #ifdef Graphics
    pollctr >>= 1;
    pollctr++;
-   if (status & Fs_Window)
+   if (status & Fs_Window) {
+#ifdef GraphicsGL
+      if (f.wb->window->is_gl)
+         gl_wputc('\n', f.wb);
+      else
+#endif                                  /* GraphicsGL */
       wputc('\n', f.wb);
+      }
    else
 #endif                                  /* Graphics */
 
@@ -3918,6 +3935,11 @@ function {1} name(x[nargs])
                      pollctr >>= 1;
                      pollctr++;
                      if (status & Fs_Window) {
+#ifdef GraphicsGL
+                        if ((f.wb)->window->is_gl)
+                           gl_wputc('\n', f.wb);
+                        else
+#endif                                  /* GraphicsGL */
                         wputc('\n', f.wb);
                         wflush(f.wb);
                         }
@@ -4418,8 +4440,9 @@ function{1} flush(f)
       pollctr >>= 1;
       pollctr++;
 
-      if (status & Fs_Window)
+      if (status & Fs_Window) {
          wflush((wbp)fp);
+         }
       else
 #endif                                  /* Graphics */
          fflush(fp);

@@ -5,8 +5,13 @@
 
 //#define GL2D_DRAWARRAYS 1 /* Punt this off as a TODO item */
 
+/*
+ * Define GL2D_DEBUG (e.g. CFLAGS=-DGL2D_DEBUG) to get glprintf() tracing
+ * of the OpenGL 2D implementation on stderr.
+ */
+
 #ifdef GL2D_DEBUG
-#define glprintf(s, ...) printf(stderr,s, ##__VA_ARGS__)
+#define glprintf(s, ...) fprintf(stderr, "%s:%s:%d: " s, __FILE__, __func__, __LINE__, ##__VA_ARGS__)
 #else                                   /* GL2D_DEBUG */
 #define glprintf(s, ...)
 #endif                                  /* GL2D_DEBUG */
@@ -111,7 +116,6 @@
 #define GL2D_DRAWOP_COPY        GL_COPY
 #define GL2D_DRAWOP_REVERSE     GL_XOR
 
-
 /*
  * Structures
  */
@@ -119,7 +123,8 @@
 /*
  * For a linked list color structure
  */
-typedef struct color {
+typedef struct color
+{
    char name[6+MAXCOLORNAME];
    unsigned short r, g, b, a;
    /* for referencing a mutable color (negative) */
@@ -128,7 +133,7 @@ typedef struct color {
    unsigned long c; /* X11 color handle */
 #endif                                  /* XWindows */
    struct color *prev, *next;
-   } *clrp;
+} *clrp;
 
 /*
  * Object for storing font characters (uses textures)

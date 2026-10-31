@@ -123,6 +123,7 @@ clean Clean:
 
 Pure: Clean
 	$(RM) h/auto.h
+	$(RM) iconc/ccomp_param.h
 	$(RM) common/rswitch.s 
 
 

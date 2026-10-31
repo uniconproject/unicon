@@ -9,6 +9,11 @@
 #include "ccode.h"
 #include "csym.h"
 #include "cproto.h"
+/*
+ * Angle brackets so the -I build directory is searched before a
+ * ccomp_param.h left beside this file by an in-tree configure.
+ */
+#include <ccomp_param.h>
 
 extern char *refpath;
 
@@ -109,6 +114,84 @@ Deliberate Syntax Error
    nxtlib = &l->next;
    }
 
+#if UNIX || NTGCC
+/*
+ * Return a copy of the space-separated flags s without the -O options.
+ *  Used for -nO, on both the -p options and the configure-supplied flags.
+ *  A quoted stretch is part of its token, so -O inside an argument such
+ *  as -DHELP='"use -O2"' is left alone.  Backslash escapes the next
+ *  character inside double quotes; single quotes are literal.
+ */
+static char *rmv_O_flags(char *s)
+{
+   char *rslt, *q, *p;
+   int drop;
+   char quote;
+
+   rslt = q = alloc(strlen(s) + 1);
+   p = s;
+   while (*p) {
+      drop = (p[0] == '-' && p[1] == 'O' && (p == s || p[-1] == ' '));
+      while (*p && *p != ' ') {
+         if (*p == '\'' || *p == '"') {
+            quote = *p;
+            if (!drop)
+               *q++ = *p;
+            p++;
+            while (*p && *p != quote) {
+               if (quote == '"' && *p == '\\' && p[1]) {
+                  if (!drop)
+                     *q++ = *p;
+                  p++;
+                  }
+               if (!drop)
+                  *q++ = *p;
+               if (*p)
+                  p++;
+               }
+            if (*p) {
+               if (!drop)
+                  *q++ = *p;
+               p++;
+               }
+            }
+         else {
+            if (!drop)
+               *q++ = *p;
+            p++;
+            }
+         }
+      if (*p == ' ') {
+         if (!drop)
+            *q++ = *p;
+         p++;
+         }
+      }
+   *q = '\0';
+   return rslt;
+}
+
+/*
+ * Compiler for generated C.  ICONC_CFLAGS and the rest were probed with
+ * configure's CC, which is not necessarily "cc", so that is the default.
+ * -C replaces it.  -nO also strips -O options baked into that command.
+ * A value that is only the leading space from iconc_c_escape means CC
+ * was empty; keep the historical compiler in that case.
+ */
+static char *host_compiler(void)
+{
+   char *cc;
+
+   cc = c_comp;
+   if (!c_comp_explicit && ICONC_CC[0] != '\0' &&
+       !(ICONC_CC[0] == ' ' && ICONC_CC[1] == '\0'))
+      cc = ICONC_CC;
+   if (!opt_hc_opts)
+      cc = rmv_O_flags(cc);
+   return cc;
+}
+#endif                                  /* UNIX || NTGCC */
+
 /*
  * This routine removes the optimizations options from
  * the string of options to be sent to the host compiler
@@ -117,10 +200,6 @@ static
 char *
 rmv_ccomp_opts(char * opts)
 {
-   char * p;
-   char * q;
-   char * rslt;
-
 #if PORT || MSDOS || MVS || VM || VMS
    /* something may be needed */
    fprintf(stderr, "warning: option \"-nO\" unsupported on this platform.\n");
@@ -129,33 +208,37 @@ rmv_ccomp_opts(char * opts)
 
 #if UNIX
    /*
-    * on unix, -O is the first member of COpts
+    * This used to assume -O was the first option and skip to the next
+    * one, reading past the end of an empty or -O-less string.
     */
-   rslt = alloc(sizeof(char) * (strlen(opts) + 1));
-   for (p=opts+1; p && *p != '-'; p++)
-      ;
-   q = rslt;
-   while (p && *p)
-      *q++ = *p++;
-   *q = 0;
-   return rslt;
+   return rmv_O_flags(opts);
 #endif
 }
 
+
 /*
- * Grow a string.
+ * Grow a string.  One doubling is not enough when a single piece is
+ * longer than the buffer, so keep growing until it fits.
  */
 char *growcat(char *buf, int *buflenp, int n, ...)
 {
-   int i;
-   char *s;
+   int i, need;
+   char *s, *t;
    va_list args;
    va_start(args, n);
    for(i=0; i<n; i++) {
       s = va_arg(args, char *);
-      if (strlen(buf) + strlen(s) >= *buflenp) {
-         *buflenp *= 2;
-         if ((buf = realloc(buf, *buflenp)) == NULL) return NULL;
+      need = strlen(buf) + strlen(s);
+      while (need >= *buflenp) {
+         if (*buflenp > need / 2)
+            *buflenp *= 2;
+         else
+            *buflenp = need + 1;
+         if ((t = realloc(buf, *buflenp)) == NULL) {
+            free(buf);
+            return NULL;
+            }
+         buf = t;
          }
       strcat(buf, s);
       }
@@ -242,7 +325,15 @@ Deliberate Syntax Error
 
 #if UNIX || NTGCC
 
-   buf = growcat(buf, &buflen, 3, c_comp, " ", c_opts);
+   /*
+    * Configure's compiler and flags come first, so that the -p options
+    *  in c_opts can override the flags.  -nO removes -O options from
+    *  both, including ones carried in the compiler command itself.
+    */
+   buf = growcat(buf, &buflen, 5, host_compiler(), ICONC_CPPFLAGS,
+                 opt_hc_opts ? ICONC_CFLAGS : rmv_O_flags(ICONC_CFLAGS),
+                 ICONCCFLAGS, " ");
+   buf = growcat(buf, &buflen, 1, c_opts);
 
 #ifdef MacOS
    buf = growcat(buf, &buflen, 1," -Wno-parentheses-equality");
@@ -277,6 +368,7 @@ Deliberate Syntax Error
       buf = growcat(buf, &buflen, 2, " ", dlrgint);
       }
 #endif
+   buf = growcat(buf, &buflen, 1, ICONC_LDFLAGS);  /* with the -l tail */
    for (l = liblst; l != NULL; l = l->next) {
       buf = growcat(buf, &buflen, 2, " ", l->libname);
       }

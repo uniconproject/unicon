@@ -279,12 +279,27 @@ class DialogPreferences : Dialog(
    end
 
    method setup()
-      self.set_attribs("size=640,200", "pos="||position)
+      local lx, ly, lw, gap, rx
+
+      #
+      # Original 640x200 coords assumed small Motif bitmap fonts.
+      # Xft / flat-theme metrics are taller and wider, so give the
+      # dialog room and keep gaps between every control.
+      #
+      self.set_attribs("size=720,300", "pos="||position)
+      if GuiThemeIsFlat() then
+         self.set_attribs("font=" || GuiThemePickFont())
+
+      lx := 16
+      ly := 28
+      lw := 108
+      gap := 8
+      rx := 540
 
       sample_box := BuffEditableTextList()
       sample_box.set_attribs("bg="||val_background_color, "font="||fontname)
-      sample_box.set_pos("35", "50")
-      sample_box.set_size("75%", "75%-4")
+      sample_box.set_pos(16, 68)
+      sample_box.set_size(508, 180)
       sample_box.set_contents(["# Sample Code w/ Error",
                                "procedure main()", "   local c",
                                "   c:=Hello()", "end", "",
@@ -292,91 +307,91 @@ class DialogPreferences : Dialog(
                                "   write(\"Hello World\")", "end"])
 
       list_bg_color := List()
-      list_bg_color.set_pos(25, 25)
-      list_bg_color.set_size("100", )
+      list_bg_color.set_pos(lx, ly)
+      list_bg_color.set_size(lw)
       list_bg_color.connect(self, "on_list_bg_color", SELECTION_CHANGED_EVENT)
       list_bg_color.set_selection_list(["white", "black", "off-white"])
 
       list_syntax_color := List()
-      list_syntax_color.set_pos(125, 25)
-      list_syntax_color.set_size("100")
+      list_syntax_color.set_pos(lx + (lw + gap), ly)
+      list_syntax_color.set_size(lw)
       list_syntax_color.connect(self, "on_list_syntax_color",
                                 SELECTION_CHANGED_EVENT)
       list_syntax_color.set_selection_list(["light-colors", "dark-colors",
                                             "bright-colors"])
 
       list_comment_color := List()
-      list_comment_color.set_pos(225, 25)
-      list_comment_color.set_size("100")
+      list_comment_color.set_pos(lx + 2 * (lw + gap), ly)
+      list_comment_color.set_size(lw)
       list_comment_color.connect(self, "on_list_comment_color",
                                  SELECTION_CHANGED_EVENT)
       list_comment_color.set_selection_list(["blue", "red", "green"])
 
       list_linenumber_color := List()
-      list_linenumber_color.set_pos(325, 25)
-      list_linenumber_color.set_size("100")
+      list_linenumber_color.set_pos(lx + 3 * (lw + gap), ly)
+      list_linenumber_color.set_size(lw)
       list_linenumber_color.connect(self, "on_list_linenumber_color",
                                     SELECTION_CHANGED_EVENT)
       list_linenumber_color.set_selection_list(["grey","black","white","brown",
                                                 "dark-yellow", "yellow"])
 
       list_highlight_color := List()
-      list_highlight_color.set_pos(425, 25)
-      list_highlight_color.set_size("100")
+      list_highlight_color.set_pos(lx + 4 * (lw + gap), ly)
+      list_highlight_color.set_size(lw)
       list_highlight_color.connect(self, "on_list_highlight_color",
                                    SELECTION_CHANGED_EVENT)
       list_highlight_color.set_selection_list(["light-grey", "white-grey",
                                                "yellow"])
 
       list_error_color := List()
-      list_error_color.set_pos(525, 25)
-      list_error_color.set_size("100")
+      list_error_color.set_pos(lx + 5 * (lw + gap), ly)
+      list_error_color.set_size(lw)
       list_error_color.connect(self, "on_list_error_color",
                                SELECTION_CHANGED_EVENT)
       list_error_color.set_selection_list(["red", "dark-red", "pink"])
 
       label_background_color := Label()
-      label_background_color.set_pos("35", "10")
+      label_background_color.set_pos(lx + 4, 8)
       label_background_color.set_internal_alignment("l")
       label_background_color.set_label("Background:")
 
       label_syntax_color := Label()
-      label_syntax_color.set_pos("135", "10")
+      label_syntax_color.set_pos(lx + (lw + gap) + 4, 8)
       label_syntax_color.set_internal_alignment("l")
       label_syntax_color.set_label("Syntax:")
 
       label_comment_color := Label()
-      label_comment_color.set_pos("235", "10")
+      label_comment_color.set_pos(lx + 2 * (lw + gap) + 4, 8)
       label_comment_color.set_internal_alignment("l")
       label_comment_color.set_label("Comment:")
 
       label_linenumber_color := Label()
-      label_linenumber_color.set_pos("335", "10")
+      label_linenumber_color.set_pos(lx + 3 * (lw + gap) + 4, 8)
       label_linenumber_color.set_internal_alignment("l")
       label_linenumber_color.set_label("Line Number:")
 
       label_highlight_color := Label()
-      label_highlight_color.set_pos("435", "10")
+      label_highlight_color.set_pos(lx + 4 * (lw + gap) + 4, 8)
       label_highlight_color.set_internal_alignment("l")
       label_highlight_color.set_label("Highlight:")
 
       label_error_color := Label()
-      label_error_color.set_pos("535", "10")
+      label_error_color.set_pos(lx + 5 * (lw + gap) + 4, 8)
       label_error_color.set_internal_alignment("l")
       label_error_color.set_label("Error:")
 
       label_paren_match1 := Label()
-      label_paren_match1.set_pos("534", "63")
+      label_paren_match1.set_pos(rx, 68)
       label_paren_match1.set_internal_alignment("l")
       label_paren_match1.set_label("Parentheses")
 
       label_paren_match2 := Label()
-      label_paren_match2.set_pos("544", "78")
+      label_paren_match2.set_pos(rx, 84)
       label_paren_match2.set_internal_alignment("l")
       label_paren_match2.set_label("Matching:")
 
       check_box_paren_on := CheckBox()
-      check_box_paren_on.set_pos("555", "90")
+      check_box_paren_on.set_pos(rx, 104)
       check_box_paren_on.connect(self, "on_check_box_paren_on", ACTION_EVENT)
       check_box_paren_on.set_toggles()
       if \paren_check_box_state = 1 then
@@ -384,17 +399,17 @@ class DialogPreferences : Dialog(
       check_box_paren_on.set_label("On")
 
       label_syntax_highlighting1 := Label()
-      label_syntax_highlighting1.set_pos("545", "118")
+      label_syntax_highlighting1.set_pos(rx, 140)
       label_syntax_highlighting1.set_internal_alignment("l")
       label_syntax_highlighting1.set_label("Syntax")
 
       label_syntax_highlighting2 := Label()
-      label_syntax_highlighting2.set_pos("530", "132")
+      label_syntax_highlighting2.set_pos(rx, 156)
       label_syntax_highlighting2.set_internal_alignment("l")
       label_syntax_highlighting2.set_label("Highlighting:")
 
       check_box_syntax_highlighting_on := CheckBox()
-      check_box_syntax_highlighting_on.set_pos("555", "146")
+      check_box_syntax_highlighting_on.set_pos(rx, 176)
       check_box_syntax_highlighting_on.connect(self,
                               "check_box_syntax_highlighting_on", ACTION_EVENT)
       check_box_syntax_highlighting_on.set_toggles()
@@ -402,18 +417,18 @@ class DialogPreferences : Dialog(
          check_box_syntax_highlighting_on.set_is_checked()
       check_box_syntax_highlighting_on.set_label("On")
 
-      text_button_ok := TextButton()
-      text_button_ok.set_pos(595, 170)
-      text_button_ok.connect(self, "on_text_button_ok", BUTTON_RELEASE_EVENT)
-      text_button_ok.set_internal_alignment("c")
-      text_button_ok.set_label("Ok")
-
       text_button_cancel := TextButton()
-      text_button_cancel.set_pos(535, 170)
+      text_button_cancel.set_pos(rx, 250)
       text_button_cancel.connect(self, "on_text_button_cancel",
                                  BUTTON_RELEASE_EVENT)
       text_button_cancel.set_internal_alignment("c")
       text_button_cancel.set_label("Cancel")
+
+      text_button_ok := TextButton()
+      text_button_ok.set_pos(rx + 90, 250)
+      text_button_ok.connect(self, "on_text_button_ok", BUTTON_RELEASE_EVENT)
+      text_button_ok.set_internal_alignment("c")
+      text_button_ok.set_label("Ok")
 
       self.add(sample_box)
       self.add(list_bg_color)

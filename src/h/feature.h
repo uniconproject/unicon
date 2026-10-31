@@ -144,6 +144,10 @@
    Feature(1, "_X_WINDOW_SYSTEM", "X Windows")
 #endif                  /* XWindows */
 
+#ifdef HAVE_LIBXFT
+   Feature(1, "_XFT", "Xft")
+#endif                  /* HAVE_LIBXFT */
+
 #ifdef MSWindows
    Feature(1, "_MS_WINDOWS", "MS Windows")
 #ifdef NT

@@ -690,7 +690,7 @@ int checkOpenConsole( FILE *w, char *s );
       wdp       alc_display             (char *s);
       void      free_display            (wdp wd);
       wfp       alc_font                (wbp w, char **s);
-      wfp       tryfont                 (wbp w, char *s);
+      wfp       tryfont                 (wbp w, char *s, int use_xft);
       wclrp     alc_rgb                 (wbp w, char *s, unsigned int r,
                                            unsigned int g, unsigned int b,
                                            int is_iconcolor);
@@ -709,9 +709,14 @@ int checkOpenConsole( FILE *w, char *s );
       void      postcursor              (wbp);
       void      scrubcursor             (wbp);
       void      mkfont                  (char *s, char is_3D);
-#ifdef HAVE_XFT
+#ifdef HAVE_LIBXFT
+      void      xft_init                (void);
+      int       setaa                   (wbp w, char *val);
       void      drawstrng               (wbp w, int x, int y, char *str, int slen);
-#endif                                  /* HAVE_XFT */
+      int       textwidth               (wbp w, char *s, int n);
+      void      ensure_xftdraw          (wbp w);
+      char     *convert_spec            (char *s);
+#endif                                  /* HAVE_LIBXFT */
 
    #endif                               /* XWindows */
 

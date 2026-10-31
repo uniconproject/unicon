@@ -1671,6 +1671,18 @@ static word unicon_getrandom(void)
    struct tm ctstruct;
 #endif                                  /* Concurrent */
 
+   /*
+    * Prefer the operating system's entropy source.  The generator keeps
+    * only 31 bits (see RandVal), and a wider seed overflows the signed
+    * multiply RandA * k_random on a 64-bit word.  The mask also keeps
+    * &random non-negative, as it has always been.
+    */
+   if (os_entropy(&krandom, sizeof(krandom)) == 0)
+      return (word)((uword)krandom & 0x7FFFFFFFL);
+
+   /*
+    * No OS entropy: fall back to the time-based seed.
+    */
    time(&t);
 
 /*

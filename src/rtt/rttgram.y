@@ -59,8 +59,11 @@
 %token <t> Store 356 Type 357 New 358 All_fields 359 Then 360
 %token <t> Type_case 361 Of 362 Len_case 363 Constant 364 Errorfail 365
 %token <t> Declspec 366 B_IProc_Type 367
-/* 368 is reserved by Bison 3.8.2 as YYUNDEF; do not assign a token here. */
-%token <t> Offsetof 369 Thread_local 370
+/*
+ * 368 is unused.  Bison 3.8.2 numbers YYUNDEF one above the highest token
+ * pinned here, so it moves when a token is added; nothing depends on it.
+ */
+%token <t> Offsetof 369 Thread_local 370 HostDir 371
 
 %type <t> unary_op assign_op struct_or_union typedefname
 %type <t> identifier op_name key_const union attrb_name
@@ -638,6 +641,7 @@ non_lbl_stmt
       {$$ = node2(BinryNd, $1, $3, NULL); free_t($2); free_t($4);}
    | Runerr '(' assign_expr ',' assign_expr ')' ';'
       {$$ = node2(BinryNd, $1, $3, $5); free_t($2); free_t($4); free_t($6);}
+   | HostDir   {$$ = node0(PrimryNd, $1);}
    ;
 
 labeled_stmt
@@ -754,6 +758,7 @@ external_dcltion
    : function_definition
    | dcltion                {dclout($1);}
    | definition
+   | HostDir                {hostdir($1);}
    ;
 
 function_definition

@@ -301,7 +301,7 @@ int Consolefflush(FILE *f)
 void wattr(FILE *w, char *s, int len)
 {
    struct descrip answer;
-   wattrib((wbp)w, s, len, &answer, s);
+   wattrib((wbp)w, s, len, &answer, s, len);
 }
 
 #else                                   /* ConsoleWindow */

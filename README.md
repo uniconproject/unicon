@@ -122,10 +122,13 @@ dnf install libjpeg-turbo-devel libpng-devel libX11-devel mesa-libGL-devel mesa-
 	    openssl-devel libssh-devel unixODBC-devel libXft-devel libXpm-devel
 ```
 
-`libXft` enables antialiased 2D X11 text (`+XFT` in `unicon -features`;
-fontconfig comes along as an Xft dependency). FreeType rasterizes
-TrueType/OpenType fonts for OpenGL graphics and is also used under
-Xft. See the Fonts section of the Unicon book (Chapter 7) and UTR 21/22.
+`libXft` links antialiased 2D X11 text (`Xft` in `unicon -features`;
+fontconfig comes along as an Xft dependency). A window uses it when
+its `aa` attribute is `on` (`WOpen("aa=on")` or `WAttrib("aa=on")`).
+The default is off unless `UNICON_XFT=on`. `./configure --without-Xft`
+leaves it out of the binary. FreeType rasterizes TrueType/OpenType
+fonts for OpenGL graphics and is also used under Xft. See the Fonts
+section of the Unicon book (Chapter 7) and UTR 21/22.
 
 Go into the Unicon directory and run:
 ```

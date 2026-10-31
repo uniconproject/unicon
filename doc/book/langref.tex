@@ -4189,9 +4189,16 @@ or similar), \texttt{sans} (Helvetica or similar), \texttt{mono} (a
 mono spaced sans serif font) and \texttt{typewriter} (Courier or
 similar). \texttt{Font()} fails if the requested font name does not
 exist.
-On X11 builds with Xft (\texttt{+XFT} in \texttt{unicon -features}),
-2D windows render these names with antialiased scalable fonts via
-Xft/fontconfig/FreeType; without Xft, core X fonts are used.
+On X11 builds that list \texttt{Xft} in \texttt{unicon -features},
+a 2D window renders these names with antialiased scalable fonts via
+Xft/fontconfig/FreeType when its \texttt{aa} attribute is \texttt{on}
+(\texttt{WOpen("aa=on")} or \texttt{WAttrib("aa=on")}). The default
+is off unless \texttt{UNICON\_XFT=on}. With \texttt{aa} on,
+\texttt{Font(w)} returns the font string last requested, so that value
+can be passed back to \texttt{Font(w,s)}. A raw fontconfig pattern
+uses an \texttt{fc:} prefix
+(\texttt{font=fc:Arial:pixelsize=18}), and \texttt{Font(w)} keeps
+that prefix. Without Xft in the build, core X fonts are used.
 On the OpenGL graphics path, FreeType may load a TrueType or OpenType
 font \emph{file} as the family field (for example
 \texttt{mymono.ttf,18}); see Chapter~7 and UTR~22.

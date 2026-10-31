@@ -243,10 +243,9 @@ typedef struct _wfont {
   int           descent;
   int           height;
   int           maxwidth;               /* max width of one char */
+  XFontStruct * fsp;                    /* core X font; unused when xft is set */
 #ifdef HAVE_LIBXFT
-  XftFont     * fsp;
-#else                                   /* HAVE_LIBXFT */
-  XFontStruct * fsp;                    /* X font pointer */
+  XftFont     * xft;                    /* set only while UNICON_XFT is on */
 #endif                                  /* HAVE_LIBXFT */
 #endif                                  /* XWindows */
 #ifdef MSWindows
@@ -404,6 +403,10 @@ typedef struct _wcontext {
   int           linestyle;
   int           linewidth;
   int           leading;                /* inter-line leading */
+#ifdef HAVE_LIBXFT
+  int           aa;                     /* antialiased (Xft) text */
+  char          *fontreq;               /* last font= string; Font() returns it */
+#endif                                  /* HAVE_LIBXFT */
 #endif                                  /* XWindows */
 #ifdef MSWindows
   LOGPEN        pen;
@@ -707,7 +710,8 @@ struct wbind_list {
 #define A_GLVERSION     86
 #define A_GLVENDOR      87
 #define A_GLRENDERER    88
+#define A_AA            89
 
-#define NUMATTRIBS      88
+#define NUMATTRIBS      89
 
 #define XICONSLEEP      20 /* milliseconds */

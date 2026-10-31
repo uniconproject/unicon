@@ -11,7 +11,7 @@ int alc_centry2(wdp wd, int j);
 wfp findfont(wbp w, char *fam, int size, int flags);
 int okfont(char *spec, int size, int flags);
 int fontcmp(char *font1, char *font2, int size, int flags);
-wfp loadfont(wdp wd, char *s);
+wfp loadfont(wdp wd, char *s, int use_xft);
 
 #define DEFAULTFONTNAME "fixed"
 
@@ -661,32 +661,30 @@ wdp alc_display(char *s)
       }
 
    /*
-    * Initialize fonts and other things.
+    * Initialize fonts and other things. UNICON_XFT is read before the
+    * default font so one process does not mix the two metric systems.
     */
+#ifdef HAVE_LIBXFT
+   xft_init();
+#endif                                  /* HAVE_LIBXFT */
    wd->numFonts = 1;
 #ifdef HAVE_LIBXFT
-   wd->fonts = loadfont(wd, convert_spec(DEFAULTFONTNAME));
-#else                                   /* HAVE_LIBXFT */
-   wd->fonts = loadfont(wd, DEFAULTFONTNAME);
+   if (unicon_xft)
+      wd->fonts = loadfont(wd, convert_spec(DEFAULTFONTNAME), 1);
+   else
 #endif                                  /* HAVE_LIBXFT */
+      wd->fonts = loadfont(wd, DEFAULTFONTNAME, 0);
    if (wd->fonts == NULL) {
       free(wd);
       return NULL;
       }
    wd->fonts->refcount = 1;
    wd->fonts->next = wd->fonts->previous = NULL;
-#ifdef HAVE_LIBXFT
-   wd->xfont = XLoadQueryFont(wd->display, "fixed");
-#endif                                  /* HAVE_LIBXFT */
 
    {
    XGCValues gcv;
    Display *stddpy = wd->display;
-#ifdef HAVE_LIBXFT
-   gcv.font = wd->xfont->fid;
-#else                                   /* HAVE_LIBXFT */
-   gcv.font = wd->fonts->fsp->fid;
-#endif                                  /* HAVE_LIBXFT */
+   gcv.font = GC_FONT(wd, wd->fonts);
    gcv.foreground = wd->colors[0].c;
    gcv.background = wd->colors[1].c;
    gcv.fill_style = FillSolid;
@@ -704,21 +702,10 @@ wdp alc_display(char *s)
    }
 
 
-#ifdef HAVE_LIBXFT
-
 /*
- * convert_spec() / Xft text helpers live in common/xftsupp.c (plain C; rtt
- * cannot parse Xft types).  alc_font just routes through convert_spec.
- */
-wfp alc_font(wbp w, char **s)
-{
-   return tryfont(w, convert_spec(*s));
-}
-
-#else /* HAVE_LIBXFT */
-
-/*
- * allocate font s in the display attached to w
+ * allocate font s in the display attached to w.
+ * UNICON_XFT rewrites the spec as an Xft pattern. Otherwise the
+ * classic XLFD lookup keeps the metrics existing programs expect.
  */
 wfp alc_font(wbp w, char **s)
    {
@@ -726,6 +713,11 @@ wfp alc_font(wbp w, char **s)
    wfp rv;
    char family[MAXFONTWORD+1];
    char *stdfam;
+
+#ifdef HAVE_LIBXFT
+   if (w->context->aa)
+      return tryfont(w, convert_spec(*s), 1);
+#endif                                  /* HAVE_LIBXFT */
 
    if (strcmp(*s, "fixed") != 0 && parsefont(*s, family, &flags, &size, &tp)) {
       /*
@@ -772,7 +764,7 @@ wfp alc_font(wbp w, char **s)
    /*
     * Not found as an Icon name; may be an X font name.
     */
-   return tryfont(w, *s);
+   return tryfont(w, *s, 0);
    }
 
 /*
@@ -893,7 +885,7 @@ wfp findfont(wbp w, char *family, int size, int flags)
    else
       strcpy(fontspec, fontlist[champ]);
    XFreeFontNames(fontlist);
-   return tryfont(w, fontspec);
+   return tryfont(w, fontspec, 0);
    }
 
 /*
@@ -980,13 +972,11 @@ do { int r = fieldcmp(font1, font2, s, n); if (r != 0) return -r; } while (0)
    return 0;
    }
 
-#endif /* HAVE_LIBXFT */
-
 /*
  * load a font and return a font structure.
  */
 
-wfp tryfont(wbp w, char *s)
+wfp tryfont(wbp w, char *s, int use_xft)
    {
    wdp wd = w->window->display;
    wfp rv;
@@ -994,7 +984,19 @@ wfp tryfont(wbp w, char *s)
     * see if the font is already loaded on this display
     */
    for(rv = wd->fonts; rv != NULL; rv = rv->next) {
-      if (!strcmp(s,rv->name)) break;
+      if (strcmp(s, rv->name))
+         continue;
+#ifdef HAVE_LIBXFT
+      /*
+       * The same name can be a core X font and an Xft pattern
+       * ("fixed", or font=fc:fixed). Match the backend too.
+       */
+      if (use_xft && rv->xft == NULL)
+         continue;
+      if (!use_xft && rv->xft != NULL)
+         continue;
+#endif                                  /* HAVE_LIBXFT */
+      break;
       }
    if (rv != NULL) {
       rv->refcount++;
@@ -1004,7 +1006,7 @@ wfp tryfont(wbp w, char *s)
    /*
     * load a new font
     */
-   rv = loadfont(wd, s);
+   rv = loadfont(wd, s, use_xft);
    if (rv == NULL) {
       return NULL;
       }
@@ -1021,31 +1023,49 @@ wfp tryfont(wbp w, char *s)
    return rv;
    }
 
-wfp loadfont(wdp wd, char *s)
+wfp loadfont(wdp wd, char *s, int use_xft)
    {
    wfp rv;
    CURTSTATE();
+#ifndef HAVE_LIBXFT
+   use_xft = 0;
+#endif                                  /* HAVE_LIBXFT */
    GRFX_ALLOC(rv, _wfont);
    rv->name = (char *)strdup(s);
    if (rv->name == NULL) ReturnErrNum(305, NULL);
 #ifdef HAVE_LIBXFT
-   rv->fsp = XftFontOpenName(wd->display, wd->screen, rv->name);
-#else                                   /* HAVE_LIBXFT */
-   rv->fsp = XLoadQueryFont(wd->display, rv->name);
-#endif                                  /* HAVE_LIBXFT */
-   if (rv->fsp == NULL){
-      free(rv->name);
-      free(rv);
-      return NULL;
+   if (use_xft) {
+      if (wd->xfont == NULL) {
+         wd->xfont = XLoadQueryFont(wd->display, "fixed");
+         if (wd->xfont == NULL) {
+            free(rv->name);
+            free(rv);
+            return NULL;
+            }
+         }
+      rv->xft = XftFontOpenName(wd->display, wd->screen, rv->name);
+      if (rv->xft == NULL) {
+         free(rv->name);
+         free(rv);
+         return NULL;
+         }
+      rv->ascent = rv->xft->ascent;
+      rv->descent = rv->xft->descent;
+      rv->maxwidth = rv->xft->max_advance_width;
       }
-
-#ifdef HAVE_LIBXFT
-   xft_font_metrics(wd, rv);
-#else
-   rv->ascent = rv->fsp->ascent;
-   rv->descent = rv->fsp->descent;
-   rv->maxwidth = rv->fsp->max_bounds.width;
-#endif
+   else
+#endif                                  /* HAVE_LIBXFT */
+      {
+      rv->fsp = XLoadQueryFont(wd->display, rv->name);
+      if (rv->fsp == NULL) {
+         free(rv->name);
+         free(rv);
+         return NULL;
+         }
+      rv->ascent = rv->fsp->ascent;
+      rv->descent = rv->fsp->descent;
+      rv->maxwidth = rv->fsp->max_bounds.width;
+      }
    rv->height = rv->ascent + rv->descent;
    return rv;
    }
@@ -1070,6 +1090,15 @@ wcp alc_context(wbp w)
    wc->bg = 1;
    wc->font = wd->fonts;
    wc->leading = wd->fonts->height;
+#ifdef HAVE_LIBXFT
+   wc->aa = unicon_xft;
+   /*
+    * The display default was opened from "fixed". Remember that request
+    * so Font() does not hand back the Xft pattern.
+    */
+   if (wc->aa)
+      wc->fontreq = salloc(DEFAULTFONTNAME);
+#endif                                  /* HAVE_LIBXFT */
    wc->drawop = GXcopy;
    wc->rgbmode = 2;
    wc->gamma = wd->gamma;
@@ -1109,6 +1138,14 @@ wcp clone_context(wbp w)
    wd->colors[rv->bg].refcount++;
    rv->font = wc->font;
    rv->font->refcount++;
+#ifdef HAVE_LIBXFT
+   rv->aa = wc->aa;
+   if (wc->fontreq != NULL) {
+      rv->fontreq = salloc(wc->fontreq);
+      if (rv->fontreq == NULL)
+         return NULL;
+      }
+#endif                                  /* HAVE_LIBXFT */
    rv->fillstyle = wc->fillstyle;
    rv->linestyle = wc->linestyle;
    rv->linewidth = wc->linewidth;
@@ -1125,11 +1162,7 @@ wcp clone_context(wbp w)
    else
       gcv.foreground = wd->colors[rv->fg].c;
    gcv.background = wd->colors[rv->bg].c;
-#ifdef HAVE_LIBXFT
-   gcv.font       = wd->xfont->fid;
-#else                                   /* HAVE_LIBXFT */
-   gcv.font       = rv->font->fsp->fid;
-#endif                                  /* HAVE_LIBXFT */
+   gcv.font       = GC_FONT(wd, rv->font);
    gcv.line_style = rv->linestyle;
    gcv.line_width = rv->linewidth;
    if (rv->linewidth > 1) {
@@ -1243,6 +1276,10 @@ void free_context(wcp wc)
    if(wc->refcount == 0) {
       if (wc->gc != NULL)
          XFreeGC(wc->display->display, wc->gc);
+#ifdef HAVE_LIBXFT
+      if (wc->fontreq != NULL)
+         free(wc->fontreq);
+#endif                                  /* HAVE_LIBXFT */
       /* free color references to fg and bg? */
       free_display(wc->display);
       GRFX_UNLINK(wc, wcntxts);

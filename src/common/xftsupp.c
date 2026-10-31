@@ -3,7 +3,9 @@
  *
  * Lives in common (not runtime): runtime .c files are rtt output.
  * Plain C because rtt cannot parse Xft/fontconfig types.
- * Gated by HAVE_LIBXFT (from autoconf).
+ * Gated by HAVE_LIBXFT (from autoconf). A font uses Xft when it was
+ * opened for a window with aa=on. Other fonts take the classic core
+ * X path. UNICON_XFT only supplies the default for new windows.
  */
 
 #include "../h/rt.h"
@@ -12,6 +14,46 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+int unicon_xft;
+
+static int xft_ready;
+
+static int xft_env_on(char *s)
+{
+   char buf[8];
+   int i;
+
+   for (i = 0; s[i] != '\0' && i < (int)sizeof(buf) - 1; i++) {
+      buf[i] = s[i];
+      if (buf[i] >= 'A' && buf[i] <= 'Z')
+         buf[i] = buf[i] - 'A' + 'a';
+      }
+   if (s[i] != '\0')
+      return 0;
+   buf[i] = '\0';
+   return !strcmp(buf, "1") || !strcmp(buf, "on") ||
+          !strcmp(buf, "yes") || !strcmp(buf, "true");
+}
+
+/*
+ * Default for a new window's aa attribute. Read once, before the
+ * first display loads its default font. Unset, 0, and off keep the
+ * classic X fonts. A window can still set aa=on or aa=off itself.
+ */
+void xft_init(void)
+{
+   char *s;
+
+   if (xft_ready)
+      return;
+   xft_ready = 1;
+   unicon_xft = 0;
+   s = getenv("UNICON_XFT");
+   if (s != NULL && xft_env_on(s))
+      unicon_xft = 1;
+}
 
 char *convert_spec(char *s)
 {
@@ -63,8 +105,12 @@ char *convert_spec(char *s)
    else
       XftPatternAddString(p, XFT_FAMILY, family);
 
+   /*
+    * Unicon font sizes are pixel heights, matching the XLFD pixel
+    * field. XFT_SIZE is points and comes out larger on a normal display.
+    */
    if (size > 0)
-      XftPatternAddDouble(p, XFT_SIZE, (double)size);
+      XftPatternAddDouble(p, XFT_PIXEL_SIZE, (double)size);
 
    if (flags & FONTFLAG_MEDIUM)
       XftPatternAddInteger(p, XFT_WEIGHT, XFT_WEIGHT_MEDIUM);
@@ -111,24 +157,6 @@ char *convert_spec(char *s)
    return res;
 }
 
-void xft_font_metrics(wdp wd, wfp rv)
-{
-   XGlyphInfo extents;
-   char buf[256];
-   int i;
-
-   /*
-    * Xft's font ascent/descent fields are often unreliable; measure a
-    * string of all byte values and derive metrics from the glyph info.
-    */
-   for (i = 0; i < 256; ++i)
-      buf[i] = (char)i;
-   XftTextExtents8(wd->display, rv->fsp, (FcChar8 *)buf, 256, &extents);
-   rv->ascent = extents.y;
-   rv->descent = extents.height - extents.y;
-   rv->maxwidth = rv->fsp->max_advance_width;
-}
-
 void ensure_xftdraw(wbp w)
 {
    wsp ws = w->window;
@@ -155,6 +183,29 @@ void ensure_xftdraw(wbp w)
       ws->winDraw = XftDrawCreate(wd->display, ws->win, ws->vis, wd->cmap);
 }
 
+/*
+ * Clip() updates the graphics context only. XftDraw does not consult
+ * that context, so apply the same rectangle here. clipw < 0 means the
+ * clip is off.
+ */
+static void apply_xft_clip(wbp w, XftDraw *d)
+{
+   wcp wc = w->context;
+   XRectangle r;
+
+   if (d == NULL)
+      return;
+   if (wc->clipw < 0) {
+      XftDrawSetClip(d, NULL);
+      return;
+      }
+   r.x = wc->clipx;
+   r.y = wc->clipy;
+   r.width = wc->clipw;
+   r.height = wc->cliph;
+   XftDrawSetClipRectangles(d, 0, 0, &r, 1);
+}
+
 int textwidth(wbp w, char *s, int n)
 {
    XGlyphInfo extents;
@@ -162,7 +213,9 @@ int textwidth(wbp w, char *s, int n)
 
    if (n <= 0)
       return 0;
-   XftTextExtents8(wd->display, w->context->font->fsp, (FcChar8 *)s, n, &extents);
+   if (w->context->font->xft == NULL)
+      return XTextWidth(w->context->font->fsp, s, n);
+   XftTextExtents8(wd->display, w->context->font->xft, (FcChar8 *)s, n, &extents);
    return extents.xOff;
 }
 
@@ -178,22 +231,54 @@ void drawstrng(wbp w, int x, int y, char *str, int slen)
    if (slen <= 0)
       return;
 
+   /*
+    * Xft paints the foreground with PictOpOver. noop draws nothing.
+    * Every other drawop, including reverse, stays on the graphics
+    * context, which Xft does not honor.
+    */
+   if (wc->font->xft == NULL || wc->drawop == DRAWOP_NOOP ||
+       wc->drawop != DRAWOP_COPY || ISXORREVERSE(w)) {
+      if (wc->drawop == DRAWOP_NOOP && wc->font->xft != NULL)
+         return;
+      if (ws->win)
+         XDrawString(wd->display, ws->win, wc->gc, x, y, str, slen);
+      XDrawString(wd->display, ws->pix, wc->gc, x, y, str, slen);
+      return;
+      }
+
    ensure_xftdraw(w);
+   apply_xft_clip(w, ws->pixDraw);
+   apply_xft_clip(w, ws->winDraw);
 
    c = &wd->colors[wc->fg];
-   rc.red = c->r;
-   rc.green = c->g;
-   rc.blue = c->b;
+   /*
+    * Mutable colors are changed with XStoreColor. That updates the
+    * pixel and the colormap entry, not these cached components, so
+    * reading r/g/b paints the text black or in a stale color.
+    */
+   if (c->type == CLR_MUTABLE) {
+      XColor xc;
+      xc.pixel = c->c;
+      XQueryColor(wd->display, wd->cmap, &xc);
+      rc.red = xc.red;
+      rc.green = xc.green;
+      rc.blue = xc.blue;
+      }
+   else {
+      rc.red = c->r;
+      rc.green = c->g;
+      rc.blue = c->b;
+      }
    rc.alpha = 0xffff;
 
    if (!XftColorAllocValue(wd->display, ws->vis, wd->cmap, &rc, &color))
       return;
 
    if (ws->pixDraw != NULL)
-      XftDrawString8(ws->pixDraw, &color, wc->font->fsp, x, y,
+      XftDrawString8(ws->pixDraw, &color, wc->font->xft, x, y,
                      (FcChar8 *)str, slen);
    if (ws->win != (Window)NULL && ws->winDraw != NULL)
-      XftDrawString8(ws->winDraw, &color, wc->font->fsp, x, y,
+      XftDrawString8(ws->winDraw, &color, wc->font->xft, x, y,
                      (FcChar8 *)str, slen);
 
    XftColorFree(wd->display, ws->vis, wd->cmap, &color);

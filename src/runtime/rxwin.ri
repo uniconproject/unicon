@@ -71,7 +71,28 @@ void xdis(register wbp w, char *s, int n)
    x = ws->x;
    y = ws->y;
    delta_x = TEXTWIDTH(w,s,n);
-   RENDER4(XDrawImageString,x,y,s,n);
+#ifdef HAVE_LIBXFT
+   /*
+    * XDrawImageString uses the font installed in the graphics context.
+    * An Xft face leaves the core "fixed" font there, so opaque text has
+    * to fill the background and then draw with the Xft face.
+    */
+   if (wc->font->xft != NULL && wc->drawop == DRAWOP_COPY &&
+       !ISXORREVERSE(w)) {
+      int ascent = wc->font->ascent;
+      int fill = wc->fillstyle;
+      if (fill != FillSolid)
+         XSetFillStyle(stddpy, stdgc, FillSolid);
+      XSetForeground(stddpy, stdgc, wd->colors[wc->bg].c);
+      RENDER4(XFillRectangle, x, y - ascent, delta_x, wc->font->height);
+      XSetForeground(stddpy, stdgc, wd->colors[wc->fg].c);
+      if (fill != FillSolid)
+         XSetFillStyle(stddpy, stdgc, fill);
+      drawstrng(w, x, y, s, n);
+      }
+   else
+#endif                                  /* HAVE_LIBXFT */
+      RENDER4(XDrawImageString,x,y,s,n);
    ws->x += delta_x;
    }
 
@@ -663,11 +684,7 @@ int handle_misc(wdp wd, wbp w)
                             wd->icongc, 0, 0, ws->iconw, ws->iconh, 3, 3);
                else
                   XDrawString(wd->display, evwin, wd->icongc, 4,
-#ifdef HAVE_LIBXFT
-                              ws->display->xfont->ascent + 2,
-#else                                   /* HAVE_LIBXFT */
-                              ws->display->fonts->fsp->max_bounds.ascent + 2,
-#endif                                  /* HAVE_LIBXFT */
+                              ICON_ASCENT(ws->display) + 2,
                               ws->iconlabel, strlen(ws->iconlabel));
                if (ws->iconic == IconicState)
                   SETEXPOSED(wb);
@@ -1295,21 +1312,9 @@ void makeIcon(wbp w,
       ws->iconw += 6;
       }
    else {    /* determine the size of the icon window */
-#ifdef HAVE_LIBXFT
-      ws->iconh = wd->xfont->ascent +
-                  wd->xfont->descent + 5;
-#else                                   /* HAVE_LIBXFT */
-      ws->iconh = wd->fonts->ascent +
-                  wd->fonts->descent + 5;
-#endif                                  /* HAVE_LIBXFT */
+      ws->iconh = ICON_FHEIGHT(wd) + 5;
       if (ws->iconlabel == NULL) ws->iconlabel = "";
-#ifdef HAVE_LIBXFT
-      ws->iconw = XTextWidth(wd->xfont, ws->iconlabel,
-                  strlen(ws->iconlabel)) + 6;
-#else                                   /* HAVE_LIBXFT */
-      ws->iconw = XTextWidth(wd->fonts->fsp, ws->iconlabel,
-                  strlen(ws->iconlabel)) + 6;
-#endif                                  /* HAVE_LIBXFT */
+      ws->iconw = ICON_FWIDTH(wd, ws->iconlabel, strlen(ws->iconlabel)) + 6;
       }
 
    /* if icon position hint exists, get it */
@@ -1476,11 +1481,7 @@ int wmap(wbp w)
     */
    gcv.foreground = wd->colors[wc->fg].c ^ (ISXORREVERSE(w) ? wd->colors[wc->bg].c : 0);
    gcv.background = wd->colors[wc->bg].c;
-#ifdef HAVE_LIBXFT
-   gcv.font       = wd->xfont->fid;
-#else                                   /* HAVE_LIBXFT */
-   gcv.font       = wc->font->fsp->fid;
-#endif                                  /* HAVE_LIBXFT */
+   gcv.font       = GC_FONT(wd, wc->font);
    if (wc->fillstyle)
       gcv.fill_style = wc->fillstyle;
    else
@@ -1786,11 +1787,7 @@ int seticonlabel(wbp w, char *val)
       if (ws->iconic == IconicState && !ws->iconpix && ws->iconwin) {
          XClearWindow(wd->display, ws->iconwin);
          XDrawString(wd->display, ws->iconwin, wd->icongc, 4,
-#ifdef HAVE_LIBXFT
-                     wd->xfont->ascent + 2,
-#else                                   /* HAVE_LIBXFT */
-                     wd->fonts->fsp->max_bounds.ascent + 2,
-#endif                                  /* HAVE_LIBXFT */
+                     ICON_ASCENT(wd) + 2,
                      ws->iconlabel, strlen(ws->iconlabel));
          }
       }
@@ -2560,6 +2557,28 @@ void getlinestyle(wbp w, char *answer)
 
 void getfntnam(wbp w, char *answer)
 {
+#ifdef HAVE_LIBXFT
+   /*
+    * font->name for an Xft font is a fontconfig pattern. "Arial:pixelsize=18"
+    * has no comma, so parsefont() takes the whole string as the family and
+    * drops the size. Return the request setfont() stored (or "fixed" for
+    * the display default). If that is missing, keep a raw pattern behind
+    * the fc: prefix convert_spec() already understands.
+    */
+   if (w->context->font->xft != NULL) {
+      char *req = w->context->fontreq;
+
+      if (req == NULL) {
+         req = w->context->font->name;
+         if (strncmp(req, "fc:", 3) != 0) {
+            snprintf(answer, MaxCvtLen, "fc:%s", req);
+            return;
+            }
+         }
+      snprintf(answer, MaxCvtLen, "%s", req);
+      return;
+      }
+#endif                                  /* HAVE_LIBXFT */
    sprintf(answer,"%s", w->context->font->name);
 }
 
@@ -2594,6 +2613,66 @@ void geticonic(wbp w, char *answer)
    }
 }
 
+#ifdef HAVE_LIBXFT
+static int aa_on(char *s)
+{
+   char buf[8];
+   int i;
+
+   if (s == NULL)
+      return -1;
+   for (i = 0; s[i] != '\0' && i < (int)sizeof(buf) - 1; i++) {
+      buf[i] = s[i];
+      if (buf[i] >= 'A' && buf[i] <= 'Z')
+         buf[i] = buf[i] - 'A' + 'a';
+      }
+   if (s[i] != '\0')
+      return -1;
+   buf[i] = '\0';
+   if (!strcmp(buf, "on") || !strcmp(buf, "yes") || !strcmp(buf, "true") ||
+       !strcmp(buf, "1"))
+      return 1;
+   if (!strcmp(buf, "off") || !strcmp(buf, "no") || !strcmp(buf, "false") ||
+       !strcmp(buf, "0"))
+      return 0;
+   return -1;
+}
+
+/*
+ * Antialiased text for this window. Reloads the current font so the
+ * metrics match the face that will actually be drawn.
+ */
+int setaa(wbp w, char *val)
+{
+   int on;
+   char *held, *spec;
+   wcp wc = w->context;
+
+#ifdef Graphics3D
+   if (wc->is_3D)
+      return Failed;
+#endif                                  /* Graphics3D */
+   on = aa_on(val);
+   if (on < 0)
+      return Failed;
+   if (on == wc->aa)
+      return Succeeded;
+   spec = wc->fontreq != NULL ? wc->fontreq : "fixed";
+   held = salloc(spec);
+   if (held == NULL)
+      return Failed;
+   wc->aa = on;
+   spec = held;
+   if (setfont(w, &spec) == Failed) {
+      wc->aa = on ? 0 : 1;
+      free(held);
+      return Failed;
+      }
+   free(held);
+   return Succeeded;
+}
+#endif                                  /* HAVE_LIBXFT */
+
 /*
  * Set the window's font by name.
  */
@@ -2612,10 +2691,29 @@ int setfont(wbp w, char **s)
 
    /* could free up previously allocated font here */
 
+#ifdef HAVE_LIBXFT
+   {
+   char *req = salloc(*s);
+   char *oldreq = wc->fontreq;
+   if (req == NULL)
+      return Failed;
+   wc->fontreq = req;
+   Protect(tmp = alc_font(w,s), { free(req); wc->fontreq = oldreq; return Failed; });
+   if (oldreq != NULL)
+      free(oldreq);
+   }
+#else                                   /* HAVE_LIBXFT */
    Protect(tmp = alc_font(w,s), return Failed);
+#endif                                  /* HAVE_LIBXFT */
    wc->font = tmp;
+   wc->leading = tmp->height;
 
-#ifndef HAVE_LIBXFT
+#ifdef HAVE_LIBXFT
+   if (wc->gc != NULL && wc->font->xft == NULL)
+      XSetFont(ws->display->display, wc->gc, wc->font->fsp->fid);
+   else if (wc->gc != NULL)
+      XSetFont(ws->display->display, wc->gc, ws->display->xfont->fid);
+#else                                   /* HAVE_LIBXFT */
    if (wc->gc != NULL)
       XSetFont(ws->display->display, wc->gc, wc->font->fsp->fid);
 #endif                                  /* HAVE_LIBXFT */
@@ -4438,11 +4536,7 @@ Pixmap loadimage(wbp w, char *filename,
    if (stdgc == NULL) {
       gcv.foreground = wd->colors[wc->fg].c;
       gcv.background = wd->colors[wc->bg].c;
-#ifdef HAVE_LIBXFT
-      gcv.font       = wd->xfont->fid;
-#else                                   /* HAVE_LIBXFT */
-      gcv.font       = wc->font->fsp->fid;
-#endif                                  /* HAVE_LIBXFT */
+      gcv.font       = GC_FONT(wd, wc->font);
       wc->gc = XCreateGC(stddpy, p2, gcmask, &gcv);
       stdgc = wc->gc;
       }
@@ -4718,11 +4812,7 @@ char my_wmap(wbp w)
     */
    gcv.foreground = wd->colors[wc->fg].c ^ (ISXORREVERSE(w) ? wd->colors[wc->bg].c : 0);
    gcv.background = wd->colors[wc->bg].c;
-#ifdef HAVE_LIBXFT
-   gcv.font       = wd->xfont->fid;
-#else                                   /* HAVE_LIBXFT */
-   gcv.font       = wc->font->fsp->fid;
-#endif                                  /* HAVE_LIBXFT */
+   gcv.font       = GC_FONT(wd, wc->font);
    if (wc->fillstyle)
       gcv.fill_style = wc->fillstyle;
    else

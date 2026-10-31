@@ -3616,6 +3616,14 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          AttemptAttr(setfont(w, &valptr));
          break;
          }
+      case A_AA: {
+#ifdef HAVE_LIBXFT
+         AttemptAttr(setaa(w, val));
+#else                                   /* HAVE_LIBXFT */
+         return Failed;
+#endif                                  /* HAVE_LIBXFT */
+         break;
+         }
       case A_PATTERN: {
          AttemptAttr(SetPattern(w, val, strlen(val)));
          break;
@@ -4151,6 +4159,14 @@ int wattrib(wbp w, char *s, long len, dptr answer, char * abuf)
          getfntnam(w, abuf);
          MakeStr(abuf, strlen(abuf), answer);
          break;
+      case A_AA:
+#ifdef HAVE_LIBXFT
+         sprintf(abuf, "%s", w->context->aa ? "on" : "off");
+#else                                   /* HAVE_LIBXFT */
+         sprintf(abuf, "off");
+#endif                                  /* HAVE_LIBXFT */
+         MakeStr(abuf, strlen(abuf), answer);
+         break;
       case A_X:  MakeInt(ws->x - wc->dx, answer); break;
       case A_Y:  MakeInt(ws->y - wc->dy, answer); break;
       case A_DX: MakeInt(wc->dx, answer); break;
@@ -4577,6 +4593,7 @@ int ulcmp(pointer p1, pointer p2)
 
 stringint attribs[] = {
    { 0,                 NUMATTRIBS},
+   {"aa",               A_AA},
    {"ascent",           A_ASCENT},
    {"bg",               A_BG},
    {"buffer",           A_BUFFERMODE},

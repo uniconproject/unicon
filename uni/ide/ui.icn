@@ -34,6 +34,7 @@ link getpaths
 link classbrowser
 link enqueue, preferences
 link stddlg
+link ivibtab
 
 $ifdef _MS_WINDOWS_NT
 $define SL "\\"
@@ -63,6 +64,7 @@ class UIDE : Dialog(
    MsgBox, EditBox, PtyBox,
    FileTabSet,ClassTabSet, DevTabSet,
    FileBrowser,
+   IvibTabPanel, ivib_maindialog,
    tab_item_1, tab_item_2, tab_item_3, tab_item_4,
    ui_Preferences
    )
@@ -410,6 +412,20 @@ class UIDE : Dialog(
       ClassTabSet.add(tab_item_3)
       ClassTabSet.set_which_one(tab_item_3)
       self.add(ClassTabSet)
+
+      #
+      # The integrated ivib; placed off screen until the Files/IVIB view
+      # is selected (see Mainbar.on_view_window_filesivib).
+      #
+      IvibTabPanel := Panel()
+      IvibTabPanel.set_pos("0", "110%")
+      IvibTabPanel.set_size("50%", "50%")
+      ivib_maindialog := IvibTab()
+      ivib_maindialog.set_pos("2", "2")
+      ivib_maindialog.set_size("100%-4", "100%-4")
+      ivib_maindialog.set_draw_border()
+      IvibTabPanel.add(ivib_maindialog)
+      self.add(IvibTabPanel)
 
       pnlToolbar := Panel()
       pnlToolbar.set_pos("0", "4.5%")

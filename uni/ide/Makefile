@@ -17,21 +17,26 @@ SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 	templates.icn definitions.icn uproject.icn \
 	classbrowser.icn tree.icn imgs.icn utags.icn matchparen.icn \
 	qu_replace.icn online.icn about.icn is_binary.icn ptyDispatcher.icn \
-	shelletl.icn funclookup.icn 
+	shelletl.icn funclookup.icn ivibtab.icn
 
 OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	mainbar.u modified.u preferences.u templates.u definitions.u \
 	uproject.u classbrowser.u imgs.u utags.u matchparen.u qu_replace.u \
-	online.u about.u is_binary.u ptyDispatcher.u shelletl.u funclookup.u\
+	online.u about.u is_binary.u ptyDispatcher.u shelletl.u funclookup.u \
+	ivibtab.u
 
-.PHONY: ivib
+.PHONY: ivib FORCE
 
 all: ivib ui
 
-ivib:
+ivib: ivib/ivib$(EXE)
+
+# The ivib program is rebuilt whenever any of its ucode files change.
+ivib/ivib$(EXE): FORCE
 	cd ivib && $(MAKE)
 
-ui:	$(OBJ)
+# ui links the ivib ucode files (see ivibtab.icn).
+ui:	$(OBJ) ivib/ivib$(EXE)
 	$(UC) $(DASHG) -o ui $(OBJ)
 	$(CP) ui$(EXE) ../../bin
 
@@ -104,6 +109,9 @@ shelletl.u: shelletl.icn
 
 classbrowser.u: classbrowser.icn  imgs.u
 	$(UC) $(UFLAGS2) classbrowser
+
+ivibtab.u: ivibtab.icn
+	$(UC) $(UFLAGS) ivibtab
 
 #tree.u: tree.icn
 #	$(UC) $(UFLAGS2) tree

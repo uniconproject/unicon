@@ -135,6 +135,38 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    #
+   # Replace the whole buffer and leave the change on the undo list.
+   # set_contents() clears that list.
+   #
+   #
+   # on_replace, if given, is told after a later undo or redo.  The
+   # first apply does not call it: the caller still has the state that
+   # produced new.
+   #
+   method replace_contents(lines, on_replace)
+      local old, new, ed
+      old := []
+      every put(old, !self.contents)
+      new := []
+      every put(new, !(\lines | []))
+      if *new = 0 then put(new, "")
+      lines_equal(old, new) & return
+      ed := EditableTextListReplaceEdit(self, old, new, on_replace)
+      undo_manager.add_edit(ed)
+      ed.redo()
+      self.fire(CONTENT_CHANGED_EVENT)
+      return
+   end
+
+   method lines_equal(a, b)
+      local i
+      if *a ~= *b then fail
+      every i := 1 to *a do
+         if a[i] ~== b[i] then fail
+      return
+   end
+
+   #
    # Call this method if the contents list, previously
    # set with {set_contents()}, has changed.
    #
@@ -1511,6 +1543,56 @@ class EditableTextListPasteEdit:EditableTextListEdit(s, pre, n)
    initially(parent, s)
       self.EditableTextListEdit.initially(parent)
       self.s := s
+end
+
+#
+# Replace every line.  One undo restores the previous buffer.
+#
+class EditableTextListReplaceEdit:EditableTextListEdit(
+   old_lines, new_lines, on_replace, live)
+   method install(lines)
+      parent.contents := []
+      every put(parent.contents, !lines)
+      if *parent.contents = 0 then
+         parent.contents := [""]
+      parent.clear_mark()
+      parent.clear_view_list()
+   end
+
+   method show()
+      if parent.is_dialog_open() then {
+         parent.compute_and_invalidate()
+         parent.constrain_line()
+      }
+   end
+
+   method redo()
+      install(new_lines)
+      parent.cursor_x := parent.cursor_y := 1
+      show()
+      # The first redo is the initial apply.  Only a later redo, which
+      # puts the generated text back, has a canvas to bring back with it.
+      if \live & \on_replace then
+         on_replace.layout_replaced(new_lines, parent)
+      live := 1
+   end
+
+   method undo()
+      install(old_lines)
+      parent.cursor_x := self.cursor_x
+      parent.cursor_y := self.cursor_y
+      parent.mark_x := self.mark_x
+      parent.mark_y := self.mark_y
+      show()
+      if \on_replace then
+         on_replace.layout_replaced(old_lines, parent)
+   end
+
+   initially(parent, old_lines, new_lines, on_replace)
+      self.EditableTextListEdit.initially(parent)
+      self.old_lines := old_lines
+      self.new_lines := new_lines
+      self.on_replace := on_replace
 end
 
 class LineSplitter(parent)

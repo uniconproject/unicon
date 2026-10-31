@@ -294,6 +294,7 @@ class Main : CommonDialog(
          if f := ::open(s) then {
             c := load_canvas(f, s) | fail
             c.set_parent_dialog(self)
+            c.set_parent(self)    # the canvas reaches Main via its parent
             c.set_pos(self.canvas.x, self.canvas.y)
             c.set_size(c.w, c.h)
             c.clear_selections()
@@ -833,6 +834,8 @@ class Main : CommonDialog(
       "   end",
       "",
       "   method end_dialog()",
+      "      #To close overall program use: exit(0)",
+      "      #To close a single dialog window use: dispose()",
       "   end",
       "",
       "   method init_dialog()",
@@ -844,6 +847,7 @@ class Main : CommonDialog(
       "",
       "   initially",
       "      self.Dialog.initially()",
+      "      self.connect(self, \"dispose\", CLOSE_BUTTON_EVENT)",
       "end",
       "",
       "#You can invoke your ivib layout with something like this:",

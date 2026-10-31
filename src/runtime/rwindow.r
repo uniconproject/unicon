@@ -814,7 +814,7 @@ static char *texturetable[] = {
    "plastic",
    "sand",
    "skin",
-   "sky"
+   "sky",
    "snow",
    "stone",
    "tile",
@@ -854,11 +854,18 @@ int parsecolor(wbp w, char *buf, long *r, long *g, long *b, long *a)
    double dr, dg, db, da = 1.0;
 
    *r = *g = *b = 0L;
+   /*
+    * Context alpha is the default only for an OpenGL window.  ColorValue()
+    * and PaletteKey() are legal with no window, and a native window never
+    * initializes alpha (calloc leaves it 0, which would make the color
+    * transparent).
+    */
 #ifdef GraphicsGL
-   *a = (long) (w->context->alpha*65535.0);
-#else                                   /* GraphicsGL */
-   *a = 65535;
+   if (w && w->window && w->window->is_gl)
+      *a = (long) (w->context->alpha * 65535.0);
+   else
 #endif                                  /* GraphicsGL */
+   *a = 65535;
 
    /* trim leading spaces */
    while (isspace(*buf))
@@ -1067,19 +1074,26 @@ static int colorphrase(char *buf, long *r, long *g, long *b, long *a)
    /* check for numeric diaphaneity value */
    tmpf = atof(buf);
 
-   if (p || tmpf > 0.0) {
+   if (p) {
       /* skip past word */
       buf += strlen(buf) + 1;
       if (buf >= ebuf)
          return 0;
       /* save diaphaneity value, but ignore "opaque" */
-      if (p && (((colrmod *)p) -> val) != 100)
+      if ((((colrmod *)p) -> val) != 100)
          alpha = ((colrmod *)p) -> val / 100.0;
-      /* save numeric diaphaneity value */
-      else {
-         if (tmpf >= 1.0) tmpf = 1.0;
-         alpha = tmpf;
-         }
+      }
+   else if (tmpf > 0.0) {
+      /*
+       * A named level such as "opaque" also makes atof() return 0, and
+       * must not fall through to here: that stored alpha 0 and the color
+       * disappeared.  Only a word that is not in the table is numeric.
+       */
+      buf += strlen(buf) + 1;
+      if (buf >= ebuf)
+         return 0;
+      if (tmpf >= 1.0) tmpf = 1.0;
+      alpha = tmpf;
       }
 
    /* check for "very" */

@@ -576,6 +576,31 @@ int go_virtual(wbp w)
 }
 
 /*
+ * alc_display() failed after XOpenDisplay().  wd is not on the display
+ * list, so this closes the connection instead of free_display().
+ */
+static void discard_display(wdp wd)
+   {
+   wfp wf, next;
+
+   if (!wd)
+      return;
+   for (wf = wd->fonts; wf; wf = next) {
+      next = wf->next;
+      free(wf->name);
+      free(wf);
+      }
+#ifdef HAVE_XFT
+   if (wd->xfont && wd->display)
+      XFreeFont(wd->display, wd->xfont);
+#endif                                  /* HAVE_XFT */
+   free(wd->colors);
+   if (wd->display)
+      XCloseDisplay(wd->display);
+   free(wd);
+   }
+
+/*
  * allocate a display on machine s
  */
 wdp alc_display(char *s)
@@ -615,54 +640,11 @@ wdp alc_display(char *s)
    wd->screen = DefaultScreen(wd->display);
    wd->cmap = DefaultColormap(wd->display, wd->screen);
 
-#ifdef GraphicsGL
-   {
-   int query;
-   int fbparms[] = {GLX_RENDER_TYPE, GLX_RGBA_BIT,
-                   GLX_DOUBLEBUFFER, True,
-                   GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-                   GLX_DEPTH_SIZE, 16,
-                   GLX_STENCIL_SIZE, 3, None};
-
-   /* Check for GLX */
-   if (!glXQueryExtension(wd->display, &query, &query)) {
-      fprintf(stderr, "no visual extension\n");
-      return NULL;
-      }
-
    /*
-    * Try to get a GLXFBConfig for GLXWindows and GLXPixmaps
+    * GLX is not required here.  A native 2D window must still open on a
+    * server that has no GLX.  OpenGL windows set up the framebuffer
+    * config, visual, and shared context in gl_init_display().
     */
-   wd->configs = glXChooseFBConfig(wd->display, wd->screen, fbparms,
-      &(wd->nConfigs));
-   if (wd->configs == NULL) {
-      fprintf(stderr, "failed to get fbconfig\n");
-      return NULL;
-      }
-
-   /*
-    * Try to get a glX visual
-    */
-   wd->vis = glXGetVisualFromFBConfig(wd->display, wd->configs[0]);
-   if (wd->vis == NULL) {
-      fprintf(stderr, "failed to get visual\n");
-      return NULL;
-      }
-
-   /*
-    * Create a shared context with direct rendering (if possible)
-    * for textures. All windows sharing a display will share
-    * with this context.
-    */
-   if (wd->sharedCtx == NULL) {
-      wd->sharedCtx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
-      if (wd->sharedCtx == NULL) {
-         printf("failed to get shared render context\n");
-         return NULL;
-         }
-      }
-   }
-#endif                                  /* GraphicsGL */
 
    /*
     * Color slots 0 and 1 are permanently reserved for black and white
@@ -671,6 +653,10 @@ wdp alc_display(char *s)
     */
    wd->sizColors = DMAXCOLORS;
    wd->colors = calloc(DMAXCOLORS, sizeof (struct wcolor));
+   if (wd->colors == NULL) {
+      discard_display(wd);
+      return NULL;
+      }
    strcpy(wd->colors[0].name,"black");
    wd->colors[0].refcount = 1;
    wd->colors[0].type = CLR_SHARED;
@@ -718,7 +704,7 @@ wdp alc_display(char *s)
    wd->fonts = loadfont(wd, DEFAULTFONTNAME);
 #endif                                  /* HAVE_XFT */
    if (wd->fonts == NULL) {
-      free(wd);
+      discard_display(wd);
       return NULL;
       }
    wd->fonts->refcount = 1;
@@ -742,7 +728,7 @@ wdp alc_display(char *s)
    wd->icongc = XCreateGC(stddpy, DefaultRootWindow(stddpy),
       GCFont | GCForeground | GCBackground | GCFillStyle | GCCapStyle, &gcv);
    if (wd->icongc == NULL) {
-      free(wd);
+      discard_display(wd);
       return NULL;
       }
    }
@@ -1213,8 +1199,14 @@ wcp alc_context(wbp w)
 
 #ifdef GraphicsGL
    if (w->window->is_gl) {
-      init_2dcontext(wc);
-      init_3dcontext(wc);
+      if (init_2dcontext(wc) != Succeeded ||
+          init_3dcontext(wc) != Succeeded) {
+         free(wc->patternname);
+         free(wc->selectionnamelist);
+         wd->refcount--;
+         free(wc);
+         return NULL;
+         }
       wc->glfg.c = wd->colors[0].c;
       wd->colors[0].refcount++;
       wc->glbg.c = wd->colors[1].c;
@@ -1282,7 +1274,10 @@ wcp clone_context(wbp w)
    rv->bits = wc->bits;
 
 #ifdef Graphics3D
-   copy_3dcontext(wc, rv);
+   if (copy_3dcontext(wc, rv) != Succeeded) {
+      free_context(rv);
+      return NULL;
+      }
 #endif                                  /* Graphics3D */
 
    if (ISXORREVERSE(w))
@@ -1401,6 +1396,17 @@ int free_window(wsp ws)
        */
       if (ws->theColors) { free(ws->theColors); ws->iconColors = NULL; }
       if (ws->iconColors) { free(ws->iconColors); ws->iconColors = NULL; }
+#ifdef GraphicsGL
+      gl_free_context_fields(&ws->wcrender);
+      gl_free_context_fields(&ws->wcdef);
+#endif                                  /* GraphicsGL */
+      /*
+       * alc_display() took one reference for this window.  The context
+       * holds another, which free_context() drops.  A child window did
+       * not call alc_display(); wclose() releases its extra reference.
+       */
+      if (ws->parent == NULL && ws->display)
+         free_display(ws->display);
       /* if (ws->selectiondata) { free(ws->selectiondata); ws->selectiondata = NULL; } ?? */
       GRFX_UNLINK(ws, wstates);
       }
@@ -1414,6 +1420,21 @@ void free_context(wcp wc)
    {
    wc->refcount--;
    if(wc->refcount == 0) {
+#ifdef Graphics3D
+      int n;
+#endif                                  /* Graphics3D */
+      free(wc->patternname);
+      wc->patternname = NULL;
+#ifdef Graphics3D
+      if (wc->selectionnamelist) {
+         n = wc->selectionnamecount;
+         while (n > 0)
+            free(wc->selectionnamelist[--n]);
+         free(wc->selectionnamelist);
+         wc->selectionnamelist = NULL;
+         wc->selectionnamecount = 0;
+         }
+#endif                                  /* Graphics3D */
       if (wc->gc != NULL)
          XFreeGC(wc->display->display, wc->gc);
       free_display(wc->display);

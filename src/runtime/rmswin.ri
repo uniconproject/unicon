@@ -216,6 +216,29 @@ char *lookcmdname(char *buf, char *s)
 }
 
 /*
+ * Drop the reference taken by alc_display().  Windows has no free_display();
+ * the last reference also releases OpenGL objects hung off the display.
+ */
+static void drop_display(wdp wd)
+   {
+   if (!wd)
+      return;
+   wd->refcount--;
+   if (wd->refcount > 0)
+      return;
+#ifdef GraphicsGL
+   gl_free_display_resources(wd);
+#endif                                  /* GraphicsGL */
+   if (wd->previous)
+      wd->previous->next = wd->next;
+   else
+      wdsplys = wd->next;
+   if (wd->next)
+      wd->next->previous = wd->previous;
+   free(wd);
+   }
+
+/*
  * wopen
  * If it returns NULL, per fsys.r, wopen() should set err_index to one of:
  *  >= 0: the index of an offending attribute value
@@ -277,7 +300,10 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
    if (is_gl) {
       gl_init_winstate(ws);
       if (gl_init_display(ws->display, !is_3d) != Succeeded) {
+         wdp bad = ws->display;
          *err_index = -1;
+         ws->display = NULL;
+         drop_display(bad);
          free_binding(w);
          set_errortext(145);
          return NULL;
@@ -322,15 +348,10 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
          }
 
       /*
-       * Need to determine a way to initialize the default context for a
-       * window without adding items to the display list.
+       * Initial attributes are applied before the canvas exists, and must
+       * not be recorded as drawing commands.
        */
-      if (!ws->initAttrs)
-         ws->initAttrs = 1;
-      else {
-         glprintf("gl_wopen(): need a mutex lock\n");
-         return NULL;
-         }
+      ws->initAttrs = 1;
       }
 #endif                                  /* GraphicsGL */
 
@@ -462,6 +483,26 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
    ws->pixwidth = ws->width;
    ws->pixheight = ws->height;
 
+#ifdef GraphicsGL
+   /*
+    * 2D and 3D OpenGL windows both need a WGL context and the GL canvas
+    * defaults.  Only 3D used to take this path, so a "gl" window had no
+    * context to draw into and a 3D window had dim/slices/rings left at 0.
+    */
+   if (ws->is_gl) {
+      ws->initAttrs = 0;
+      hdc = GetDC(ws->iconwin);
+      SetDCPixelFormat(hdc);
+      ReleaseDC(ws->iconwin, hdc);
+      if (create3Dcontext(w) != Succeeded || ws->ctx == NULL ||
+          init_canvas(w) == Failed) {
+         *err_index = -1;
+         free_binding(w);
+         return NULL;
+         }
+      }
+   else
+#endif                                  /* GraphicsGL */
 #ifdef Graphics3D
    if (wc->rendermode == UGL3D) {
       hdc = GetDC(ws->iconwin);
@@ -3711,6 +3752,7 @@ wdp alc_display(char *s)
       }
 
    strcpy(wd->name,s);
+   wd->gamma = GammaCorrection;
 #ifdef Graphics3D
    wd->stex = NULL;
 #endif                                  /* Graphics3D */
@@ -3720,6 +3762,30 @@ wdp alc_display(char *s)
    GRFX_LINK(wd, wdsplys);
    return wd;
    }
+#ifdef GraphicsGL
+static void free_private_font(wfp font)
+   {
+   if (!font)
+      return;
+   if (font->font)
+      DeleteObject(font->font);
+   free(font->name);
+   free(font);
+   }
+
+static int font_is_shared(wdp wd, wfp font)
+   {
+   wfp wf;
+
+   if (!wd || !font)
+      return 0;
+   for (wf = wd->glfonts; wf; wf = wf->next)
+      if (wf == font)
+         return 1;
+   return 0;
+   }
+#endif                                  /* GraphicsGL */
+
 /*
  * allocate a context.  Can't be called until w has a window.
  */
@@ -3738,6 +3804,8 @@ wbp w;
 
    wc->serial = ++context_serial;
    wc->display = w->window->display;
+   if (wc->display)
+      wc->display->refcount++;
    wc->bkmode = OPAQUE;        /* at present, only used in line drawing */
    wc->fg = RGB(0,0,0);
    wc->bg = RGB(255,255,255);
@@ -3767,6 +3835,47 @@ wbp w;
 
    wc->font->charwidth = 8; /* looks like a bug */
    wc->leading = 16;
+
+#ifdef GraphicsGL
+   if (w->window->is_gl) {
+      wfp gdifont = wc->font;
+      int gdi_leading = wc->leading;
+
+      /*
+       * Same defaults the X11 allocator installs.  dim/slices/rings come
+       * from init_3dcontext(); leaving them 0 makes DrawLine divide by 0.
+       * Keep the GDI font when no GL font was loaded, and hang its HFONT
+       * on the GL font so window setup can still SelectObject it.
+       */
+      if (init_2dcontext(wc) != Succeeded ||
+          init_3dcontext(wc) != Succeeded) {
+         if (wc->font != gdifont)
+            free_private_font(gdifont);
+         else
+            free_private_font(wc->font);
+         free(wc->fgname);
+         free(wc->bgname);
+         free(wc->patternname);
+#ifdef Graphics3D
+         free(wc->selectionnamelist);
+#endif                                  /* Graphics3D */
+         drop_display(wc->display);
+         free(wc);
+         return NULL;
+         }
+      if (wc->font == NULL) {
+         wc->font = gdifont;
+         wc->leading = gdi_leading;
+         }
+      else if (wc->font != gdifont) {
+         if (wc->font->font == NULL) {
+            wc->font->font = gdifont->font;
+            gdifont->font = NULL;
+            }
+         free_private_font(gdifont);
+         }
+      }
+#endif                                  /* GraphicsGL */
 
    GRFX_LINK(wc, wcntxts);
    return wc;
@@ -3907,6 +4016,15 @@ wsp ws;
    int i;
    ws->refcount--;
    if(ws->refcount == 0) {
+#ifdef GraphicsGL
+      if (ws->ctx) {
+         wglMakeCurrent(NULL, NULL);
+         wglDeleteContext(ws->ctx);
+         ws->ctx = NULL;
+         }
+      gl_free_context_fields(&ws->wcrender);
+      gl_free_context_fields(&ws->wcdef);
+#endif                                  /* GraphicsGL */
       if (ws->win) /* && IsWindowVisible(ws->win))*/
          DestroyWindow(ws->win);
 /*      ws->win = 0;*/
@@ -3945,6 +4063,8 @@ wsp ws;
          free(ws->child);
          }
       ws->child = 0;
+      drop_display(ws->display);
+      ws->display = NULL;
       GRFX_UNLINK(ws, wstates);
       }
    return 0;
@@ -3956,6 +4076,9 @@ wsp ws;
 void free_context(wc)
 wcp wc;
    {
+#ifdef Graphics3D
+   int n;
+#endif                                  /* Graphics3D */
    wc->refcount--;
    if(wc->refcount == 0) {
       if (wc->cliprgn)
@@ -3967,20 +4090,37 @@ wcp wc;
       if (wc->patternname)
          free(wc->patternname);
       wc->patternname = 0;
+#ifdef Graphics3D
+      if (wc->selectionnamelist) {
+         n = wc->selectionnamecount;
+         while (n > 0)
+            free(wc->selectionnamelist[--n]);
+         free(wc->selectionnamelist);
+         wc->selectionnamelist = NULL;
+         wc->selectionnamecount = 0;
+         }
+#endif                                  /* Graphics3D */
       if (wc->fgname) free(wc->fgname);
       wc->fgname = 0;
       if (wc->bgname) free(wc->bgname);
       wc->bgname = 0;
       if (wc->font) {
-         if (wc->font->font)
-            DeleteObject(wc->font->font);
-         wc->font->font = 0;
-         if (wc->font->name)
-            free(wc->font->name);
-         wc->font->name = 0;
-         free(wc->font);
+#ifdef GraphicsGL
+         if (!font_is_shared(wc->display, wc->font))
+#endif                                  /* GraphicsGL */
+            {
+            if (wc->font->font)
+               DeleteObject(wc->font->font);
+            wc->font->font = 0;
+            if (wc->font->name)
+               free(wc->font->name);
+            wc->font->name = 0;
+            free(wc->font);
+            }
          }
       wc->font = 0;
+      drop_display(wc->display);
+      wc->display = NULL;
       GRFX_UNLINK(wc, wcntxts);
       }
    }
@@ -4437,6 +4577,11 @@ HDC CreateWinDC(wbp w)
       SelectClipRgn(hdc, wc->cliprgn);
       }
 
+#ifdef GraphicsGL
+   if (ws->is_gl && ws->ctx)
+      wglMakeCurrent(hdc, ws->ctx);
+   else
+#endif                                  /* GraphicsGL */
 #ifdef Graphics3D
 /*   wc->ctx = wglCreateContext (hdc); */
    if (w->context->rendermode == UGL3D) {
@@ -5160,13 +5305,29 @@ char my_wmap(wbp w)
    ws->pixwidth = ws->width;
    ws->pixheight = ws->height;
 
+#ifdef GraphicsGL
+   if (ws->is_gl) {
+      ws->initAttrs = 0;
+      hdc = GetDC(ws->iconwin);
+      SetDCPixelFormat(hdc);
+      if (ws->ctx == NULL)
+         ws->ctx = wglCreateContext(hdc);
+      if (ws->ctx != NULL)
+         wglMakeCurrent(hdc, ws->ctx);
+      ReleaseDC(ws->iconwin, hdc);
+      if (ws->ctx == NULL || init_canvas(w) == Failed)
+         return 0;
+      }
+   else
+#endif                                  /* GraphicsGL */
 #ifdef Graphics3D
    if (wc->rendermode == UGL3D) {
       hdc = GetDC(ws->iconwin);
       SetDCPixelFormat(hdc);
 #ifdef GraphicsGL
-      ws->ctx = wglCreateContext (hdc);
-      wglMakeCurrent (hdc, ws->ctx);
+      ws->ctx = wglCreateContext(hdc);
+      if (ws->ctx != NULL)
+         wglMakeCurrent(hdc, ws->ctx);
 #endif                                  /* GraphicsGL */
       ReleaseDC(ws->iconwin, hdc);
       }
@@ -5243,8 +5404,12 @@ char my_wmap(wbp w)
    else if (ws->type >= CHILD_WIN3D)
           child_window = CHILD_WIN3D;
 
-   if (child_window == CHILD_WIN3D){
-      /* set up the appropriate 3D states; initialize canvas */
+   if (child_window == CHILD_WIN3D
+#ifdef GraphicsGL
+       && !ws->is_gl
+#endif                                  /* GraphicsGL */
+      ){
+      /* OpenGL children already ran init_canvas(), which calls this. */
       if (init_3dcanvas(w) == Failed)
          return 0;
    }

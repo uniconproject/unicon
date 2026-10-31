@@ -1236,7 +1236,10 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
    if (is_gl) {
       gl_init_winstate(ws);
       if (gl_init_display(ws->display, !is_3d) != Succeeded) {
+         wdp bad = ws->display;
          *err_index = -1;
+         ws->display = NULL;
+         free_display(bad);
          free_binding(w);
          set_errortext(145);
          return NULL;
@@ -1299,15 +1302,11 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
          }
 
       /*
-       * Need to determine a way to initialize the default context for a
-       * window without adding items to the display list.
+       * Initial attributes are applied before the canvas exists, and must
+       * not be recorded as drawing commands.  The flag is per window and
+       * the window is not shared yet.
        */
-      if (!ws->initAttrs)
-         ws->initAttrs = 1;
-      else {
-         glprintf("gl_wopen(): need a mutex lock\n");
-         return NULL;
-         }
+      ws->initAttrs = 1;
       }
 #endif                                  /* GraphicsGL */
 
@@ -1349,12 +1348,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
 
 #ifdef GraphicsGL
    if (is_gl) {
-      if (ws->initAttrs)
-         ws->initAttrs = 0;
-      else {
-         glprintf("gl_wopen(): need a mutex unlock\n");
-         return NULL;
-         }
+      ws->initAttrs = 0;
 
       if ((i = gl_wmap(w)) != Succeeded) {
          if (i == Failed) {
@@ -2998,21 +2992,51 @@ int setdisplay(wbp w, char *s)
 
 #ifdef GraphicsGL
    if (ws->is_gl) {
-      /* can't change display for mapped window! */
-      if (ws->iconic != HiddenState) return Failed;
+      wdp old;
+
+      /*
+       * The window, GL context, and pbuffer belong to the display that
+       * created them.  Hidden windows still have those resources (they
+       * are unmapped, not destroyed).  Only a canvas with none of them
+       * yet can move, which is the same rule as the native pixmap check.
+       */
+      if (ws->win != (Window) NULL ||
+          ws->ctx != (GLXContext) NULL ||
+          ws->pbuf != (GLXPbuffer) NULL)
+         return Failed;
 
       Protect(d = alc_display(s), return 0);
       if (gl_init_display(d, !ws->is_3D) != Succeeded) {
          free_display(d);
          return 0;
          }
-      ws->display = d;
+      old = ws->display;
+      if (old != d) {
+         /*
+          * alc_display() contributed one reference.  This window and its
+          * context hold two on the old display; give the new one the
+          * second and release both on the old.
+          */
+         d->refcount++;
+         ws->display = d;
+         wc->display = d;
+         if (old) {
+            old->refcount -= 2;
+            if (old->refcount <= 0) {
+               old->refcount = 1;
+               free_display(old);
+               }
+            }
+         }
+      else
+         free_display(d);
 
       strcpy(wc->glfg.name, "black");
       wc->glfg.r = 0;
       wc->glfg.g = 0;
       wc->glfg.b = 0;
       wc->glfg.a = 65535;
+      wc->glfg.c = 0;
       wc->glfg.id = 0;
 
       strcpy(wc->glbg.name, "white");
@@ -3020,7 +3044,13 @@ int setdisplay(wbp w, char *s)
       wc->glbg.g = 65535;
       wc->glbg.b = 65535;
       wc->glbg.a = 65535;
+      wc->glbg.c = 1;
       wc->glbg.id = 0;
+
+      if (d->glfonts)
+         wc->font = d->glfonts;
+      else
+         wc->font = d->fonts;
       }
    else
 #endif                                  /* GraphicsGL */
@@ -3033,9 +3063,9 @@ int setdisplay(wbp w, char *s)
    ws->display = d;
    wc->fg = 0;
    wc->bg = 1;
+   wc->font = d->fonts;
    }
 
-   wc->font = d->fonts;
    return Succeeded;
    }
 
@@ -5144,9 +5174,13 @@ int children_close(wbp w)
    else {
       free_xcolors(w, 2);
       free_xcolors(w, 1);
-/*      free_window(ws);  */
-      w->window->display->refcount--;
-      w->window->display->refcount--;
+      /*
+       * A child took one reference besides the context's.  free_binding()
+       * drops the context reference, and a top-level window's alc_display()
+       * reference.
+       */
+      if (ws->parent != NULL && ws->display)
+         free_display(ws->display);
       free_binding(w);
       }
 

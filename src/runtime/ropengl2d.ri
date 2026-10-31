@@ -1106,13 +1106,16 @@ int updaterendercontext(wbp w, int intcode)
    char *s;
    ws->busy_flag = 1;
 
-   if (ws->updateRC == 0) {
+   if (ws->updateRC == 0)
       ws->updateRC = 1;
-      }
-   else {
-      glprintf("updateRC: need a mutex lock for updaterendercontext()...\n");
+   else
       return Failed;
-      }
+
+   /*
+    * Clear the re-entry flag on the way out.  An early return used to
+    * leave it set, after which every later update failed.
+    */
+#define END_UPDATE(code) do { ws->updateRC = 0; ws->busy_flag = 0; return (code); } while (0)
 
    /* apply drawop */
    if (intcode != GL2D_DRAWOP && wcr->drawop != wc->drawop) {
@@ -1120,44 +1123,39 @@ int updaterendercontext(wbp w, int intcode)
          s = "reverse";
       else
          s = "copy";
-      if (gl_setdrawop(w, s) == RunError) {
-         return RunError;
-         }
+      if (gl_setdrawop(w, s) == RunError)
+         END_UPDATE(RunError);
       }
 
    /* apply fg */
    if (intcode != GL2D_FG && !ColorEqual(wcr->glfg,wc->glfg)) {
-      if (gl_color(w, GL2D_FG, 0, wc->glfg.name) == RunError) {
-         return RunError;
-         }
+      if (gl_color(w, GL2D_FG, 0, wc->glfg.name) == RunError)
+         END_UPDATE(RunError);
       }
 
    /* apply bg */
    if (intcode != GL2D_BG && !ColorEqual(wcr->glbg,wc->glbg)) {
-      if (gl_color(w, GL2D_BG, 0, wc->glbg.name) == RunError) {
-         return RunError;
-         }
+      if (gl_color(w, GL2D_BG, 0, wc->glbg.name) == RunError)
+         END_UPDATE(RunError);
       }
 
    /* apply reverse */
    if (intcode != GL2D_REVERSE && wcr->reverse != wc->reverse) {
-      if (gl_toggle_fgbg(w) == RunError) {
-         return RunError;
-         }
+      if (gl_toggle_fgbg(w) == RunError)
+         END_UPDATE(RunError);
       }
 
    /* apply gamma */
    if (intcode != GL2D_GAMMA && wcr->gamma != wc->gamma) {
-      if (gl_setgamma(w, wc->gamma) == RunError) {
-         return RunError;
-         }
+      if (gl_setgamma(w, wc->gamma) == RunError)
+         END_UPDATE(RunError);
       }
 
    /* apply font */
    if (intcode != GL2D_FONT && wc->font != wcr->font) {
       if (wc->font) {
          if (gl_setfont(w, &(wc->font->name)) == RunError)
-            return RunError;
+            END_UPDATE(RunError);
          }
       else if (wc->font) {
          /* hmmm... fonts were not allocated for some reason. let it be */
@@ -1168,7 +1166,7 @@ int updaterendercontext(wbp w, int intcode)
    /* apply leading */
    if (intcode != GL2D_LEADING && wcr->leading != wc->leading) {
       if (gl_setleading(w, wc->leading) == RunError)
-         return RunError;
+         END_UPDATE(RunError);
       }
 
    /* apply fillstyle */
@@ -1186,9 +1184,8 @@ int updaterendercontext(wbp w, int intcode)
          default:
             syserr("invalid fillstyle");
          }
-      if (gl_setfillstyle(w, s) == RunError) {
-         return RunError;
-         }
+      if (gl_setfillstyle(w, s) == RunError)
+         END_UPDATE(RunError);
       }
 
    /* apply linestyle */
@@ -1206,62 +1203,53 @@ int updaterendercontext(wbp w, int intcode)
          default:
             syserr("invalid linestyle");
          }
-      if (gl_setlinestyle(w, s) == RunError) {
-         return RunError;
-         }
+      if (gl_setlinestyle(w, s) == RunError)
+         END_UPDATE(RunError);
       }
 
    /*
     * apply pattern - {patternname} should never be NULL
     */
-   if (intcode != GL2D_PATTERN && strcmp(wc->patternname,wcr->patternname)) {
+   if (intcode != GL2D_PATTERN && wc->patternname &&
+       (wcr->patternname == NULL ||
+        strcmp(wc->patternname, wcr->patternname))) {
       if (gl_SetPattern(w,wc->patternname,strlen(wc->patternname)) == RunError)
-         return RunError;
+         END_UPDATE(RunError);
       }
 
 
    /* apply linewidth */
    if (intcode != GL2D_LINEWIDTH && wcr->linewidth != wc->linewidth) {
-      if (gl_setlinewidth(w, wc->linewidth) == RunError) {
-         return RunError;
-         }
+      if (gl_setlinewidth(w, wc->linewidth) == RunError)
+         END_UPDATE(RunError);
       }
 
    /* apply dx */
    if (intcode != GL2D_DX && wcr->dx != wc->dx) {
-      if (gl_setdx(w) == RunError) {
-         return RunError;
-         }
+      if (gl_setdx(w) == RunError)
+         END_UPDATE(RunError);
       }
 
    /* apply dy */
    if (intcode != GL2D_DY && wcr->dy != wc->dy) {
-      if (gl_setdy(w) == RunError) {
-         return RunError;
-         }
+      if (gl_setdy(w) == RunError)
+         END_UPDATE(RunError);
       }
 
    /* apply clipping - just generalize for all four components */
    if (intcode != GL2D_CLIP &&
        (wcr->clipx != wc->clipx || wcr->clipy != wc->clipy ||
         wcr->clipw != wc->clipw || wcr->cliph != wc->cliph)) {
-      if (gl_setclip(w) == RunError) {
-         return RunError;
-         }
+      if (gl_setclip(w) == RunError)
+         END_UPDATE(RunError);
       }
 
-   if (ws->updateRC == 1) {
-      ws->updateRC = 0;
-      }
-   else {
-      glprintf("updateRC: need a mutex unlock for updaterendercontext()...\n");
-      return Failed;
-      }
+#undef END_UPDATE
+   ws->updateRC = 0;
+   ws->busy_flag = 0;
 
    /* Save this as last context used */
    ws->lastwcserial = wc->serial;
-
-   ws->busy_flag = 0;
    return Succeeded;
    }
 
@@ -1473,6 +1461,7 @@ int copy_2dcontext(wcp wcdest, wcp wcsrc)
 
    wcdest->drawop = wcsrc->drawop;
    wcdest->gamma = wcsrc->gamma;
+   wcdest->rgbmode = wcsrc->rgbmode;
    wcdest->reverse = wcsrc->reverse;
 
    if (wcsrc->font) {
@@ -1488,10 +1477,12 @@ int copy_2dcontext(wcp wcdest, wcp wcsrc)
          if (strcmp(wcdest->patternname,wcsrc->patternname)) {
             free(wcdest->patternname);
             wcdest->patternname = strdup(wcsrc->patternname);
+            if (!wcdest->patternname) return RunError;
             }
          }
       else {
          wcdest->patternname = strdup(wcsrc->patternname);
+         if (!wcdest->patternname) return RunError;
          }
    else if (wcdest->patternname != NULL) {
          free(wcdest->patternname);
@@ -3052,7 +3043,7 @@ int setfont2d(wbp w, struct b_record *rp)
       wcr->font->refcount--;
    wcr->font = wf;
    wcr->leading = FT_FHEIGHT(wf->face);
-   wcr->font->refcount--;
+   wcr->font->refcount++;
 
    return Succeeded;
    }
@@ -3180,7 +3171,6 @@ int setpattern2d(wbp w, struct b_record *rp)
       update = 1;
       /* "black" is default pattern */
       if (wcr->patternname == NULL) {
-         return Failed;
          wcr->patternname = strdup("black");
          if (!wcr->patternname) return RunError;
          }
@@ -6497,7 +6487,7 @@ int gl_setfont(wbp w, char **s)
       wcr->font->refcount--;
    wcr->font = wf;
    wcr->leading = FT_FHEIGHT(wf->face);
-   wcr->font->refcount--;
+   wcr->font->refcount++;
 
    c_put(&(w->window->funclist2d), &f);
 
@@ -7315,8 +7305,16 @@ wcp gl_clone_context(wbp w)
    wc = w->context;
    Protect(rv = alc_context(w), return NULL);
 
-   copy_2dcontext(rv, wc);
-   copy_3dcontext(wc, rv);
+   /*
+    * alc_context() installs default 2D/3D state.  Copy the source on top
+    * of it.  On failure the new context is linked and must be released,
+    * not just freed.
+    */
+   if (copy_2dcontext(rv, wc) != Succeeded ||
+       copy_3dcontext(wc, rv) != Succeeded) {
+      free_context(rv);
+      return NULL;
+      }
 
    return rv;
    }
@@ -7488,6 +7486,77 @@ int gl_wputc(int ci, wbp w)
 
 
 /*
+ * Release pattern names copied into an embedded render context
+ * (wcrender / wcdef).  The font itself stays with the display.
+ */
+void gl_free_context_fields(wcp wc)
+   {
+   if (!wc)
+      return;
+   free(wc->patternname);
+   wc->patternname = NULL;
+   }
+
+
+#ifdef XWindows
+/*
+ * Framebuffer config, visual, and the shared texture context.  Done on
+ * the first OpenGL window for this display, not from alc_display(), so a
+ * native window can still open when the server has no GLX.
+ */
+static int glx_init_display(wdp wd)
+   {
+   int query;
+   int fbparms[] = {GLX_RENDER_TYPE, GLX_RGBA_BIT,
+                   GLX_DOUBLEBUFFER, True,
+                   GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+                   GLX_DEPTH_SIZE, 16,
+                   GLX_STENCIL_SIZE, 3, None};
+
+   if (wd->sharedCtx != NULL)
+      return Succeeded;
+
+   if (!glXQueryExtension(wd->display, &query, &query)) {
+      glprintf("GLX extension is not available\n");
+      return Failed;
+      }
+
+   if (wd->configs == NULL) {
+      wd->configs = glXChooseFBConfig(wd->display, wd->screen, fbparms,
+         &(wd->nConfigs));
+      if (wd->configs == NULL) {
+         glprintf("failed to get fbconfig\n");
+         return Failed;
+         }
+      }
+
+   if (wd->vis == NULL) {
+      wd->vis = glXGetVisualFromFBConfig(wd->display, wd->configs[0]);
+      if (wd->vis == NULL) {
+         glprintf("failed to get visual\n");
+         XFree((void *) wd->configs);
+         wd->configs = NULL;
+         wd->nConfigs = 0;
+         return Failed;
+         }
+      }
+
+   wd->sharedCtx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
+   if (wd->sharedCtx == NULL) {
+      glprintf("failed to get shared render context\n");
+      XFree((void *) wd->vis);
+      wd->vis = NULL;
+      XFree((void *) wd->configs);
+      wd->configs = NULL;
+      wd->nConfigs = 0;
+      return Failed;
+      }
+   return Succeeded;
+   }
+#endif                                  /* XWindows */
+
+
+/*
  * OpenGL-specific initialization of a display that the native window
  * system has already allocated (alc_display()).  Displays are shared
  * between windows, so this only does work the first time.  The default
@@ -7496,6 +7565,11 @@ int gl_wputc(int ci, wbp w)
  */
 int gl_init_display(wdp wd, int need_font)
    {
+#ifdef XWindows
+   if (glx_init_display(wd) != Succeeded)
+      return Failed;
+#endif                                  /* XWindows */
+
    if (!wd->texIds) {
       /*
        * Array for non-standard pattern textures. See macros for allocating
@@ -7586,6 +7660,10 @@ void gl_free_display_resources(wdp wd)
       for (i = 0; i < 256; i++)
          free(wf->chars[i].pixmap);
 #endif                                  /* HAVE_LIBFREETYPE */
+#ifdef MSWindows
+      if (wf->font)
+         DeleteObject(wf->font);
+#endif                                  /* MSWindows */
       free(wf->name);
       free(wf);
       }

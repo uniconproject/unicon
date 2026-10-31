@@ -291,15 +291,48 @@ int init_3dcontext(wcp wc)
 
 int copy_3dcontext(wcp wc, wcp rv)
 {
+   int i, n;
+   char **copy;
+
   /* set defaults for attributes */
    rv->dim = wc->dim;
    rv->slices = wc->slices;
    rv->rings = wc->rings;
    rv->selectionenabled = wc->selectionenabled;
    rv->selectionrendermode = wc->selectionrendermode;
+   /*
+    * init_3dcontext() mallocs a private name list.  Sharing that pointer
+    * with the source leaked the destination list and freed it twice when
+    * both contexts closed.  Free the destination list before its count is
+    * overwritten, then give it its own copy of the source names.
+    */
+   if (rv->selectionnamelist &&
+       rv->selectionnamelist != wc->selectionnamelist) {
+      n = rv->selectionnamecount;
+      while (n > 0)
+         free(rv->selectionnamelist[--n]);
+      free(rv->selectionnamelist);
+      rv->selectionnamelist = NULL;
+      }
    rv->selectionnamelistsize = wc->selectionnamelistsize;
    rv->selectionnamecount = wc->selectionnamecount;
-   rv->selectionnamelist = wc->selectionnamelist;
+   if (wc->selectionnamelist) {
+      copy = malloc(wc->selectionnamelistsize * sizeof(char *));
+      if (copy == NULL)
+         return Failed;
+      for (i = 0; i < wc->selectionnamecount; i++) {
+         copy[i] = strdup(wc->selectionnamelist[i]);
+         if (copy[i] == NULL) {
+            while (i > 0)
+               free(copy[--i]);
+            free(copy);
+            return Failed;
+            }
+         }
+      rv->selectionnamelist = copy;
+      }
+   else
+      rv->selectionnamelist = NULL;
    rv->app_use_selection3D = wc->app_use_selection3D;
    rv->autogen = wc->autogen;
    rv->normode = wc->normode;

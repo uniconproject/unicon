@@ -940,6 +940,7 @@ int checkOpenConsole( FILE *w, char *s );
       int gl_init_display(wdp wd, int need_font);
       void gl_init_winstate(wsp ws);
       void gl_free_display_resources(wdp wd);
+      void gl_free_context_fields(wcp wc);
       int gl_wgetq(wbp w, dptr res, int t);
       int gl_wmap(wbp w);
    #endif                                       /* GraphicsGL */

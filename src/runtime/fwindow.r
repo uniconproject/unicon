@@ -179,6 +179,9 @@ function{1} Clone(argv[argc])
       tended struct descrip sbuf, sbuf2;
       char answer[128];
       int child_window=0;
+#ifdef GraphicsGL
+      int saved_init = 0;
+#endif                                  /* GraphicsGL */
 #ifdef Graphics3D
       int is_texture=0;
       int texhandle;
@@ -290,10 +293,8 @@ function{1} Clone(argv[argc])
 
 #ifdef GraphicsGL
       if (new_w->window->is_gl) {
-         if (!new_w->window->initAttrs)
-            new_w->window->initAttrs = 1;
-         else
-            glprintf("Clone(): need a mutex lock\n");
+         saved_init = new_w->window->initAttrs;
+         new_w->window->initAttrs = 1;
          }
 #endif                                  /* GraphicsGL */
       for (n = warg; n < argc; n++) {
@@ -301,18 +302,24 @@ function{1} Clone(argv[argc])
             if (!cnv:tmp_string(argv[n], sbuf))  /* sbuf not allocated */
                runerr(109, argv[n]);
             switch (wattrib(new_w, StrLoc(argv[n]), StrLen(argv[n]), &sbuf2, answer)) {
-            case Failed: fail;
-            case RunError: runerr(0, argv[n]);
+            case Failed:
+#ifdef GraphicsGL
+               if (new_w->window->is_gl)
+                  new_w->window->initAttrs = saved_init;
+#endif                                  /* GraphicsGL */
+               fail;
+            case RunError:
+#ifdef GraphicsGL
+               if (new_w->window->is_gl)
+                  new_w->window->initAttrs = saved_init;
+#endif                                  /* GraphicsGL */
+               runerr(0, argv[n]);
                }
             }
          }
 #ifdef GraphicsGL
-      if (new_w->window->is_gl) {
-         if (new_w->window->initAttrs)
-            new_w->window->initAttrs = 0;
-         else
-            glprintf("Clone(): need a mutex unlock\n");
-         }
+      if (new_w->window->is_gl)
+         new_w->window->initAttrs = saved_init;
 
       if (new_w->window->is_gl) {
          if (child_window)
@@ -2516,8 +2523,8 @@ function{0,1} PaletteKey(argv[argc])
 
       if (cnv:C_integer(argv[warg + 1], n)) {
 #ifdef GraphicsGL
-         if (w->window->is_gl) {
-            if (w == NULL || (s = gl_get_mutable_name(w, n)) == NULL)
+         if (w != NULL && w->window->is_gl) {
+            if ((s = gl_get_mutable_name(w, n)) == NULL)
                fail;
             }
          else

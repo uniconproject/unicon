@@ -18,6 +18,15 @@
 
 int unicon_xft;
 
+/*
+ * The classic core "fixed" font has 6x13 cells, and layouts (ivib's, the
+ * gui package's) are sized for it.  An unsized "fixed" is opened at the
+ * largest pixel size whose cells fit in 6x13, found once per process.
+ */
+#define FIXED_CELL_W 6
+#define FIXED_CELL_H 13
+static int xft_fixed_px;
+
 static int xft_ready;
 
 static int xft_env_on(char *s)
@@ -109,8 +118,10 @@ char *convert_spec(char *s)
     * Unicon font sizes are pixel heights, matching the XLFD pixel
     * field. XFT_SIZE is points and comes out larger on a normal display.
     */
-   if (size > 0)
-      XftPatternAddDouble(p, XFT_PIXEL_SIZE, (double)size);
+   if (size <= 0)
+      size = strcmp(family, "fixed") ? DEFAULTFONTSIZE :
+         (xft_fixed_px > 0 ? xft_fixed_px : FIXED_CELL_H);
+   XftPatternAddDouble(p, XFT_PIXEL_SIZE, (double)size);
 
    if (flags & FONTFLAG_MEDIUM)
       XftPatternAddInteger(p, XFT_WEIGHT, XFT_WEIGHT_MEDIUM);
@@ -155,6 +166,75 @@ char *convert_spec(char *s)
    XftNameUnparse(p, res, sizeof(res) - 1);
    XftPatternDestroy(p);
    return res;
+}
+
+/*
+ * Open the font a pattern name describes.  fontconfig's own settings
+ * often leave small text with slight or no hinting, which snaps glyphs
+ * only vertically; in a narrow mono cell that blurs the stems together
+ * (the m of a 6-pixel "fixed" comes out a grey block).  So a mono font
+ * under XFT_FULLHINT pixels is hinted in both directions, by the
+ * autohinter so faces without hints of their own get it too.  This is
+ * set after matching, where the system configuration cannot undo it.
+ * Proportional fonts are left alone: full hinting would change their
+ * widths.
+ */
+#define XFT_FULLHINT 16
+
+XftFont *xft_open(Display *dpy, int scr, char *name)
+{
+   FcPattern *p, *m;
+   FcResult r;
+   XftFont *f;
+   double px;
+   int spacing;
+
+   if ((p = XftNameParse(name)) == NULL)
+      return NULL;
+   m = XftFontMatch(dpy, scr, p, &r);
+   FcPatternDestroy(p);
+   if (m == NULL)
+      return NULL;
+   if (FcPatternGetDouble(m, FC_PIXEL_SIZE, 0, &px) == FcResultMatch &&
+       px < XFT_FULLHINT &&
+       FcPatternGetInteger(m, FC_SPACING, 0, &spacing) == FcResultMatch &&
+       spacing >= FC_MONO) {
+      FcPatternDel(m, FC_HINTING);
+      FcPatternAddBool(m, FC_HINTING, FcTrue);
+      FcPatternDel(m, FC_HINT_STYLE);
+      FcPatternAddInteger(m, FC_HINT_STYLE, FC_HINT_FULL);
+      FcPatternDel(m, FC_AUTOHINT);
+      FcPatternAddBool(m, FC_AUTOHINT, FcTrue);
+      }
+   if ((f = XftFontOpenPattern(dpy, m)) == NULL)
+      FcPatternDestroy(m);
+   return f;
+}
+
+/*
+ * Find the pixel size an unsized "fixed" is opened at (see above).
+ */
+void xft_fit_fixed(Display *dpy, int scr)
+{
+   char spec[32], name[256];
+   XftFont *f;
+   int px, fits;
+
+   if (xft_fixed_px > 0)
+      return;
+   for (px = FIXED_CELL_H; px > 8; px--) {
+      sprintf(spec, "fixed,%d", px);
+      strncpy(name, convert_spec(spec), sizeof(name) - 1);
+      name[sizeof(name) - 1] = '\0';
+      if ((f = xft_open(dpy, scr, name)) == NULL)
+         break;
+      fits = f->max_advance_width <= FIXED_CELL_W &&
+             f->ascent + f->descent <= FIXED_CELL_H;
+      XftFontClose(dpy, f);
+      if (fits)
+         break;
+      }
+   xft_fixed_px = px;
 }
 
 void ensure_xftdraw(wbp w)

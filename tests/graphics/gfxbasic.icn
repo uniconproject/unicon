@@ -11,6 +11,10 @@ procedure main()
              "fg=black") | stop("no window")
    ref := open("ref", "g", "size=1,1", "canvas=hidden") | stop("no window")
    write("size ", WAttrib(w, "width"), "x", WAttrib(w, "height"))
+   # the default font, "fixed", has X11's 6x13 cells, as layouts expect
+   write("fixed font fits 6x13: ",
+         if WAttrib(w, "fwidth") = 6 & WAttrib(w, "fheight") <= 13 then "yes"
+         else WAttrib(w, "fwidth") || "x" || WAttrib(w, "fheight"))
 
    FillRectangle(w, 10, 5, 7, 3)
    report("fill", "black")

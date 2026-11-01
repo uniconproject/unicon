@@ -1982,6 +1982,34 @@ void geticonic(wbp w, char *answer)
  */
 
 /*
+ * X11's default font, "fixed", has 6x13 character cells, and window and
+ * dialog layouts (such as those made by ivib) are sized for it.  An
+ * unsized "fixed" is the mono face at the largest size whose cells fit
+ * in 6x13; the size found is kept for later windows.
+ */
+static struct ucfont *fixedfont(char *name, int flags, int *sizep)
+   {
+   static int fixedsize;
+   struct ucfont *uf;
+   int size;
+
+   if (fixedsize > 0) {
+      *sizep = fixedsize;
+      return uc_font_open(name, flags, fixedsize);
+      }
+   for (size = 13; ; size--) {
+      if ((uf = uc_font_open(name, flags, size)) == NULL)
+         return NULL;
+      if (size <= 8 || (uc_font_maxwidth(uf) <= 6 &&
+                        uc_font_ascent(uf) + uc_font_descent(uf) <= 13))
+         break;
+      uc_font_close(uf);
+      }
+   *sizep = fixedsize = size;
+   return uf;
+   }
+
+/*
  * Open the font described by an Icon font spec ("family,styles,size").
  * The family may also be the path of a TrueType or OpenType file.
  */
@@ -2017,10 +2045,13 @@ static wfp sdl_mkfont(char *s)
    if (style & (FONTFLAG_BOLD | FONTFLAG_DEMI)) flags |= UC_FONT_BOLD;
    if (style & (FONTFLAG_ITALIC | FONTFLAG_OBLIQUE)) flags |= UC_FONT_ITALIC;
    if (style & FONTFLAG_MONO) flags |= UC_FONT_MONO;
-   if (size <= 0)
-      size = strcmp(family, "fixed") ? DEFAULTFONTSIZE : 13;
-
-   uf = uc_font_open(name, flags, size);
+   if (size <= 0 && !strcmp(family, "fixed"))
+      uf = fixedfont(name, flags, &size);
+   else {
+      if (size <= 0)
+         size = DEFAULTFONTSIZE;
+      uf = uc_font_open(name, flags, size);
+      }
    if (uf == NULL)
       return NULL;
    f = calloc(1, sizeof(struct _wfont));

@@ -7,6 +7,7 @@ link enqueue
 global w, ref
 
 procedure main()
+   local r
    w := open("gfxbasic", "g", "size=60,40", "canvas=hidden", "bg=white",
              "fg=black") | stop("no window")
    ref := open("ref", "g", "size=1,1", "canvas=hidden") | stop("no window")
@@ -36,6 +37,22 @@ procedure main()
    FillRectangle(w, 10, 8, 30, 20)
    WAttrib(w, "drawop=copy")
    report("reverse twice", "red")
+   EraseArea(w)
+
+   # reverse swaps fg and bg; SDL also swaps the blends of the two that
+   # smoothed text leaves, where X11 xors them with fg ^ bg
+   Fg(w, "#8e9092"); DrawPoint(w, 1, 1)
+   Fg(w, "#1c2024"); DrawPoint(w, 2, 1)
+   r := Clone(w, "fg=#1c2024", "drawop=reverse")
+   FillRectangle(r, 0, 0, 4, 3)
+   Uncouple(r)
+   write("reverse: ",
+      if Pixel(w, 0, 0, 1, 1) == colorpixel("#1c2024") &
+         Pixel(w, 2, 1, 1, 1) == colorpixel("white") &
+         (not (&features == "SDL graphics") |
+          between(Pixel(w, 1, 1, 1, 1), "#1c2024", "white"))
+      then "ok" else Pixel(w, 1, 1, 1, 1))
+   Fg(w, "red")
    EraseArea(w)
 
    Clip(w, 10, 10, 8, 6)
@@ -110,4 +127,20 @@ procedure near(c1, c2)
    every i := 1 to 3 do
       if abs(a[i] - b[i]) > 3 then fail
    return
+end
+
+# is each channel of color p between those of colors a and b?
+procedure between(p, a, b)
+   local i
+   p := rgblist(p); a := rgblist(colorpixel(a)); b := rgblist(colorpixel(b))
+   every i := 1 to 3 do
+      if not (a[i] <= p[i] <= b[i] | b[i] <= p[i] <= a[i]) then fail
+   return
+end
+
+procedure rgblist(s)
+   local l
+   l := []
+   s ? while put(l, integer(tab(many(&digits)))) do move(1)
+   return l
 end

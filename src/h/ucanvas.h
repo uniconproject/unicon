@@ -32,6 +32,17 @@
 #define UC_OP_ORINVERTED        13
 #define UC_OP_NAND              14
 #define UC_OP_SET               15
+/*
+ * Not an X11 code: dst = src - dst in each 8-bit channel (mod 256).
+ * With src = fg + bg (see uc_rgb_sum), it swaps fg and bg, as X11's xor
+ * with fg ^ bg does, and also swaps the blends of the two that smoothed
+ * text leaves, which xor turns into unrelated colors.  Done twice, it
+ * restores every pixel.
+ */
+#define UC_OP_REVERSE           16
+#define uc_rgb_sum(a, b) ((((((a) >> 16) + ((b) >> 16)) & 255) << 16) | \
+                          (((((a) >> 8) + ((b) >> 8)) & 255) << 8) | \
+                          (((a) + (b)) & 255))
 
 #define UC_LINE_SOLID           0
 #define UC_LINE_DASHED          1       /* on/off: gaps are left untouched */

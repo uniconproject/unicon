@@ -247,6 +247,10 @@ static unsigned int rop(int op, unsigned int s, unsigned int d)
       case UC_OP_ORINVERTED:   r = ~s | d;        break;
       case UC_OP_NAND:         r = ~(s & d);      break;
       case UC_OP_SET:          r = ~0u;           break;
+      case UC_OP_REVERSE:
+         r = ((((s >> 16) - (d >> 16)) & 255) << 16) |
+             ((((s >> 8) - (d >> 8)) & 255) << 8) | ((s - d) & 255);
+         break;
       default:                 r = s;             break;
       }
    return r & RGBMASK;

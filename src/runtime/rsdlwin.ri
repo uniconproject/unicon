@@ -247,9 +247,10 @@ struct ucgc *sdl_gc(wbp w)
    struct ucgc *gc = &wc->gc;
    int i;
 
-   gc->fg = (unsigned int)(ISXORREVERSE(w) ? (wc->fg ^ wc->bg) : wc->fg);
+   gc->fg = (unsigned int)(ISXORREVERSE(w) ?
+                           uc_rgb_sum(wc->fg, wc->bg) : wc->fg);
    gc->bg = (unsigned int)wc->bg;
-   gc->op = ISXORREVERSE(w) ? UC_OP_XOR : wc->drawop;
+   gc->op = ISXORREVERSE(w) ? UC_OP_REVERSE : wc->drawop;
    gc->linewidth = wc->linewidth;
    gc->linestyle = wc->linestyle;
    gc->fillstyle = wc->fillstyle;

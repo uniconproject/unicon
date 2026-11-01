@@ -717,8 +717,10 @@ wdp alc_display(char *s)
 #endif                                  /* HAVE_LIBXFT */
    wd->numFonts = 1;
 #ifdef HAVE_LIBXFT
-   if (unicon_xft)
+   if (unicon_xft) {
+      xft_fit_fixed(wd->display, wd->screen);
       wd->fonts = loadfont(wd, convert_spec(DEFAULTFONTNAME), 1);
+      }
    else
 #endif                                  /* HAVE_LIBXFT */
       wd->fonts = loadfont(wd, DEFAULTFONTNAME, 0);
@@ -763,8 +765,10 @@ wfp alc_font(wbp w, char **s)
    char *stdfam;
 
 #ifdef HAVE_LIBXFT
-   if (w->context->aa)
+   if (w->context->aa) {
+      xft_fit_fixed(w->window->display->display, w->window->display->screen);
       return tryfont(w, convert_spec(*s), 1);
+      }
 #endif                                  /* HAVE_LIBXFT */
 
    if (strcmp(*s, "fixed") != 0 && parsefont(*s, family, &flags, &size, &tp)) {
@@ -1091,7 +1095,7 @@ wfp loadfont(wdp wd, char *s, int use_xft)
             return NULL;
             }
          }
-      rv->xft = XftFontOpenName(wd->display, wd->screen, rv->name);
+      rv->xft = xft_open(wd->display, wd->screen, rv->name);
       if (rv->xft == NULL) {
          free(rv->name);
          free(rv);

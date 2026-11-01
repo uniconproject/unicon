@@ -724,6 +724,8 @@ int checkOpenConsole( FILE *w, char *s );
       int       textwidth               (wbp w, char *s, int n);
       void      ensure_xftdraw          (wbp w);
       char     *convert_spec            (char *s);
+      void      xft_fit_fixed           (Display *dpy, int scr);
+      XftFont  *xft_open                (Display *dpy, int scr, char *name);
 #endif                                  /* HAVE_LIBXFT */
 
    #endif                               /* XWindows */

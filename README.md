@@ -129,7 +129,8 @@ make -j
 ```
 Graphics use X11 by default on Linux. `./configure --enable-sdl-graphics` uses
 SDL3 instead (it needs the SDL3 and FreeType development packages; fontconfig
-is used to find fonts when it is installed). The SDL backend is 2D only.
+is used to find fonts when it is installed). The SDL backend does 2D and 3D
+graphics; 3D uses OpenGL, as with X11.
 After that you can add `unicon/bin` to the $PATH environment variable or install Unicon instead:
 ```
 make install
@@ -148,7 +149,8 @@ with Homebrew:
 ```
 brew install pkg-config sdl3 freetype
 ```
-configure then builds the native SDL graphics backend; no X server is needed.
+configure then builds the native SDL graphics backend, 2D and 3D (through
+Apple's OpenGL framework); no X server is needed.
 Without SDL3, configure falls back to X11, which needs the XQuartz package from
 https://www.xquartz.org/. `./configure --disable-sdl-graphics` asks for X11
 even when SDL3 is installed.
@@ -208,6 +210,17 @@ make
 ```
 Note that, although the build environment is UCRT64, the resulting Unicon binaries may also be
 run from the standard Windows command line `cmd` terminal.
+
+Graphics use the native Windows backend by default. To use SDL3 instead, as on
+macOS (and optionally Linux), install it and FreeType and configure with
+`--enable-sdl-graphics`:
+```
+pacman -S mingw-w64-ucrt-x86_64-SDL3 mingw-w64-ucrt-x86_64-freetype
+./configure --build=x86_64-w64-mingw32 --enable-sdl-graphics
+```
+The Unicon programs then need `SDL3.dll`, from the UCRT64 `bin` directory, next to
+them or on the `PATH`. The SDL backend does not have the functions that only the
+native backend has, such as `WinButton()` and `WinOpenDialog()`.
 
 #### 2. MSVCRT (Legacy):
 

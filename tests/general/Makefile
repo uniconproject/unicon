@@ -31,6 +31,8 @@ include ../Makefile.test
 # Default BLKSIZE follows host RAM (src/runtime/init.r); pin it so &collections match stand/gc2.std.
 GC2_BLKSIZE ?= 1000000
 gc2: TEST_ENV := BLKSIZE=$(GC2_BLKSIZE)
+# gcarray needs one block region, so a short region forces a collection.
+gcarray: TEST_ENV := BLKSIZE=4000000
 
 
 Icont Test-icont:
@@ -54,3 +56,5 @@ Test-iconc :
 Siconc Samples-iconc:
 		IC=iconc sh Test-icon $(SAMPLES)
 
+# gcinit's block region is too small for what startup allocates.
+gcinit: TEST_ENV := BLKSIZE=20000

@@ -1,0 +1,44 @@
+#
+# array() and list(n, x) with a number x allocate an array block and
+# then its list header; they reserve room for both first, so that no
+# collection can happen in between and lose the array block, which is
+# not yet reachable.  With one block region (see Makefile), fill it with
+# garbage and live lists, then ask for an array that leaves less room
+# than a list header needs.
+#
+procedure main()
+   local live, i, n, a, bad, free, kind
+   bad := 0
+   live := []
+   every kind := 1 to 4 do
+   every i := 1 to 40 do {
+      every 1 to 200 do list(20)                  # garbage
+      put(live, list(10, i))
+      free := blockfree()
+      n := (free - 32 - 48) / 8                   # leaves about 48 bytes
+      if n < 2 then next
+      a := case kind of {
+         1: array(n, 0.5)
+         2: array(n, 3)
+         3: list(n, 0.5)
+         4: list(n, 3)
+         }
+      every 1 to 200 do list(20)                  # reuse freed space
+      if not (*a = n & a[1] = a[n] = (if kind % 2 = 1 then 0.5 else 3)) then
+         bad +:= 1
+      a := &null
+      }
+   every a := !live do
+      if not (a[1] = a[10]) then bad +:= 1
+   write("arrays: ", if bad = 0 then "ok" else bad || " bad")
+end
+
+# free bytes in the block region (one region: see Makefile)
+procedure blockfree()
+   local i, r, s, x
+   i := 0
+   every x := &regions do if (i +:= 1) = 3 then r := x
+   i := 0
+   every x := &storage do if (i +:= 1) = 3 then s := x
+   return r - s
+end

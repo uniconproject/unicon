@@ -28,7 +28,7 @@
 #
 #		evhandle()	reads and responds to the next event.
 #
-#		evmux()		loops forever, handling events.
+#		evmux()		loops handling events until the window closes.
 #
 #	Two other small procedures help build event-driven programs:
 #
@@ -63,9 +63,10 @@
 #   evmux(win) -- loop forever, calling event handlers as appropriate.
 #   evhandle(win) -- wait for the next event, and handle it.
 #
-#	evmux(win) is an infinite loop that calls user routines in response
-#	to window events.  It is for programs that don't need to do other
-#	work while waiting for window input.
+#	evmux(win) is a loop that calls user routines in response to window
+#	events.  It is for programs that don't need to do other work while
+#	waiting for window input.  It returns when the window is closed,
+#	for example by the window manager's close button.
 #
 #	evhandle(win) processes one event and then returns to its caller,
 #	allowing external loop control.  evhandle returns the outcome of
@@ -179,13 +180,17 @@ procedure evchar(s)
 end
 
 
-## evmux(win) -- loop forever, calling event handlers as appropriate.
+## evmux(win) -- loop calling event handlers until the window closes.
 ## evhandle(win) -- wait for the next event, and handle it.
 #		    produce result of the handler proc; fail if nobody handles.
 
 procedure evmux(win)
-   repeat
+   repeat {
       evhandle(win)
+      # stop when the window has been closed (by the window manager or
+      # by a handler); a closed window has no more events to read
+      WAttrib(win, "canvas") | return
+      }
 end
 
 procedure evhandle(win)

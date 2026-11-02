@@ -1556,9 +1556,13 @@ struct region *newregion(word nbytes, word stdsize)
 
 #ifdef Arrays
 
+/*
+ * The block size is a uword: an int wrapped past 2GB, and AlcBlk then
+ * moved the free pointer backwards over live blocks.
+ */
 struct b_intarray *alcintarray(uword n)
 {
-   int bsize = sizeof(struct b_intarray) + (n-1) * sizeof(word);
+   uword bsize = sizeof(struct b_intarray) + (n ? n - 1 : 0) * sizeof(word);
    register struct b_intarray *blk;
    CURTSTATE();
 
@@ -1571,7 +1575,7 @@ struct b_intarray *alcintarray(uword n)
 
 struct b_realarray *alcrealarray(uword n)
 {
-   int bsize = sizeof(struct b_realarray) + (n-1) * sizeof(double);
+   uword bsize = sizeof(struct b_realarray) + (n ? n - 1 : 0) * sizeof(double);
    register struct b_realarray *blk;
    CURTSTATE();
 

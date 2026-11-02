@@ -317,7 +317,12 @@ end
 ############################################################################
 
 procedure GetEvents(vidget, missed, all, resize)
-   repeat ProcessEvent(vidget, missed, all, resize)
+   repeat {
+      ProcessEvent(vidget, missed, all, resize)
+      # stop when the window has been closed (by the window manager or
+      # by a callback); a closed window has no more events to read
+      WAttrib(vidget.win, "canvas") | return
+      }
 end
 
 procedure ProcessEvent(vidget, missed, all, resize)

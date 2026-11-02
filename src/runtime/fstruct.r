@@ -1397,6 +1397,14 @@ function{1} list(n, x)
         type_case x of {
         integer: {
             word *ip;
+            /*
+             * Reserve room for the header and the array together: the
+             * array block is not reachable until the header points at it,
+             * so no collection may run in between.
+             */
+            if (!reserve(Blocks, (word)(sizeof(struct b_list) +
+                  sizeof(struct b_intarray) + (uword)(size - 1) * sizeof(word))))
+               runerr(0);
             Protect(hp = alclisthdr(size,(union block *)alcintarray(size)), runerr(0));
             /* initialize all elements to x */
             ip = &((union block *)hp)->List.listhead->Intarray.a[0];
@@ -1408,6 +1416,9 @@ function{1} list(n, x)
 
         real: {
             double *rp, rval;
+            if (!reserve(Blocks, (word)(sizeof(struct b_list) +
+                  sizeof(struct b_realarray) + (uword)(size - 1) * sizeof(double))))
+               runerr(0);
             Protect(hp = alclisthdr(size,(union block *)alcrealarray(size)), runerr(0));
             /* initialize all elements to x */
             rp = &((union block *)hp)->List.listhead->Realarray.a[0];
@@ -2241,9 +2252,10 @@ function{1} array(x[n])
       word *a_ip;
       double dv, *a_dp;
       C_integer ci;
-      int num = 1;
+      word num = 1;
       int i;
-      int bsize;
+      word k;                          /* fill count; int overflows past 2^31-1 */
+      uword bsize;
       int i_or_real = 0;
 
       if( n>2 ){
@@ -2261,18 +2273,21 @@ function{1} array(x[n])
          if (!is:integer(x[i])) MakeInt(ci, &(x[i]));
          }
       for(i=0;i<n-1;i++) num *= IntVal(x[i]);
+      if (num < 0 || num > (word)((MaxLong - sizeof(struct b_list) -
+                                   sizeof(struct b_realarray)) / sizeof(double)))
+         runerr(205, x[0]);
 
       /*
        * Decide whether we are doing the IntArray or RealArray.
        */
       if (cnv:(exact)C_integer(x[n-1], ci)) {
          i_or_real = 1; /* integer */
-         bsize = sizeof(struct b_intarray) + (n-1) * sizeof(word);
+         bsize = sizeof(struct b_intarray) + (uword)(num ? num-1 : 0) * sizeof(word);
          if (!is:integer(x[i])) MakeInt(ci, &(x[i]));
          }
       else if (cnv:C_double(x[n-1], dv)) {
          i_or_real = 2; /* real */
-         bsize = sizeof(struct b_realarray) + (n-1) * sizeof(double);
+         bsize = sizeof(struct b_realarray) + (uword)(num ? num-1 : 0) * sizeof(double);
          }
       else if (is:list(x[n-1])) {
          /* get the first element of x[n-1], use it to set i_or_real */
@@ -2304,11 +2319,11 @@ function{1} array(x[n])
 
       if (i_or_real == 1) {
          a_ip = d.vword.bptr->List.listhead->Intarray.a;
-         for(i=0; i<num; i++) a_ip[i] = IntVal(x[n-1]);
+         for(k=0; k<num; k++) a_ip[k] = IntVal(x[n-1]);
          }
       else {
          a_dp = d.vword.bptr->List.listhead->Realarray.a;
-         for(i=0; i<num; i++) a_dp[i] = dv;
+         for(k=0; k<num; k++) a_dp[k] = dv;
          }
 
       return d;

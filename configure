@@ -11509,6 +11509,15 @@ fi
 fi
 
       fi
+      # MSYS2 headers live in $MSYSTEM_PREFIX/include/freetype2, which
+      # the compiler does not search, and pkg-config is often not installed.
+      if test "x$freetype_HOME" = "x" ; then
+        if test -n "$MSYSTEM_PREFIX" ; then
+          if test -f "$MSYSTEM_PREFIX/include/freetype2/freetype/freetype.h" ; then
+            freetype_HOME=$MSYSTEM_PREFIX
+          fi
+        fi
+      fi
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if freetype is wanted" >&5
@@ -11839,6 +11848,57 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
    fi
 fi
 
+      # Windows links with --static, which does not pick up the DLL
+      # import library. Name it, as for SDL3.
+      if test "x$cv_libfreetype" != "xyes" -a "ms$unicon_os" = "mswindows" ; then
+        ft_cpp=$CPPFLAGS
+        ft_ld=$LDFLAGS
+        ft_libs=$LIBS
+        ft_cflags=
+        ft_lflags=
+        if test "x$freetype_HOME" != "x" ; then
+          ft_cflags="-I${freetype_HOME}/include/freetype2"
+          ft_lflags="-L${freetype_HOME}/lib"
+        elif test -n "$MSYSTEM_PREFIX" ; then
+          ft_cflags="-I${MSYSTEM_PREFIX}/include/freetype2"
+          ft_lflags="-L${MSYSTEM_PREFIX}/lib"
+        fi
+        CPPFLAGS="$CPPFLAGS $ft_cflags"
+        LDFLAGS="$LDFLAGS $ft_lflags"
+        LIBS="-l:libfreetype.dll.a $LIBS"
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for FreeType through its import library" >&5
+printf %s "checking for FreeType through its import library... " >&6; }
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ft2build.h>
+#include FT_FREETYPE_H
+int
+main (void)
+{
+return FT_Open_Face(0, 0, 0, 0);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  cv_libfreetype=yes
+           FREETYPE_CFLAGS="$ft_cflags"
+           { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define HAVE_LIBFREETYPE 1" >>confdefs.h
+
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+           CPPFLAGS=$ft_cpp
+           LDFLAGS=$ft_ld
+           LIBS=$ft_libs
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+      fi
       if test "x$cv_libfreetype" = "xyes" ; then
         sdlgraphics=yes
       elif test "x$sdlgraphics" = "xyes" ; then

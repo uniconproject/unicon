@@ -848,7 +848,48 @@ if ! test "x$graphics" = "xno"; then
       if test "x$freetype_HOME" = "x" ; then
         pkg_home([freetype], [freetype2])
       fi
+      # MSYS2 headers live in $MSYSTEM_PREFIX/include/freetype2, which
+      # the compiler does not search, and pkg-config is often not installed.
+      if test "x$freetype_HOME" = "x" ; then
+        if test -n "$MSYSTEM_PREFIX" ; then
+          if test -f "$MSYSTEM_PREFIX/include/freetype2/freetype/freetype.h" ; then
+            freetype_HOME=$MSYSTEM_PREFIX
+          fi
+        fi
+      fi
       CHECK_FREETYPE()
+      # Windows links with --static, which does not pick up the DLL
+      # import library. Name it, as for SDL3.
+      if test "x$cv_libfreetype" != "xyes" -a "ms$unicon_os" = "mswindows" ; then
+        ft_cpp=$CPPFLAGS
+        ft_ld=$LDFLAGS
+        ft_libs=$LIBS
+        ft_cflags=
+        ft_lflags=
+        if test "x$freetype_HOME" != "x" ; then
+          ft_cflags="-I${freetype_HOME}/include/freetype2"
+          ft_lflags="-L${freetype_HOME}/lib"
+        elif test -n "$MSYSTEM_PREFIX" ; then
+          ft_cflags="-I${MSYSTEM_PREFIX}/include/freetype2"
+          ft_lflags="-L${MSYSTEM_PREFIX}/lib"
+        fi
+        CPPFLAGS="$CPPFLAGS $ft_cflags"
+        LDFLAGS="$LDFLAGS $ft_lflags"
+        LIBS="-l:libfreetype.dll.a $LIBS"
+        AC_MSG_CHECKING([for FreeType through its import library])
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <ft2build.h>
+#include FT_FREETYPE_H
+]], [[return FT_Open_Face(0, 0, 0, 0);]])],
+          [cv_libfreetype=yes
+           FREETYPE_CFLAGS="$ft_cflags"
+           AC_MSG_RESULT([yes])
+           AC_DEFINE([HAVE_LIBFREETYPE], [1], [Define to 1 if you have lib freetype])],
+          [AC_MSG_RESULT([no])
+           CPPFLAGS=$ft_cpp
+           LDFLAGS=$ft_ld
+           LIBS=$ft_libs])
+      fi
       if test "x$cv_libfreetype" = "xyes" ; then
         sdlgraphics=yes
       elif test "x$sdlgraphics" = "xyes" ; then

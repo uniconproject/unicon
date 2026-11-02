@@ -1621,33 +1621,46 @@ void uc_font_close(struct ucfont *f)
    free(f);
 }
 
+#define UC_FULLHINT 16                  /* device pixels; see glyph() */
+
 static struct ucglyph *glyph(struct ucfont *f, unsigned char ch)
 {
    struct ucglyph *g = &f->glyphs[ch];
    FT_GlyphSlot slot;
    FT_UInt gi;
    FT_Pos adv0;
-   int r;
+   int r, small;
 
    if (g->loaded) return g;
    g->loaded = 1;
    gi = FT_Get_Char_Index(f->face, ch);
    if (ch < 32 || (ch >= 127 && ch < 160)) gi = 0;
-   if (FT_Load_Glyph(f->face, gi, FT_LOAD_DEFAULT | FT_LOAD_TARGET_LIGHT)
-       != 0)
+   /*
+    * Light hinting snaps only vertically.  Below UC_FULLHINT device
+    * pixels that leaves the stems of a narrow glyph (the m of a 6-pixel
+    * mono cell) blurred into a grey block, so small text is hinted in
+    * both directions, by the autohinter so that unhinted faces (Menlo,
+    * say) get it too.
+    */
+   small = f->size * f->scale < UC_FULLHINT;
+   if (FT_Load_Glyph(f->face, gi, small ?
+                     FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_NORMAL :
+                     FT_LOAD_DEFAULT | FT_LOAD_TARGET_LIGHT) != 0)
       return g;
    slot = f->face->glyph;
    adv0 = slot->advance.x;
    if (f->synth & 1)
       FT_GlyphSlot_Embolden(slot);
-   if (FT_Render_Glyph(slot, FT_RENDER_MODE_LIGHT) != 0)
+   if (FT_Render_Glyph(slot, small ? FT_RENDER_MODE_NORMAL :
+                                     FT_RENDER_MODE_LIGHT) != 0)
       return g;
-   if (f->scale == 1)
+   if (f->scale == 1 && !small)
       g->advance = (int)((slot->advance.x + 32) >> 6);
    else {
       /*
-       * Use the unhinted advance scaled down, so text is as wide as it
-       * is on a standard-density display and layouts do not change.
+       * Use the unhinted advance (scaled down), so text is as wide as
+       * it is with light hinting on a standard-density display, and
+       * layouts do not change.
        */
       double adv = slot->linearHoriAdvance / 65536.0 +
                    (slot->advance.x - adv0) / 64.0;

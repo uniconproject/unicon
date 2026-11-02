@@ -973,6 +973,21 @@ Deliberate Syntax Error
    mainhead->tvalloc = NULL;
    mainhead->freshblk = nulldesc;       /* &main has no refresh block. */
    mainhead->tvalloc = NULL;
+#if !COMPILER
+   /*
+    * With threads, the interpreter registers (sp, pfp, ...) are these
+    * fields, and the block comes from malloc().  Clear them: sp stays
+    * NULL until the interpreter starts, which tells collect() that
+    * initialization is not complete, and allocations before then (the
+    * co-expression queues below, say) can call it.
+    */
+   mainhead->es_sp = NULL;
+   mainhead->es_pfp = NULL;
+   mainhead->es_efp = NULL;
+   mainhead->es_gfp = NULL;
+   mainhead->es_ipc.opnd = NULL;
+   mainhead->es_ilevel = 0;
+#endif                                  /* !COMPILER */
 #ifdef StackCheck
    mainhead->es_stack = (word *)(mainhead+1);
 #endif                                  /* StackCheck */

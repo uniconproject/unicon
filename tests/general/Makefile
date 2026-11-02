@@ -56,3 +56,5 @@ Test-iconc :
 Siconc Samples-iconc:
 		IC=iconc sh Test-icon $(SAMPLES)
 
+# gcinit's block region is too small for what startup allocates.
+gcinit: TEST_ENV := BLKSIZE=20000

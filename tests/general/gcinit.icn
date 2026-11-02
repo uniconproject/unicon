@@ -1,0 +1,12 @@
+#
+# With a block region smaller than what startup allocates, a collection
+# runs before the interpreter has started (see Makefile).  It must see
+# that initialization is not complete instead of walking an interpreter
+# stack that does not exist yet.
+#
+procedure main()
+   local L
+   L := []
+   every put(L, list(1 to 300))
+   write("ok ", *L, " ", *L[-1])
+end

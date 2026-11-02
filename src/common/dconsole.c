@@ -109,7 +109,7 @@ void set_errortext(int i){
 struct tend_desc *tend;
 char *reserve_0(int r, word n) { return malloc(1); }
 
-#ifdef MSWindows
+#if defined(MSWindows) || defined(SDLWindows)
 #ifdef NTGCC
    char *getenv(const char *s)
    {
@@ -129,7 +129,7 @@ void xmfree(){
 
 }
 
-#endif                                          /* MSWindows */
+#endif                                  /* MSWindows || SDLWindows */
 
 /*
  * An array of all characters for use in making one-character strings.

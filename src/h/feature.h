@@ -144,6 +144,10 @@
    Feature(1, "_X_WINDOW_SYSTEM", "X Windows")
 #endif                  /* XWindows */
 
+#ifdef SDLGraphics
+   Feature(1, "_SDL_GRAPHICS", "SDL graphics")
+#endif                  /* SDLGraphics */
+
 #ifdef MSWindows
    Feature(1, "_MS_WINDOWS", "MS Windows")
 #ifdef NT

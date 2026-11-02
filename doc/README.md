@@ -84,6 +84,11 @@ Machine-readable tables in `doc/utr/utf8/`:
 
 ## Other documentation
 
+### Building
+
+- [SDL graphics](sdl-graphics.md) — installing SDL3 and FreeType, and
+  `./configure --enable-sdl-graphics`, on Linux, macOS, and Windows
+
 ### General Unicon pages
 
 Pages that are not a single numbered UTR (guides, indexes, examples).

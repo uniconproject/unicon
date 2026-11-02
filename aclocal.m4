@@ -532,6 +532,67 @@ dnl   ]
 done
 ])
 
+#------------------------------------------------------------
+# pkg_home(var, module): when --with-var=DIR was not given, take
+# var_HOME from pkg-config's prefix for module.  Skips /usr, which
+# the compiler searches anyway.  Homebrew and other private
+# prefixes on macOS are found this way.
+#------------------------------------------------------------
+AC_DEFUN([pkg_home],
+[
+if test "x$$1_HOME" = "x" ; then
+  AC_PATH_PROG([PKG_CONFIG], [pkg-config])
+  if test -n "$PKG_CONFIG" && $PKG_CONFIG --exists $2 ; then
+    pkg_prefix=`$PKG_CONFIG --variable=prefix $2`
+    if test -n "$pkg_prefix" && test "x$pkg_prefix" != "x/usr" ; then
+      $1_HOME=$pkg_prefix
+    fi
+  fi
+fi
+])
+
+#------------------------------------------------
+# SDL3, for the SDL graphics backend
+#------------------------------------------------
+AC_DEFUN([CHECK_SDL3],
+[
+do_arg_with([SDL3])
+if test "x$with_SDL3" != "xno"; then
+  pkg_home([SDL3], [sdl3])
+  do_lib_check([SDL3], [${SDL3_HOME}], [SDL3/SDL.h], [SDL_CreateWindow], [HAVE_LIBSDL3], [C])
+  # Windows builds link with --static, which skips SDL3's DLL import
+  # library unless it is named outright
+  if test "x$cv_libSDL3" != "xyes" -a "ms$unicon_os" = "mswindows" ; then
+    if test "x$SDL3_HOME" != "x" ; then
+      save_flags([-I${SDL3_HOME}/include], [-L${SDL3_HOME}/lib], [])
+    else
+      save_flags([], [], [])
+    fi
+    LIBS="-l:libSDL3.dll.a $LIBS"
+    AC_MSG_CHECKING([for SDL3 through its import library])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <SDL3/SDL.h>]],
+                                    [[SDL_CreateWindow("", 1, 1, 0);]])],
+      [cv_libSDL3=yes
+       AC_MSG_RESULT([yes])
+       AC_DEFINE([HAVE_LIBSDL3], [1], [Define to 1 if you have lib SDL3])],
+      [AC_MSG_RESULT([no])
+       restore_flags()])
+  fi
+fi
+])
+
+#------------------------------------------------
+# fontconfig, optional for the SDL graphics backend
+#------------------------------------------------
+AC_DEFUN([CHECK_FONTCONFIG],
+[
+do_arg_with([fontconfig])
+if test "x$with_fontconfig" != "xno"; then
+  pkg_home([fontconfig], [fontconfig])
+  do_lib_check([fontconfig], [${fontconfig_HOME}], [fontconfig/fontconfig.h], [FcFontMatch], [HAVE_LIBFONTCONFIG], [C])
+fi
+])
+
 AC_DEFUN([CHECK_XFT],
 [
 do_arg_with([Xft])

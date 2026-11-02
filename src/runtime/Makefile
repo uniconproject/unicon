@@ -18,8 +18,8 @@ HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 	  ../h/rmacros.h ../h/rexterns.h ../h/rstructs.h $(AUTO_H)\
 	  ../h/rproto.h ../h/mproto.h ../h/version.h ../h/sys.h
 
-GRAPHICSHDRS = ../h/graphics.h ../h/xwin.h
-GRAPHICSRI = rxwin.ri rmswin.ri rwin3d.ri ropengl.ri rd3d.ri
+GRAPHICSHDRS = ../h/graphics.h ../h/xwin.h ../h/sdlwin.h ../h/ucanvas.h ../h/usdlwin.h
+GRAPHICSRI = rxwin.ri rmswin.ri rsdlwin.ri rwin3d.ri ropengl.ri rd3d.ri
 
 .PHONY: update_rev
 

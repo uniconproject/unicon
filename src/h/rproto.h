@@ -715,12 +715,38 @@ int checkOpenConsole( FILE *w, char *s );
       void      wflushall               (void);
       void      postcursor              (wbp);
       void      scrubcursor             (wbp);
-      void      mkfont                  (char *s, char is_3D);
 #ifdef HAVE_XFT
       void      drawstrng               (wbp w, int x, int y, char *str, int slen);
 #endif                                  /* HAVE_XFT */
 
    #endif                               /* XWindows */
+
+   #ifdef SDLGraphics
+      /*
+       * Implementation routines specific to the SDL backend
+       */
+      struct ucgc *sdl_gc       (wbp w);
+      int       sdl_displaysize (int which);
+      int       sdl_delay       (int n);
+      wdp       alc_display     (char *s);
+      void      free_display    (wdp wd);
+      void      unsetclip       (wbp w);
+      int       resizePixmap    (wbp w, int width, int height);
+      int       moveResizeWindow(wbp w, int x, int y, int wd, int h);
+      int       seticonimage    (wbp w, dptr dp);
+      void      wflushall       (void);
+      void      drawarcs        (wbp w, XArc *arcs, int narcs);
+      void      drawlines       (wbp w, XPoint *points, int npoints);
+      void      drawpoints      (wbp w, XPoint *points, int npoints);
+      void      drawrectangles  (wbp w, XRectangle *recs, int nrecs);
+      void      drawsegments    (wbp w, XSegment *segs, int nsegs);
+      void      drawstrng       (wbp w, int x, int y, char *s, int slen);
+      void      fillarcs        (wbp w, XArc *arcs, int narcs);
+      void      fillpolygon     (wbp w, XPoint *pts, int npts);
+      #ifdef Graphics3D
+         void   sdl_gl_swap     (wbp w);
+      #endif                            /* Graphics3D */
+   #endif                               /* SDLGraphics */
 
    int setglXVisual(wdp wd);
 
@@ -784,6 +810,7 @@ int checkOpenConsole( FILE *w, char *s );
       void sphere(double radius, double x, double y, double z,
                   int slices, int rings, int gen);
       wfp srch_3dfont(char *fname, int fsize, char ftype);
+      void mkfont3d(char *s);
       int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2);
       int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height);
       int TexFillRect(wbp w, int texhandle, int x, int y, int width, int height,
@@ -880,12 +907,18 @@ int checkOpenConsole( FILE *w, char *s );
 
 #endif                          /* MSWindows */
 
+#ifdef SDLWindows
+      /* the console window of the GUI build */
+      void waitkey(FILE *w);
+      void closelog();
+#endif                          /* SDLWindows */
+
 #endif                                  /* Graphics */
 
 /* Used by system() on Windows with or without the graphics subsystem. */
-#ifdef MSWindows
+#if defined(MSWindows) || defined(SDLWindows)
 int mswinsystem(char *s);
-#endif                                  /* MSWindows */
+#endif                                  /* MSWindows || SDLWindows */
 
 #ifdef Audio
 int StartAudioThread(char filename[]);

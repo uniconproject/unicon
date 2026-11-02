@@ -105,6 +105,6 @@ The programs then need `SDL3.dll`, from the UCRT64 `bin` directory, next to
 them or on the `PATH`.
 
 ```
-pacman -S mingw-w64-ucrt-x86_64-sdl3 mingw-w64-ucrt-x86_64-freetype
+pacman -S mingw-w64-ucrt-x86_64-pkgconf mingw-w64-ucrt-x86_64-sdl3 mingw-w64-ucrt-x86_64-freetype
 ./configure --build=x86_64-w64-mingw32 --enable-sdl-graphics
 ```

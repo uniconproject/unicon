@@ -100,11 +100,19 @@ Point configure at both prefixes:
 
 ## Windows
 
-Under MSYS2 UCRT64, install SDL3 and FreeType and select the SDL backend.
-The programs then need `SDL3.dll`, from the UCRT64 `bin` directory, next to
-them or on the `PATH`.
+Under MSYS2 UCRT64, install SDL3, FreeType, and pkg-config. The Windows build
+links both into the executable, so a program does not need `SDL3.dll` or
+`libfreetype-6.dll`. FreeType's static library also needs HarfBuzz,
+Graphite, Brotli, and bzip2. Pass `--with-graphics-libs=shared` to link
+the DLLs instead. A program then needs `SDL3.dll`, `libfreetype-6.dll`,
+and the libraries FreeType loads (HarfBuzz, Brotli, bzip2, libpng, and
+zlib). Keep the UCRT64 `bin` directory on `PATH`, or copy those DLLs
+next to the program.
 
 ```
-pacman -S mingw-w64-ucrt-x86_64-pkgconf mingw-w64-ucrt-x86_64-sdl3 mingw-w64-ucrt-x86_64-freetype
+pacman -S mingw-w64-ucrt-x86_64-pkgconf mingw-w64-ucrt-x86_64-sdl3 \
+  mingw-w64-ucrt-x86_64-freetype mingw-w64-ucrt-x86_64-harfbuzz \
+  mingw-w64-ucrt-x86_64-graphite2 mingw-w64-ucrt-x86_64-brotli \
+  mingw-w64-ucrt-x86_64-bzip2
 ./configure --build=x86_64-w64-mingw32 --enable-sdl-graphics
 ```

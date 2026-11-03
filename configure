@@ -820,6 +820,7 @@ enable_hwasan
 enable_uniconx
 with_zlib
 with_SDL3
+with_graphics_libs
 with_freetype
 with_fontconfig
 with_xlib
@@ -1531,6 +1532,9 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-zlib[=DIR]       Use zlib package (DIR: custom library path)
   --with-SDL3[=DIR]       Use SDL3 package (DIR: custom library path)
+  --with-graphics-libs=static|shared
+                          Link SDL3 and FreeType into the executable, or use
+                          their shared libraries. Windows defaults to static.
   --with-freetype[=DIR]   Use freetype package (DIR: custom library path)
   --with-fontconfig[=DIR] Use fontconfig package (DIR: custom library path)
   --with-xlib[=DIR]       Use xlib package (DIR: custom library path)
@@ -12023,6 +12027,99 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
    fi
 fi
 
+      # --without-freetype skips the check above. Do not enable FreeType
+      # again through the static closure or the DLL import library.
+      if test "x$with_freetype" != "xno" ; then
+      if test "${with_graphics_libs+y}" ; then
+        graphics_libs=$with_graphics_libs
+      else
+        graphics_libs=auto
+      fi
+      if test "x$graphics_libs" = "xauto" ; then
+        if test "ms$unicon_os" = "mswindows" ; then
+          graphics_libs=static
+        else
+          graphics_libs=shared
+        fi
+      fi
+      if test "x$graphics_libs" != "xstatic" -a "x$graphics_libs" != "xshared" ; then
+        as_fn_error $? "--with-graphics-libs must be static or shared" "$LINENO" 5
+      fi
+      # Static: one executable. pkg-config lists the libraries FreeType and
+      # SDL were built against. Shared: DLL import libraries, which --static
+      # skips unless they are named outright.
+      if test "x$graphics_libs" = "xstatic" ; then
+        if test -z "$PKG_CONFIG" ; then
+          as_fn_error $? "static SDL graphics needs pkg-config modules sdl3 and freetype2 (or pass --with-graphics-libs=shared)" "$LINENO" 5
+        fi
+        if ! $PKG_CONFIG --exists sdl3 || ! $PKG_CONFIG --exists freetype2 ; then
+          as_fn_error $? "static SDL graphics needs pkg-config modules sdl3 and freetype2 (or pass --with-graphics-libs=shared)" "$LINENO" 5
+        fi
+        sdl_static_cflags=`$PKG_CONFIG --static --cflags sdl3`
+        ft_static_cflags=`$PKG_CONFIG --static --cflags freetype2`
+        sdl_static_libs=`$PKG_CONFIG --static --libs sdl3`
+        ft_static_libs=`$PKG_CONFIG --static --libs freetype2`
+        # libfreetype.a calls these from objects a one-symbol probe never
+        # loads. Name any that pkg-config left out. Pull every FreeType
+        # object into the link so configure fails here, not at iconx.
+        for ft_extra in -lharfbuzz -lgraphite2 -lusp10 -lrpcrt4 -lbrotlidec -lbrotlicommon -lbz2
+        do
+          case " $ft_static_libs " in
+          *" $ft_extra "*) ;;
+          *) ft_static_libs="$ft_static_libs $ft_extra" ;;
+          esac
+        done
+        ft_static_libs=`echo " $ft_static_libs " | sed \
+          -e 's/ -lfreetype / -Wl,--whole-archive -lfreetype -Wl,--no-whole-archive /' \
+          -e 's/^ *//' -e 's/ *$//'`
+        ft_cpp=$CPPFLAGS
+        ft_libs=$LIBS
+        LIBS=`echo " $LIBS " | sed \
+          -e 's/ -l:libSDL3.dll.a / /g' \
+          -e 's/ -lSDL3 / /g' \
+          -e 's/ -l:libfreetype.dll.a / /g' \
+          -e 's/ -lfreetype / /g' \
+          -e 's/^ *//' -e 's/ *$//'`
+        LIBS="$ft_static_libs $sdl_static_libs $LIBS"
+        CPPFLAGS="$CPPFLAGS $ft_static_cflags $sdl_static_cflags"
+        FREETYPE_CFLAGS="$ft_static_cflags"
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for static SDL3 and FreeType" >&5
+printf %s "checking for static SDL3 and FreeType... " >&6; }
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <SDL3/SDL.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
+int
+main (void)
+{
+return SDL_Init(0) + FT_Open_Face(0, 0, 0, 0);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  cv_libSDL3=yes
+  cv_libfreetype=yes
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define HAVE_LIBFREETYPE 1" >>confdefs.h
+
+else $as_nop
+  as_fn_error $? "static SDL3/FreeType link failed; pass --with-graphics-libs=shared to use the DLLs" "$LINENO" 5
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+      else
+      if test "ms$unicon_os" = "mswindows" ; then
+        case " $LIBS " in
+        *" -lSDL3 "*)
+          LIBS=`echo " $LIBS " | sed 's/ -lSDL3 / -l:libSDL3.dll.a /g;s/^ *//;s/ *$//'`
+          ;;
+        esac
+      fi
       # Windows links with --static. That selects libfreetype.a, and a
       # probe of FT_Open_Face succeeds, but the archive's WOFF, autofit,
       # and bzip objects need brotli, harfbuzz, and bzip2. The DLL import
@@ -12110,6 +12207,8 @@ printf "%s\n" "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
+      fi
+      fi
       fi
       if test "x$cv_libfreetype" = "xyes" ; then
         sdlgraphics=yes

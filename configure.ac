@@ -135,6 +135,10 @@ AC_ARG_ENABLE([graphics3d],
 AC_ARG_ENABLE([sdl-graphics],
 	[AS_HELP_STRING([--enable-sdl-graphics], [2D graphics through SDL3 instead of X11 (default on macOS when SDL3 is found)])],
 		        [sdlgraphics=$enableval], [sdlgraphics=auto])
+AC_ARG_WITH([graphics-libs],
+	[AS_HELP_STRING([--with-graphics-libs=static|shared],
+		[Link SDL3 and FreeType into the executable, or use their shared libraries. Windows defaults to static.])],
+		[graphics_libs=$withval], [graphics_libs=auto])
 AC_ARG_ENABLE([multiprograms],
 	[AS_HELP_STRING([--disable-multiprograms], [No multi programs support])],
 			[multiprograms=$enableval], [multiprograms=on])
@@ -905,10 +909,83 @@ if ! test "x$graphics" = "xno"; then
         fi
       fi
       CHECK_FREETYPE()
-      # Windows links with --static. That selects libfreetype.a, and a
-      # probe of FT_Open_Face succeeds, but the archive's WOFF, autofit,
-      # and bzip objects need brotli, harfbuzz, and bzip2. The DLL import
-      # library, like SDL3's, does not. Use it whenever -lfreetype was chosen.
+      # --without-freetype skips the check above. Do not enable FreeType
+      # again through the static closure or the DLL import library.
+      if test "x$with_freetype" != "xno" ; then
+      if test "x$graphics_libs" = "xauto" ; then
+        if test "ms$unicon_os" = "mswindows" ; then
+          graphics_libs=static
+        else
+          graphics_libs=shared
+        fi
+      fi
+      if test "x$graphics_libs" != "xstatic" -a "x$graphics_libs" != "xshared" ; then
+        AC_MSG_ERROR([--with-graphics-libs must be static or shared])
+      fi
+      # Static: one executable. pkg-config lists the libraries FreeType and
+      # SDL were built against (harfbuzz, brotli, bzip2, and the Windows
+      # system libraries). A probe of one symbol is not enough, because
+      # --static selects libfreetype.a and only some of its objects refer
+      # to those libraries.
+      # Shared: the DLL import libraries. --static would otherwise skip
+      # them unless they are named outright.
+      if test "x$graphics_libs" = "xstatic" ; then
+        if test -z "$PKG_CONFIG" ; then
+          AC_PATH_PROG([PKG_CONFIG], [pkg-config])
+        fi
+        if test -z "$PKG_CONFIG" || \
+           ! $PKG_CONFIG --exists sdl3 || ! $PKG_CONFIG --exists freetype2 ; then
+          AC_MSG_ERROR([static SDL graphics needs pkg-config modules sdl3 and freetype2 (or pass --with-graphics-libs=shared)])
+        fi
+        sdl_static_cflags=`$PKG_CONFIG --static --cflags sdl3`
+        ft_static_cflags=`$PKG_CONFIG --static --cflags freetype2`
+        sdl_static_libs=`$PKG_CONFIG --static --libs sdl3`
+        ft_static_libs=`$PKG_CONFIG --static --libs freetype2`
+        # libfreetype.a calls these from objects a one-symbol probe never
+        # loads. Name any that pkg-config left out. Pull every FreeType
+        # object into the link so configure fails here, not at iconx.
+        for ft_extra in -lharfbuzz -lgraphite2 -lusp10 -lrpcrt4 -lbrotlidec -lbrotlicommon -lbz2
+        do
+          case " $ft_static_libs " in
+          *" $ft_extra "*) ;;
+          *) ft_static_libs="$ft_static_libs $ft_extra" ;;
+          esac
+        done
+        ft_static_libs=`echo " $ft_static_libs " | sed \
+          -e 's/ -lfreetype / -Wl,--whole-archive -lfreetype -Wl,--no-whole-archive /' \
+          -e 's/^ *//' -e 's/ *$//'`
+        ft_cpp=$CPPFLAGS
+        ft_libs=$LIBS
+        LIBS=`echo " $LIBS " | sed \
+          -e 's/ -l:libSDL3.dll.a / /g' \
+          -e 's/ -lSDL3 / /g' \
+          -e 's/ -l:libfreetype.dll.a / /g' \
+          -e 's/ -lfreetype / /g' \
+          -e 's/^ *//' -e 's/ *$//'`
+        LIBS="$ft_static_libs $sdl_static_libs $LIBS"
+        CPPFLAGS="$CPPFLAGS $ft_static_cflags $sdl_static_cflags"
+        FREETYPE_CFLAGS="$ft_static_cflags"
+        AC_MSG_CHECKING([for static SDL3 and FreeType])
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <SDL3/SDL.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
+]], [[return SDL_Init(0) + FT_Open_Face(0, 0, 0, 0);]])],
+          [cv_libSDL3=yes
+           cv_libfreetype=yes
+           AC_MSG_RESULT([yes])
+           AC_DEFINE([HAVE_LIBFREETYPE], [1], [Define to 1 if you have lib freetype])],
+          [AC_MSG_ERROR([static SDL3/FreeType link failed; pass --with-graphics-libs=shared to use the DLLs])])
+      else
+      # Shared libraries. On Windows, --static skips a DLL import library
+      # unless it is named outright.
+      if test "ms$unicon_os" = "mswindows" ; then
+        case " $LIBS " in
+        *" -lSDL3 "*)
+          LIBS=`echo " $LIBS " | sed 's/ -lSDL3 / -l:libSDL3.dll.a /g;s/^ *//;s/ *$//'`
+          ;;
+        esac
+      fi
       if test "x$cv_libfreetype" = "xyes" -a "ms$unicon_os" = "mswindows" ; then
         case " $LIBS " in
         *" -lfreetype "*)
@@ -955,6 +1032,8 @@ if ! test "x$graphics" = "xno"; then
            CPPFLAGS=$ft_cpp
            LDFLAGS=$ft_ld
            LIBS=$ft_libs])
+      fi
+      fi
       fi
       if test "x$cv_libfreetype" = "xyes" ; then
         sdlgraphics=yes

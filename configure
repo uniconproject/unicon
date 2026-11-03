@@ -12023,6 +12023,43 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
    fi
 fi
 
+      # Windows links with --static. That selects libfreetype.a, and a
+      # probe of FT_Open_Face succeeds, but the archive's WOFF, autofit,
+      # and bzip objects need brotli, harfbuzz, and bzip2. The DLL import
+      # library, like SDL3's, does not. Use it whenever -lfreetype was chosen.
+      if test "x$cv_libfreetype" = "xyes" -a "ms$unicon_os" = "mswindows" ; then
+        case " $LIBS " in
+        *" -lfreetype "*)
+          ft_libs=$LIBS
+          LIBS=`echo " $LIBS " | sed 's/ -lfreetype / -l:libfreetype.dll.a /g;s/^ *//;s/ *$//'`
+          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for FreeType through its import library" >&5
+printf %s "checking for FreeType through its import library... " >&6; }
+          cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ft2build.h>
+#include FT_FREETYPE_H
+int
+main (void)
+{
+return FT_Open_Face(0, 0, 0, 0);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+             LIBS=$ft_libs
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+          ;;
+        esac
+      fi
       # Windows links with --static, which does not pick up the DLL
       # import library. Name it, as for SDL3.
       if test "x$cv_libfreetype" != "xyes" -a "ms$unicon_os" = "mswindows" ; then

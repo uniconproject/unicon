@@ -905,8 +905,27 @@ if ! test "x$graphics" = "xno"; then
         fi
       fi
       CHECK_FREETYPE()
-      # Windows links with --static, which does not pick up the DLL
-      # import library. Name it, as for SDL3.
+      # Windows links with --static. That selects libfreetype.a, and a
+      # probe of FT_Open_Face succeeds, but the archive's WOFF, autofit,
+      # and bzip objects need brotli, harfbuzz, and bzip2. The DLL import
+      # library, like SDL3's, does not. Use it whenever -lfreetype was chosen.
+      if test "x$cv_libfreetype" = "xyes" -a "ms$unicon_os" = "mswindows" ; then
+        case " $LIBS " in
+        *" -lfreetype "*)
+          ft_libs=$LIBS
+          LIBS=`echo " $LIBS " | sed 's/ -lfreetype / -l:libfreetype.dll.a /g;s/^ *//;s/ *$//'`
+          AC_MSG_CHECKING([for FreeType through its import library])
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <ft2build.h>
+#include FT_FREETYPE_H
+]], [[return FT_Open_Face(0, 0, 0, 0);]])],
+            [AC_MSG_RESULT([yes])],
+            [AC_MSG_RESULT([no])
+             LIBS=$ft_libs])
+          ;;
+        esac
+      fi
+      # If the probe missed FreeType entirely, try the import library alone.
       if test "x$cv_libfreetype" != "xyes" -a "ms$unicon_os" = "mswindows" ; then
         ft_cpp=$CPPFLAGS
         ft_ld=$LDFLAGS

@@ -537,6 +537,13 @@ AC_DEFUN([CHECK_XFT],
 do_arg_with([Xft])
 if test "x$with_Xft" != "xno"; then
   do_lib_check([Xft], [${Xft_HOME}], [X11/Xft/Xft.h], [XftFontOpenPattern], [HAVE_LIBXFT], [C])
+  #
+  # Xft fontconfig patterns (FcPattern*) need libfontconfig at link time.
+  #
+  if test "x$cv_libXft" = "xyes"; then
+    AC_SEARCH_LIBS([FcPatternCreate], [fontconfig], [],
+      [AC_MSG_WARN([libfontconfig not found; Xft may fail to link])])
+  fi
 fi
 ])
 

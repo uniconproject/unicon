@@ -243,11 +243,10 @@ typedef struct _wfont {
   int           descent;
   int           height;
   int           maxwidth;               /* max width of one char */
-#ifdef HAVE_XFT
-  XftFont     * fsp;
-#else                                   /* HAVE_XFT */
-  XFontStruct * fsp;                    /* X font pointer */
-#endif                                  /* HAVE_XFT */
+  XFontStruct * fsp;                    /* core X font; unused when xft is set */
+#ifdef HAVE_LIBXFT
+  XftFont     * xft;                    /* set only while UNICON_XFT is on */
+#endif                                  /* HAVE_LIBXFT */
 #endif                                  /* XWindows */
 #ifdef MSWindows
   char        * name;                   /* name for WAttrib and fontsearch */
@@ -352,9 +351,9 @@ typedef struct _wdisplay {
   Display *     display;
   GC            icongc;
   Colormap      cmap;
-#ifdef HAVE_XFT
+#ifdef HAVE_LIBXFT
   XFontStruct   *xfont;
-#endif                                  /* HAVE_XFT */
+#endif                                  /* HAVE_LIBXFT */
 #ifdef Graphics3D
   XVisualInfo   *vis;
 #endif                                  /* Graphics3D */
@@ -404,6 +403,10 @@ typedef struct _wcontext {
   int           linestyle;
   int           linewidth;
   int           leading;                /* inter-line leading */
+#ifdef HAVE_LIBXFT
+  int           aa;                     /* antialiased (Xft) text */
+  char          *fontreq;               /* last font= string; Font() returns it */
+#endif                                  /* HAVE_LIBXFT */
 #endif                                  /* XWindows */
 #ifdef MSWindows
   LOGPEN        pen;
@@ -546,9 +549,9 @@ typedef struct _wstate {
   Window        iconwin;                /* icon window */
   Pixmap        iconpix;                /* icon pixmap */
   Visual        *vis;
-#ifdef HAVE_XFT
+#ifdef HAVE_LIBXFT
   XftDraw       *winDraw,*pixDraw;
-#endif                                  /* HAVE_XFT */
+#endif                                  /* HAVE_LIBXFT */
   int           normalx, normaly;       /* pos to remember when maximized */
   int           normalw, normalh;       /* size to remember when maximized */
   int           numColors;              /* allocated (used) color info */
@@ -707,7 +710,8 @@ struct wbind_list {
 #define A_GLVERSION     86
 #define A_GLVENDOR      87
 #define A_GLRENDERER    88
+#define A_AA            89
 
-#define NUMATTRIBS      88
+#define NUMATTRIBS      89
 
 #define XICONSLEEP      20 /* milliseconds */

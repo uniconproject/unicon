@@ -107,3 +107,14 @@ typedef enum TRuntime_Status_states {
   RTSTATUS_HARDERROR    /* Hardware Error shutdown, triggered by signals
                            SIGBUS, SIGFPE, SIGILL, and SIGSEGV */
   } TRuntime_Status;
+
+/*
+ * Opaque Xft types for rtt when X11+libXft is enabled.  rtt does not
+ * process system headers (so it never sees <X11/Xft/Xft.h>); the C
+ * compiler gets the real structs from that header via sys.h.
+ * Irrelevant on MSWindows and other non-Xft builds (HAVE_LIBXFT unset).
+ */
+#if defined(HAVE_LIBXFT)
+typedef struct _XftFont XftFont;
+typedef struct _XftDraw XftDraw;
+#endif

@@ -27,6 +27,8 @@ int unicon_xft;
 #define FIXED_CELL_H 13
 static int xft_fixed_px;
 
+#define XFT_CELL_TAG ":unicon_cell="
+
 static int xft_ready;
 
 static int xft_env_on(char *s)
@@ -67,7 +69,7 @@ void xft_init(void)
 char *convert_spec(char *s)
 {
    static char res[256];
-   int flags, size, tp;
+   int flags, size, tp, sized, n;
    char family[MAXFONTWORD+1];
    XftPattern *p;
 
@@ -118,6 +120,7 @@ char *convert_spec(char *s)
     * Unicon font sizes are pixel heights, matching the XLFD pixel
     * field. XFT_SIZE is points and comes out larger on a normal display.
     */
+   sized = size > 0 && (flags & FONTFLAG_MONO);
    if (size <= 0)
       size = strcmp(family, "fixed") ? DEFAULTFONTSIZE :
          (xft_fixed_px > 0 ? xft_fixed_px : FIXED_CELL_H);
@@ -165,6 +168,19 @@ char *convert_spec(char *s)
 
    XftNameUnparse(p, res, sizeof(res) - 1);
    XftPatternDestroy(p);
+
+   /*
+    * For a mono font an explicit size is a cell height, as it is for
+    * core X fonts, so tag the name with it; xft_trim_cell() reads the
+    * tag back.  The tag also keeps "fixed,10" apart from the unsized
+    * "fixed", which is opened at the same pixel size but must keep its
+    * natural 6x13 cell.  Proportional fonts are left alone: their core
+    * cells are already taller than the nominal size.
+    */
+   if (sized) {
+      n = strlen(res);
+      snprintf(res + n, sizeof(res) - n, "%s%d", XFT_CELL_TAG, size);
+      }
    return res;
 }
 
@@ -188,8 +204,13 @@ XftFont *xft_open(Display *dpy, int scr, char *name)
    XftFont *f;
    double px;
    int spacing;
+   char buf[256], *t;
 
-   if ((p = XftNameParse(name)) == NULL)
+   strncpy(buf, name, sizeof(buf) - 1);
+   buf[sizeof(buf) - 1] = '\0';
+   if ((t = strstr(buf, XFT_CELL_TAG)) != NULL)
+      *t = '\0';
+   if ((p = XftNameParse(buf)) == NULL)
       return NULL;
    m = XftFontMatch(dpy, scr, p, &r);
    FcPatternDestroy(p);
@@ -362,6 +383,30 @@ void drawstrng(wbp w, int x, int y, char *str, int slen)
                      (FcChar8 *)str, slen);
 
    XftColorFree(wd->display, ws->vis, wd->cmap, &color);
+}
+
+/*
+ * Layout height for an Xft font.  A pixel size is an em size, and Xft
+ * rounds ascent and descent up, so the cell comes out 15-30% taller than
+ * the same size does for a core X font.  When the name carries an
+ * explicit size, trim ascent and descent so they sum to it, keeping the
+ * font's own proportion.  Glyphs and advances are not touched.
+ */
+void xft_trim_cell(XftFont *f, char *name, int *asc, int *desc)
+{
+   char *t;
+   int a = f->ascent, d = f->descent, want;
+
+   *asc = a;
+   *desc = d;
+   if ((t = strstr(name, XFT_CELL_TAG)) == NULL)
+      return;
+   want = atoi(t + strlen(XFT_CELL_TAG));
+   if (want < 1 || a + d <= want)
+      return;
+   d = (int)((double)d * want / (a + d) + 0.5);
+   *asc = want - d;
+   *desc = d;
 }
 
 #endif /* XWindows && HAVE_LIBXFT */

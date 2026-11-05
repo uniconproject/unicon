@@ -726,6 +726,7 @@ int checkOpenConsole( FILE *w, char *s );
       char     *convert_spec            (char *s);
       void      xft_fit_fixed           (Display *dpy, int scr);
       XftFont  *xft_open                (Display *dpy, int scr, char *name);
+      void      xft_trim_cell           (XftFont *f, char *name, int *asc, int *desc);
 #endif                                  /* HAVE_LIBXFT */
 
    #endif                               /* XWindows */

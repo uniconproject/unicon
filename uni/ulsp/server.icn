@@ -17,7 +17,7 @@ import logger
 
 class Server(
    port,                         # Port number acquired from args on start up of server
-   mode,                         # Mode to run in (client | server)
+   mode,                         # Mode to run in (client | server | stdio)
    sock,                         # Socket connection for communication with client
    openFiles,                    # File container for open files
    completionHandler,            # Instance of CompletionHandler class for handling completion requests
@@ -95,9 +95,21 @@ class Server(
 
    method run()
       local msg
-      jrpc_handler := JRPC_HTTPSocket(sock)
+      if mode == "stdio" then {
+         # The headers end in "\r\n\r\n" and Content-Length counts bytes,
+         # so nothing may translate line ends, as Windows does by default.
+         Attrib(&input, "binary=yes")
+         Attrib(&output, "binary=yes")
+         jrpc_handler := JRPC_HTTPSocket(&input, , &output)
+      }
+      else
+         jrpc_handler := JRPC_HTTPSocket(sock)
       repeat {
-         if msg := jrpc_handler.get_msg() then {
+         if not (msg := jrpc_handler.get_msg()) then {
+            # A failed read on stdin means the client has gone away.
+            if mode == "stdio" then break
+         }
+         else {
             #Logger.info("msg= ", image(msg.get_content()))
             case msg.get_kind() of {
                "request" : handle_request(msg)
@@ -379,6 +391,11 @@ class Server(
 
    method connect()
       local openopt := "n", mstring
+
+      if mode == "stdio" then {
+         Logger.info("Starting Unicon LSP on stdin/stdout")
+         return
+      }
 
       case mode of {
          "s" : {

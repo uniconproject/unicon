@@ -442,6 +442,18 @@ deliberate syntax error
 #define ExInterp_sp     sp = rsp; IPC_MEM = ripc;
 #define EntInterp_sp    rsp = sp; ripc = IPC_MEM;
 
+/*
+ * Suspension copies the stack region [first,last] to the top of the stack,
+ * followed by at most a descriptor.  Deep chains of suspended generators
+ * grow the stack this way without any procedure being invoked.
+ */
+#define SuspStackCheck(first, last) \
+   if (EvalStackOverflow(rsp, ((char *)(last) - (char *)(first)) + \
+                         WordSize + sizeof(struct descrip))) { \
+      ExInterp_sp; \
+      fatalerr(301, NULL); \
+      }
+
 /*#define ExInterp_ipc  ipc = ripc;
 #define EntInterp_ipc   ripc = ripc;
 
@@ -539,26 +551,6 @@ int interp_x(int fsig,dptr cargp)
 #endif                                  /* StackCheck */
 #endif                                  /* e_cstack */
 
-#ifdef StackCheck
-   /*
-    * Make a stab at catching interpreter stack overflow.  This does
-    * not detect C stack overflow.
-    */
-   if (((char *)sp + PerilDelta) > (char *)(BlkD(k_current,Coexpr)->es_stackend)){
-         fatalerr(301, NULL);
-         }
-#else                                   /* StackCheck */
-#ifndef MultiProgram
-   /*
-    * Make a stab at catching interpreter stack overflow.  This does
-    * nothing for invocation in a co-expression other than &main.
-    */
-   if (BlkLoc(k_current) == BlkLoc(k_main) &&
-      ((char *)sp + PerilDelta) > (char *)stackend)
-         fatalerr(301, NULL);
-#endif                                  /* MultiProgram */
-#endif                                  /* StackCheck */
-
 #ifdef Polling
    if (!pollctr--) {
       pollctr = pollevent();
@@ -624,6 +616,7 @@ int interp_x(int fsig,dptr cargp)
        * Copy the portion of the stack with endpoints firstwd and lastwd
        *  (inclusive) to the top of the stack.
        */
+      SuspStackCheck(firstwd, lastwd);
       for (wd = firstwd; wd <= lastwd; wd++)
          *++rsp = *wd;
       gfp = newgfp;
@@ -1359,31 +1352,14 @@ L_astatic:
                   bp = BlkLoc(value_tmp);
                   args = (int)Blk(bp,List)->size;
 
-#ifdef StackCheck
                   /*
                    * Make a stab at catching interpreter stack overflow.
                    * This does not detect C stack overflow.
                    */
-                  if ((char *)sp + args * sizeof(struct descrip) + PerilDelta >
-                       (char *)(BlkD(k_current,Coexpr)->es_stackend)) {
+                  if (EvalStackOverflow(rsp, args * sizeof(struct descrip))) {
                      ExInterp_sp;
                      fatalerr(301, NULL);
                      }
-#else                                   /* StackCheck */
-#ifndef MultiProgram
-                  /*
-                   * Make a stab at catching interpreter stack overflow.
-                   * This does nothing for invocation in a co-expression other
-                   * than &main.
-                   */
-                  if (BlkLoc(k_current) == BlkLoc(k_main) &&
-                      ((char *)sp + args * sizeof(struct descrip) >
-                       (char *)stackend)) {
-                     ExInterp_sp;
-                     fatalerr(301, NULL);
-                     }
-#endif                                  /* MultiProgram */
-#endif                                  /* StackCheck */
 
 #ifdef Arrays
                   if(Blk(bp,List)->listtail) {
@@ -1457,16 +1433,6 @@ invokej:
 #if e_stack
             EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_stack);
 #endif
-
-#ifdef StackCheck
-            /*
-             * Make a stab at catching interpreter stack overflow.  This does
-             * not detect C stack overflow.
-             */
-            if (((char *)sp + PerilDelta) >
-                (char *)(BlkD(k_current,Coexpr)->es_stackend))
-               fatalerr(301, NULL);
-#endif                                  /* StackCheck */
 
             type = invoke(args, &carg, &nargs);
             EntInterp_sp;
@@ -1694,6 +1660,7 @@ Unmark_uw:
              * Copy the portion of the stack with endpoints firstwd and lastwd
              *  (inclusive) to the top of the stack.
              */
+            SuspStackCheck(firstwd, lastwd);
             for (wd = firstwd; wd <= lastwd; wd++)
                *++rsp = *wd;
             PushVal(oldsp[-1]);
@@ -1746,6 +1713,7 @@ Unmark_uw:
                 *  (inclusive) to the top of the stack.
                 */
                rsp -= 2;                /* overwrite result */
+               SuspStackCheck(firstwd, lastwd);
                for (wd = firstwd; wd <= lastwd; wd++)
                   *++rsp = *wd;
                PushDesc(sval);          /* push saved result */
@@ -1856,6 +1824,7 @@ Lsusp_uw:
              * Copy the portion of the stack with endpoints firstwd and lastwd
              *  (inclusive) to the top of the stack.
              */
+            SuspStackCheck(firstwd, lastwd);
             for (wd = firstwd; wd <= lastwd; wd++)
                *++rsp = *wd;
             PushVal(oldsp[-1]);

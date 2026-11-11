@@ -109,12 +109,14 @@ void co_init(struct b_coexpr *sblkp)
 #endif                                  /* UpStack */
 
    sblkp->es_argp = (dptr)newsp;  /* args are first thing on stack */
-#ifdef StackCheck
+   /*
+    * The limits of the interpreter stack are needed by the overflow check
+    * whether or not StackCheck is defined.
+    */
    sblkp->es_stack = newsp;
    sblkp->es_stackend = (word *)
       ((word)((char *)sblkp + (stksize - sizeof(*sblkp))/2)
          &~((word)WordSize*StackAlign-1));
-#endif                                  /* StackCheck */
 #endif                                  /* COMPILER */
 
    /*

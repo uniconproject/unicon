@@ -766,6 +766,12 @@ extern struct b_proc *opblks[];
          fprintf(f,"{create ..}");
          break;
 
+      case Op_Esusp:
+      case Op_Lsusp:
+      case Op_Psusp:
+         fprintf(f,"{suspend ..}");
+         break;
+
       case Op_Field:
          putc('{', f);
          outimage(f, ++xargp, 0);

@@ -23,6 +23,11 @@ endif
 GC_BLKSIZE ?= 1000000
 gc: TEST_ENV := BLKSIZE=$(GC_BLKSIZE)
 
+# Each thread owns inbox, outbox and cequeue blocks, about 35KB together.
+# Thread-stress jobs set BLKSIZE=300000, which cannot hold the chain.
+# The prefix overrides that for this test only.
+tdeepgc: TEST_ENV := BLKSIZE=67108864 STRSIZE=1048576
+
 # Do the tests
 Test: DoTest
 

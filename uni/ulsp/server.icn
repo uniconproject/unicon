@@ -178,28 +178,14 @@ class Server(
 ########################################################
 
    method didOpen(request_params)
-      local fname, uri, f, initial_file_contents, filehandler_object
-      if \(uri := request_params["textDocument"]["uri"]) then {
-         # uri: file://<PATH>
-         uri ? {
-            ="file://" | write(&errout, "unexpected uri:", uri)
-            fname := tab(0)
-         }
-
-         if f := open(fname) then {
-            initial_file_contents := reads(f, -1)
-            close(f)
-         }
-      }
-      # Get rid of root / and change unicode encoded "%3A" back to ":" on Windows machines
-      if &features == ("MS Windows NT") then {
-         fname := replace(fname[2:0], "%3A", ":")
-      }
-      openFiles[\uri] := FileHandler(fname, lsp_database)
-      filehandler_object := openFiles[\uri]
+      local fname, uri, filehandler_object
+      uri := \request_params["textDocument"]["uri"] | fail
+      fname := uri_to_path(uri)
+      openFiles[uri] := filehandler_object := FileHandler(fname, lsp_database)
       filehandler_object.setFile()
+      # The editor's text may differ from the file on disk.
+      filehandler_object.updateUniDoc(fname, \request_params["textDocument"]["text"])
       filehandler_object.updateFileHandler()
-
    end
 
 ########################################################
@@ -217,30 +203,14 @@ class Server(
 ########################################################
 
    method didChange(request_params)
-      local fname, uri, f, file_contents, filehandler_object, initial_file_contents
-      if \(uri := request_params["textDocument"]["uri"]) then {
-         # uri: file://<PATH>
-         uri ? {
-            ="file://" | write(&errout, "unexpected uri:", uri)
-            fname := tab(0)
-         }
-
-         if f := open(fname) then {
-            initial_file_contents := reads(f, -1)
-            close(f)
-         }
-      }
-      # Get rid of root / and change unicode encoded "%3A" back to ":" on Windows machines
-      if &features == ("MS Windows NT") then {
-         fname := replace(fname[2:0], "%3A", ":")
-      }
-      uri := request_params["textDocument"]["uri"]
+      local fname, uri, file_contents, filehandler_object
+      uri := \request_params["textDocument"]["uri"] | fail
+      fname := uri_to_path(uri)
       file_contents := request_params["contentChanges"][1]["text"]
-      filehandler_object := openFiles[\uri]
+      filehandler_object := openFiles[uri]
       # If file handler doesn't exist, create it (file might have been changed before didOpen)
       if /filehandler_object then {
-         openFiles[\uri] := FileHandler(fname, lsp_database)
-         filehandler_object := openFiles[\uri]
+         openFiles[uri] := filehandler_object := FileHandler(fname, lsp_database)
          filehandler_object.setFile()
       }
       filehandler_object.updateUniDoc(fname, file_contents)
@@ -304,7 +274,7 @@ class Server(
       filehandler_object := openFiles[\msg.get_param_uri()]
       definitionHandler.setVariables(filehandler_object, msg.get_params())
       if result := definitionHandler.getResult() then
-         \result["uri"] := replace(result["uri"], "c:/", "/c%3A/")
+         \result["uri"] := path_to_uri(result["uri"])
       msg.make_result_response(result)
       jrpc_handler.send_msg(msg)
    end

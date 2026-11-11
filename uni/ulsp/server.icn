@@ -27,6 +27,7 @@ class Server(
    symbolHandler,
    foldingRangeHandler,
    formattingHandler,
+   diagnosticsHandler,
    lsp_database,                  # table containing database of packages (i.e. main, graphics3d, etc.) and their files.
    jrpc_handler,
    stoploop,
@@ -186,6 +187,8 @@ class Server(
       # The editor's text may differ from the file on disk.
       filehandler_object.updateUniDoc(fname, \request_params["textDocument"]["text"])
       filehandler_object.updateFileHandler()
+      publishDiagnostics(uri, fname, request_params["textDocument"]["text"],
+                         request_params["textDocument"]["version"])
    end
 
 ########################################################
@@ -196,6 +199,7 @@ class Server(
       local uri
       uri := request_params["textDocument"]["uri"]
       delete(openFiles, \uri)
+      publishDiagnostics(\uri)
    end
 
 ########################################################
@@ -215,6 +219,21 @@ class Server(
       }
       filehandler_object.updateUniDoc(fname, file_contents)
       filehandler_object.updateFileHandler()
+      publishDiagnostics(uri, fname, file_contents, request_params["textDocument"]["version"])
+   end
+
+########################################################
+#          textDocument/publishDiagnostics             #
+########################################################
+
+   # Check text, the contents of the document at uri, and send its errors
+   # to the client. With no text, clear the document's diagnostics.
+   method publishDiagnostics(uri, fname, text, version)
+      local params
+      params := table("uri", uri, "diagnostics",
+                      if \text then diagnosticsHandler.getResult(fname, text) else [])
+      params["version"] := \version
+      jrpc_handler.send_msg(JRPC_Message().make_notification("textDocument/publishDiagnostics", params))
    end
 
 ########################################################
@@ -357,6 +376,7 @@ class Server(
       symbolHandler := SymbolHandler()
       foldingRangeHandler := FoldingRangeHandler()
       formattingHandler := FormattingHandler()
+      diagnosticsHandler := DiagnosticsHandler()
    end
 
    method connect()

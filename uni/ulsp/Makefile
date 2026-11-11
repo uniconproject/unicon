@@ -6,9 +6,9 @@ UFLAGS=-s -u
 
 prog=ulsp
 
-SRC=launch-lsp.icn uri.icn file_handler.icn database.icn server.icn completion.icn signature.icn hover.icn \
+SRC=launch-lsp.icn uri.icn diagnostics.icn file_handler.icn database.icn server.icn completion.icn signature.icn hover.icn \
 	definition.icn lsif.icn symbols.icn folding.icn formatting.icn
-OBJ=launch-lsp.u uri.u file_handler.u database.u server.u completion.u signature.u hover.u definition.u \
+OBJ=launch-lsp.u uri.u diagnostics.u file_handler.u database.u server.u completion.u signature.u hover.u definition.u \
 	lsif.u symbols.u folding.u formatting.u
 
 export IPATH=$(UNI)/unidoc
@@ -26,7 +26,7 @@ jsonrpc-test: jsonrpc-test.u
 launch-lsp.u:launch-lsp.icn file_handler.u database.u server.u completion.u signature.u hover.u \
 				 definition.u symbols.u folding.u formatting.u
 
-server.u:server.icn uri.u database.u completion.u file_handler.u signature.u hover.u definition.u \
+server.u:server.icn uri.u diagnostics.u database.u completion.u file_handler.u signature.u hover.u definition.u \
 		   symbols.u folding.u formatting.u
 hover.u:hover.icn signature.u
 definition.u: definition.icn hover.u

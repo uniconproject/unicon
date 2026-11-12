@@ -8,7 +8,7 @@ MAKEFLAGS += --no-print-directory
 # define UC if it is not defined already
 UC?=../bin/unicon
 
-TESTS=general posix thread pattern mt unicon coexpr lib crypto
+TESTS=general posix thread pattern mt unicon coexpr lib crypto ulsp
 
 #  The default is to run all tests, using icont.
 #  Test / all / summary / Summary below use recursive Summary (Makefile.test):
@@ -158,6 +158,7 @@ distclean:
 		-cd thread &&	$(MAKE) distclean
 		-cd coexpr &&	$(MAKE) distclean
 		-cd crypto &&	$(MAKE) distclean
+		-cd ulsp &&	$(MAKE) distclean
 		-rm -f posix/x.icn
 		-rm -f posix/1
 
@@ -177,4 +178,5 @@ clean Clean Pure:
 		-cd coexpr &&	$(MAKE) Clean
 		-cd lib &&	$(MAKE) Clean
 		-cd crypto &&	$(MAKE) Clean
+		-cd ulsp &&	$(MAKE) Clean
 		-for d in $(TESTS); do rm -f $$d/.suite_duration; done

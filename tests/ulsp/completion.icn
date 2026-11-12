@@ -1,0 +1,15 @@
+#
+# completion.icn: members of an object after "."
+#
+link lspclient
+
+procedure main()
+   local r, id, item
+   lsp_init()
+   lsp_open("oo.icn")
+   id := lsp_at("textDocument/completion", "oo.icn", 19, 5,
+                table("context", table("triggerKind", 2, "triggerCharacter", ".")))
+   r := lsp_run("completion")
+   every item := !lsp_result(r, id)["items"] do
+      lsp_show("item", item)
+end

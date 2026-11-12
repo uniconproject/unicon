@@ -1,0 +1,23 @@
+#
+# diagnostics.icn: ulsp reports the errors the Unicon translator finds
+#
+link lspclient
+
+procedure main()
+   local r
+   lsp_init()
+   lsp_open("bad.icn")
+   lsp_change("bad.icn", "procedure main()\n   write(\"abc)\nend\n", 2)
+   lsp_change("bad.icn", "procedure main()\n   write(\"abc\")\nend\n", 3)
+   lsp_open("inc.icn", "$include \"nofile.icn\"\nprocedure main()\nend\n")
+   # an error after characters that are more than one byte in UTF-8, and
+   # one or two code units in UTF-16: e with an acute accent, and an emoji
+   lsp_open("utf8.icn", "procedure main()\n   write(\"\xc3\xa9\xf0\x9f\x98\x80\", \"abc)\nend\n")
+   # defs.icn is found in the document's directory, also when LPATH
+   # already has directories, separated by semicolons
+   setenv("LPATH", "/nonexistent/a;/nonexistent/b")
+   lsp_open("incdir.icn", "$include \"defs.icn\"\nprocedure main()\n   write(ANSWER)\nend\n")
+   lsp_close("bad.icn")
+   r := lsp_run("diagnostics")
+   every lsp_show("diagnostics", lsp_notifications(r, "textDocument/publishDiagnostics"))
+end

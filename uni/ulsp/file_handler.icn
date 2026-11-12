@@ -406,7 +406,8 @@ class FileHandler(
       objects := table()
       lineNum := 1
       while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
-         if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=[\ \t]*[a-zA-Z0-9_]+[(][a-zA-Z0-9_]*[)][\ \t]*$", _line) then {
+         # x := ClassName(any arguments)
+         if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=[\ \t]*[a-zA-Z0-9_]+[(]", _line) then {
             _line ? {
                tab(many(' \t'))
                objectName := tab(many(&digits ++ &letters ++ '-' ++ '_'))

@@ -8,6 +8,7 @@
 
 global yyerror            # called with a message on each syntax error
 global parsingErrors      # the preprocessor's errors, as ParseError records
+global comp, fset         # translator options; left null: not iconc
 
 record ParseError(lineNumber, errorMessage)
 
@@ -19,4 +20,12 @@ record ParseError(lineNumber, errorMessage)
 #
 procedure warning(s, lineno, filenam, text)
    return
+end
+
+#
+# The translator for cint turns a $C ... $Cend block into Unicon code;
+# here the block is left out.
+#
+procedure CIncludesParser(s)
+   return ""
 end

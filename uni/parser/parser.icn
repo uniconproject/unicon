@@ -24,20 +24,34 @@
 #
 package parser
 
-link unigram, preproce, unilex
+link unigram, preproce, unilex, parserglobals
 
+global parse_messages   # the syntax errors that the last parse_unicon() met
+
+#
+# Parse the Unicon file fname, or the lines in the list fname, and return
+# its parse tree; fail if it has syntax errors.
+#
 procedure parse_unicon(fname)
    yyin := ""
    /yydebug := 0
+   # note syntax errors instead of writing them to &output
+   parse_messages := []
+   parsingErrors := []
+   /yyerror := parse_error
    every yyin ||:= preprocessor(fname, predefs()) do
       yyin ||:= "\n"
-   ::write("parse_unicon(", ::image(fname), ") \nyyin:", yyin)
+   every parse_error((!parsingErrors).errorMessage)
    yylex_reinit()
    yyout := &output
    rv := yyparse()
    if yynerrs > 0 then
       fail
    return yyval
+end
+
+procedure parse_error(s)
+   return ::put(parse_messages, s)
 end
 
 

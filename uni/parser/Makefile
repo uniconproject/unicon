@@ -7,7 +7,7 @@ include $(UNICON_TOP_BUILDDIR)/Makedefs.uni
 UFILES=classinfo.u databaseinfo.u packageinfo.u parsedclass.u \
 	parsedfunction.u parsedinitiallymethod.u parsedmethod.u \
 	parsedobject.u parsedprocedure.u parsedprogram.u \
-	parsedrecord.u parser.u preproce.u unigram.u \
+	parsedrecord.u parser.u preproce.u parserglobals.u unigram.u \
 	unilex.u unigram.action.u unigram.prefix.u unigram.suffix.u
 
 PROGS=showtree$(EXE) showdb$(EXE)

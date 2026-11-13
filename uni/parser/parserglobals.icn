@@ -1,0 +1,22 @@
+#
+# parserglobals.icn: globals that unigram.icn, unilex.icn and preproce.icn,
+# copies of the translator's own grammar, lexer and preprocessor, use but
+# do not declare. They are not in package parser, as those files are not.
+# A program that links the parser may get the translator's unilex.u from
+# uni/lib in place of the copy here, so nothing is declared in unilex.icn.
+#
+
+global yyerror            # called with a message on each syntax error
+global parsingErrors      # the preprocessor's errors, as ParseError records
+
+record ParseError(lineNumber, errorMessage)
+
+#
+# The lexer calls warning() for a token that may be a mistake, such as
+# the ":+" of s[1:+n]. The translator's warning() writes a message; a
+# program that only parses has nowhere to write one, and its &output may
+# be for something else, so here the warning is dropped.
+#
+procedure warning(s, lineno, filenam, text)
+   return
+end

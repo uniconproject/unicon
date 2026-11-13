@@ -33,7 +33,7 @@ class FileHandler(
    uri,
    lsp_database,
    temp_file,
-   #   file_contents,
+   file_text,     # the document's text, as the client last sent it
    links,
    imports,
    _package,
@@ -88,11 +88,15 @@ class FileHandler(
    end
 
    method updateUniDoc(uri, contents)
-      local files, file_contents
+      local files
       temp_idoc.processFile(uri, contents)
-      file_contents := contents
+      file_text := contents
       files := temp_idoc.getAllFiles()
       m_uni_file := files[1]
+   end
+
+   method getContents()
+      return \file_text
    end
 
    method deleteTempFile()

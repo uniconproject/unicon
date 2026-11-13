@@ -1,0 +1,29 @@
+#
+# formatting.icn: ulsp re-indents a document, and leaves alone one that
+# does not compile
+#
+link lspclient
+
+procedure main()
+   local r, id1, id2, id3, e
+   lsp_init()
+   lsp_open("messy.icn")
+   id1 := lsp_request("textDocument/formatting",
+                      table("textDocument", table("uri", lsp_uri("src/messy.icn")),
+                            "options", table("tabSize", 3, "insertSpaces", "__true__")))
+   id2 := lsp_request("textDocument/formatting",
+                      table("textDocument", table("uri", lsp_uri("src/messy.icn")),
+                            "options", table("tabSize", 4, "insertSpaces", "__false__")))
+   lsp_open("bad.icn")
+   lsp_change("bad.icn", "procedure main()\nwrite(\"abc)\nend\n", 2)
+   id3 := lsp_request("textDocument/formatting",
+                      table("textDocument", table("uri", lsp_uri("src/bad.icn")),
+                            "options", table("tabSize", 3, "insertSpaces", "__true__")))
+   r := lsp_run("formatting")
+   write("spaces:")
+   every e := !lsp_result(r, id1) do lsp_show("edit", e)
+   write("tabs:")
+   every e := !lsp_result(r, id2) do lsp_show("edit", e)
+   write("does not compile:")
+   lsp_show("edits", lsp_result(r, id3))
+end

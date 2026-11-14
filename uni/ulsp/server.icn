@@ -243,7 +243,9 @@ class Server(
    method publishDiagnostics(uri, fname, text, version)
       local params
       params := table("uri", uri, "diagnostics",
-                      if \text then diagnosticsHandler.getResult(fname, text) else [])
+                      if \text then diagnosticsHandler.getResult(fname, text,
+                                        (\openFiles[uri]).getScopes() | &null)
+                      else [])
       params["version"] := \version
       jrpc_handler.send_msg(JRPC_Message().make_notification("textDocument/publishDiagnostics", params))
    end

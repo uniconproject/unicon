@@ -1,5 +1,6 @@
 #
-# diagnostics.icn: ulsp reports the errors the Unicon translator finds
+# diagnostics.icn: ulsp reports the errors the Unicon translator finds,
+# and the identifiers its linker finds undeclared
 #
 link lspclient
 
@@ -17,6 +18,13 @@ procedure main()
    # already has directories, separated by semicolons
    setenv("LPATH", "/nonexistent/a;/nonexistent/b")
    lsp_open("incdir.icn", "$include \"defs.icn\"\nprocedure main()\n   write(ANSWER)\nend\n")
+   # undeclared names, also in a method and in a procedure nothing calls
+   lsp_open("undecl.icn", "procedure main()\n   local a\n   a := b + 1\n   write(a, b)\nend\n_
+class C(n)\n   method m()\n      return n + k\n   end\nend\n_
+procedure unused(x)\n   return x + y\nend\n")
+   lsp_open("pkg.icn", "package mypkg\nprocedure f()\n   return z\nend\n")
+   # the errout of &errout is not the undeclared errout
+   lsp_open("kw.icn", "procedure main()\n   write(&errout, errout)\nend\n")
    lsp_close("bad.icn")
    r := lsp_run("diagnostics")
    every lsp_show("diagnostics", lsp_notifications(r, "textDocument/publishDiagnostics"))

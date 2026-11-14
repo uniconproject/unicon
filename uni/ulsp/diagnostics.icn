@@ -8,6 +8,10 @@
 # and import find the same files they would if the document were compiled
 # where it is.
 #
+# A document without errors is then linked with "unicon -u", which names
+# the identifiers that are not declared and the procedure each is in; the
+# document's scopes (scopes.icn) say where in the procedure they are.
+#
 # The file is always called ulspdoc.icn, whatever the document's name is:
 # the translator passes file names on to a shell, and a document may have
 # a name that means something to one.
@@ -21,10 +25,11 @@ import logger
 class DiagnosticsHandler(unicon, tmpdir)
 
    #
-   # getResult(fname, text): a list of LSP Diagnostic tables for text,
-   # the current contents of the file fname.
+   # getResult(fname, text, scopes): a list of LSP Diagnostic tables for
+   # text, the current contents of the file fname; scopes, if given, is
+   # its DocScopes.
    #
-   method getResult(fname, text)
+   method getResult(fname, text, scopes)
       local dir, f, line, results, seen, d, oldlpath, oldipath, lines
       results := []
       \text | return results
@@ -60,10 +65,43 @@ class DiagnosticsHandler(unicon, tmpdir)
          close(f)
       }
 
+      if *results = 0 & \scopes then
+         every put(results, undeclared(dir, scopes))
+
       setenv("LPATH", oldlpath)
       setenv("IPATH", oldipath)
       remove_work_dir(dir)
       return results
+   end
+
+   #
+   # Warnings for the identifiers that the linker says are undeclared in
+   # ulspdoc.icn, the document, in dir. The document is linked with a
+   # file that says "invocable all", so that procedures nothing calls are
+   # kept, and that has an empty main if the document has none.
+   #
+   method undeclared(dir, scopes)
+      local f, line, name, p, o
+      f := open(dir || "/ulspmain.icn", "w") | fail
+      write(f, "invocable all")
+      if \scopes.pkg | not (scopes.globals["main"].kind == "procedure") then
+         write(f, "procedure main()\nend")
+      close(f)
+      run_unicon(unicon, dir, ["-s", "-u", "ulspdoc.icn", "ulspmain.icn", "-o", "ulspu"], "ulspu.log")
+      f := open(dir || "/ulspu.log") | fail
+      # ulspdoc.icn: "name": undeclared identifier, procedure p
+      while line := read(f) do line ? {
+         if ="ulspdoc.icn: \"" & name := tab(find("\": undeclared identifier, procedure ")) then {
+            move(36)
+            p := tab(0)
+            every o := scopes.undeclared(p, name) do
+               suspend table("range", scopes.range(o),
+                             "severity", 2,
+                             "source", "unicon",
+                             "message", "\"" || name || "\": undeclared identifier")
+         }
+      }
+      close(f)
    end
 
    #

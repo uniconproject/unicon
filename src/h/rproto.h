@@ -452,6 +452,7 @@ int             bigtoreal       (dptr da, double *result);
    void         bigprint        (FILE *f, dptr da);
    int          cpbignum        (dptr da, dptr db);
    int          bigadd          (dptr da, dptr db, dptr dx);
+   int          big_int_op      (int op, C_integer x, C_integer y, dptr r);
    int          bigsub          (dptr da, dptr db, dptr dx);
    int          bigmul          (dptr da, dptr db, dptr dx);
    int          bigdiv          (dptr da, dptr db, dptr dx);
@@ -926,9 +927,11 @@ void    cotrace         (struct b_coexpr *ccp, struct b_coexpr *ncp,
                            int swtch_typ, dptr valloc);
 #ifdef MultiProgram
 void    deref_0         (dptr dp1, dptr dp2);
+void    deref_0_slow    (dptr dp1, dptr dp2);
 void    deref_1         (dptr dp1, dptr dp2);
 #else                                   /* MultiProgram */
 void    deref           (dptr dp1, dptr dp2);
+void    deref_slow      (dptr dp1, dptr dp2);
 #endif                                  /* MultiProgram */
 void    envset          (void);
 int     eq              (dptr dp1,dptr dp2);
@@ -1165,6 +1168,9 @@ void init_threadstate(struct threadstate *ts);
 struct threadstate *get_tstate();
 #endif                                  /* HAVE_KEYWORD__THREAD */
 void thread_control(int action);
+#ifdef SerialBatches
+word serial_batch(void *ctr, int isatomic);
+#endif                                  /* SerialBatches */
 #ifdef HAVE_C11_ATOMICS
 int narthreads_inc_fast(void);
 #endif                                  /* HAVE_C11_ATOMICS */

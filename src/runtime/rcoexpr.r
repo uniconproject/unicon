@@ -528,8 +528,7 @@ int co_chng(struct b_coexpr *ncp,
     * this by using the global, k_current, but that's not global anymore.
     */
 #ifdef PthreadCoswitch
-   curtstate =  global_curtstate ? global_curtstate :
-      pthread_getspecific(tstate_key);
+   curtstate =  global_curtstate ? global_curtstate : TSTATE_GET();
 #endif                                  /* PthreadCoswitch */
 
    return BlkD(k_current,Coexpr)->coexp_act;
@@ -820,7 +819,7 @@ void *nctramp(void *arg)
 #ifndef HAVE_KEYWORD__THREAD
     struct threadstate *curtstate;
     curtstate = (ce->tstate ? ce->tstate : alloc_tstate());
-    pthread_setspecific(tstate_key, (void *) curtstate);
+    TSTATE_SET(curtstate);
 #endif                                  /* HAVE_KEYWORD__THREAD */
 
   /*

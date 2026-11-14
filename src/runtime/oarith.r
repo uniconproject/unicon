@@ -11,13 +11,32 @@
 int list_add(dptr x, dptr y, dptr z);
 #endif                                  /* DataParallel */
 
+#ifdef LargeInts
+/*
+ * big_int_op - x op y for two C integers whose result overflowed, as a
+ *  large integer (op: 0 add, 1 subtract, 2 multiply, 3 divide).  The
+ *  tended temporaries live here, so the operators themselves need no tend
+ *  frame on the common path.
+ */
+int big_int_op(int op, C_integer x, C_integer y, dptr r)
+   {
+   tended struct descrip lx, ly;
+
+   MakeInt(x, &lx);
+   MakeInt(y, &ly);
+   switch (op) {
+      case 0:  return bigadd(&lx, &ly, r);
+      case 1:  return bigsub(&lx, &ly, r);
+      case 2:  return bigmul(&lx, &ly, r);
+      default: return bigdiv(&lx, &ly, r);
+      }
+   }
+#endif                                  /* LargeInts */
+
 #begdef ArithOp(icon_op, func_name, c_int_op, c_real_op, c_list_op)
 
    operator{1} icon_op func_name(x, y)
       declare {
-#ifdef LargeInts
-         tended struct descrip lx, ly;
-#endif                                  /* LargeInts */
          C_integer irslt;
          }
 #ifdef DataParallel
@@ -95,9 +114,7 @@ end
    irslt = div3(x,y, &over_flow);
    if (over_flow) {
 #ifdef LargeInts
-      MakeInt(x,&lx);
-      MakeInt(y,&ly);
-      if (bigdiv(&lx,&ly,&result) == RunError) /* alcbignum failed */
+      if (big_int_op(3, x, y, &result) == RunError) /* alcbignum failed */
          runerr(0);
       return result;
 #else                                   /* LargeInts */
@@ -132,12 +149,14 @@ ArithOp( / , divide , Divide , RealDivide, list_add /* bogus */)
 #enddef
 
 #begdef Sub(x,y)
+#ifdef HAVE_BUILTIN_OVERFLOW
+   over_flow = __builtin_sub_overflow(x, y, &irslt);
+#else                                   /* HAVE_BUILTIN_OVERFLOW */
    irslt = sub(x,y, &over_flow);
+#endif                                  /* HAVE_BUILTIN_OVERFLOW */
    if (over_flow) {
 #ifdef LargeInts
-      MakeInt(x,&lx);
-      MakeInt(y,&ly);
-      if (bigsub(&lx,&ly,&result) == RunError) /* alcbignum failed */
+      if (big_int_op(1, x, y, &result) == RunError) /* alcbignum failed */
          runerr(0);
       return result;
 #else                                   /* LargeInts */
@@ -217,12 +236,14 @@ ArithOp( % , mod , IntMod , RealMod, list_add /* bogus */ )
 #enddef
 
 #begdef Mpy(x,y)
+#ifdef HAVE_BUILTIN_OVERFLOW
+   over_flow = __builtin_mul_overflow(x, y, &irslt);
+#else                                   /* HAVE_BUILTIN_OVERFLOW */
    irslt = mul(x,y,&over_flow);
+#endif                                  /* HAVE_BUILTIN_OVERFLOW */
    if (over_flow) {
 #ifdef LargeInts
-      MakeInt(x,&lx);
-      MakeInt(y,&ly);
-      if (bigmul(&lx,&ly,&result) == RunError) /* alcbignum failed */
+      if (big_int_op(2, x, y, &result) == RunError) /* alcbignum failed */
          runerr(0);
       return result;
 #else                                   /* LargeInts */
@@ -340,12 +361,14 @@ end
 #enddef
 
 #begdef Add(x,y)
+#ifdef HAVE_BUILTIN_OVERFLOW
+   over_flow = __builtin_add_overflow(x, y, &irslt);
+#else                                   /* HAVE_BUILTIN_OVERFLOW */
    irslt = add(x,y, &over_flow);
+#endif                                  /* HAVE_BUILTIN_OVERFLOW */
    if (over_flow) {
 #ifdef LargeInts
-      MakeInt(x,&lx);
-      MakeInt(y,&ly);
-      if (bigadd(&lx, &ly, &result) == RunError)  /* alcbignum failed */
+      if (big_int_op(0, x, y, &result) == RunError)  /* alcbignum failed */
          runerr(0);
       return result;
 #else                                   /* LargeInts */

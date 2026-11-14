@@ -150,6 +150,9 @@ struct region *curstring, *curblock;
 #ifdef Concurrent
      int is_concurrent = 0;
      struct threadstate *global_curtstate;
+#ifdef HAVE_TLS
+     __thread struct threadstate *tls_curtstate;
+#endif                                  /* HAVE_TLS */
 
 #ifdef HAVE_KEYWORD__THREAD
       __thread struct threadstate roottstate;
@@ -598,6 +601,15 @@ void init_threadstate( struct threadstate *ts)
 #ifdef Concurrent
    ts->tid = pthread_self();
    ts->Pollctr=0;
+#ifdef SerialBatches
+   {
+   int i;
+   for (i = 0; i < SER_SLOTS; i++) {
+      ts->Ser_key[i] = NULL;
+      ts->Ser_next[i] = ts->Ser_end[i] = 0;
+      }
+   }
+#endif                                  /* SerialBatches */
 
    /* used in fmath.r, log() */
    ts->Lastbase=0.0;
@@ -732,7 +744,7 @@ void init_progstate(struct progstate *pstate);
    init_threadstate(curtstate);
 
 #if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
-   pthread_setspecific(tstate_key, (void *) curtstate);
+   TSTATE_SET(curtstate);
 #endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
 
 #ifdef MultiProgram

@@ -99,6 +99,9 @@ extern struct threadstate *global_curtstate;
 #ifndef HAVE_KEYWORD__THREAD
    extern pthread_key_t tstate_key;
 #endif
+#ifdef HAVE_TLS
+   extern __thread struct threadstate *tls_curtstate;
+#endif                                  /* HAVE_TLS */
 
 #if ConcurrentCOMPILER
 extern struct region *Public_stringregion;

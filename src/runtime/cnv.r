@@ -764,11 +764,48 @@ void f(dptr s, dptr d)
    }
 #enddef
 
+#begdef deref_fast_macro(f, slow)
+/*
+ * deref - dereference a descriptor.  Most calls are for values that are
+ *  not variables, plain variables, record fields and list elements, and
+ *  elements of integer arrays; handle those here, without the
+ *  thread-state lookup and tend frame that the general case (slow) needs.
+ */
+void f(dptr s, dptr d)
+   {
+   if (!is:variable(*s)) {
+      *d = *s;
+      return;
+      }
+   if (!(s->dword & F_Typecode)) {
+      if (Offset(*s) == 0) {
+         *d = *VarLoc(*s);
+         return;
+         }
+#ifdef Arrays
+      if (BlkLoc(*s)->Intarray.title == T_Intarray) {
+         d->vword.integr = *((word *)VarLoc(*s) + Offset(*s));
+         d->dword = D_Integer;
+         return;
+         }
+      if (BlkLoc(*s)->Realarray.title != T_Realarray)
+#endif                                  /* Arrays */
+         {
+         *d = *(dptr)((word *)VarLoc(*s) + Offset(*s));
+         return;
+         }
+      }
+   slow(s, d);
+   }
+#enddef
+
 #ifdef MultiProgram
-deref_macro(deref_0,0)
+deref_macro(deref_0_slow,0)
+deref_fast_macro(deref_0,deref_0_slow)
 deref_macro(deref_1,E_Deref)
 #else                                   /* MultiProgram */
-deref_macro(deref,0)
+deref_macro(deref_slow,0)
+deref_fast_macro(deref,deref_slow)
 #endif                                  /* MultiProgram */
 
 /*

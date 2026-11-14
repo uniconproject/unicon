@@ -634,6 +634,58 @@
 #define Deref0(d) if (Var(d)) deref_0(&d, &d)
 
 /*
+ * In-line fast paths for the common conversions.  rtt emits these names
+ * for cnv: and def: in operators and functions (see inline_cnv() in
+ * rttout.c): an argument that already has the wanted type, as most do, is
+ * copied here, and anything else goes to the conversion routine.
+ * The source is read once.  Callers pass expressions such as *dp++,
+ * and reading it again would skip values.
+ */
+#define CnvCInt(s, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Integer) ? (*_d = IntVal(*_s), 1) : cnv_c_int(_s, _d); \
+   })
+#define CnvECInt(s, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Integer) ? (*_d = IntVal(*_s), 1) : cnv_ec_int(_s, _d); \
+   })
+#define CnvEInt(s, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Integer) ? (*_d = *_s, 1) : cnv_eint(_s, _d); \
+   })
+#define DefCInt(s, df, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Integer) ? (*_d = IntVal(*_s), 1) : def_c_int(_s, (df), _d); \
+   })
+#ifdef DescriptorDouble
+#define CnvCDbl(s, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Real) ? (*_d = _s->vword.realval, 1) : \
+   (_s->dword == D_Integer) ? (*_d = (double)IntVal(*_s), 1) : \
+   cnv_c_dbl(_s, _d); \
+   })
+#define DefCDbl(s, df, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Real) ? (*_d = _s->vword.realval, 1) : \
+   def_c_dbl(_s, (df), _d); \
+   })
+#else                                   /* DescriptorDouble */
+#define CnvCDbl(s, d) ({ \
+   __typeof__(s) _s = (s); \
+   __typeof__(d) _d = (d); \
+   (_s->dword == D_Integer) ? (*_d = (double)IntVal(*_s), 1) : \
+   cnv_c_dbl(_s, _d); \
+   })
+#define DefCDbl(s, df, d) def_c_dbl(s, df, d)
+#endif                                  /* DescriptorDouble */
+
+/*
  * Construct a substring trapped variable.
  */
 #define SubStr(dest,var,len,pos)\
@@ -704,6 +756,34 @@
    #define SERIAL_UNLOCK(mtx)           MUTEX_UNLOCKID(mtx)
 #endif                                  /* Concurrent && HAVE_C11_ATOMICS */
 
+/*
+ * Serial numbers.  Every list, set, table, record, pattern and
+ * co-expression takes the next number from a counter shared by all
+ * threads.  Once threads are running, an atomic add on that one word for
+ * every allocation makes the cores fight over its cache line, so each
+ * thread instead takes SER_BATCH numbers at a time (serial_batch() in
+ * ralc.r).  Numbers stay unique and, within a thread, in creation order;
+ * a program that never starts a thread numbers 1, 2, 3, ... as before.
+ */
+#ifdef SerialBatches
+   #define NEXT_SERIAL(ctr) (is_concurrent ? \
+      serial_batch((void *)&(ctr), 1) : ATOMIC_ADD(ctr, 1))
+   #define NEXT_RECID(ctr) (is_concurrent ? \
+      serial_batch((void *)&(ctr), 0) : \
+      __atomic_fetch_add(&(ctr), 1, __ATOMIC_RELAXED))
+#elif defined(Concurrent) && defined(HAVE_ATOMIC_BUILTINS)
+   /*
+    * No C11 atomics, so no batches, but alcrecd() still skips its lock
+    * when the builtins are available.  A plain increment would lose ids.
+    */
+   #define NEXT_SERIAL(ctr) ((ctr)++)
+   #define NEXT_RECID(ctr) \
+      __atomic_fetch_add(&(ctr), 1, __ATOMIC_RELAXED)
+#else
+   #define NEXT_SERIAL(ctr) ((ctr)++)
+   #define NEXT_RECID(ctr) ((ctr)++)
+#endif
+
 #ifdef Concurrent
 
    #define CE_INBOX_SIZE        1024
@@ -739,16 +819,29 @@
 #else
 */
 
-#define SYNC_GLOBAL_CURTSTATE()  do if (!is_concurrent) global_curtstate = \
-      (struct threadstate *) pthread_getspecific(tstate_key); while (0)
+/*
+ * A thread's state is kept under tstate_key, and also, where the compiler
+ * supports them, in a thread-local variable, which is much cheaper to read
+ * than pthread_getspecific().  TSTATE_SET() sets both.
+ */
+#ifdef HAVE_TLS
+#define TSTATE_GET()  tls_curtstate
+#define TSTATE_SET(ts) do { struct threadstate *ts__ = (ts); \
+      pthread_setspecific(tstate_key, (void *) ts__); \
+      tls_curtstate = ts__; } while (0)
+#else                                   /* HAVE_TLS */
+#define TSTATE_GET()  ((struct threadstate *) pthread_getspecific(tstate_key))
+#define TSTATE_SET(ts) pthread_setspecific(tstate_key, (void *) (ts))
+#endif                                  /* HAVE_TLS */
 
-#define TLS_CURTSTATE_ONLY()  struct threadstate *curtstate = \
-      (struct threadstate *) pthread_getspecific(tstate_key);
+#define SYNC_GLOBAL_CURTSTATE()  do if (!is_concurrent) global_curtstate = \
+      TSTATE_GET(); while (0)
+
+#define TLS_CURTSTATE_ONLY()  struct threadstate *curtstate = TSTATE_GET();
 
 
 #define GET_CURTSTATE()  struct threadstate *curtstate = \
-    global_curtstate? global_curtstate: \
-    (struct threadstate *) pthread_getspecific(tstate_key);
+    global_curtstate? global_curtstate: TSTATE_GET();
 
 #define CURTSTATE_CE() struct b_coexpr *curtstate_ce = curtstate->c;
 

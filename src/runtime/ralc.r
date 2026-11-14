@@ -28,6 +28,37 @@ AtomicWord table_ser = 1;     /* serial numbers for tables */
 #endif                                  /* MultiProgram */
 
 
+#ifdef SerialBatches
+/*
+ * serial_batch - the next serial number from the counter at ctr, taken
+ *  from this thread's batch for that counter; see NEXT_SERIAL.  A thread
+ *  caches batches for SER_SLOTS counters, by address; a counter that
+ *  displaces another simply starts a new batch.  isatomic says whether
+ *  the counter is an AtomicWord or a plain word (a record constructor's
+ *  recid).
+ */
+word serial_batch(void *ctr, int isatomic)
+   {
+   int h;
+   word first;
+   CURTSTATE();
+
+   h = ((uword)ctr / sizeof(word)) % SER_SLOTS;
+   if (curtstate->Ser_key[h] != ctr ||
+       curtstate->Ser_next[h] == curtstate->Ser_end[h]) {
+      if (isatomic)
+         first = atomic_fetch_add_explicit((AtomicWord *)ctr, SER_BATCH,
+                                           memory_order_relaxed);
+      else
+         first = __atomic_fetch_add((word *)ctr, SER_BATCH, __ATOMIC_RELAXED);
+      curtstate->Ser_key[h] = ctr;
+      curtstate->Ser_next[h] = first;
+      curtstate->Ser_end[h] = first + SER_BATCH;
+      }
+   return curtstate->Ser_next[h]++;
+   }
+#endif                                  /* SerialBatches */
+
 /*
  * AlcBlk - allocate a block.
  */
@@ -224,7 +255,7 @@ struct b_coexpr *alccoexp()
    ep->size = 0;
    ep->es_actstk = NULL;
    SERIAL_LOCK(MTX_COEXP_SER);
-   ep->id = coexp_ser++;
+   ep->id = NEXT_SERIAL(coexp_ser);
    SERIAL_UNLOCK(MTX_COEXP_SER);
    ep->es_tend = NULL;
    ep->file_name = "";
@@ -356,7 +387,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
    else{
 #endif                                  /* MultiProgram */
       SERIAL_LOCK(MTX_COEXP_SER);
-      ep->id = coexp_ser++;
+      ep->id = NEXT_SERIAL(coexp_ser);
       SERIAL_UNLOCK(MTX_COEXP_SER);
 #ifdef MultiProgram
    }
@@ -513,14 +544,14 @@ union block *f(int tcode)
       AlcFixBlk(pt, b_table, T_Table);
       ps = (struct b_set *)pt;
       SERIAL_LOCK(MTX_TABLE_SER);
-      ps->id = table_ser++;
+      ps->id = NEXT_SERIAL(table_ser);
       SERIAL_UNLOCK(MTX_TABLE_SER);
       }
    else {       /* tcode == T_Set */
       EVVal(sizeof(struct b_set), e_set);
       AlcFixBlk(ps, b_set, T_Set);
       SERIAL_LOCK(MTX_SET_SER);
-      ps->id = set_ser++;
+      ps->id = NEXT_SERIAL(set_ser);
       SERIAL_UNLOCK(MTX_SET_SER);
       }
    ps->size = 0;
@@ -581,7 +612,7 @@ struct b_pattern *f(word stck_size)
    AlcFixBlk(pheader, b_pattern, T_Pattern)
    pheader->stck_size = stck_size;
    SERIAL_LOCK(MTX_PAT_SER);
-   pheader->id = pat_ser++;
+   pheader->id = NEXT_SERIAL(pat_ser);
    SERIAL_UNLOCK(MTX_PAT_SER);
    pheader->pe = NULL;
    return pheader;
@@ -650,7 +681,7 @@ struct b_list *alclisthdr(uword size, union block *bptr)
    AlcFixBlk(blk, b_list, T_List)
    blk->size = size;
    SERIAL_LOCK(MTX_LIST_SER);
-   blk->id = list_ser++;
+   blk->id = NEXT_SERIAL(list_ser);
    SERIAL_UNLOCK(MTX_LIST_SER);
    blk->listhead = bptr;
    blk->listtail = NULL;
@@ -690,7 +721,7 @@ struct b_list *f(uword size, uword nslots)
    AlcVarBlk(lblk, b_lelem, T_Lelem, nslots)
    SERIAL_LOCK(MTX_LIST_SER);
    if (size != -1)
-      blk->id = list_ser++;
+      blk->id = NEXT_SERIAL(list_ser);
    else{
       /*
        * size -1 is used to indicate an RT list,
@@ -742,7 +773,7 @@ struct b_list *f(uword size, uword nslots)
    AlcBlk(lblk, b_lelem, T_Lelem, i)
    SERIAL_LOCK(MTX_LIST_SER);
    if (size != -1)
-      blk->id = list_ser++;
+      blk->id = NEXT_SERIAL(list_ser);
    else{
       /*
        * size -1 is used to indicate an RT list,
@@ -866,8 +897,7 @@ struct b_record *f(int nflds, union block *recptr)
     * The serial number shares a field of the constructor's procedure
     * block, so it cannot be declared atomic; use an atomic add on it.
     */
-   blk->id = __atomic_fetch_add(&(((struct b_proc *)recptr)->recid), 1,
-                                __ATOMIC_RELAXED);
+   blk->id = NEXT_RECID(((struct b_proc *)recptr)->recid);
 #else                                   /* Concurrent && HAVE_ATOMIC_BUILTINS */
    MUTEX_LOCKID(MTX_RECID);
    blk->id = (((struct b_proc *)recptr)->recid)++;

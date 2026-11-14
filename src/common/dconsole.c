@@ -99,6 +99,9 @@ void init_threadstate(struct threadstate *ts)
 }
 
 pthread_key_t tstate_key;
+#ifdef HAVE_TLS
+__thread struct threadstate *tls_curtstate;
+#endif                                  /* HAVE_TLS */
 
 #endif                                          /* Concurrent */
 

@@ -337,6 +337,16 @@
     */
 #endif                          /* Concurrent */
 
+/*
+ * Per-thread batches of serial numbers; see NEXT_SERIAL in rmacros.h.
+ */
+#if defined(Concurrent) && defined(HAVE_C11_ATOMICS) && \
+    defined(HAVE_ATOMIC_BUILTINS)
+   #define SerialBatches
+   #define SER_BATCH 1024               /* numbers taken at a time */
+   #define SER_SLOTS 8                  /* counters cached per thread */
+#endif
+
 #ifndef NoINTMAIN
    #undef INTMAIN
    #define INTMAIN

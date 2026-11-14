@@ -301,8 +301,7 @@ function{1} display(i,f,c)
       struct progstate *savedprog;
 #ifdef Concurrent
        /* rtt doesn't like CURTSTATE() in declare clause */
-       struct threadstate *curtstate =
-                   (struct threadstate *) pthread_getspecific(tstate_key);
+       struct threadstate *curtstate = TSTATE_GET();
        struct b_coexpr *curtstate_ce = curtstate->c;
 #endif                                  /* Concurrent */
       }

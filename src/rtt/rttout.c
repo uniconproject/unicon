@@ -652,6 +652,31 @@ static int retval_dcltor(struct node *dcltor, int indent)
    }
 
 /*
+ * inline_cnv - the name to call for a conversion routine.  The common
+ *  numeric conversions have macros (CnvCInt and so on, in rmacros.h) that
+ *  handle a source already of the wanted type in line and call the
+ *  routine otherwise; most conversions in operators and functions find
+ *  their argument already converted.
+ */
+static char *inline_cnv(char *name)
+   {
+   static char *map[][2] = {
+      {"cnv_c_int", "CnvCInt"},
+      {"cnv_ec_int", "CnvECInt"},
+      {"cnv_eint", "CnvEInt"},
+      {"cnv_c_dbl", "CnvCDbl"},
+      {"def_c_int", "DefCInt"},
+      {"def_c_dbl", "DefCDbl"},
+      };
+   int i;
+
+   for (i = 0; i < sizeof(map) / sizeof(map[0]); i++)
+      if (strcmp(name, map[i][0]) == 0)
+         return map[i][1];
+   return name;
+   }
+
+/*
  * cnv_fnc - produce code to handle RTT cnv: and def: constructs.
  */
 static void cnv_fnc(struct token *t, int typcd, struct node *src, struct node *dflt,
@@ -678,7 +703,7 @@ static void cnv_fnc(struct token *t, int typcd, struct node *src, struct node *d
    *  with a default value, determine (through dflt_to_prt) if the
    *  default value is passed by-reference instead of by-value.
    */
-   prt_str(cnv_name(typcd, dflt, &dflt_to_ptr), indent);
+   prt_str(inline_cnv(cnv_name(typcd, dflt, &dflt_to_ptr)), indent);
    prt_str("(", indent);
 
    /*

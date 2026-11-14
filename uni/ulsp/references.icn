@@ -1,0 +1,134 @@
+#
+# references.icn: answer documentHighlight, references, prepareRename,
+# rename and, for names declared in the document, definition
+#
+# These use the document's scopes (scopes.icn), so they know which
+# occurrences of a name are the same variable. They only see the one
+# document: references to a global declared here may also be in other
+# files, and so only parameters, locals and statics can be renamed.
+#
+
+package ulsp
+
+import logger
+
+class ScopeHandler()
+
+   #
+   # The name at the request's position, or fail.
+   #
+   method occ_at(filehandler, params)
+      local d, pos
+      d := (\filehandler).getScopes() | fail
+      pos := params["position"] | fail
+      return d.at(pos["line"], pos["character"])
+   end
+
+   #
+   # textDocument/documentHighlight: every place in the document where
+   # the name at the position is used, or [].
+   #
+   method highlight(filehandler, params)
+      local d, o, x, L
+      L := []
+      o := occ_at(filehandler, params) | return L
+      d := filehandler.getScopes()
+      every x := d.all_like(o) do
+         put(L, table("range", d.range(x), "kind", if \x.decl then 3 else 2))
+      return L
+   end
+
+   #
+   # textDocument/references: Locations of the name at the position in
+   # this document, with its declaration if the client asks for it.
+   #
+   method references(filehandler, params, uri)
+      local d, o, x, L, with_decl
+      L := []
+      o := occ_at(filehandler, params) | return L
+      d := filehandler.getScopes()
+      with_decl := params["context"]["includeDeclaration"] === "__true__"
+      every x := d.all_like(o) do
+         if \with_decl | /x.decl then
+            put(L, table("uri", uri, "range", d.range(x)))
+      return L
+   end
+
+   #
+   # The Location where the name at the position is declared, if it is
+   # declared in this document; fails otherwise.
+   #
+   method definition(filehandler, params, uri)
+      local d, o, x
+      o := occ_at(filehandler, params) | fail
+      d := filehandler.getScopes()
+      every x := d.all_like(o) do
+         if \x.decl then
+            return table("uri", uri, "range", d.range(x))
+   end
+
+   #
+   # Why the name at o in the scopes d cannot be renamed, or fail if it
+   # can be.
+   #
+   method cannot_rename(d, o)
+      local n
+      if o.sym.kind == ("param" | "local" | "static") then {
+         if \d.unsafe[o.sym] then
+            return o.sym.name || " is also used " || d.unsafe[o.sym]
+         if n := d.left_out(o.sym) then
+            return o.sym.name || " is also on line " || n || ", which an $ifdef leaves out"
+         fail
+      }
+      return case o.sym.kind of {
+         "builtin": o.sym.name || " is a built-in function"
+         "other": o.sym.name || " is not declared in this file"
+         default: "only parameters, locals and statics can be renamed, as " ||
+            o.sym.name || " may be used in other files"
+      }
+   end
+
+   #
+   # textDocument/prepareRename: the range of the name and the name
+   # itself, or a string that says why it cannot be renamed, or fail if
+   # there is no name at the position.
+   #
+   method prepare_rename(filehandler, params)
+      local d, o
+      o := occ_at(filehandler, params) | fail
+      d := filehandler.getScopes()
+      return cannot_rename(d, o) |
+         table("range", d.range(o), "placeholder", o.sym.name)
+   end
+
+   #
+   # textDocument/rename: a WorkspaceEdit, or a string that says why the
+   # name cannot be renamed.
+   #
+   method rename(filehandler, params, uri)
+      local d, o, x, edits, new, why
+      o := occ_at(filehandler, params) | return "there is no name here to rename"
+      d := filehandler.getScopes()
+      if why := cannot_rename(d, o) then return why
+      new := params["newName"] | return "no new name was given"
+      new == o.sym.name & return table("changes", table(uri, []))
+      if not is_name(new) then
+         return image(new) || " is not a name that can be used in Unicon"
+      # the preprocessor would replace a name that is one of its symbols
+      if member(d.macros, new) then
+         return new || (if member(predefs(), new) then
+                           " is a symbol that the preprocessor defines"
+                        else " is a $define macro")
+      # the new name must not already mean something in the procedure
+      if member(\d.names[o.sym.owner], new) then
+         return new || " is already used in this procedure"
+      if \d.globals[new] then
+         return new || " is already declared in this file"
+      if proc(new, 0) then
+         return new || " is a built-in function"
+      edits := []
+      every x := d.all_like(o) do
+         put(edits, table("range", d.range(x), "newText", new))
+      return table("changes", table(uri, edits))
+   end
+end

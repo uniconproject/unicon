@@ -27,6 +27,7 @@ package parser
 link unigram, preproce, unilex, parserglobals
 
 global parse_messages   # the syntax errors that the last parse_unicon() met
+global parse_macros     # the names that were preprocessor symbols in it
 
 #
 # Parse the Unicon file fname, or the lines in the list fname, and return
@@ -39,8 +40,13 @@ procedure parse_unicon(fname)
    parse_messages := []
    parsingErrors := []
    /yyerror := parse_error
-   every yyin ||:= preprocessor(fname, predefs()) do
+   # the preprocessor forgets its symbols when it is done; note the ones
+   # it had, predefined or from $define, as it wrote each line
+   parse_macros := ::set()
+   every yyin ||:= preprocessor(fname, predefs()) do {
       yyin ||:= "\n"
+      every ::insert(parse_macros, ::key(preproc_sym_table | preproc_fun_table))
+      }
    every parse_error((!parsingErrors).errorMessage)
    yylex_reinit()
    yyout := &output

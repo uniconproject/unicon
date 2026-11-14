@@ -17,7 +17,8 @@ procedure lsp_init()
    lsp_msgs := []
    lsp_id := 0
    lsp_request("initialize", table("processId", &null, "rootUri", lsp_uri(""),
-                                   "capabilities", table()))
+                                   "capabilities", table("textDocument",
+                                      table("rename", table("prepareSupport", "__true__")))))
    lsp_notify("initialized", table())
 end
 
@@ -136,11 +137,19 @@ procedure lsp_canon(x)
          s := "{"
          sep := ""
          every k := !sort([: key(x) :]) do {
-            s ||:= sep || k || ": " || lsp_canon(x[k])
+            # a key may be a uri, as in a WorkspaceEdit
+            s ||:= sep || replace(k, lsp_uri(""), "$DIR/") || ": " || lsp_canon(x[k])
             sep := ", "
          }
          return s || "}"
       }
       default: return image(x)
    }
+end
+
+# the whole reply to request id: its result, or its error
+procedure lsp_reply(replies, id)
+   local m
+   every m := !replies do
+      if m["id"] === id then return \m["error"] | m["result"]
 end

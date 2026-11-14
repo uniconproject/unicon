@@ -21,6 +21,7 @@ package ulsp
 link regexp
 link io
 import json
+import logger
 import UniDoc
 
 import lang
@@ -34,6 +35,7 @@ class FileHandler(
    lsp_database,
    temp_file,
    file_text,     # the document's text, as the client last sent it
+   doc_scopes,    # a DocScopes for file_text, made when first needed
    links,
    imports,
    _package,
@@ -97,6 +99,20 @@ class FileHandler(
 
    method getContents()
       return \file_text
+   end
+
+   #
+   # What each name in the document refers to, as a DocScopes; fails if
+   # the document does not parse.
+   #
+   method getScopes()
+      local d
+      \file_text | fail
+      if (\doc_scopes).text === file_text then return doc_scopes
+      d := DocScopes(file_text, directory_of(uri))
+      if d.build() then
+         return doc_scopes := d
+      Logger.info("scopes: ", uri, " does not parse: ", !parse_messages | "")
    end
 
    method deleteTempFile()

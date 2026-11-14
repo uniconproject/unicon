@@ -28,6 +28,8 @@ class Server(
    foldingRangeHandler,
    formattingHandler,
    diagnosticsHandler,
+   scopeHandler,                 # documentHighlight, references, rename
+
    lsp_database,                  # table containing database of packages (i.e. main, graphics3d, etc.) and their files.
    jrpc_handler,
    stoploop,
@@ -62,6 +64,10 @@ class Server(
          "textDocument/documentSymbol" : symbolHelp(msg)
          "textDocument/foldingRange" : foldingRangeHelp(msg)
          "textDocument/formatting" : formattingHelp(msg)
+         "textDocument/documentHighlight" : highlightHelp(msg)
+         "textDocument/references" : referencesHelp(msg)
+         "textDocument/prepareRename" : prepareRenameHelp(msg)
+         "textDocument/rename" : renameHelp(msg)
          "shutdown" : shutdown(msg)
          default: {
             handle_unsupported(msg)
@@ -146,7 +152,10 @@ class Server(
 # Follow the LSP specifications on how to add a particular capability to your initialize string.
 
    method initialize(msg)
-      local capabilitiesTable
+      local capabilitiesTable, rename
+      # rename options may only be given to a client that can prepare a rename
+      rename := if (\(\(\(\msg.get_params())["capabilities"])["textDocument"])["rename"])["prepareSupport"] === "__true__"
+                then table("prepareProvider", "__true__") else "__true__"
 
       capabilitiesTable := [
          "capabilities": [
@@ -165,7 +174,10 @@ class Server(
             "definitionProvider": "__true__";
             "documentSymbolProvider": "__true__";
             "foldingRangeProvider": "__true__";
-            "documentFormattingProvider": "__true__"
+            "documentFormattingProvider": "__true__";
+            "documentHighlightProvider": "__true__";
+            "referencesProvider": "__true__";
+            "renameProvider": rename
          ];
          "processId": getpid()
       ]
@@ -291,10 +303,49 @@ class Server(
    method definitionHelp(msg)
       local filehandler_object, result
       filehandler_object := openFiles[\msg.get_param_uri()]
-      definitionHandler.setVariables(filehandler_object, msg.get_params())
-      if result := definitionHandler.getResult() then
-         \result["uri"] := path_to_uri(result["uri"])
+      # a name declared in this document, then the database
+      if not (result := scopeHandler.definition(filehandler_object, msg.get_params(), msg.get_param_uri())) then {
+         definitionHandler.setVariables(filehandler_object, msg.get_params())
+         if result := definitionHandler.getResult() then
+            \result["uri"] := path_to_uri(result["uri"])
+      }
       msg.make_result_response(result)
+      jrpc_handler.send_msg(msg)
+   end
+
+########################################################
+#    documentHighlight, references, prepareRename,     #
+#    rename                                            #
+########################################################
+
+   method highlightHelp(msg)
+      msg.make_result_response(scopeHandler.highlight(openFiles[\msg.get_param_uri()], msg.get_params()))
+      jrpc_handler.send_msg(msg)
+   end
+
+   method referencesHelp(msg)
+      msg.make_result_response(scopeHandler.references(openFiles[\msg.get_param_uri()], msg.get_params(),
+                                                       msg.get_param_uri()))
+      jrpc_handler.send_msg(msg)
+   end
+
+   method prepareRenameHelp(msg)
+      local result
+      result := scopeHandler.prepare_rename(openFiles[\msg.get_param_uri()], msg.get_params())
+      if type(result) == "string" then
+         msg.make_error_response(-32803, result)
+      else
+         msg.make_result_response(result)
+      jrpc_handler.send_msg(msg)
+   end
+
+   method renameHelp(msg)
+      local result
+      result := scopeHandler.rename(openFiles[\msg.get_param_uri()], msg.get_params(), msg.get_param_uri())
+      if type(result) == "string" then
+         msg.make_error_response(-32803, result)
+      else
+         msg.make_result_response(result)
       jrpc_handler.send_msg(msg)
    end
 
@@ -377,6 +428,7 @@ class Server(
       foldingRangeHandler := FoldingRangeHandler()
       formattingHandler := FormattingHandler()
       diagnosticsHandler := DiagnosticsHandler()
+      scopeHandler := ScopeHandler()
    end
 
    method connect()

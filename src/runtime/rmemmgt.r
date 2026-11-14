@@ -9,7 +9,12 @@
  */
 static void postqual            (dptr dp);
 static void markblock   (dptr dp);
+static void markblock1  (dptr dp);
 static void markptr             (union block **ptr);
+static void markptr1            (union block **ptr);
+static void markcoexpr          (struct b_coexpr *cp);
+static int  markdefer           (int kind, void *p);
+static void markdeferred        (void);
 static void sweep               (struct b_coexpr *ce);
 static void reclaim             (void);
 static void cofree              (void);
@@ -937,11 +942,106 @@ static void postqual(dptr dp)
    }
 
 /*
+ * Marking recurses into each block it finds, so a long chain of blocks,
+ *  such as a linked list of records or co-expressions that refer to one
+ *  another, needs a C stack frame per block.  That overflows the stack:
+ *  a thread's small stack quickly, and the main stack for a chain of a
+ *  million records.  Below MarkDepth levels, markblock() and markptr()
+ *  recurse as before; deeper than that, they put the work on a list,
+ *  which the outermost call works through before it returns.  The
+ *  collector runs alone, so the list and the depth need no locking.
+ */
+#define MarkDepth 64
+
+#define MarkDesc   0                    /* markblock(dptr) */
+#define MarkPtr    1                    /* markptr(union block **) */
+#define MarkCoexpr 2                    /* markcoexpr(struct b_coexpr *) */
+
+static int markdepth;                   /* current markblock/markptr depth */
+static struct markitem {
+   int kind;
+   void *p;
+   } *marklist;                         /* deferred marking */
+static word marknum, markmax;           /* items in use, items allocated */
+
+/*
+ * markdefer - add an item to the deferred list.  Fails if the list
+ *  cannot grow, in which case the caller marks the item at once.
+ */
+static int markdefer(int kind, void *p)
+   {
+   if (marknum == markmax) {
+      word n = markmax ? 2 * markmax : 1024;
+      struct markitem *ml;
+      ml = realloc(marklist, n * sizeof(struct markitem));
+      if (ml == NULL)
+         return 0;
+      marklist = ml;
+      markmax = n;
+      }
+   marklist[marknum].kind = kind;
+   marklist[marknum].p = p;
+   marknum++;
+   return 1;
+   }
+
+/*
+ * markdeferred - mark the items on the deferred list, including any that
+ *  are added while doing so.  The depth stays above zero meanwhile, so
+ *  the calls made here do not start working through the list themselves.
+ */
+static void markdeferred(void)
+   {
+   struct markitem mi;
+
+   markdepth++;
+   while (marknum > 0) {
+      mi = marklist[--marknum];
+      switch (mi.kind) {
+         case MarkDesc:   markblock((dptr)mi.p); break;
+         case MarkPtr:    markptr((union block **)mi.p); break;
+         case MarkCoexpr: markcoexpr((struct b_coexpr *)mi.p); break;
+         }
+      }
+   markdepth--;
+   }
+
+/*
  * markblock - mark each accessible block in the block region and build
  *  back-list of descriptors pointing to that block. (Phase I of garbage
- *  collection.)
+ *  collection.)  dp must stay where it is until marking ends: it is
+ *  either a root or a descriptor inside a block or on a stack.
  */
 static void markblock(dptr dp)
+   {
+   if (markdepth >= MarkDepth && markdefer(MarkDesc, dp))
+      return;
+   markdepth++;
+   markblock1(dp);
+   if (--markdepth == 0)
+      markdeferred();
+   }
+
+/*
+ * markcoexpr - mark a co-expression known only by its address.
+ *  Co-expressions do not take part in back-chaining, so a descriptor
+ *  made here for the duration of the call is enough.
+ */
+static void markcoexpr(struct b_coexpr *cp)
+   {
+   struct descrip d;
+
+   if (markdepth >= MarkDepth && markdefer(MarkCoexpr, cp))
+      return;
+   d.dword = D_Coexpr;
+   BlkLoc(d) = (union block *)cp;
+   markdepth++;
+   markblock1(&d);
+   if (--markdepth == 0)
+      markdeferred();
+   }
+
+static void markblock1(dptr dp)
    {
    register dptr dp1;
    register char *block, *endblock;
@@ -1031,7 +1131,6 @@ static void markblock(dptr dp)
       struct b_coexpr *cp;
       struct astkblk *abp;
       int i;
-      struct descrip adesc;
 
       /*
        * dp points to a co-expression block that has not been
@@ -1055,20 +1154,12 @@ static void markblock(dptr dp)
 #ifdef CoExpr
       /*
        * Mark the activators of this co-expression.   The activators are
-       *  stored as a list of addresses, but markblock requires the address
-       *  of a descriptor.  To accommodate markblock, the dummy descriptor
-       *  adesc is filled in with each activator address in turn and then
-       *  marked.  Since co-expressions and the descriptors that reference
-       *  them don't participate in the back-chaining scheme, it's ok to
-       *  reuse the descriptor in this manner.
+       *  stored as a list of addresses, which markcoexpr() accepts.
        */
       cp = (struct b_coexpr *)block;
-      adesc.dword = D_Coexpr;
       for (abp = cp->es_actstk; abp != NULL; abp = abp->astk_nxt) {
-         for (i = 1; i <= abp->nactivators; i++) {
-            BlkLoc(adesc) = (union block *)abp->arec[i-1].activator;
-            markblock(&adesc);
-            }
+         for (i = 1; i <= abp->nactivators; i++)
+            markcoexpr(abp->arec[i-1].activator);
          }
       if(BlkLoc(cp->freshblk) != NULL)
          markblock(&((struct b_coexpr *)block)->freshblk);
@@ -1180,6 +1271,16 @@ int is_in_a_block_region(char *block)
  */
 
 static void markptr(union block **ptr)
+   {
+   if (markdepth >= MarkDepth && markdefer(MarkPtr, ptr))
+      return;
+   markdepth++;
+   markptr1(ptr);
+   if (--markdepth == 0)
+      markdeferred();
+   }
+
+static void markptr1(union block **ptr)
    {
    register dptr dp;
    register char *block, *endblock;

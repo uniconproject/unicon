@@ -1,0 +1,45 @@
+#
+# tdeepgc.icn -- collect from a thread with a small C stack while a long
+#  chain of threads is live.  Each thread knows only the next one, so
+#  marking reaches the last thread through all the others.  The collector
+#  used to recurse once per thread and overflow the 64K stack.
+#
+procedure main(a)
+   local t, k
+   /*
+    * 1000 threads overflow a 64K C stack when marking recurses once per
+    * thread.  FreeBSD refuses more than kern.threads.max_threads_per_proc
+    * of them (1500 by default), so this stays under that limit.
+    */
+   k := integer(a[1]) | 1000
+   t := &null
+   every 1 to k do
+      t := spawn(create relay(t), 1K, 1K, 64K)
+   0 @>> t                      # the first thread collects
+   write("collected: ", <<@)
+   -1 @>> t                     # stop every thread
+   while wait(t)
+   write("chain of ", k, " threads")
+end
+
+procedure relay(nxt)
+   local v
+   while v := <<@ do {
+      if v = 0 then {
+         collect()
+         "yes" @>> &main
+         }
+      else {
+         /*
+          * Pass the stop along and join the next thread before
+          * returning, so the head's exit means the whole chain
+          * has shut down.
+          */
+         if \nxt then {
+            v @>> nxt
+            wait(nxt)
+            }
+         return
+         }
+      }
+end

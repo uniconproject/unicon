@@ -70,7 +70,8 @@ procedure run_threadring(argv)
 end
 
 procedure run_threadring_new(argv)
-local n, first_thread, prev_thread, number, new_thread
+local first_thread, prev_thread, number, new_thread
+   # n is global. The threads read it; a local here would leave them with &null.
    n := argv[1]
    first_thread :=  prev_thread := spawn(create threadfun2(1), 1K, 1K, 64K)
    signal(first_thread)

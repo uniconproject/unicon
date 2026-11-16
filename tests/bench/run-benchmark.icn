@@ -16,6 +16,8 @@
 #
 #   Compile and run without arguments to run entire suite or
 #   specify as runtime arguments which benchmarks to run.
+#   Each timed execution of the suite is a new interpreter, so a
+#   program does not collect in regions left by an earlier one.
 #
 ############################################################################
 
@@ -31,6 +33,15 @@ global output
 
 procedure main(argv)
    local rL, tL, rT, concurrent, tests := [], rTable := table()
+
+   #
+   # Child of the suite. Run one benchmark once and write
+   # cpu-ms, wall seconds, and wall microseconds to &output.
+   #
+   if argv[1] == "--run" then {
+      run_once(argv[2])
+      return
+      }
 
    concurrent := verify_concurrent()
 
@@ -51,35 +62,35 @@ procedure main(argv)
             write_header(1)
 
             writes(left("concord concord.data",31))
-            tL := getavgtimes(run_concord, "concord.data")
+            tL := isolated_avg("concord")
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
             } else writetime(tL[1], tL[2], tL[3])
 
             writes(left("deal 50000",31))
-            tL := getavgtimes(run_deal, 50000)
+            tL := isolated_avg("deal")
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
             } else writetime(tL[1], tL[2], tL[3])
 
             writes(left("ipxref ipxref.dat",31))
-            tL := getavgtimes(run_ipxref, "ipxref.dat")
+            tL := isolated_avg("ipxref")
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
             } else writetime(tL[1], tL[2], tL[3])
 
             writes(left("queens 12",31))
-            tL := getavgtimes(run_queens, 12)
+            tL := isolated_avg("queens")
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
             } else writetime(tL[1], tL[2], tL[3])
 
             writes(left("rsg rsg.data",31))
-            tL := getavgtimes(run_rsg, "rsg.data")
+            tL := isolated_avg("rsg")
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
@@ -87,14 +98,14 @@ procedure main(argv)
 
             rT := []
             writes(left("binary-trees 14",31))
-            tL:= getavgtimes(run_binarytrees_sequential,14)
+            tL:= isolated_avg("binary-trees-seq")
             put(rT, list_to_num(tL))
 #            insert(rTable, "binary-trees", tabulate_ratios(rT))
 
             if \concurrent then {
 #               writes(left("binary-trees 10 ",31))
                writestime(tL[1], tL[2], tL[3])
-               tL := getavgtimes(run_binarytrees_concurrent,14)
+               tL := isolated_avg("binary-trees-conc")
                put(rT, list_to_num(tL))
 #               insert(rTable, "binary-trees", tabulate_ratios(rT))
                writestime(tL[1], tL[2], tL[3],1)
@@ -105,26 +116,26 @@ procedure main(argv)
             if \concurrent then {
                writes(left("chameneos-redux 65000",43))
                writes(left("N/A", 3))
-               tL := getavgtimes(run_chameneos, 65000)
+               tL := isolated_avg("chameneos-redux")
                writetime(tL[1], tL[2], tL[3],1)
                }
 
             writes(left("fannkuch 9",31))
-            tL := getavgtimes(run_fannkuch, 9)
+            tL := isolated_avg("fannkuch")
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
             } else writetime(tL[1], tL[2], tL[3])
 
             writes(left("fasta 250000",31))
-            tL := getavgtimes(run_fasta, 250000)
+            tL := isolated_avg("fasta")
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
             } else writetime(tL[1], tL[2], tL[3])
 
             writes(left("k-nucleotide 150-thou.dat",31))
-            tL := getavgtimes(run_knucleotide, "150-thou.dat")
+            tL := isolated_avg("k-nucleotide")
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
@@ -133,12 +144,12 @@ procedure main(argv)
 
             rT := []
             writes(left("mandelbrot 750",31))
-            tL := getavgtimes(run_mandelbrot_sequential,750)
+            tL := isolated_avg("mandelbrot-seq")
             put(rT, list_to_num(tL))
 
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
-               tL := getavgtimes(run_mandelbrot_concurrent,750)
+               tL := isolated_avg("mandelbrot-conc")
                put(rT, list_to_num(tL))
 #               insert(rTable, "mandelbrot", tabulate_ratios(rT))
                writestime(tL[1], tL[2], tL[3],1)
@@ -147,21 +158,21 @@ procedure main(argv)
             else writetime(tL[1], tL[2], tL[3])
 
             writes(left("meteor-contest 600",31))
-            tL := getavgtimes(run_meteorcontest, 600)
+            tL := isolated_avg("meteor-contest")
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
             } else writetime(tL[1], tL[2], tL[3])
 
             writes(left("n-body 100000",31))
-            tL := getavgtimes(run_nbody, 100000)
+            tL := isolated_avg("n-body")
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
             } else writetime(tL[1], tL[2], tL[3])
 
             writes(left("pidigits 7000",31))
-            tL := getavgtimes(run_pidigits, 7000)
+            tL := isolated_avg("pidigits")
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
@@ -169,12 +180,12 @@ procedure main(argv)
 
             rT := []
             writes(left("regex-dna 700-thou.dat",31))
-            tL := getavgtimes(run_regexdna_sequential, "700-thou.dat")
+            tL := isolated_avg("regex-dna-seq")
             put(rT, list_to_num(tL))
 
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
-               tL := getavgtimes(run_regexdna_concurrent, "700-thou.dat")
+               tL := isolated_avg("regex-dna-conc")
                put(rT, list_to_num(tL))
 #               insert(rTable, "regex-dna", tabulate_ratios(rT))
                writestime(tL[1], tL[2], tL[3],1)
@@ -183,14 +194,14 @@ procedure main(argv)
             else writetime(tL[1], tL[2], tL[3])
 
             writes(left("reverse-complement 15-mil.dat",31))
-            tL := getavgtimes(run_reversecomplement, "15-mil.dat")
+            tL := isolated_avg("reverse-complement")
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
             } else writetime(tL[1], tL[2], tL[3])
 
             writes(left("spectral-norm 300",31))
-            tL := getavgtimes(run_spectralnorm, 300)
+            tL := isolated_avg("spectral-norm")
             if \concurrent then {
                writestime(tL[1], tL[2], tL[3])
                writes(right("N/A\n", 16))
@@ -199,7 +210,7 @@ procedure main(argv)
             if \concurrent then {
                writes(left("thread-ring 700000",43))
                writes(left("N/A", 3))
-               tL := getavgtimes(run_threadring, 700000)
+               tL := isolated_avg("thread-ring")
                writetime(tL[1], tL[2], tL[3],1)
                }
             if \concurrent then write_ratios(rTable)
@@ -339,5 +350,124 @@ procedure main(argv)
             }
          default : write("\ncannot run benchmark " || test || "\n")
          }
+      }
+end
+
+#
+# Run id once in this interpreter and write the times to &output.
+# Benchmark output goes to the nul file, as in the suite.
+#
+procedure run_once(id)
+   local t0, t1, w0, w1, sec, usec
+   output := open(NUL, "w") | stop("cannot open ", NUL)
+   w0 := gettimeofday()
+   t0 := &time
+   bench_call(id)
+   t1 := &time
+   w1 := gettimeofday()
+   sec := w1.sec - w0.sec
+   usec := w1.usec - w0.usec
+   if usec < 0 then {
+      sec -:= 1
+      usec +:= 1000000
+      }
+   write(&output, t1 - t0, " ", sec, " ", usec)
+   flush(&output)
+end
+
+#
+# Three fresh interpreters. The returned list matches getavgtimes,
+# so the suite's reporting is unchanged. The average is taken over
+# the whole wall time, not seconds and microseconds separately.
+#
+procedure isolated_avg(id)
+   local total := 0, us, sec, usec
+   every 1 to 3 do {
+      t := isolated_run(id)
+      total +:= t[1] * 1000000 + t[2]
+      }
+   us := total / 3
+   sec := integer(us / 1000000)
+   usec := integer(us % 1000000)
+   return [CpuToHrMinSec(0), WallToHrMinSec(sec), usec]
+end
+
+procedure isolated_run(id)
+   local f, line, cmd, sec, usec
+   #
+   # open(cmd, "p") passes the line to a shell. A path with a space
+   # would be split, and the child would never run. A name with no
+   # shell metacharacters is left alone so a bare name is still found
+   # on PATH.
+   #
+   cmd := quote_cmd(&progname) || " --run " || id
+   f := open(cmd, "p") | stop("no timing from ", cmd)
+   line := read(f) | stop("no timing from ", cmd)
+   close(f)
+   line ? {
+      tab(upto(' ') + 1) | stop("bad timing from ", cmd, ": ", line)
+      sec := integer(tab(upto(' '))) | stop("bad timing from ", cmd, ": ", line)
+      move(1)
+      usec := integer(tab(0)) | stop("bad timing from ", cmd, ": ", line)
+      }
+   return [sec, usec]
+end
+
+#
+# A single shell word for s. Characters that stay special inside
+# double quotes are escaped; the rest are protected by the quotes.
+#
+$ifdef _UNIX
+procedure quote_cmd(s)
+   local out, c
+   if not (s ? upto(' \t\n\\"$`!#&|;<>()*?[]~\'')) then
+      return s
+   out := "\""
+   s ? {
+      while c := tab(upto('\\"$`')) do
+         out ||:= c || "\\" || move(1)
+      out ||:= tab(0)
+      }
+   return out || "\""
+end
+$else
+procedure quote_cmd(s)
+   local out, c
+   if not (s ? upto(' \t\"&|<>^%')) then
+      return s
+   out := "\""
+   s ? {
+      while c := tab(upto('"')) do
+         out ||:= c || "\"" || move(1)
+      out ||:= tab(0)
+      }
+   return out || "\""
+end
+$endif
+
+procedure bench_call(id)
+   case id of {
+      "concord":              run_concord(["concord.data"])
+      "deal":                 run_deal([50000])
+      "ipxref":               run_ipxref(["ipxref.dat"])
+      "queens":               run_queens([12])
+      "rsg":                  run_rsg(["rsg.data"])
+      "binary-trees-seq":     run_binarytrees_sequential([14])
+      "binary-trees-conc":    run_binarytrees_concurrent([14])
+      "chameneos-redux":      run_chameneos([65000])
+      "fannkuch":             run_fannkuch([9])
+      "fasta":                run_fasta([250000])
+      "k-nucleotide":         run_knucleotide(["150-thou.dat"])
+      "mandelbrot-seq":       run_mandelbrot_sequential([750])
+      "mandelbrot-conc":      run_mandelbrot_concurrent([750])
+      "meteor-contest":       run_meteorcontest([600])
+      "n-body":               run_nbody([100000])
+      "pidigits":             run_pidigits([7000])
+      "regex-dna-seq":        run_regexdna_sequential(["700-thou.dat"])
+      "regex-dna-conc":       run_regexdna_concurrent(["700-thou.dat"])
+      "reverse-complement":   run_reversecomplement(["15-mil.dat"])
+      "spectral-norm":        run_spectralnorm([300])
+      "thread-ring":          run_threadring([700000])
+      default:                stop("unknown benchmark ", image(id))
       }
 end

@@ -197,18 +197,25 @@ dptr field_argp;                        /* see comment in imisc.r/Ofield() */
 
 /*
  * Setup_Op sets things up for a call to the C function for an operator.
+ * Failure, return, and removal of an operator read lastev and lastdesc,
+ * so those are saved when any of those events is enabled.  Only the
+ * call event itself is emitted when e is enabled.
  */
-#begdef Setup_Op(nargs,e)
+#begdef Setup_Op(nargs, e, efail, eret, erem)
 #ifdef MultiProgram
+#if e || efail || eret || erem
    lastev = E_Operator;
    value_tmp.dword = D_Proc;
    value_tmp.vword.bptr = (union block *)&op_tbl[lastop - 1];
    lastdesc = value_tmp;
+#if e
    InterpEVValD(&value_tmp, e);
    /*
    EVValDEx(&value_tmp, e, word mylastop, mylastop=lastop, lastop=mylastop);
    */
+#endif                                  /* e */
    value_tmp = nulldesc;
+#endif                                  /* e || efail || eret || erem */
 #endif                                  /* MultiProgram */
    rargp = (dptr)(rsp - 1) - nargs;
    xargp = rargp;
@@ -1053,38 +1060,38 @@ L_astatic:
          case Op_Number:        /* +e */
          case Op_Refresh:       /* ^e */
          case Op_Size:          /* *e */
-            Setup_Op(1, e_ocall);
+            Setup_Op(1, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(1);
             DerefArg(1);
             Call_Cond(e_ofail);
 
          case Op_Value:         /* .e */
-            Setup_Op(1, e_ocall);
+            Setup_Op(1, e_ocall, e_ofail, e_oret, e_orem);
             DerefArg(1);
             Call_Cond(e_ofail);
 
          case Op_Nonnull:       /* \e */
          case Op_Null:          /* /e */
-            Setup_Op(1, e_ocall);
+            Setup_Op(1, e_ocall, e_ofail, e_oret, e_orem);
             Call_Cond(e_ofail);
 
          case Op_Random:        /* ?e */
             PushNull;
-            Setup_Op(2, e_ocall)
+            Setup_Op(2, e_ocall, e_ofail, e_oret, e_orem)
             HandleOVLD(1);
             Call_Cond(e_ofail)
 
                                 /* Generative unary operators */
 
          case Op_Tabmat:        /* =e */
-            Setup_Op(1, e_ocall);
+            Setup_Op(1, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(1);
             DerefArg(1);
             Call_Gen;
 
          case Op_Bang:          /* !e */
             PushNull;
-            Setup_Op(2, e_ocall);
+            Setup_Op(2, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(1);
             Call_Gen;
 
@@ -1115,7 +1122,7 @@ L_astatic:
          case Op_Numle:         /* e1 <= e2 */
          case Op_Numne:         /* e1 ~= e2 */
          case Op_Numlt:         /* e1 < e2 */
-            Setup_Op(2, e_ocall);
+            Setup_Op(2, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(2);
             DerefArg(1);
             DerefArg(2);
@@ -1125,47 +1132,47 @@ L_astatic:
          case Op_RcvBk:         /* e1 <<@ e2 */
          case Op_Snd:           /* e1 @> e2 */
          case Op_SndBk:         /* e1 @>> e2 */
-            Setup_Op(2, e_ocall);
+            Setup_Op(2, e_ocall, e_ofail, e_oret, e_orem);
             DerefArg(1);
             DerefArg(2);
             Call_Cond(e_ofail);
 
          case Op_Asgn:          /* e1 := e2 */
-            Setup_Op(2, e_ocall);
+            Setup_Op(2, e_ocall, e_ofail, e_oret, e_orem);
             Call_Cond(e_ofail);
 
          case Op_Swap:          /* e1 :=: e2 */
             PushNull;
-            Setup_Op(3, e_ocall);
+            Setup_Op(3, e_ocall, e_ofail, e_oret, e_orem);
             Call_Cond(e_ofail);
 
          case Op_Subsc:         /* e1[e2] */
             PushNull;
-            Setup_Op(3, e_ocall);
+            Setup_Op(3, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(2);
             Call_Cond(e_ofail);
                                 /* Generative binary operators */
 
          case Op_Rasgn:         /* e1 <- e2 */
-            Setup_Op(2, e_ocall);
+            Setup_Op(2, e_ocall, e_ofail, e_oret, e_orem);
             Call_Gen;
 
          case Op_Rswap:         /* e1 <-> e2 */
             PushNull;
-            Setup_Op(3, e_ocall);
+            Setup_Op(3, e_ocall, e_ofail, e_oret, e_orem);
             Call_Gen;
 
                                 /* Conditional ternary operators */
 
          case Op_Sect:          /* e1[e2:e3] */
             PushNull;
-            Setup_Op(4, e_ocall);
+            Setup_Op(4, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(4);
             Call_Cond(e_ofail);
                                 /* Generative ternary operators */
 
          case Op_Toby:          /* e1 to e2 by e3 */
-            Setup_Op(3, e_ocall);
+            Setup_Op(3, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(3);
             DerefArg(1);
             DerefArg(2);
@@ -2497,6 +2504,7 @@ C_rtn_term:
 
 #ifdef MultiProgram
 return_term:
+#if e_fret || e_oret
          if (lastev == E_Function) {
 #if e_fret
             value_tmp = *(dptr)(rsp - 1);       /* argument */
@@ -2515,6 +2523,7 @@ return_term:
 
             value_tmp = nulldesc;
             }
+#endif                                  /* e_fret || e_oret */
 #endif                                  /* MultiProgram */
 
          continue;

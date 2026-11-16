@@ -1,0 +1,39 @@
+#
+# deepgc.icn -- collect while long chains of blocks are live, then check
+#  that every block survived with its contents.  Marking such a chain
+#  goes deeper than the collector recurses and defers the rest.
+#
+record node(val, nxt)
+
+procedure main(a)
+   local n, head, L, p, i, s, t, c
+
+   n := integer(a[1]) | 100000
+
+   # a linked list of records
+   every i := 1 to n do head := node(i, head)
+
+   # nested lists, each holding the one before
+   L := []
+   every i := 1 to n / 10 do L := [i, L]
+
+   # a chain of tables
+   t := &null
+   every i := 1 to n / 10 do t := table(t)
+
+   collect()
+
+   s := 0
+   c := 0
+   p := head
+   while \p do { s +:= p.val; c +:= 1; p := p.nxt }
+   write("records: ", c, " sum ok: ", if s = n * (n + 1) / 2 then "yes" else "no")
+
+   c := 0
+   while *L > 0 do { c +:= 1; L := L[2] }
+   write("lists: ", c)
+
+   c := 0
+   while \t do { c +:= 1; t := t[0] }
+   write("tables: ", c)
+end

@@ -228,9 +228,12 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
 #endif                                  /* WordBits == 64 */
        ) {
       p->Interp = interp_1;
+      /* The pointer is stored first, so a loop that sees the bit sees interp_1. */
+      ATOMIC_OR(p->attention, ATTN_INTERP);
       }
    else {
       p->Interp = interp_0;
+      ATOMIC_AND(p->attention, ~ATTN_INTERP);
       }
 }
 

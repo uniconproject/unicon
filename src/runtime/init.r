@@ -1974,6 +1974,7 @@ void init_progstate(struct progstate *pstate){
    pstate->Cptable = cptable_0;
    pstate->EVstralc = EVStrAlc_0;
    pstate->Interp = interp_0;
+   ATOMIC_STORE(pstate->attention, 0);
    pstate->Cnvcset = cnv_cset_0;
    pstate->Cnvint = cnv_int;
    pstate->Cnvreal = cnv_real;

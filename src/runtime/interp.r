@@ -655,17 +655,52 @@ int interp_x(int fsig,dptr cargp)
 
 #ifdef MultiProgram
       /*
-       *  If the TP (the child program) received a signal that it does
-       *  not have a handler for, it reports it back to its parent.
-       *  The reported event is E_Signal with a string name of that signal
+       * One load covers a signal the child could not handle and, in the
+       * uninstrumented interpreter, a request to switch to interp_1.
+       * thread_call is tested on its own later in the loop.
        */
-      if (curpstate->signal > 0) {
-         struct descrip val;
-         StrLoc(val) = si_i2s(signalnames, curpstate->signal);
-         StrLen(val) = strlen(StrLoc(val));
-         InterpEVValD(&val,E_Signal);
-         curpstate->signal = 0;
+      {
+      int pending = ATOMIC_LOAD_ACQUIRE(curpstate->attention);
+#if e_line || e_loc
+      /* Already instrumented.  ATTN_INTERP stays set for the session. */
+      pending &= ATTN_SIGNAL;
+#endif                                  /* e_line || e_loc */
+      if (pending) {
+         /*
+          * Report E_Signal to the parent, with the signal name.
+          */
+         if (pending & ATTN_SIGNAL) {
+            if (curpstate->signal > 0) {
+               struct descrip val;
+               StrLoc(val) = si_i2s(signalnames, curpstate->signal);
+               StrLen(val) = strlen(StrLoc(val));
+               InterpEVValD(&val,E_Signal);
+               curpstate->signal = 0;
+               }
+            ATOMIC_AND(curpstate->attention, ~ATTN_SIGNAL);
+            /* A signal that landed after the clear still has to be seen. */
+            if (curpstate->signal > 0)
+               ATOMIC_OR(curpstate->attention, ATTN_SIGNAL);
+            }
+#if e_line || e_loc
+#else                                   /* e_line || e_loc */
+         /*
+          * Uninstrumented, but monitoring is now on.  Interp is stored
+          * before the bit, so a set bit means interp_1 unless monitoring
+          * has since been turned off.
+          */
+         if (curpstate->Interp == interp_1) {
+            ilevel--;
+            ExInterp_sp;
+#ifdef TSTATARG
+            return interp_1(0, cargp, CURTSTATARG);
+#else                                    /* TSTATARG */
+            return interp_1(0, cargp);
+#endif                                   /* TSTATARG */
+            }
+#endif                                  /* e_line || e_loc */
          }
+      }
 #endif                                  /* MultiProgram */
 
 #if HAVE_PROFIL && e_tick
@@ -765,22 +800,6 @@ int interp_x(int fsig,dptr cargp)
             }
         }
       }
-#else                                   /* E_Line || E_Loc */
-#ifdef MultiProgram
-      /*
-       * We are uninstrumented code, but the program should be instrumented.
-       * Switch to the instrumented version of the interpreter.
-       */
-      if (curpstate->Interp == interp_1) {
-         ilevel--;
-         ExInterp_sp;
-#ifdef TSTATARG
-         return interp_1(0, cargp, CURTSTATARG);
-#else                                    /* TSTATARG */
-         return interp_1(0, cargp);
-#endif                                   /* TSTATARG */
-         }
-#endif                                  /* MultiProgram */
 #endif                                  /* E_Line || E_Loc */
 
       lastop = GetOp;           /* Instruction fetch */

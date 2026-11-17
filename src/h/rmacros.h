@@ -732,6 +732,8 @@
    #define ATOMIC_STORE(x, v)           atomic_store_explicit(&(x), (v), memory_order_relaxed)
    #define ATOMIC_STORE_RELEASE(x, v)   atomic_store_explicit(&(x), (v), memory_order_release)
    #define ATOMIC_ADD(x, v)             atomic_fetch_add_explicit(&(x), (v), memory_order_relaxed)
+   #define ATOMIC_OR(x, v)              ((void)atomic_fetch_or_explicit(&(x), (v), memory_order_release))
+   #define ATOMIC_AND(x, v)             ((void)atomic_fetch_and_explicit(&(x), (v), memory_order_release))
    #define ATOMIC_LOAD_SC(x)            atomic_load(&(x))
    #define ATOMIC_STORE_SC(x, v)        atomic_store(&(x), (v))
    #define ATOMIC_ADD_SC(x, v)          atomic_fetch_add(&(x), (v))
@@ -747,6 +749,8 @@
    #define ATOMIC_STORE(x, v)           ((x) = (v))
    #define ATOMIC_STORE_RELEASE(x, v)   ((x) = (v))
    #define ATOMIC_ADD(x, v)             ((x) += (v), (x) - (v))
+   #define ATOMIC_OR(x, v)              ((void)((x) |= (v)))
+   #define ATOMIC_AND(x, v)             ((void)((x) &= (v)))
    #define ATOMIC_LOAD_SC(x)            (x)
    #define ATOMIC_STORE_SC(x, v)        ((x) = (v))
    #define ATOMIC_ADD_SC(x, v)          ((x) += (v), (x) - (v))
@@ -755,6 +759,14 @@
    #define SERIAL_LOCK(mtx)             MUTEX_LOCKID(mtx)
    #define SERIAL_UNLOCK(mtx)           MUTEX_UNLOCKID(mtx)
 #endif                                  /* Concurrent && HAVE_C11_ATOMICS */
+
+/*
+ * Bits in progstate.attention.  The interpreter loads that one word per
+ * instruction.  A pending signal and a switch to the instrumented
+ * interpreter set their own bits.  thread_call is a separate global.
+ */
+#define ATTN_SIGNAL 1
+#define ATTN_INTERP 2
 
 /*
  * Serial numbers.  Every list, set, table, record, pattern and

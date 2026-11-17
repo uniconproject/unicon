@@ -833,6 +833,12 @@ struct progstate {
    /*int Inited; not used anymore */
    int signal;
    /*
+    * ATTN_SIGNAL when signal is waiting to be reported, ATTN_INTERP when
+    * the running interpreter should switch to interp_1.  The loop tests
+    * this word once.  thread_call is not part of it.
+    */
+   AtomicInt attention;
+   /*
     * trapped variable keywords' values
     */
    struct descrip Kywd_err;          /* Probably mutex. not important now */

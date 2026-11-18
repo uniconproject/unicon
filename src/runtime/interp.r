@@ -417,6 +417,7 @@ deliberate syntax error
  * DerefArg(n) dereferences the nth argument.
  */
 #define DerefArg(n)   Deref(rargp[n])
+#define DerefArg2Proto(d) if (Var(d)) { ExInterp_sp; deref(&(d), &(d)); }
 
 /*
  * For the sake of efficiency, the stack pointer is kept in a register
@@ -1157,6 +1158,24 @@ L_astatic:
             Call_Cond(e_ofail);
 
          case Op_Asgn:          /* e1 := e2 */
+#if !e_ocall
+            {
+            /* PROTO: plain variable := value, without calling Oasgn */
+            dptr ap = (dptr)(rsp - 1) - 2;
+            if (Var(ap[1]) && !(ap[1].dword & F_Typecode) &&
+                Offset(ap[1]) == 0
+#ifdef MultiProgram
+                && curpstate->eventmask.dword == D_Null
+#endif                                  /* MultiProgram */
+                ) {
+               DerefArg2Proto(ap[2]);
+               *VarLoc(ap[1]) = ap[2];
+               ap[0] = ap[1];
+               rsp = (word *)ap + 1;
+               break;
+               }
+            }
+#endif
             Setup_Op(2, e_ocall, e_ofail, e_oret, e_orem);
             Call_Cond(e_ofail);
 

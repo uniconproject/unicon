@@ -649,12 +649,14 @@
 #define CnvECInt(s, d) ({ \
    __typeof__(s) _s = (s); \
    __typeof__(d) _d = (d); \
-   (_s->dword == D_Integer) ? (*_d = IntVal(*_s), 1) : cnv_ec_int(_s, _d); \
+   (_s->dword == D_Integer) ? (*_d = IntVal(*_s), 1) : \
+   (_s->dword == D_Real) ? 0 : cnv_ec_int(_s, _d); \
    })
 #define CnvEInt(s, d) ({ \
    __typeof__(s) _s = (s); \
    __typeof__(d) _d = (d); \
-   (_s->dword == D_Integer) ? (*_d = *_s, 1) : cnv_eint(_s, _d); \
+   (_s->dword == D_Integer) ? (*_d = *_s, 1) : \
+   (_s->dword == D_Real) ? 0 : cnv_eint(_s, _d); \
    })
 #define DefCInt(s, df, d) ({ \
    __typeof__(s) _s = (s); \

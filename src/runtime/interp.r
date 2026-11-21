@@ -1185,6 +1185,63 @@ L_astatic:
             Call_Cond(e_ofail);
 
          case Op_Subsc:         /* e1[e2] */
+#if !e_ocall
+            {
+            /*
+             * PROTO: an unshared list or array subscripted by an in-range
+             *  integer, without calling Osubsc.  Mirrors the list case of
+             *  subsc in oref.r; everything else falls through to it.
+             */
+            dptr ap = (dptr)(rsp - 1) - 2;
+            struct descrip lx, ly;
+            lx = ap[1]; ly = ap[2];
+            if (Var(lx) && !(lx.dword & F_Typecode) && Offset(lx) == 0)
+               lx = *VarLoc(lx);
+            if (Var(ly) && !(ly.dword & F_Typecode) && Offset(ly) == 0)
+               ly = *VarLoc(ly);
+            if (lx.dword == D_List && ly.dword == D_Integer
+#ifdef MultiProgram
+                && curpstate->eventmask.dword == D_Null
+#endif                                  /* MultiProgram */
+#ifdef Concurrent
+                && !BlkD(lx, List)->shared
+#endif                                  /* Concurrent */
+                ) {
+               struct b_list *lp = BlkD(lx, List);
+               word i = IntVal(ly), size = lp->size;
+               if (i <= 0)
+                  i += size + 1;
+               if (i >= 1 && i <= size) {
+                  union block *bp = lp->listhead;
+                  word *ep;
+#ifdef Arrays
+                  if (lp->listtail == NULL) {
+                     if (BlkType(bp) == T_Realarray)
+                        ep = (word *)&((struct b_realarray *)bp)->a[i-1];
+                     else
+                        ep = (word *)&((struct b_intarray *)bp)->a[i-1];
+                     }
+                  else
+#endif                                  /* Arrays */
+                     {
+                     word j = 1;
+                     while (i >= j + bp->Lelem.nused) {
+                        j += bp->Lelem.nused;
+                        bp = bp->Lelem.listnext;
+                        }
+                     i += bp->Lelem.first - j;
+                     if (i >= bp->Lelem.nslots)
+                        i -= bp->Lelem.nslots;
+                     ep = (word *)&bp->Lelem.lslots[i];
+                     }
+                  ap[0].vword.descptr = (dptr)bp;
+                  ap[0].dword = D_Var + (ep - (word *)bp);
+                  rsp = (word *)ap + 1;
+                  break;
+                  }
+               }
+            }
+#endif
             PushNull;
             Setup_Op(3, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(2);

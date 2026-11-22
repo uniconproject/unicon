@@ -1380,13 +1380,13 @@ char* print_sockaddr(struct sockaddr* sa, char* buf, int buflen ) {
 /*
  * get port, IPv4 or IPv6:
  */
-short get_sa_port(struct sockaddr *sa)
+int get_sa_port(struct sockaddr *sa)
 {
-    if (sa->sa_family == AF_INET) {
-        return (((struct sockaddr_in*)sa)->sin_port);
-    }
-
-    return (((struct sockaddr_in6*)sa)->sin6_port);
+    if (sa->sa_family == AF_INET)
+        return ntohs(((struct sockaddr_in*)sa)->sin_port);
+    if (sa->sa_family == AF_INET6)
+        return ntohs(((struct sockaddr_in6*)sa)->sin6_port);
+    return 0;
 }
 
 char* print_sockaddrport(struct sockaddr* sa, char* buf, int buflen ) {

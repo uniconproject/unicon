@@ -105,6 +105,18 @@
    #define Fs_Pty       040000000            /* pty */
 #endif
 
+/*
+ * Field indexes of the posix_message record returned by receive().
+ * Keep in step with rec_structor() in rposix.r.
+ */
+#define PMSG_ADDR       0       /* peer "host:port" (datagrams) */
+#define PMSG_MSG        1       /* payload */
+#define PMSG_SADDR      2       /* source address */
+#define PMSG_DADDR      3       /* destination address */
+#define PMSG_TTL        4       /* TTL / hop limit */
+#define PMSG_PROTO      5       /* IP protocol number */
+#define PMSG_NFIELDS    6
+
 
 /*
  * Thread status flags in status field of coexpr blocks.

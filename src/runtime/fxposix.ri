@@ -2230,7 +2230,7 @@ function{0,1} receive(f)
    body {
       tended struct b_record *rp;
       static dptr constr;
-      int nfields, status, ret;
+      int nfields, status, ret, i;
 
       status = BlkD(f,File)->status;
       if (!(status & Fs_Socket))
@@ -2242,6 +2242,14 @@ function{0,1} receive(f)
 
       nfields = (int) BlkD(*constr,Proc)->nfields;
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+      /*
+       * alcrecd() does not initialize the fields.  Make every one &null
+       * before anything else allocates, so a garbage collection never
+       * sees a stale descriptor and fields that do not apply to this
+       * kind of file stay &null.
+       */
+      for (i = 0; i < nfields; i++)
+         rp->fields[i] = nulldesc;
 
 #if HAVE_LIBSSH
       if (status & Fs_SSH) {
@@ -2294,17 +2302,18 @@ function{0,1} receive(f)
             case SSH_CHUNK_STDERR: tag = "stderr"; break;
             default:               tag = "exit";   break;
             }
-         StrLoc(rp->fields[0]) = tag;
-         StrLen(rp->fields[0]) = strlen(tag);
+         StrLoc(rp->fields[PMSG_ADDR]) = tag;
+         StrLen(rp->fields[PMSG_ADDR]) = strlen(tag);
          len = ck->len - ck->off;
-         Protect(StrLoc(rp->fields[1]) = alcstr(ck->data + ck->off, len),
+         Protect(StrLoc(rp->fields[PMSG_MSG]) =
+                    alcstr(ck->data + ck->off, len),
                  {
 #ifdef Concurrent
                   MUTEX_UNLOCKID(ssh_mtx);
 #endif                                  /* Concurrent */
                   free(ck); runerr(0);
                   });
-         StrLen(rp->fields[1]) = len;
+         StrLen(rp->fields[PMSG_MSG]) = len;
          free(ck);
 #ifdef Concurrent
          MUTEX_UNLOCKID(ssh_mtx);

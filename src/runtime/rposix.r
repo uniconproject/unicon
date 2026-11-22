@@ -775,7 +775,8 @@ dptr rec_structor(char *name)
          AsgnCStr(fields[4], "ttl");
          AsgnCStr(fields[5], "proto");
          posix_message.dword = D_Proc;
-         posix_message.vword.bptr = (union block *)dynrecord(&s, fields, 6);
+         posix_message.vword.bptr = (union block *)dynrecord(&s, fields,
+                                                             PMSG_NFIELDS);
          }
       return &posix_message;
       }
@@ -3640,7 +3641,8 @@ int sock_send(char *adr, char *msg, int msglen, int af_fam)
 /*
  * Used by function receive() to receive a UDP or raw datagram into a
  * record.  This allocates from the heaps, so rp must point at a tended
- * pointer.  For IPPROTO_ICMP raw sockets the message typically includes
+ * pointer, and receive() must already have set every field of the record
+ * to &null.  For IPPROTO_ICMP raw sockets the message typically includes
  * the IP header followed by the ICMP payload.
  *
  * MSG_PEEK into a 2K stack buffer (typical MTU-sized datagrams), then
@@ -3707,27 +3709,26 @@ int sock_recv(int s, struct b_record **rp)
       return 0;
       }
 
-   StrLen((*rp)->fields[1]) = msglen;
-   StrLoc((*rp)->fields[1]) = alcstr(buf, msglen);
+   {
+      char *p = alcstr(buf, msglen);
+      StrLoc((*rp)->fields[PMSG_MSG]) = p;
+      StrLen((*rp)->fields[PMSG_MSG]) = msglen;
+   }
 
-   (*rp)->fields[2] = nulldesc;          /* saddr */
-   (*rp)->fields[3] = nulldesc;          /* daddr */
-   (*rp)->fields[4] = nulldesc;          /* ttl */
-   (*rp)->fields[5] = nulldesc;          /* proto */
    if (s_type == SOCK_RAW && msglen >= 20 && ((buf[0] >> 4) & 0xf) == 4) {
       char ip[INET_ADDRSTRLEN];
       struct in_addr in;
-      MakeInt((unsigned char)buf[8], &(*rp)->fields[4]);
-      MakeInt((unsigned char)buf[9], &(*rp)->fields[5]);
+      MakeInt((unsigned char)buf[8], &(*rp)->fields[PMSG_TTL]);
+      MakeInt((unsigned char)buf[9], &(*rp)->fields[PMSG_PROTO]);
       memcpy(&in, buf + 12, 4);
       if (inet_ntop(AF_INET, &in, ip, sizeof(ip)) != NULL)
-         String((*rp)->fields[2], ip);
+         String((*rp)->fields[PMSG_SADDR], ip);
       memcpy(&in, buf + 16, 4);
       if (inet_ntop(AF_INET, &in, ip, sizeof(ip)) != NULL)
-         String((*rp)->fields[3], ip);
+         String((*rp)->fields[PMSG_DADDR], ip);
       }
    else if (print_sockaddr(sa, addrbuf, INET6_ADDRSTRLEN) != NULL)
-      String((*rp)->fields[2], addrbuf);
+      String((*rp)->fields[PMSG_SADDR], addrbuf);
    free(heap);
 
    s = getnameinfo(sa, addrlen, host,
@@ -3743,7 +3744,7 @@ int sock_recv(int s, struct b_record **rp)
      snprintf(addrstr, sizeof(addrstr), "%s:%d", addrbuf, get_sa_port(sa));
    }
 
-   String((*rp)->fields[0], addrstr);
+   String((*rp)->fields[PMSG_ADDR], addrstr);
 
    return 1;
 }

@@ -101,9 +101,9 @@
       if ((!is:null(mycurpstate->valuemask)) &&
           (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
          break;
-      /* exint; */
+      exint;
       actparent(event);
-      /* entint; */
+      entint;
    } while (0)
 #enddef                                 /* RealEVValD */
 

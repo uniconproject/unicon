@@ -2,6 +2,11 @@
 # paths that are modified in the pull request.
 #
 # Labels are configured in .github/labeler.yml
+#
+# pull_request_target is required so a pull request from a fork can be
+# labeled: pull_request gives that token no write access. This file does
+# not check out the pull request. The repository Actions policy must
+# allow this event or GitHub blocks the workflow after 2026-12-02.
 
 name: Labeler
 on:
@@ -16,7 +21,7 @@ jobs:
       pull-requests: write
 
     steps:
-    - uses: actions/labeler@v5
+    - uses: actions/labeler@v6.2.0
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
         sync-labels: false

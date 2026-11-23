@@ -56,10 +56,10 @@ word lastop;                    /* Last operator evaluated */
  * in every build, so these are not under Concurrent.
  */
 #ifdef ThreadSanitizer
-#define GetOp (word)__atomic_load_n(ipc.op++, __ATOMIC_ACQUIRE)
+#define GetOp (word)__atomic_load_n(ripc.op++, __ATOMIC_ACQUIRE)
 #define PublishOp(p, x) __atomic_store_n((p), (x), __ATOMIC_RELEASE)
 #else                                   /* ThreadSanitizer */
-#define GetOp (word)(*ipc.op++)
+#define GetOp (word)(*ripc.op++)
 #define PublishOp(p, x) do { ATOMIC_FENCE_RELEASE(); *(p) = (x); } while (0)
 #endif                                  /* ThreadSanitizer */
 
@@ -72,7 +72,7 @@ struct pf_marker *pfp = NULL;   /* Procedure frame pointer */
 struct ef_marker *efp;          /* Expression frame pointer */
 struct gf_marker *gfp;          /* Generator frame pointer */
 inst ipc;                       /* Interpreter program counter */
-inst oldipc;                    /* the previous ipc, fix returned line zero */
+inst oldipc;                    /* the previous ripc, fix returned line zero */
 word *sp = NULL;                /* Stack pointer */
 int ilevel;
 #ifndef StackCheck
@@ -197,18 +197,25 @@ dptr field_argp;                        /* see comment in imisc.r/Ofield() */
 
 /*
  * Setup_Op sets things up for a call to the C function for an operator.
+ * Failure, return, and removal of an operator read lastev and lastdesc,
+ * so those are saved when any of those events is enabled.  Only the
+ * call event itself is emitted when e is enabled.
  */
-#begdef Setup_Op(nargs,e)
+#begdef Setup_Op(nargs, e, efail, eret, erem)
 #ifdef MultiProgram
+#if e || efail || eret || erem
    lastev = E_Operator;
    value_tmp.dword = D_Proc;
    value_tmp.vword.bptr = (union block *)&op_tbl[lastop - 1];
    lastdesc = value_tmp;
+#if e
    InterpEVValD(&value_tmp, e);
    /*
    EVValDEx(&value_tmp, e, word mylastop, mylastop=lastop, lastop=mylastop);
    */
+#endif                                  /* e */
    value_tmp = nulldesc;
+#endif                                  /* e || efail || eret || erem */
 #endif                                  /* MultiProgram */
    rargp = (dptr)(rsp - 1) - nargs;
    xargp = rargp;
@@ -230,7 +237,7 @@ dptr field_argp;                        /* see comment in imisc.r/Ofield() */
 #enddef                                 /* Setup_Arg */
 
 #begdef Call_Cond(e)
-if (((int (*)(dptr))*(optab[lastop]))(rargp) == A_Resume) {
+if ((signal = ((int (*)(dptr))*(optab[lastop]))(rargp), ripc = IPC_MEM, signal) == A_Resume) {
      InterpEVValD(&lastdesc, e);
      goto efail_noev;
    }
@@ -358,6 +365,7 @@ if (((int (*)(dptr))*(optab[lastop]))(rargp) == A_Resume) {
  */
 #begdef Call_Gen
    signal = ((int (*)(dptr))*(optab[lastop]))(rargp);
+   ripc = IPC_MEM;
    goto C_rtn_term;
 #enddef                                 /* Call_Gen */
 
@@ -365,9 +373,9 @@ if (((int (*)(dptr))*(optab[lastop]))(rargp) == A_Resume) {
  * GetWord fetches the next icode word.  PutWord(x) stores x at the current
  * icode word.
  */
-#define GetWord (*ipc.opnd++)
-#define PutWord(x) ipc.opnd[-1] = (x)
-#define PutOp(x) ipc.op[-1] = (x)
+#define GetWord (*ripc.opnd++)
+#define PutWord(x) ripc.opnd[-1] = (x)
+#define PutOp(x) ripc.op[-1] = (x)
 
 /*
  * "Semi-atomic" (thread-safe?) self-modifying instruction rewrite.
@@ -396,11 +404,11 @@ if (((int (*)(dptr))*(optab[lastop]))(rargp) == A_Resume) {
 
 #if WordBits == IntBits
 #begdef PutInstr(x,y,op_offset)
-   do { ipc.opnd[-1] = (y); PublishOp(&ipc.op[-1-op_offset], (x)); } while(0)
+   do { ripc.opnd[-1] = (y); PublishOp(&ripc.op[-1-op_offset], (x)); } while(0)
 #enddef
 #else if WordBits == IntBits*2
 #begdef PutInstr(x,y,op_offset)
-   do { ipc.opnd[-1] = (y); PublishOp(&ipc.op[-1-2*op_offset], (x)); } while(0)
+   do { ripc.opnd[-1] = (y); PublishOp(&ripc.op[-1-2*op_offset], (x)); } while(0)
 #enddef
 #else
 deliberate syntax error
@@ -410,6 +418,7 @@ deliberate syntax error
  * DerefArg(n) dereferences the nth argument.
  */
 #define DerefArg(n)   Deref(rargp[n])
+#define DerefArg2Proto(d) if (Var(d)) { ExInterp_sp; deref(&(d), &(d)); }
 
 /*
  * For the sake of efficiency, the stack pointer is kept in a register
@@ -418,21 +427,23 @@ deliberate syntax error
  *  for the stack pointer elsewhere, rsp must be stored into sp when
  *  the context of the loop is left and conversely, rsp must be loaded
  *  from sp when the loop is reentered.  The macros ExInterp_sp and
- *  EntInterp_sp, respectively, handle these operations.  Currently,
- *  this register/global scheme is only used for the stack pointer.
- *  Study (performance testing) is needed to justify rsp's use, and determine
- *  whether it should be extended to other interpreter loop variables.
- *  Potential future candidates include ipc and lastop, for example.
- *  Even if they are part of it, its not clear that there should be
- *  separate macros for them, or if one ExInterp/EntInterp pair should
- *  handle all register variables that need to be saved/restored.
+ *  EntInterp_sp, respectively, handle these operations.  They also
+ *  save and restore the program counter: the loop keeps it in ripc,
+ *  and IPC_MEM is where the rest of the runtime reads it.
+ *  lastop is still a candidate for the same treatment.
  */
 
-#define ExInterp_sp     sp = rsp;
-#define EntInterp_sp    rsp = sp;
+/*
+ * ipc is the global program counter without threads, and
+ * curtstate_ce->es_ipc when threads are enabled.  ripc is the
+ * copy the loop keeps in a register.
+ */
+#define IPC_MEM ipc
+#define ExInterp_sp     sp = rsp; IPC_MEM = ripc;
+#define EntInterp_sp    rsp = sp; ripc = IPC_MEM;
 
 /*#define ExInterp_ipc  ipc = ripc;
-#define EntInterp_ipc   ripc = ipc;
+#define EntInterp_ipc   ripc = ripc;
 
 #define ExInterp_lastop rlastop = lastop;
 #define EntInterp_lastop        lastop = rlastop;
@@ -515,6 +526,7 @@ int interp_x(int fsig,dptr cargp)
     CURTSTATE_AND_CE();
 #endif                                  /* TSTATARG */
 #endif                                  /* Concurrent */
+   inst ripc = IPC_MEM;                 /* PROTO: ipc kept in a register */
 
 #if e_intcall
    EVVal(fsig, e_intcall);
@@ -590,7 +602,7 @@ int interp_x(int fsig,dptr cargp)
       newgfp->gf_gentype = fsig;
       newgfp->gf_gfp = gfp;
       newgfp->gf_efp = efp;
-      newgfp->gf_ipc = ipc;
+      newgfp->gf_ipc = ripc;
       rsp += Wsizeof(struct gf_smallmarker);
 
       /*
@@ -648,17 +660,52 @@ int interp_x(int fsig,dptr cargp)
 
 #ifdef MultiProgram
       /*
-       *  If the TP (the child program) received a signal that it does
-       *  not have a handler for, it reports it back to its parent.
-       *  The reported event is E_Signal with a string name of that signal
+       * One load covers a signal the child could not handle and, in the
+       * uninstrumented interpreter, a request to switch to interp_1.
+       * thread_call is tested on its own later in the loop.
        */
-      if (curpstate->signal > 0) {
-         struct descrip val;
-         StrLoc(val) = si_i2s(signalnames, curpstate->signal);
-         StrLen(val) = strlen(StrLoc(val));
-         InterpEVValD(&val,E_Signal);
-         curpstate->signal = 0;
+      {
+      int pending = ATOMIC_LOAD_ACQUIRE(curpstate->attention);
+#if e_line || e_loc
+      /* Already instrumented.  ATTN_INTERP stays set for the session. */
+      pending &= ATTN_SIGNAL;
+#endif                                  /* e_line || e_loc */
+      if (pending) {
+         /*
+          * Report E_Signal to the parent, with the signal name.
+          */
+         if (pending & ATTN_SIGNAL) {
+            if (curpstate->signal > 0) {
+               struct descrip val;
+               StrLoc(val) = si_i2s(signalnames, curpstate->signal);
+               StrLen(val) = strlen(StrLoc(val));
+               InterpEVValD(&val,E_Signal);
+               curpstate->signal = 0;
+               }
+            ATOMIC_AND(curpstate->attention, ~ATTN_SIGNAL);
+            /* A signal that landed after the clear still has to be seen. */
+            if (curpstate->signal > 0)
+               ATOMIC_OR(curpstate->attention, ATTN_SIGNAL);
+            }
+#if e_line || e_loc
+#else                                   /* e_line || e_loc */
+         /*
+          * Uninstrumented, but monitoring is now on.  Interp is stored
+          * before the bit, so a set bit means interp_1 unless monitoring
+          * has since been turned off.
+          */
+         if (curpstate->Interp == interp_1) {
+            ilevel--;
+            ExInterp_sp;
+#ifdef TSTATARG
+            return interp_1(0, cargp, CURTSTATARG);
+#else                                    /* TSTATARG */
+            return interp_1(0, cargp);
+#endif                                   /* TSTATARG */
+            }
+#endif                                  /* e_line || e_loc */
          }
+      }
 #endif                                  /* MultiProgram */
 
 #if HAVE_PROFIL && e_tick
@@ -702,8 +749,8 @@ int interp_x(int fsig,dptr cargp)
 #endif                                  /* e_line */
        )) {
 
-      if (InRange(code, ipc.opnd, endcode)) {
-        uword ipc_offset = DiffPtrs((char *)ipc.opnd, (char *)code);
+      if (InRange(code, ripc.opnd, endcode)) {
+        uword ipc_offset = DiffPtrs((char *)ripc.opnd, (char *)code);
         uword size;
         word temp_no;
         if (!current_line_ptr ||
@@ -758,22 +805,6 @@ int interp_x(int fsig,dptr cargp)
             }
         }
       }
-#else                                   /* E_Line || E_Loc */
-#ifdef MultiProgram
-      /*
-       * We are uninstrumented code, but the program should be instrumented.
-       * Switch to the instrumented version of the interpreter.
-       */
-      if (curpstate->Interp == interp_1) {
-         ilevel--;
-         ExInterp_sp;
-#ifdef TSTATARG
-         return interp_1(0, cargp, CURTSTATARG);
-#else                                    /* TSTATARG */
-         return interp_1(0, cargp);
-#endif                                   /* TSTATARG */
-         }
-#endif                                  /* MultiProgram */
 #endif                                  /* E_Line || E_Loc */
 
       lastop = GetOp;           /* Instruction fetch */
@@ -827,14 +858,14 @@ Deliberate Syntax Error
          case Op_Cset:          /* cset */
 #ifdef Concurrent
             MUTEX_LOCKID(MTX_OP_ACSET);
-            if (ipc.op[-1] == Op_Acset) {
+            if (ripc.op[-1] == Op_Acset) {
               MUTEX_UNLOCKID(MTX_OP_ACSET); goto L_acset; }
 #else                                   /*Concurrent*/
             PutOp(Op_Acset);
 #endif                                  /*Concurrent*/
             PushVal(D_Cset);
             opnd = GetWord;
-            opnd += (word)ipc.opnd;
+            opnd += (word)ripc.opnd;
 #ifdef Concurrent
             PutInstr(Op_Acset, opnd, 1);
 #else                                   /*Concurrent*/
@@ -863,14 +894,14 @@ L_acset:
          case Op_Real:          /* real */
 #ifdef Concurrent
             MUTEX_LOCKID(MTX_OP_AREAL);
-            if (ipc.op[-1] == Op_Areal) {
+            if (ripc.op[-1] == Op_Areal) {
               MUTEX_UNLOCKID(MTX_OP_AREAL); goto L_areal; }
 #else                                   /*Concurrent*/
             PutOp(Op_Areal);
 #endif                                  /*Concurrent*/
             PushVal(D_Real);
             opnd = GetWord;
-            opnd += (word)ipc.opnd;
+            opnd += (word)ripc.opnd;
 #ifdef DescriptorDouble
             /*
              * Now it is a pointer, but we want it to be the actual double.
@@ -907,7 +938,7 @@ L_areal:
          case Op_Str:           /* string */
 #ifdef Concurrent
             MUTEX_LOCKID(MTX_OP_ASTR);
-            if (ipc.op[-1] == Op_Astr) {
+            if (ripc.op[-1] == Op_Astr) {
                MUTEX_UNLOCKID(MTX_OP_ASTR); goto L_astr; }
 #else                                   /*Concurrent*/
             PutOp(Op_Astr);
@@ -920,8 +951,8 @@ L_areal:
              * state, then lookup the program state of the current procedure,
              * and use its globals instead of the current program state.
              */
-            if (!InRange(code, ipc.opnd, endcode)) {
-               struct progstate *p = findicode(ipc.opnd);
+            if (!InRange(code, ripc.opnd, endcode)) {
+               struct progstate *p = findicode(ripc.opnd);
                opnd = (word)(p->Strcons + GetWord);
                }
             else
@@ -957,7 +988,7 @@ L_astr:
          case Op_Global:        /* global */
 #ifdef Concurrent
             MUTEX_LOCKID(MTX_OP_AGLOBAL);
-            if (ipc.op[-1] == Op_Aglobal) {
+            if (ripc.op[-1] == Op_Aglobal) {
               MUTEX_UNLOCKID(MTX_OP_AGLOBAL); goto L_aglobal; }
 #else                                   /*Concurrent*/
             PutOp(Op_Aglobal);
@@ -970,8 +1001,8 @@ L_astr:
              * state, then lookup the program state of the current procedure,
              * and use its globals instead of the current program state.
              */
-            if (!InRange(code, ipc.opnd, endcode)) {
-               struct progstate *p = findicode(ipc.opnd);
+            if (!InRange(code, ripc.opnd, endcode)) {
+               struct progstate *p = findicode(ripc.opnd);
                PushAVal(&(p->Globals[opnd]));
                PutWord((word)&(p->Globals[opnd]));
                }
@@ -1004,7 +1035,7 @@ L_aglobal:
          case Op_Static:        /* static */
 #ifdef Concurrent
             MUTEX_LOCKID(MTX_OP_ASTATIC);
-            if (ipc.op[-1] == Op_Astatic) {
+            if (ripc.op[-1] == Op_Astatic) {
               MUTEX_UNLOCKID(MTX_OP_ASTATIC); goto L_astatic; }
 #else                                   /*Concurrent*/
             PutOp(Op_Astatic);
@@ -1017,8 +1048,8 @@ L_aglobal:
              * state, then lookup the program state of the current procedure,
              * and use its statics instead of the current program state.
              */
-            if (!InRange(code, ipc.opnd, endcode)) {
-               struct progstate *p = findicode(ipc.opnd);
+            if (!InRange(code, ripc.opnd, endcode)) {
+               struct progstate *p = findicode(ripc.opnd);
                PushAVal(&(p->Statics[opnd]));
                PutWord((word)&(p->Statics[opnd]));
                }
@@ -1053,38 +1084,38 @@ L_astatic:
          case Op_Number:        /* +e */
          case Op_Refresh:       /* ^e */
          case Op_Size:          /* *e */
-            Setup_Op(1, e_ocall);
+            Setup_Op(1, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(1);
             DerefArg(1);
             Call_Cond(e_ofail);
 
          case Op_Value:         /* .e */
-            Setup_Op(1, e_ocall);
+            Setup_Op(1, e_ocall, e_ofail, e_oret, e_orem);
             DerefArg(1);
             Call_Cond(e_ofail);
 
          case Op_Nonnull:       /* \e */
          case Op_Null:          /* /e */
-            Setup_Op(1, e_ocall);
+            Setup_Op(1, e_ocall, e_ofail, e_oret, e_orem);
             Call_Cond(e_ofail);
 
          case Op_Random:        /* ?e */
             PushNull;
-            Setup_Op(2, e_ocall)
+            Setup_Op(2, e_ocall, e_ofail, e_oret, e_orem)
             HandleOVLD(1);
             Call_Cond(e_ofail)
 
                                 /* Generative unary operators */
 
          case Op_Tabmat:        /* =e */
-            Setup_Op(1, e_ocall);
+            Setup_Op(1, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(1);
             DerefArg(1);
             Call_Gen;
 
          case Op_Bang:          /* !e */
             PushNull;
-            Setup_Op(2, e_ocall);
+            Setup_Op(2, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(1);
             Call_Gen;
 
@@ -1115,7 +1146,7 @@ L_astatic:
          case Op_Numle:         /* e1 <= e2 */
          case Op_Numne:         /* e1 ~= e2 */
          case Op_Numlt:         /* e1 < e2 */
-            Setup_Op(2, e_ocall);
+            Setup_Op(2, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(2);
             DerefArg(1);
             DerefArg(2);
@@ -1125,47 +1156,122 @@ L_astatic:
          case Op_RcvBk:         /* e1 <<@ e2 */
          case Op_Snd:           /* e1 @> e2 */
          case Op_SndBk:         /* e1 @>> e2 */
-            Setup_Op(2, e_ocall);
+            Setup_Op(2, e_ocall, e_ofail, e_oret, e_orem);
             DerefArg(1);
             DerefArg(2);
             Call_Cond(e_ofail);
 
          case Op_Asgn:          /* e1 := e2 */
-            Setup_Op(2, e_ocall);
+#if !e_ocall
+            {
+            /* PROTO: plain variable := value, without calling Oasgn */
+            dptr ap = (dptr)(rsp - 1) - 2;
+            if (Var(ap[1]) && !(ap[1].dword & F_Typecode) &&
+                Offset(ap[1]) == 0
+#ifdef MultiProgram
+                && curpstate->eventmask.dword == D_Null
+#endif                                  /* MultiProgram */
+                ) {
+               DerefArg2Proto(ap[2]);
+               *VarLoc(ap[1]) = ap[2];
+               ap[0] = ap[1];
+               rsp = (word *)ap + 1;
+               break;
+               }
+            }
+#endif
+            Setup_Op(2, e_ocall, e_ofail, e_oret, e_orem);
             Call_Cond(e_ofail);
 
          case Op_Swap:          /* e1 :=: e2 */
             PushNull;
-            Setup_Op(3, e_ocall);
+            Setup_Op(3, e_ocall, e_ofail, e_oret, e_orem);
             Call_Cond(e_ofail);
 
          case Op_Subsc:         /* e1[e2] */
+#if !e_ocall
+            {
+            /*
+             * PROTO: an unshared list or array subscripted by an in-range
+             *  integer, without calling Osubsc.  Mirrors the list case of
+             *  subsc in oref.r; everything else falls through to it.
+             */
+            dptr ap = (dptr)(rsp - 1) - 2;
+            struct descrip lx, ly;
+            lx = ap[1]; ly = ap[2];
+            if (Var(lx) && !(lx.dword & F_Typecode) && Offset(lx) == 0)
+               lx = *VarLoc(lx);
+            if (Var(ly) && !(ly.dword & F_Typecode) && Offset(ly) == 0)
+               ly = *VarLoc(ly);
+            if (lx.dword == D_List && ly.dword == D_Integer
+#ifdef MultiProgram
+                && curpstate->eventmask.dword == D_Null
+#endif                                  /* MultiProgram */
+#ifdef Concurrent
+                && !BlkD(lx, List)->shared
+#endif                                  /* Concurrent */
+                ) {
+               struct b_list *lp = BlkD(lx, List);
+               word i = IntVal(ly), size = lp->size;
+               if (i <= 0)
+                  i += size + 1;
+               if (i >= 1 && i <= size) {
+                  union block *bp = lp->listhead;
+                  word *ep;
+#ifdef Arrays
+                  if (lp->listtail == NULL) {
+                     if (BlkType(bp) == T_Realarray)
+                        ep = (word *)&((struct b_realarray *)bp)->a[i-1];
+                     else
+                        ep = (word *)&((struct b_intarray *)bp)->a[i-1];
+                     }
+                  else
+#endif                                  /* Arrays */
+                     {
+                     word j = 1;
+                     while (i >= j + bp->Lelem.nused) {
+                        j += bp->Lelem.nused;
+                        bp = bp->Lelem.listnext;
+                        }
+                     i += bp->Lelem.first - j;
+                     if (i >= bp->Lelem.nslots)
+                        i -= bp->Lelem.nslots;
+                     ep = (word *)&bp->Lelem.lslots[i];
+                     }
+                  ap[0].vword.descptr = (dptr)bp;
+                  ap[0].dword = D_Var + (ep - (word *)bp);
+                  rsp = (word *)ap + 1;
+                  break;
+                  }
+               }
+            }
+#endif
             PushNull;
-            Setup_Op(3, e_ocall);
+            Setup_Op(3, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(2);
             Call_Cond(e_ofail);
                                 /* Generative binary operators */
 
          case Op_Rasgn:         /* e1 <- e2 */
-            Setup_Op(2, e_ocall);
+            Setup_Op(2, e_ocall, e_ofail, e_oret, e_orem);
             Call_Gen;
 
          case Op_Rswap:         /* e1 <-> e2 */
             PushNull;
-            Setup_Op(3, e_ocall);
+            Setup_Op(3, e_ocall, e_ofail, e_oret, e_orem);
             Call_Gen;
 
                                 /* Conditional ternary operators */
 
          case Op_Sect:          /* e1[e2:e3] */
             PushNull;
-            Setup_Op(4, e_ocall);
+            Setup_Op(4, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(4);
             Call_Cond(e_ofail);
                                 /* Generative ternary operators */
 
          case Op_Toby:          /* e1 to e2 by e3 */
-            Setup_Op(3, e_ocall);
+            Setup_Op(3, e_ocall, e_ofail, e_oret, e_orem);
             HandleOVLD(3);
             DerefArg(1);
             DerefArg(2);
@@ -1260,6 +1366,7 @@ L_astatic:
                    */
                   if ((char *)sp + args * sizeof(struct descrip) + PerilDelta >
                        (char *)(BlkD(k_current,Coexpr)->es_stackend)) {
+                     ExInterp_sp;
                      fatalerr(301, NULL);
                      }
 #else                                   /* StackCheck */
@@ -1271,8 +1378,10 @@ L_astatic:
                    */
                   if (BlkLoc(k_current) == BlkLoc(k_main) &&
                       ((char *)sp + args * sizeof(struct descrip) >
-                       (char *)stackend))
+                       (char *)stackend)) {
+                     ExInterp_sp;
                      fatalerr(301, NULL);
+                     }
 #endif                                  /* MultiProgram */
 #endif                                  /* StackCheck */
 
@@ -1330,6 +1439,7 @@ L_astatic:
 
                default: {               /* illegal type for invocation */
                   xargp = (dptr)(rsp - 3);
+                  ExInterp_sp;
                   err_msg(126, &value_tmp);
                   goto efail;
                   }
@@ -1407,6 +1517,7 @@ invokej:
                   signal = ((*(bproc->entryp.ccode.p1d)))(rargp);
 #endif                                  /* FncTrace */
                   }
+               ripc = IPC_MEM;          /* PROTO */
 
 #ifdef FncTrace
                if (k_ftrace) {
@@ -1431,6 +1542,7 @@ invokej:
             Setup_Arg(0);
 
             signal = ((int (*)(dptr))*(keytab[(int)opnd]))(rargp);
+            ripc = IPC_MEM;
             goto C_rtn_term;
 
          case Op_Llist:         /* construct list */
@@ -1466,13 +1578,13 @@ invokej:
          case Op_Mark:          /* create expression frame marker */
 #ifdef Concurrent
             MUTEX_LOCKID(MTX_OP_AMARK);
-            if (ipc.op[-1] == Op_Amark) {
+            if (ripc.op[-1] == Op_Amark) {
               MUTEX_UNLOCKID(MTX_OP_AMARK); goto L_amark; }
 #else                                   /*Concurrent*/
             PutOp(Op_Amark);
 #endif                                  /*Concurrent*/
             opnd = GetWord;
-            opnd += (word)ipc.opnd;
+            opnd += (word)ripc.opnd;
 #ifdef Concurrent
             PutInstr(Op_Amark, opnd, 1);
 #else                                   /*Concurrent*/
@@ -1493,7 +1605,7 @@ mark:
             newefp->ef_gfp = gfp;
             newefp->ef_efp = efp;
             newefp->ef_ilevel = ilevel;
-            InterpEVValS((word *) ipc.opnd, E_Syntax);/* -new- */
+            InterpEVValS((word *) ripc.opnd, E_Syntax);/* -new- */
             rsp += Wsizeof(*efp);
             efp = newefp;
             gfp = 0;
@@ -1507,7 +1619,7 @@ mark0:
             newefp->ef_gfp = gfp;
             newefp->ef_efp = efp;
             newefp->ef_ilevel = ilevel;
-            InterpEVValS((word *) ipc.opnd, E_Syntax);/* -new- */
+            InterpEVValS((word *) ripc.opnd, E_Syntax);/* -new- */
             rsp += Wsizeof(*efp);
             efp = newefp;
             gfp = 0;
@@ -1529,7 +1641,7 @@ mark0:
              * Remove any suspended C generators.
              */
 Unmark_uw:
-            InterpEVValS((word *) ipc.opnd - 1, E_Syntax); /* -new- */
+            InterpEVValS((word *) ripc.opnd - 1, E_Syntax); /* -new- */
             if (efp->ef_ilevel < ilevel) {
                --ilevel;
                ExInterp_sp;
@@ -1557,7 +1669,7 @@ Unmark_uw:
             newgfp->gf_gentype = G_Esusp;
             newgfp->gf_gfp = gfp;
             newgfp->gf_efp = efp;
-            newgfp->gf_ipc = ipc;
+            newgfp->gf_ipc = ripc;
             gfp = newgfp;
             rsp += Wsizeof(struct gf_smallmarker);
 
@@ -1716,7 +1828,7 @@ Lsusp_uw:
             newgfp->gf_gentype = G_Psusp;
             newgfp->gf_gfp = gfp;
             newgfp->gf_efp = efp;
-            newgfp->gf_ipc = ipc;
+            newgfp->gf_ipc = ripc;
             newgfp->gf_argp = glbl_argp;
             newgfp->gf_pfp = pfp;
             gfp = newgfp;
@@ -1752,7 +1864,9 @@ Lsusp_uw:
             if (k_trace) {
                k_trace--;
                sproc = BlkD(*glbl_argp, Proc);
+               ExInterp_sp;
                strace(&(sproc->pname), svalp);
+               EntInterp_sp;
                }
 
             /*
@@ -1771,7 +1885,7 @@ Lsusp_uw:
                }
 
             efp = pfp->pf_efp;
-            ipc = pfp->pf_ipc;
+            ripc = pfp->pf_ipc;
             glbl_argp = pfp->pf_argp;
             pfp = pfp->pf_pfp;
             value_tmp = nulldesc;
@@ -1870,7 +1984,9 @@ Eret_uw:
             --k_level;
             if (k_trace) {
                k_trace--;
+               ExInterp_sp;
                rtrace(&(rproc->pname), glbl_argp);
+               EntInterp_sp;
                }
 Pret_uw:
             if (pfp->pf_ilevel < ilevel) {
@@ -1889,7 +2005,7 @@ Pret_uw:
             rsp = (word *)glbl_argp + 1;
             efp = pfp->pf_efp;
             gfp = pfp->pf_gfp;
-            ipc = pfp->pf_ipc;
+            ripc = pfp->pf_ipc;
             glbl_argp = pfp->pf_argp;
             pfp = pfp->pf_pfp;
             value_tmp = nulldesc;
@@ -1927,17 +2043,17 @@ efail_noev:
                  break;
                  }
 
-               oldipc = ipc;            /* fixing the line zero return */
-               ipc = efp->ef_failure;
+               oldipc = ripc;            /* fixing the line zero return */
+               ripc = efp->ef_failure;
                gfp = efp->ef_gfp;
                rsp = (word *)efp - 1;
                efp = efp->ef_efp;
 
-               if (ipc.op == 0)
+               if (ripc.op == 0)
                   goto efail;
 
                if (pfp != NULL &&  sp != rsp)
-                  InterpEVValS((word *) ipc.opnd - 1, E_Syntax); /* -new- */
+                  InterpEVValS((word *) ripc.opnd - 1, E_Syntax); /* -new- */
 
                break;
                }
@@ -1962,7 +2078,7 @@ efail_noev:
                      EntInterp_sp;
                      }
                   }
-               ipc = resgfp->gf_ipc;
+               ripc = resgfp->gf_ipc;
                efp = resgfp->gf_efp;
                gfp = resgfp->gf_gfp;
                rsp = (word *)resgfp - 1;
@@ -2060,7 +2176,9 @@ efail_noev:
             --k_level;
             if (k_trace) {
                k_trace--;
+               ExInterp_sp;
                failtrace(&(BlkD(*glbl_argp, Proc)->pname));
+               EntInterp_sp;
                }
 Pfail_uw:
 
@@ -2077,7 +2195,7 @@ Pfail_uw:
                }
             efp = pfp->pf_efp;
             gfp = pfp->pf_gfp;
-            ipc = pfp->pf_ipc;
+            ripc = pfp->pf_ipc;
             glbl_argp = pfp->pf_argp;
             pfp = pfp->pf_pfp;
 
@@ -2091,9 +2209,9 @@ Pfail_uw:
             PushVal(((word *)efp)[-1]);
             break;
 
-         case Op_Chfail:        /* change failure ipc */
+         case Op_Chfail:        /* change failure ripc */
             opnd = GetWord;
-            opnd += (word)ipc.opnd;
+            opnd += (word)ripc.opnd;
             efp->ef_failure.opnd = (word *)opnd;
             break;
 
@@ -2120,19 +2238,19 @@ EntInterp_sp;
 
 #ifdef Concurrent
             MUTEX_LOCKID(MTX_OP_AGOTO);
-            if (ipc.op[-1] == Op_Agoto) {
+            if (ripc.op[-1] == Op_Agoto) {
               MUTEX_UNLOCKID(MTX_OP_AGOTO); goto L_agoto; }
 #else                                   /*Concurrent*/
             PutOp(Op_Agoto);
 #endif                                  /*Concurrent*/
             opnd = GetWord;
-            opnd += (word)ipc.opnd;
+            opnd += (word)ripc.opnd;
 #ifdef Concurrent
             PutInstr(Op_Agoto, opnd, 1);
 #else                                   /*Concurrent*/
             PutWord(opnd);
 #endif                                  /*Concurrent*/
-            ipc.opnd = (word *)opnd;
+            ripc.opnd = (word *)opnd;
 
             MUTEX_UNLOCKID(MTX_OP_AGOTO);
             break;
@@ -2141,19 +2259,19 @@ EntInterp_sp;
             AbsOperandFence();
 L_agoto:
             opnd = GetWord;
-            ipc.opnd = (word *)opnd;
+            ripc.opnd = (word *)opnd;
             break;
 
          case Op_Init:          /* initial */
 #ifdef Concurrent
             {
             struct init_site *site;
-            word *after = ipc.opnd + 1;
+            word *after = ripc.opnd + 1;
 
             ExInterp_sp;                        /* may wait counted out */
             MUTEX_LOCKID_CONTROLLED_ALWAYS(MTX_INITIAL);
             for (;;) {
-               if (ipc.op[-1] == Op_Agoto) {    /* done */
+               if (ripc.op[-1] == Op_Agoto) {    /* done */
                   MUTEX_UNLOCKID_ALWAYS(MTX_INITIAL);
                   goto L_agoto;
                   }
@@ -2163,7 +2281,7 @@ L_agoto:
                   break;
                if (site->owner == curtstate) {    /* recursion: skip it */
                   MUTEX_UNLOCKID_ALWAYS(MTX_INITIAL);
-                  ipc.opnd = (word *)((word)after + after[-1]);
+                  ripc.opnd = (word *)((word)after + after[-1]);
                   goto init_skipped;
                   }
                /* another thread is running it; wait until it is done */
@@ -2183,14 +2301,14 @@ L_agoto:
             init_sites = site;
             init_running++;
             MUTEX_UNLOCKID_ALWAYS(MTX_INITIAL);
-            ipc.opnd = after;                   /* run the body */
+            ripc.opnd = after;                   /* run the body */
             }
 init_skipped:
 #else                                   /*Concurrent*/
-            *--ipc.op = Op_Goto;
-            opnd = sizeof(*ipc.op) + sizeof(*rsp);
-            opnd += (word)ipc.opnd;
-            ipc.opnd = (word *)opnd;
+            *--ripc.op = Op_Goto;
+            opnd = sizeof(*ripc.op) + sizeof(*rsp);
+            opnd += (word)ripc.opnd;
+            ripc.opnd = (word *)opnd;
 #endif                                  /*Concurrent*/
             break;
 
@@ -2290,12 +2408,14 @@ init_skipped:
             PushNull;
             Setup_Arg(0);
             opnd = GetWord;
-            opnd += (word)ipc.opnd;
+            opnd += (word)ripc.opnd;
+            IPC_MEM = ripc;             /* PROTO */
 
             signal = Ocreate((word *)opnd, rargp);
 
             goto C_rtn_term;
 #else                                   /* CoExpr */
+            ExInterp_sp;
             err_msg(401, NULL);
             goto efail;
 #endif                                  /* CoExpr */
@@ -2304,6 +2424,7 @@ init_skipped:
 
 
 #ifndef CoExpr
+            ExInterp_sp;
             err_msg(401, NULL);
             goto efail;
 #else                                        /* CoExpr */
@@ -2497,6 +2618,7 @@ C_rtn_term:
 
 #ifdef MultiProgram
 return_term:
+#if e_fret || e_oret
          if (lastev == E_Function) {
 #if e_fret
             value_tmp = *(dptr)(rsp - 1);       /* argument */
@@ -2515,6 +2637,7 @@ return_term:
 
             value_tmp = nulldesc;
             }
+#endif                                  /* e_fret || e_oret */
 #endif                                  /* MultiProgram */
 
          continue;

@@ -6071,6 +6071,7 @@ struct descrip register_sig(int sig, struct descrip handler)
 
 #ifdef MultiProgram
    curpstate->signal = 0;
+   ATOMIC_AND(curpstate->attention, ~ATTN_SIGNAL);
 #endif                                  /* MultiProgram */
    MUTEX_LOCKID(MTX_HANDLERS);
    old = handlers[sig];
@@ -6086,6 +6087,7 @@ void signal_dispatcher(int sig)
    proc = handlers[sig];
 #ifdef MultiProgram
    curpstate->signal = 0;
+   ATOMIC_AND(curpstate->attention, ~ATTN_SIGNAL);
 #endif                                  /* MultiProgram */
 
    /*
@@ -6098,9 +6100,11 @@ void signal_dispatcher(int sig)
       if ((!is:null(curpstate->eventmask)) &&
           Testb((word)ToAscii(E_Signal), curpstate->eventmask)) {
          /* if we are in the TP and it has no signal handling
-          * report the signal back to its parent
+          * report the signal back to its parent.  The signal number is
+          * stored first; the bit publishes it to the interpreter loop.
           */
          curpstate->signal = sig;
+         ATOMIC_OR(curpstate->attention, ATTN_SIGNAL);
          return;
          }
       else {

@@ -2559,11 +2559,11 @@ C_rtn_term:
             case A_Pret_uw:             /* unwind for pret */
 #ifdef MultiProgram
                if (lastev == E_Function) {
-                  InterpEVVal(&lastdesc, e_frem);
+                  InterpEVValD(&lastdesc, e_frem);
                   lastev = E_Misc;
                   }
                else if (lastev == E_Operator) {
-                  InterpEVVal(&lastdesc, e_orem);
+                  InterpEVValD(&lastdesc, e_orem);
                   lastev = E_Misc;
                   }
 #endif                                  /* MultiProgram */

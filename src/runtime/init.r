@@ -17,6 +17,9 @@ static FILE * readhdr   (char *name, struct header *hdr);
  */
 static word unicon_getrandom(void);
 static void     env_err         (char *msg, char *name, char *val);
+#if UNIX
+static void install_cstack_signals(void);
+#endif                                  /* UNIX */
 FILE            *pathOpen       (char *fname, char *mode);
 
 /*
@@ -878,7 +881,19 @@ Deliberate Syntax Error
       }
 #endif                                  /* HAVE_GETRLIMIT && HAVE_SETRLIMIT && !__linux__ */
 
-#if UNIX || VMS
+#if UNIX
+   {
+   /*
+    * Run segvtrap() on an alternate signal stack, so that it can still
+    * report a C stack overflow.  The handler is process-wide and is
+    * installed once, for &main.  A worker only gives itself an
+    * alternate stack; installing again would replace trap() or the
+    * SIG_DFL that ICONCORE asked for.
+    */
+   segv_thread_init(main_segv_altstack, 1);
+   }
+   signal(SIGFPE, SigFncCast fpetrap);
+#elif VMS
    signal(SIGSEGV, SigFncCast segvtrap);
    signal(SIGFPE, SigFncCast fpetrap);
 #endif                                  /* UNIX || VMS */
@@ -1338,6 +1353,14 @@ Deliberate Syntax Error
 
 #if UNIX || VMS
       signal(SIGSEGV, SIG_DFL);
+#host #if defined(__APPLE__) || defined(__FreeBSD__)
+      /*
+       * The guard page is SIGBUS on macOS and on FreeBSD, and that
+       * handler was installed before ICONCORE was read.  Restore the
+       * default for it too, or a stack overflow still skips the core.
+       */
+      signal(SIGBUS, SIG_DFL);
+#host #endif
 #endif                                  /* UNIX || VMS */
 
 /*
@@ -1424,9 +1447,322 @@ void inttrap()
 /*
  * Produce run-time error 302 on segmentation faults.
  */
+#if UNIX
+/*
+ * Catch the signal a stack guard raises, on an alternate stack.
+ * macOS and FreeBSD report that guard as SIGBUS, not SIGSEGV.  Called only for
+ * &main, and only at startup: the action is process-wide, so a worker
+ * must not install it again.  trap() may have registered its own
+ * handler, and ICONCORE sets SIG_DFL so the kernel writes a core.
+ * Putting segvtrap() back would drop either of those.
+ */
+static void install_cstack_signals(void)
+   {
+   struct sigaction sa;
+
+   if (dodump)
+      return;
+   memset(&sa, 0, sizeof(sa));
+   sa.sa_sigaction = segvtrap;
+   sa.sa_flags = SA_SIGINFO | SA_ONSTACK;
+   sigemptyset(&sa.sa_mask);
+   sigaction(SIGSEGV, &sa, NULL);
+#host #if defined(__APPLE__) || defined(__FreeBSD__)
+   /*
+    * A thread that runs off its stack is delivered SIGBUS on macOS and
+    * on FreeBSD, not SIGSEGV.  rtt does not define those macros, so the
+    * C compiler must see this test: otherwise the handler is omitted
+    * and the guard page is an uncaught bus error.
+    */
+   sigaction(SIGBUS, &sa, NULL);
+#host #endif
+   }
+
+/*
+ * C stack overflow detection.  Running off the end of a thread's C
+ * stack raises SIGSEGV, or SIGBUS on macOS, and that signal cannot be
+ * handled on the same stack, so every
+ * interpreter thread gives segvtrap() an alternate signal stack, and
+ * records roughly where its C stack starts.  A fault address just below
+ * that start, within the stack size limit, is reported as a stack
+ * overflow instead of a memory violation.
+ *
+ * fatalerr() is not async-signal-safe, and the frame that armed the
+ * handler does not stay on the stack, so a stack overflow is reported
+ * from the handler with write() and _exit().  interp() usually stops
+ * first, via cstack_peril(), while the C stack can still run fatalerr().
+ */
+static __thread char *cstack_top;       /* near the start of this C stack */
+static __thread char *cstack_lo;        /* low end of this C stack, if known */
+static __thread int cstack_is_main;     /* non-zero in the &main thread */
+char main_segv_altstack[SegvAltStackSize];
+
+#ifdef Concurrent
+static pthread_key_t segv_altstack_key;
+
+/*
+ * Thread exit: stop using the signal stack, then free it.
+ */
+static void segv_altstack_free(void *p)
+   {
+   stack_t ss;
+   memset(&ss, 0, sizeof(ss));
+   ss.ss_flags = SS_DISABLE;
+   sigaltstack(&ss, NULL);
+   free(p);
+   }
+#endif                                  /* Concurrent */
+
+/*
+ * Give the calling thread an alternate signal stack for segvtrap().
+ * &main passes a static buffer; other threads pass NULL and get one
+ * from malloc(), freed when the thread exits.  The buffer is not placed
+ * on the thread's own C stack, which may be small (see spawn()).
+ */
+void segv_thread_init(char *altstack, int ismain)
+   {
+   stack_t ss;
+   char here;
+
+   /*
+    * Only &main installs the process-wide handler.  Every thread still
+    * needs its own alternate stack, which is what makes segvtrap()
+    * runnable when this thread's C stack is exhausted.
+    */
+   if (ismain)
+      install_cstack_signals();
+   cstack_top = &here;
+   cstack_lo = NULL;
+   cstack_is_main = ismain;
+#ifdef Concurrent
+   /*
+    * spawn() may give this thread a C stack that is not RLIMIT_STACK.
+    * The low address is the base of that mapping; the guard page sits
+    * just below it.
+    */
+   {
+      void *addr = NULL;
+      size_t sz = 0;
+#host #if defined(__linux__)
+      {
+      pthread_attr_t attr;
+      extern int pthread_getattr_np(pthread_t, pthread_attr_t *);
+      if (pthread_getattr_np(pthread_self(), &attr) == 0) {
+         pthread_attr_getstack(&attr, &addr, &sz);
+         pthread_attr_destroy(&attr);
+         }
+      }
+#host #endif
+#host #if defined(__FreeBSD__)
+      {
+      pthread_attr_t attr;
+      extern int pthread_attr_get_np(pthread_t, pthread_attr_t *);
+      /*
+       * dst must already be a live attributes object.  An uninitialized
+       * one is a wild pointer on current FreeBSD; get_np then writes
+       * through it and the thread dies with no error text.
+       */
+      if (pthread_attr_init(&attr) == 0) {
+         if (pthread_attr_get_np(pthread_self(), &attr) == 0)
+            pthread_attr_getstack(&attr, &addr, &sz);
+         pthread_attr_destroy(&attr);
+         }
+      }
+#host #endif
+#host #ifdef __APPLE__
+      {
+         char *hi = pthread_get_stackaddr_np(pthread_self());
+         sz = pthread_get_stacksize_np(pthread_self());
+         if (hi != NULL && sz > 0)
+            addr = hi - sz;
+         /*
+          * &here is below the high end.  The real top keeps a fault in
+          * this mapping from looking like it is above the stack.
+          */
+         if (hi != NULL && (cstack_top == NULL || hi > cstack_top))
+            cstack_top = hi;
+      }
+#host #endif
+      if (addr != NULL && sz > 0)
+         cstack_lo = (char *)addr;
+   }
+#endif                                  /* Concurrent */
+   /*
+    * &main's stack grows up to RLIMIT_STACK.  &here is below the high
+    * end, so this base is a little low; cstack_peril() still stops
+    * above the guard when startup has used less than CStackPeril.
+    * pthread_getattr_np() on musl reports only the pages mapped so far,
+    * which at startup is far above that limit.  Keeping that snapshot
+    * makes a deep call, such as the translator walking a class tree,
+    * look like a stack overflow.  A worker thread's size is not
+    * RLIMIT_STACK, so its recorded base is left alone.  An unlimited
+    * main stack has no base worth trusting.
+    */
+   if (ismain) {
+      struct rlimit rl;
+      if (getrlimit(RLIMIT_STACK, &rl) == 0 &&
+          rl.rlim_cur != RLIM_INFINITY &&
+          rl.rlim_cur < ((uword)1 << 30) &&
+          (uword)rl.rlim_cur < (uword)cstack_top)
+         cstack_lo = cstack_top - (uword)rl.rlim_cur;
+      else
+         cstack_lo = NULL;
+      }
+#ifdef Concurrent
+   if (ismain)
+      pthread_key_create(&segv_altstack_key, segv_altstack_free);
+   if (altstack == NULL) {
+      if ((altstack = malloc(SegvAltStackSize)) == NULL)
+         return;
+      pthread_setspecific(segv_altstack_key, altstack);
+      }
+#endif                                  /* Concurrent */
+   if (altstack == NULL)
+      return;
+   ss.ss_sp = altstack;
+   ss.ss_size = SegvAltStackSize;
+   ss.ss_flags = 0;
+   sigaltstack(&ss, NULL);
+   }
+
+static int is_cstack_fault(void *addr)
+   {
+   struct rlimit rl;
+   uword lim = (uword)1 << 30;
+   char *a = (char *)addr;
+
+   if (cstack_top == NULL || a == NULL || a >= cstack_top)
+      return 0;
+   /*
+    * A recorded mapping is the stack this thread actually received,
+    * plus the guard page just below it.  Anything still unknown falls
+    * back to the process limit.
+    */
+   if (cstack_lo != NULL && cstack_lo < cstack_top)
+      return (uword)(cstack_top - a) <=
+             (uword)(cstack_top - cstack_lo) + 1024 * 1024;
+   if (getrlimit(RLIMIT_STACK, &rl) == 0 && rl.rlim_cur != RLIM_INFINITY &&
+       rl.rlim_cur < lim)
+      lim = rl.rlim_cur;
+   return (uword)(cstack_top - a) <= lim + 1024 * 1024;
+   }
+
+/*
+ * Non-zero when mark is within the headroom above the low end of this
+ * thread's C stack: 301 in &main, 308 in any other thread.  A mark
+ * outside [lo, top) is a co-expression stack, which interp() checks
+ * separately.  The headroom is at most a quarter of the stack, so a
+ * spawn() stack of 64KB can still run.
+ */
+int cstack_peril(char *mark)
+   {
+   char *lo = cstack_lo;
+   char *top = cstack_top;
+   uword size, margin;
+
+#host #if defined(__APPLE__) && defined(Concurrent)
+   /*
+    * Ask this thread for its stack.  rtt does not define __APPLE__, so
+    * this stays in the generated C for the compiler to keep or drop.
+    * A guard page on macOS is SIGBUS, and it is an uncaught bus error
+    * if the overflow is not reported before that page.
+    */
+   {
+      char *hi = pthread_get_stackaddr_np(pthread_self());
+      size_t sz = pthread_get_stacksize_np(pthread_self());
+      extern int pthread_main_np(void);
+      if (hi != NULL && sz > 0 && mark < hi) {
+         char *plo = hi - sz;
+         size_t pmargin = CStackPeril;
+         if (pmargin > sz / 4)
+            pmargin = sz / 4;
+         if (mark >= plo && (size_t)(mark - plo) < pmargin)
+            return pthread_main_np() ? 301 : 308;
+         }
+   }
+#host #endif
+
+   if (lo == NULL || top == NULL || mark == NULL || mark >= top)
+      return 0;
+   /*
+    * A recorded base can sit a little below the guard.  Crossing it is
+    * still this stack running out.
+    */
+   if (mark < lo)
+      return ((uword)(lo - mark) < ((uword)1 << 20)) ?
+         (cstack_is_main ? 301 : 308) : 0;
+   size = (uword)(top - lo);
+   margin = CStackPeril;
+   if (margin > size / 4)
+      margin = size / 4;
+   if ((uword)(mark - lo) >= margin)
+      return 0;
+   return cstack_is_main ? 301 : 308;
+   }
+
+/*
+ * Last resort from segvtrap(), when there is no safe stack to report
+ * from.  write() and _exit() are async-signal-safe; fatalerr() is not.
+ */
+static void cstack_abort(int errnum)
+   {
+   /*
+    * ICONCORE asked for a core.  abort() is async-signal-safe, and
+    * the default SIGABRT action writes one.  _exit() would drop it.
+    */
+   if (dodump)
+      abort();
+   if (errnum == 301) {
+      static const char msg[] = "\nRun-time error 301\n";
+      if (write(STDERR_FILENO, msg, sizeof msg - 1) < 0)
+         _exit(EXIT_FAILURE);
+      }
+   else if (errnum == 302) {
+      static const char msg[] = "\nRun-time error 302\n";
+      if (write(STDERR_FILENO, msg, sizeof msg - 1) < 0)
+         _exit(EXIT_FAILURE);
+      }
+   else {
+      static const char msg[] = "\nRun-time error 308\n";
+      if (write(STDERR_FILENO, msg, sizeof msg - 1) < 0)
+         _exit(EXIT_FAILURE);
+      }
+   _exit(EXIT_FAILURE);
+   }
+#endif                                  /* UNIX */
+
+/*
+ * Produce run-time error 302 on segmentation faults, or 301/308 if the
+ * fault is a C stack overflow in &main or in another thread.
+ */
+#if UNIX
+void segvtrap(int sig, siginfo_t *si, void *uc)
+#else                                   /* UNIX */
 void segvtrap()
+#endif                                  /* UNIX */
    {
    static int n = 0;
+   int errnum = 302;
+
+#if UNIX
+   if (si != NULL && is_cstack_fault(si->si_addr))
+      cstack_abort(cstack_is_main ? 301 : 308);
+#host #if defined(__APPLE__) || defined(__FreeBSD__)
+   /*
+    * Stack overflow is SIGBUS.  The address is not always in the
+    * recorded mapping, and fatalerr() does not fit on the alternate
+    * stack.  A second fault is delivered with this signal blocked, so
+    * the process dies with "Bus error".  Report the overflow unless
+    * the address is clearly somewhere else.
+    */
+   if (sig == SIGBUS) {
+      if (si != NULL && si->si_addr != NULL && cstack_top != NULL &&
+          !is_cstack_fault(si->si_addr))
+         cstack_abort(302);
+      cstack_abort(cstack_is_main ? 301 : 308);
+      }
+#host #endif
+#endif                                  /* UNIX */
 
    MUTEX_LOCKID_CONTROLLED(MTX_SEGVTRAP_N);
    if (n != 0) {                        /* only try traceback once */
@@ -1436,7 +1772,7 @@ void segvtrap()
       }
    n++;
 
-   fatalerr(302, NULL);
+   fatalerr(errnum, NULL);
    MUTEX_UNLOCKID(MTX_SEGVTRAP_N);
    }
 

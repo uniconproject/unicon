@@ -529,6 +529,7 @@ int interp_x(int fsig,dptr cargp)
 #ifdef TallyOpt
    extern word tallybin[];
 #endif                                  /* TallyOpt */
+   char cstack_mark;                    /* locates this C stack frame */
 
 #ifdef Concurrent
 /*
@@ -539,6 +540,40 @@ int interp_x(int fsig,dptr cargp)
 #endif                                  /* TSTATARG */
 #endif                                  /* Concurrent */
    inst ripc = IPC_MEM;                 /* PROTO: ipc kept in a register */
+
+   /*
+    * Suspension re-enters interp() on the C stack.  A native
+    * co-expression's C stack grows down toward its evaluation stack in
+    * the same block, with no guard page between them, so stop before
+    * they meet, leaving room for the error traceback.  Only the
+    * process &main uses the system stack.  A program started by load()
+    * has its own &main in a co-expression block, so it is checked too.
+    */
+#ifdef MultiProgram
+   if ((struct b_coexpr *)BlkLoc(k_current) != rootpstate.Mainhead) {
+#else                                   /* MultiProgram */
+   if (BlkLoc(k_current) != BlkLoc(k_main)) {
+#endif                                  /* MultiProgram */
+      struct b_coexpr *cecs = BlkD(k_current,Coexpr);
+      char *lo = (char *)cecs->es_stack, *hi = (char *)cecs->es_stackend;
+      if (lo < hi && &cstack_mark > lo &&
+          &cstack_mark < hi + Min(CStackPeril, (hi - lo) / 4))
+         fatalerr(308, NULL);
+      }
+
+#if UNIX
+   /*
+    * &main and threads run on a system stack that has a guard page.
+    * Stop while fatalerr() still has room; segvtrap() is the backstop
+    * when this check does not see the stack.
+    */
+   {
+   int cerr;
+
+   if ((cerr = cstack_peril(&cstack_mark)) != 0)
+      fatalerr(cerr, NULL);
+   }
+#endif                                  /* UNIX */
 
 #if e_intcall
    EVVal(fsig, e_intcall);

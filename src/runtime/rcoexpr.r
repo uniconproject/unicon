@@ -815,6 +815,9 @@ struct threadstate * alloc_tstate()
 void *nctramp(void *arg)
 {
    struct b_coexpr *ce = (struct b_coexpr *) arg;
+#if UNIX
+   segv_thread_init(NULL, 0);           /* signal stack for segvtrap() */
+#endif                                  /* UNIX */
 #ifdef Concurrent
 /*   sigset_t mask; */
 

@@ -407,7 +407,15 @@ void            retderef                (dptr valp, word *low, word *high);
 #if !NT
 void rusage2rec(struct rusage *usg, struct descrip *dp, struct b_record **rp);
 #endif                                  /* NT */
+#if UNIX
+#define SegvAltStackSize (128 * 1024)   /* segvtrap() signal stack size */
+void            segvtrap        (int sig, siginfo_t *si, void *uc);
+void            segv_thread_init(char *altstack, int ismain);
+int             cstack_peril    (char *mark);
+extern char     main_segv_altstack[];
+#else                                   /* UNIX */
 void            segvtrap        (void);
+#endif                                  /* UNIX */
 void            stkdump         (int);
 word            sub             (word a,word b, int *over_flowp);
 #if __clang__ || __GNUC__

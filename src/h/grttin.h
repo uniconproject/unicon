@@ -356,6 +356,15 @@ typedef struct ssh_channel_callbacks_struct *ssh_channel_callbacks;
        typedef int pthread_key_t, sigset_t;
 #endif                                  /* Concurrent */
 
+#if UNIX
+/*
+ * For segvtrap() and segv_thread_init(); rtt only needs the member
+ * names, the generated C sees the real definitions from <signal.h>.
+ */
+typedef struct { void *ss_sp; int ss_flags; size_t ss_size; } stack_t;
+typedef struct { int si_signo; void *si_addr; } siginfo_t;
+#endif                                  /* UNIX */
+
 #ifdef HAVE_LIBCL
        typedef int cl_uint, cl_platform_id, cl_device_id;
 #endif                                  /* HAVE_LIBCL */

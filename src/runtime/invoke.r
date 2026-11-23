@@ -291,6 +291,12 @@ int invoke(int nargs, dptr *cargp, int *n)
          newsp -= (nargs - nparam) * 2;
       else if (nargs < nparam) {
          i = nparam - nargs;
+         /*
+          * Each missing argument is one descriptor.  Check before the
+          * writes: the frame check below runs only after this loop.
+          */
+         if (EvalStackOverflow(newsp, (word)i * sizeof(struct descrip)))
+            fatalerr(301, NULL);
          while (i--) {
             *++newsp = D_Null;
             *++newsp = 0;
@@ -306,6 +312,8 @@ int invoke(int nargs, dptr *cargp, int *n)
 
          if (nargs < absnparam - 1) {
             i = absnparam - 1 - nargs;
+            if (EvalStackOverflow(newsp, (word)i * sizeof(struct descrip)))
+               fatalerr(301, NULL);
             while (i--) {
                *++newsp = D_Null;
                *++newsp = 0;
@@ -337,6 +345,8 @@ int invoke(int nargs, dptr *cargp, int *n)
 
       if (nargs < abs(nparam) - 1) {
          i = abs(nparam) - 1 - nargs;
+         if (EvalStackOverflow(newsp, (word)i * sizeof(struct descrip)))
+            fatalerr(301, NULL);
          while (i--) {
             *++newsp = D_Null;
             *++newsp = 0;
@@ -356,25 +366,13 @@ int invoke(int nargs, dptr *cargp, int *n)
          return I_Builtin;
       }
 
-#ifdef StackCheck
    /*
-    * Make a stab at catching interpreter stack overflow.  This does
-    * not detect C stack overflow.
+    * Catch interpreter stack overflow before building the procedure frame
+    * and pushing the dynamic locals.  This does not detect C stack overflow.
     */
-   if (((char *)sp + PerilDelta) > (char *)(BlkD(k_current,Coexpr)->es_stackend)){
+   if (EvalStackOverflow(newsp, Vwsizeof(struct pf_marker) * sizeof(word) +
+                         proc->ndynam * sizeof(struct descrip)))
       fatalerr(301, NULL);
-      }
-#else                                   /* StackCheck */
-#ifndef MultiProgram
-   /*
-    * Make a stab at catching interpreter stack overflow.  This does
-    * nothing for invocation in a co-expression other than &main.
-    */
-   if (BlkLoc(k_current) == BlkLoc(k_main) &&
-      ((char *)sp + PerilDelta) > (char *)stackend)
-         fatalerr(301, NULL);
-#endif                                  /* MultiProgram */
-#endif                                  /* StackCheck */
 
    /*
     * Build the procedure frame.

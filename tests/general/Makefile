@@ -21,7 +21,7 @@ SKIP += utf8
 endif
 endif
 
-WINSKIP=cfuncs
+WINSKIP=cfuncs deeprec
 
 # Do the tests
 Test: DoTest

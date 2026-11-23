@@ -971,7 +971,20 @@
    /*
     * Evaluation stack overflow margin
     */
-   #define PerilDelta 100
+   #define PerilDelta 512
+
+   /*
+    * EvalStackOverflow(top, nbytes) -- true if pushing nbytes more bytes
+    * above top would come within PerilDelta bytes of the end of the current
+    * interpreter evaluation stack.  The end is kept in the co-expression
+    * block (es_stackend), which is set for &main, for every co-expression
+    * and thread, and for loaded programs.  It is used wherever the stack
+    * grows by an amount the program text does not bound: procedure frames,
+    * applied argument lists, and the stack copies made by suspension.
+    */
+   #define EvalStackOverflow(top, nbytes) \
+      (((char *)(top) + (nbytes) + PerilDelta) > \
+       (char *)(BlkD(k_current,Coexpr)->es_stackend))
 
    /*
     * Macro definitions related to descriptors.

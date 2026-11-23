@@ -1,0 +1,89 @@
+#
+# deeprec.icn -- deep recursion and evaluation stack overflow.
+#
+# The program runs itself with explicit stack sizes, so the results do not
+# depend on how much memory the machine has.  First, with ample stacks, it
+# recurses to fixed depths: on the evaluation stack alone, through
+# suspended builtin generators (each also keeps a C frame live), through
+# suspended procedures, and inside a co-expression.
+#
+# Then, with small stacks, it recurses without bound in each of the ways
+# the evaluation stack can grow.  Every one must end in run-time error 301
+# rather than a crash.
+#
+
+procedure plain(n)
+   if n = 0 then return 0
+   return 1 + plain(n-1)
+end
+
+procedure viagen(n)
+   local x
+   if n = 0 then return 0
+   every x := !"a" do return 1 + viagen(n-1)
+end
+
+procedure susp(n)
+   if n = 0 then suspend 0 else suspend 1 + susp(n-1)
+end
+
+procedure expr(n)
+   if n = 0 then return 0
+   return (1 to 2) + expr(n-1)
+end
+
+procedure sink(a[])
+   return *a
+end
+
+procedure overflow(how)
+   case how of {
+      "plain":             plain(-1)
+      "generator":         viagen(-1)
+      "suspend":           every susp(100000)
+      "expression":        expr(-1)
+      "apply":             sink ! list(1000000)
+      "co-expression":     @create plain(-1)
+      "co-expr suspend":   @create (every susp(100000))
+      }
+   write("no overflow")
+end
+
+procedure deep()
+   write("plain: ", plain(50000))
+   write("generator: ", viagen(4000))
+   write("suspend: ", susp(20000))
+   write("co-expression: ", @create plain(2000))
+   write("co-expression, generator: ", @create viagen(300))
+end
+
+procedure run(how)
+   return open(&progname || " \"" || how || "\" 2>&1", "p") |
+      stop("cannot run ", &progname)
+end
+
+procedure report(how)
+   local p, line, r
+   p := run(how)
+   while line := read(p) do
+      if /r & find("Run-time error" | "no overflow", line) then r := line
+   close(p)
+   return \r | "no run-time error reported"
+end
+
+procedure main(args)
+   local how
+   if *args > 0 then
+      return if args[1] == "deep" then deep() else overflow(args[1])
+
+   # sizes are in words
+   setenv("MSTKSIZE", "2000000")
+   setenv("COEXPSIZE", "200000")
+   every write(!run("deep"))
+
+   setenv("MSTKSIZE", "40000")
+   setenv("COEXPSIZE", "40000")
+   every how := "plain" | "generator" | "suspend" | "expression" | "apply" |
+                "co-expression" | "co-expr suspend" do
+      write(left(how || ":", 17), report(how))
+end

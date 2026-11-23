@@ -79,6 +79,17 @@ struct b_proc *op_tbl;                  /* operators available for string invoca
 
 extern struct errtab errtab[];          /* error numbers and messages */
 
+/*
+ * Soft limit requested for the main C stack at startup (64-bit hosts only);
+ * a lower hard limit takes precedence.  Linux is not included: glibc and
+ * OpenSSL read this limit back, and a 1GB value makes a thread's TLS open
+ * segfault on Ubuntu 22.04.  The stack gap there is fixed at exec time, so
+ * ulimit -s before iconx is what enlarges the main stack.
+ */
+#ifndef MainCStackWanted
+#define MainCStackWanted 1073741824UL      /* 1GB */
+#endif                                  /* MainCStackWanted */
+
 word mstksize = MStackSize;             /* initial size of main stack */
 word stksize = StackSize;               /* co-expression stack size */
 
@@ -847,6 +858,25 @@ Deliberate Syntax Error
    signal(SIGFPE, SigFncCast fpetrap);
 #endif                                  /* MICROSOFT || TURBO */
 #endif                                  /* MSDOS */
+
+#if defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT) && (WordBits == 64) && !defined(__linux__)
+   /*
+    * Every suspended builtin or operator keeps a C frame live, so the C
+    * stack, not the evaluation stack, limits how deeply generators nest.
+    * Raise the soft limit for the main C stack and let the kernel grow
+    * it on demand.  Not done on Linux: see MainCStackWanted.
+    */
+   {
+      struct rlimit rl;
+      if (getrlimit(RLIMIT_STACK, &rl) == 0 &&
+          rl.rlim_cur != RLIM_INFINITY && rl.rlim_cur < MainCStackWanted) {
+         rl.rlim_cur = MainCStackWanted;
+         if (rl.rlim_max != RLIM_INFINITY && rl.rlim_cur > rl.rlim_max)
+            rl.rlim_cur = rl.rlim_max;
+         (void)setrlimit(RLIMIT_STACK, &rl);
+         }
+      }
+#endif                                  /* HAVE_GETRLIMIT && HAVE_SETRLIMIT && !__linux__ */
 
 #if UNIX || VMS
    signal(SIGSEGV, SigFncCast segvtrap);
@@ -2025,10 +2055,8 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    tstate->Stack = (word *)((char *)(tstate+1) + icodesize);
    tstate->Stackend = (word *)(((char *)(tstate->Stack)) + (stacksize/2));
 
-#ifdef StackCheck
    coexp->es_stack = tstate->Stack;
    coexp->es_stackend = tstate->Stackend;
-#endif                                  /* StackCheck */
 
    /*
     * Initialize values.

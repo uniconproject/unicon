@@ -132,6 +132,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
 
+    # The directory does not exist until apt runs, so a restore tar exits 2.
+    - name: Prepare apt cache directory
+      run: mkdir -p /var/cache/apt/archives
     - name: Cache apt packages
       uses: actions/cache@v5
       with:

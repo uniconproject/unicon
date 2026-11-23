@@ -321,6 +321,7 @@ void main(int argc, char **argv)
           sp = BlkD(k_current,Coexpr)->es_stack + Wsizeof(struct b_coexpr);
 #else                                   /* StackCheck */
           stackend = stack + mstksize/WordSize;
+          BlkD(k_current,Coexpr)->es_stackend = stackend;
           sp = stack + Wsizeof(struct b_coexpr);
 #endif                                  /* StackCheck */
 
@@ -403,6 +404,7 @@ void main(int argc, char **argv)
    sp = BlkD(k_current,Coexpr)->es_stack + Wsizeof(struct b_coexpr);
 #else                                   /* StackCheck */
    stackend = stack + mstksize/WordSize;
+   BlkD(k_current,Coexpr)->es_stackend = stackend;
    sp = stack + Wsizeof(struct b_coexpr);
 #endif                                  /* StackCheck */
 

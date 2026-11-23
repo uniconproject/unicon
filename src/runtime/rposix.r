@@ -3659,6 +3659,7 @@ int sock_recv(int s, struct b_record **rp)
    struct sockaddr_storage conn;
    struct sockaddr* sa = (struct sockaddr*) &conn;
    unsigned int len, addrlen = sizeof(conn);
+   int gni;
    char host[NI_MAXHOST], serv[NI_MAXSERV], addrbuf[INET6_ADDRSTRLEN];
 
    len = sizeof(s_type);
@@ -3731,10 +3732,14 @@ int sock_recv(int s, struct b_record **rp)
       String((*rp)->fields[PMSG_SADDR], addrbuf);
    free(heap);
 
-   s = getnameinfo(sa, addrlen, host,
-                                NI_MAXHOST,
-                               serv, NI_MAXSERV, NI_NUMERICSERV);
-   if (s == 0)
+   /*
+    * NI_NUMERICHOST: addr is "ip:port".  Without it getnameinfo() may
+    * resolve the sender to a host name (a reverse DNS lookup per
+    * datagram, which can block) and addr would not be an address.
+    */
+   gni = getnameinfo(sa, addrlen, host, NI_MAXHOST, serv, NI_MAXSERV,
+                     NI_NUMERICSERV | NI_NUMERICHOST);
+   if (gni == 0)
       snprintf(addrstr, sizeof(addrstr), "%s:%s", host, serv);
    else {
      if ((print_sockaddr(sa, addrbuf, INET6_ADDRSTRLEN)) == NULL) {

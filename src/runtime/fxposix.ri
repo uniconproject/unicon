@@ -2255,9 +2255,10 @@ function{0,1} receive(f)
       if (status & Fs_SSH) {
          /*
           * The next channel event in true arrival order: a
-          * posix_message whose addr is "stdout", "stderr" or "exit"
-          * and whose msg is the data (the exit status as a string).
-          * Fails once the channel is exhausted.  Hold the shared
+          * posix_message whose type is "stdout", "stderr" or
+          * "exitstatus" and whose msg is the data (the exit status as a
+          * string, as c["exitstatus"] names it).  addr and the other
+          * fields are &null.  Fails once the channel is exhausted.  Hold the shared
           * session mutex around pump/dequeue (Concurrent).
           */
          struct SSHfile *sshf = BlkD(f,File)->fd.sshf;
@@ -2300,10 +2301,10 @@ function{0,1} receive(f)
          switch (ck->tag) {
             case SSH_CHUNK_STDOUT: tag = "stdout"; break;
             case SSH_CHUNK_STDERR: tag = "stderr"; break;
-            default:               tag = "exit";   break;
+            default:               tag = "exitstatus"; break;
             }
-         StrLoc(rp->fields[PMSG_ADDR]) = tag;
-         StrLen(rp->fields[PMSG_ADDR]) = strlen(tag);
+         StrLoc(rp->fields[PMSG_TYPE]) = tag;
+         StrLen(rp->fields[PMSG_TYPE]) = strlen(tag);
          len = ck->len - ck->off;
          Protect(StrLoc(rp->fields[PMSG_MSG]) =
                     alcstr(ck->data + ck->off, len),

@@ -774,6 +774,9 @@ dptr rec_structor(char *name)
          AsgnCStr(fields[3], "daddr");
          AsgnCStr(fields[4], "ttl");
          AsgnCStr(fields[5], "proto");
+         AsgnCStr(fields[6], "sport");
+         AsgnCStr(fields[7], "dport");
+         AsgnCStr(fields[8], "type");
          posix_message.dword = D_Proc;
          posix_message.vword.bptr = (union block *)dynrecord(&s, fields,
                                                              PMSG_NFIELDS);
@@ -3645,6 +3648,9 @@ int sock_send(char *adr, char *msg, int msglen, int af_fam)
  * to &null.  For IPPROTO_ICMP raw sockets the message typically includes
  * the IP header followed by the ICMP payload.
  *
+ * Fields filled: msg, addr, saddr, type ("data"), and sport for UDP.
+ * daddr, ttl and proto come from the IP header of a raw IPv4 packet.
+ *
  * MSG_PEEK into a 2K stack buffer (typical MTU-sized datagrams), then
  * consume with recvfrom.  If the peek fills the buffer, receive into a
  * 64K heap buffer so the datagram is not truncated or lost.
@@ -3715,6 +3721,8 @@ int sock_recv(int s, struct b_record **rp)
       StrLoc((*rp)->fields[PMSG_MSG]) = p;
       StrLen((*rp)->fields[PMSG_MSG]) = msglen;
    }
+   StrLoc((*rp)->fields[PMSG_TYPE]) = "data";
+   StrLen((*rp)->fields[PMSG_TYPE]) = 4;
 
    if (s_type == SOCK_RAW && msglen >= 20 && ((buf[0] >> 4) & 0xf) == 4) {
       char ip[INET_ADDRSTRLEN];
@@ -3730,6 +3738,8 @@ int sock_recv(int s, struct b_record **rp)
       }
    else if (print_sockaddr(sa, addrbuf, INET6_ADDRSTRLEN) != NULL)
       String((*rp)->fields[PMSG_SADDR], addrbuf);
+   if (s_type == SOCK_DGRAM)
+      MakeInt(get_sa_port(sa), &(*rp)->fields[PMSG_SPORT]);
    free(heap);
 
    /*

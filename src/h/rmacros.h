@@ -115,7 +115,10 @@
 #define PMSG_DADDR      3       /* destination address */
 #define PMSG_TTL        4       /* TTL / hop limit */
 #define PMSG_PROTO      5       /* IP protocol number */
-#define PMSG_NFIELDS    6
+#define PMSG_SPORT      6       /* source port */
+#define PMSG_DPORT      7       /* destination port */
+#define PMSG_TYPE       8       /* kind of message: "data", "stdout", ... */
+#define PMSG_NFIELDS    9
 
 
 /*

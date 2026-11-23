@@ -1,0 +1,1430 @@
+#
+# yaml.icn - YAML support library
+#
+# Conversion of Unicon values to and from YAML 1.2, following json.icn.
+# YAML values map to Unicon values the same way JSON values do:
+#
+#    mapping -> table          sequence -> list
+#    null, ~, empty -> &null   true/false -> "__true__"/"__false__"
+#    integer (decimal, 0x, 0o) -> integer
+#    float -> real             any other scalar -> string
+#
+# so that the result of ytous() can be used wherever the result of
+# jtous() is, and utoy() encodes Unicon structures with the same
+# "__uniset__", "__unicset__", "__unitable__", "__unirecord__" and
+# "__uniclass__" metadata as utoj(), which ytous() decodes.
+#
+# Supported: block and flow collections; plain, single-quoted,
+# double-quoted, literal (|) and folded (>) scalars with chomping and
+# indentation indicators; comments; multiple documents (--- and ...);
+# anchors and aliases; merge keys (<<); the tags !!str, !!int, !!float,
+# !!bool, !!null, !!seq, !!map, !!set and the non-specific tag !.
+# Other tags are ignored, except in strict mode.  %YAML and %TAG
+# directives are skipped.
+#
+# Not supported: multi-line implicit keys, tag handles other than ! and
+# !! (%TAG directives are ignored).
+# .inf and .nan stay strings, since Unicon reals have no infinity or
+# NaN.  YAML 1.1 booleans (yes, no, on, off) are strings, as in YAML 1.2.
+# Escapes for characters beyond 7-bit ASCII produce UTF-8.
+#
+# In strict mode, duplicate mapping keys and unknown tags are errors.
+#
+
+package yaml
+
+import json
+
+#
+# Parser state: the error handler, the anchors of the current document,
+# and the position where the current line starts.  The column of &pos is
+# &pos - lstart.  kplain is set by _ykey() for a plain-scalar key.
+# tagredef is set if the document's %TAG directives redefine "!!".
+# anchorlog, while a key check is running, records anchors that check
+# changed so they can be put back.
+#
+record _yst(jerror, anchors, lstart, kplain, tagredef, anchorlog)
+
+#<p>
+# Convert YAML to Unicon values.  This procedure is a generator: it
+# produces one Unicon value for each YAML document.
+# <[param s - YAML-encoded string, or YAML filename if mode is "f"]>
+# <[param strict - Flag for strict YAML (non-null)]>
+# <[param mode - "s" for a string (the default) or "f" for a file]>
+# <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
+#</p>
+procedure ytou(s, strict, mode, error)
+   local jerror, y
+   jerror := ErrorHandler(error, strict)
+   jerror.tag := "[yaml]"
+   case \mode | "s" of {
+      "s": y := s
+      "f": {
+         y := _yreadfile(s) |
+            return jerror.write_err("Unable to open file " || image(s))
+         jerror.init(s)
+         }
+      default: return jerror.write_err("Invalid mode " || image(mode))
+      }
+   suspend _yparse(y, jerror)
+   jerror.get_err()
+end
+
+#<p>
+# Convert a YAML string to Unicon values, one per document.
+# <[param s - YAML-encoded string]>
+# <[param strict - Flag for strict YAML (non-null)]>
+# <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
+#</p>
+procedure ytous(s, strict, error)
+   suspend ytou(s, strict, "s", error)
+end
+
+#<p>
+# Convert a YAML file to Unicon values, one per document.
+# <[param s - YAML filename]>
+# <[param strict - Flag for strict YAML (non-null)]>
+# <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
+#</p>
+procedure ytouf(s, strict, error)
+   suspend ytou(s, strict, "f", error)
+end
+
+#<p>
+# Given a Unicon value, produce a YAML document for it, including the
+# Unicon metadata that ytou() uses to reconstruct the original value.
+# <[param x - a Unicon value]>
+# <[param strict - Flag for strict YAML (non-null)]>
+# <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
+# <[return a string; a YAML document]>
+#</p>
+procedure utoy(x, strict, error)
+   local jerror, y
+   jerror := ErrorHandler(error, strict)
+   jerror.tag := "[yaml]"
+   if y := _utoy(x, jerror) then return y
+   jerror.get_err()
+end
+
+#<p>
+# Same as utoy(), except that only standard YAML data is produced,
+# without Unicon metadata.
+# <[param x - a Unicon value]>
+# <[param strict - Flag for strict YAML (non-null)]>
+# <[param error - file for error messages (defaults to <tt>&errout</tt>)]>
+# <[return a string; a YAML document]>
+#</p>
+procedure toyaml(x, strict, error)
+   local jerror, y
+   jerror := ErrorHandler(error, strict)
+   jerror.tag := "[yaml]"
+   if y := _utoy(x, jerror, "r") then return y
+   jerror.get_err()
+end
+
+procedure _yreadfile(fname)
+   local f, y
+   # Untranslated, so Windows text mode does not rewrite line breaks.
+   # _ynormnl() turns CR LF and CR into LF.
+   f := open(fname, "ru") | fail
+   y := ""
+   while y ||:= reads(f, 65536)
+   close(f)
+   return y
+end
+
+##################
+# PARSER         #
+##################
+
+#
+# Generate the value of each document in s.
+#
+procedure _yparse(s, jerror)
+   local st, d
+   if upto('\r', s) then s := _ynormnl(s)
+   st := _yst(jerror, , 1)
+   s ? {
+      ="\xef\xbb\xbf"                             # byte order mark
+      while d := _ydocument(st) do
+         suspend d[1]
+      }
+end
+
+#
+# Map CR LF and CR line breaks to LF.
+#
+procedure _ynormnl(s)
+   local r
+   r := ""
+   s ? {
+      while r ||:= tab(upto('\r')) do {
+         move(1)
+         ="\n"
+         r ||:= "\n"
+         }
+      r ||:= tab(0)
+      }
+   return r
+end
+
+procedure _yerr(st, s)
+   _jp_err(st.jerror, s)
+end
+
+#
+# Parse one document.  Returns its value in a list (the value may be
+# &null); fails at the end of the stream or on an error.
+#
+procedure _ydocument(st)
+   local v, started, directive, compact
+   st.anchors := table()
+   st.tagredef := &null
+   repeat {
+      _yskip(st) | fail
+      if pos(0) then {
+         if \directive then
+            return _yerr(st, "YAML directive without a document")
+         if \started then return [&null]
+         fail
+         }
+      if &pos = st.lstart & ="%" then {           # directive
+         directive := 1
+         if ="TAG" & tab(many(' \t')) & ="!!" & any(' \t') then
+            st.tagredef := 1
+         tab(upto('\n') | 0)
+         started := 1
+         next
+         }
+      if _yatmark(st, "...") & /directive then {
+         _ydocend(st) | fail
+         if \started then return [&null]
+         next
+         }
+      break
+      }
+   # compact: a block collection may start on this line, as in
+   # "--- a: b" and "--- - a", not only when the marker is absent.
+   if _yatmark(st, "---") then {
+      move(3)
+      compact := 1
+      }
+   else if \directive then
+      return _yerr(st, "Expected --- after YAML directives")
+   else compact := 1
+   v := _ynode(st, -1, compact) | fail
+   _yskip(st) | fail
+   if _yatmark(st, "...") then _ydocend(st) | fail
+   else if not (pos(0) | _yatmark(st, "---")) then
+      return _yerr(st, "Expected end of YAML document, got: " || _jp_next())
+   return [v]
+end
+
+#
+# Consume a document end marker; only a comment may follow it.
+#
+procedure _ydocend(st)
+   move(3)
+   tab(many(' \t'))
+   if any('#\n') | pos(0) then return
+   return _yerr(st, "Unexpected YAML after document end marker: " || _jp_next())
+end
+
+#
+# Skip white space, comments and line breaks.  Fails, with an error, on
+# a line indented with tabs.
+#
+procedure _yskip(st)
+   repeat {
+      tab(many(' \t'))
+      if any('#') & (&pos = 1 | any(' \t\n', &subject, &pos - 1)) then
+         tab(upto('\n') | 0)
+      if ="\n" then {
+         st.lstart := &pos
+         tab(many(' '))
+         if any('\t') then {
+            tab(many(' \t'))
+            if not (any('#\n') | pos(0)) then
+               return _yerr(st, "Tabs are not allowed for YAML indentation")
+            }
+         next
+         }
+      return
+      }
+end
+
+procedure _ycol(st)
+   return &pos - st.lstart
+end
+
+#
+# Succeed if &pos is at a document marker ("---" or "...") at the start
+# of a line.
+#
+procedure _yatmark(st, m)
+   return &pos = st.lstart & match(m) &
+      (any(' \t\n', &subject, &pos + 3) | &pos + 3 > *&subject)
+end
+
+#
+# Succeed if &pos is at a block sequence entry indicator.
+#
+procedure _yisdash()
+   return match("-") & (any(' \t\n', &subject, &pos + 1) | &pos = *&subject)
+end
+
+#
+# Succeed if &pos is at an explicit key indicator ("? ").
+#
+procedure _yisqkey()
+   return match("?") & (any(' \t\n', &subject, &pos + 1) | &pos = *&subject)
+end
+
+#
+# Succeed, without moving, if the current line starts an implicit key.
+#
+procedure _yiskey(st)
+   local p, ls, e, r, name
+   p := &pos
+   ls := st.lstart
+   e := st.jerror.error
+   # Reading a possible key can register anchors, then fail when there
+   # is no ":".  For [*a, &a second] that would replace a with "second"
+   # before the real parse of the same list.  Only the names written
+   # during this check are put back.
+   st.anchorlog := table()
+   r := (_ykey(st) & 1)
+   &pos := p
+   st.lstart := ls
+   st.jerror.error := e
+   every name := key(st.anchorlog) do {
+      if st.anchorlog[name] === _yabsent() then delete(st.anchors, name)
+      else st.anchors[name] := st.anchorlog[name]
+      }
+   st.anchorlog := &null
+   return \r
+end
+
+#
+# Remember the previous binding the first time a key check writes name,
+# then store v.  Outside a key check this only stores v.
+#
+procedure _ysetanchor(st, name, v)
+   local log
+   log := st.anchorlog
+   if \log & not member(log, name) then {
+      if member(st.anchors, name) then log[name] := st.anchors[name]
+      else log[name] := _yabsent()
+      }
+   st.anchors[name] := v
+   return
+end
+
+# A token meaning "this anchor was not defined before the key check".
+procedure _yabsent()
+   static s
+   initial s := []
+   return s
+end
+
+#
+# Parse a block node whose content must be indented more than column
+# ind.  The node may start on the current line, after an indicator, or
+# on a following line.  If compact is non-null, a block sequence or
+# mapping may start on the current line (after "- " or "---").  If mapval
+# is non-null, a block sequence at column ind is allowed on the next line
+# (a mapping value).  If rawbytes is non-null, a double-quoted scalar is
+# a cset's byte string: escapes are single bytes, not UTF-8 characters.
+#
+procedure _ynode(st, ind, compact, mapval, rawbytes)
+   local anchor, tag, v, c
+
+   tab(many(' \t'))
+   if \compact & not (any('#\n') | pos(0)) then {
+      if _yisdash() then return _yseq(st, _ycol(st))
+      # properties before an implicit key belong to the key
+      if _yisqkey() | _yiskey(st) then return _ymap(st, _ycol(st))
+      }
+   while any('&!') do {
+      if ="&" then {
+         if \anchor then return _yerr(st, "YAML node has two anchors")
+         anchor := tab(many(~' \t\n,[]{}')) |
+            return _yerr(st, "Expected YAML anchor name")
+         }
+      else {
+         if \tag then return _yerr(st, "YAML node has two tags")
+         tag := _ytag(st)
+         }
+      tab(many(' \t'))
+      }
+   if \(anchor | tag) & any('*') then
+      return _yerr(st, "A YAML alias cannot have properties")
+
+   if any('#\n') | pos(0) then {
+      # the node, if any, is on a following line
+      _yskip(st) | fail
+      c := _ycol(st)
+      if pos(0) | _yatmark(st, "---") | _yatmark(st, "...") then
+         v := _ytagged(st, tag, "", "plain")
+      else if c > ind then {
+         if _yisdash() then v := _ytagged(st, tag, _yseq(st, c, anchor), "node")
+         else if _yisqkey() | _yiskey(st) then
+            v := _ytagged(st, tag, _ymap(st, c, anchor), "node")
+         else if any('&!') then                   # properties on their own line
+            v := _ytagged(st, tag, _ynode(st, ind, , mapval, rawbytes), "node")
+         else v := _yscalar(st, ind, tag, rawbytes, anchor)
+         }
+      else if c = ind & \mapval & _yisdash() then
+         v := _ytagged(st, tag, _yseq(st, c, anchor), "node")
+      else
+         v := _ytagged(st, tag, "", "plain")
+      }
+   else
+      v := _yscalar(st, ind, tag, rawbytes, anchor)
+
+   if \st.jerror.error then fail
+   if \anchor then _ysetanchor(st, anchor, v)
+   return v
+end
+
+#
+# Parse a block sequence whose "-" indicators are at column c.
+#
+procedure _yseq(st, c, anchor)
+   local L
+   L := []
+   # Visible to aliases inside this sequence, as in &a [*a].
+   if \anchor then _ysetanchor(st, anchor, L)
+   repeat {
+      move(1)                                     # "-"
+      put(L, _ynode(st, c, 1)) | fail
+      _yskip(st) | fail
+      if pos(0) | _yatmark(st, "---") | _yatmark(st, "...") then break
+      if _ycol(st) < c then break
+      if _ycol(st) > c then
+         return _yerr(st, "Bad indentation of a YAML sequence entry")
+      if not _yisdash() then break
+      }
+   return L
+end
+
+#
+# Parse a block mapping whose keys are at column c.
+#
+procedure _ymap(st, c, anchor)
+   local t, k, kp, v, k1, v1, first, explicit, np
+   t := table()
+   np := 0
+   # Visible to aliases inside this mapping, as in &a {b: *a}.
+   if \anchor then _ysetanchor(st, anchor, t)
+   # Keys written directly, as opposed to keys copied in by a merge.
+   # Strict mode rejects a repeated explicit key, but an explicit key
+   # may override a value that came from <<.
+   if \st.jerror.strict then explicit := table()
+   repeat {
+      if _yisdash() then
+         return _yerr(st, "Expected a YAML mapping key, got a sequence entry")
+      if _yisqkey() then {
+         # explicit key: "? key" then, optionally, ": value" at column c
+         move(1)
+         k := _ynode(st, c, 1, 1) | fail
+         kp := &null
+         _yskip(st) | fail
+         if _ycol(st) = c & match(":") &
+            (any(' \t\n', &subject, &pos + 1) | &pos = *&subject) then {
+            move(1)
+            v := _ynode(st, c, 1, 1,
+                        if /first & k === "__unicset__" then 1 else &null) | fail
+            }
+         else v := &null
+         }
+      else {
+         if not (k := _ykey(st)) then
+            return _yerr(st, "Expected a YAML mapping key, got: " || _jp_next())
+         kp := st.kplain
+         v := _ynode(st, c, , 1,
+                     if /first & k === "__unicset__" then 1 else &null) | fail
+         }
+      if \kp & k === "<<" then
+         _ymerge(st, t, v) | fail
+      else
+         _yenter(st, t, explicit, k, v,
+                 if /first & k === "__unitable__" & v === 1 then 1 else &null) | fail
+      if /first then {
+         first := 1
+         k1 := k
+         v1 := v
+         }
+      np +:= 1
+      _yskip(st) | fail
+      if pos(0) | _yatmark(st, "---") | _yatmark(st, "...") then break
+      if _ycol(st) < c then break
+      if _ycol(st) > c then
+         return _yerr(st, "Bad indentation of a YAML mapping entry")
+      }
+   return _jfromtable(t, k1, v1, np)
+end
+
+#
+# Merge key: add the pairs of mapping v (or of each mapping in the
+# sequence v, earlier ones first) whose keys are not already in t.
+#
+procedure _ymerge(st, t, v)
+   local m, k
+   if type(v) == "table" then v := [v]
+   if type(v) ~== "list" then
+      return _yerr(st, "YAML merge key (<<) needs a mapping or a sequence of them")
+   every m := !v do {
+      if type(m) ~== "table" then
+         return _yerr(st, "YAML merge key (<<) needs a mapping or a sequence of them")
+      every k := key(m) do
+         if not member(t, k) then t[k] := m[k]
+      }
+   return t
+end
+
+#
+# Store one explicit mapping entry.  explicit is the table of keys
+# written directly in this mapping (null when strict mode is off);
+# merged keys are not in it, so a later explicit key may override them.
+# marker is non-null for the {"__unitable__":1} metadata pair, which is
+# not an entry: utoy() writes it and then the real pairs, and a table
+# that contains that key must keep the real entry.
+#
+procedure _yenter(st, t, explicit, k, v, marker)
+   if \marker then return t
+   if \explicit & member(explicit, k) then
+      return _yerr(st, "Duplicate YAML mapping key: " || image(k))
+   t[k] := v
+   if \explicit then explicit[k] := 1
+   return t
+end
+
+#
+# Parse an implicit key on the current line, and the ":" after it.
+# Fails, possibly with an error recorded, if there is no key here.
+#
+procedure _ykey(st)
+   local k, kind, anchor, tag, ls
+   st.kplain := &null
+   ls := st.lstart
+   while any('&!') do {
+      if ="&" then anchor := tab(many(~' \t\n,[]{}')) | fail
+      else tag := _ytag(st)
+      tab(many(' \t'))
+      }
+   kind := "quoted"
+   if ="\"" then k := _ydq(st) | fail
+   else if ="'" then k := _ysq(st) | fail
+   else if any('[{') then {
+      k := _yflow(st, anchor) | fail
+      kind := "node"
+      }
+   else if ="*" then {
+      if \(anchor | tag) then fail
+      k := _yalias(st) | fail
+      kind := "node"
+      }
+   else if any(':') & (any(' \t\n', &subject, &pos + 1) | &pos = *&subject) then {
+      k := ""                                     # empty key
+      kind := "plain"
+      }
+   else if any('&!,]}#|>%@`') then fail
+   else if any('?-') & (any(' \t\n', &subject, &pos + 1) | &pos = *&subject) then
+      fail
+   else {
+      k := _yplainline()
+      if k == "" then fail
+      st.kplain := 1
+      kind := "plain"
+      }
+   if st.lstart ~= ls then fail                   # spans lines
+   tab(many(' \t'))
+   if =":" & (any(' \t\n') | pos(0)) then {
+      k := _ytagged(st, tag, k, kind)
+      if \anchor then _ysetanchor(st, anchor, k)
+      return k
+      }
+end
+
+#
+# Parse a scalar, flow collection or alias in block context; continuation
+# lines of plain and quoted scalars must be indented more than ind.  The
+# rest of the line must be empty.
+#
+procedure _yscalar(st, ind, tag, rawbytes, anchor)
+   local v, kind, c
+   c := &subject[&pos]
+   if any('|>') then {
+      move(1)
+      return _ytagged(st, tag, _yblockscalar(st, ind, c), "quoted")
+      }
+   if ="\"" then {
+      v := _ydq(st, rawbytes) | fail
+      kind := "quoted"
+      }
+   else if ="'" then {
+      v := _ysq(st) | fail
+      kind := "quoted"
+      }
+   else if any('[{') then {
+      v := _yflow(st, anchor) | fail
+      kind := "node"
+      }
+   else if ="*" then {
+      v := _yalias(st) | fail
+      kind := "node"
+      }
+   else if any(',]}%@`') then
+      return _yerr(st, "Unexpected character in YAML: " || c)
+   else if any('?:-') & (any(' \t\n', &subject, &pos + 1) | &pos = *&subject) then
+      return _yerr(st, "Unexpected indicator in YAML: " || c)
+   else {
+      v := _yplain(st, ind)
+      kind := "plain"
+      }
+   tab(many(' \t'))
+   if not (any('#\n') | pos(0)) then {
+      if any(':') then
+         return _yerr(st, "YAML mapping values are not allowed here")
+      return _yerr(st, "Unexpected YAML after value: " || _jp_next())
+      }
+   return _ytagged(st, tag, v, kind)
+end
+
+#
+# Return the text of a plain scalar on the current line, leaving &pos
+# just after it.  In flow context (flow non-null) flow indicators also
+# end it.
+#
+procedure _yplainline(flow)
+   local p0, stop
+   p0 := &pos
+   stop := if \flow then ':#\n,[]{}' else ':#\n'
+   repeat {
+      tab(upto(stop) | 0)
+      if pos(0) | any('\n') then break
+      if any(':') then {
+         if any(' \t\n', &subject, &pos + 1) | &pos = *&subject |
+            (\flow & any(',[]{}', &subject, &pos + 1)) then break
+         move(1)
+         next
+         }
+      if any('#') then {
+         if &pos > p0 & any(' \t', &subject, &pos - 1) then break
+         move(1)
+         next
+         }
+      break                                       # flow indicator
+      }
+   return trim(&subject[p0:&pos], ' \t')
+end
+
+#
+# Parse a plain scalar, which may continue on following lines indented
+# more than ind (or on any line, in flow context).  Returns its text.
+#
+procedure _yplain(st, ind, flow)
+   local s, line, p, ls, nl
+   s := _yplainline(flow)
+   repeat {
+      p := &pos
+      ls := st.lstart
+      tab(many(' \t'))
+      if not any('\n') then break
+      nl := 0
+      while ="\n" do {
+         st.lstart := &pos
+         nl +:= 1
+         tab(many(' \t'))
+         }
+      if pos(0) | any('#') | (/flow & _ycol(st) <= ind) |
+         (\flow & any(',[]{}:')) |
+         # Only a real document marker ends the scalar.  "---world" is text.
+         (_yatmark(st, "---") | _yatmark(st, "...")) |
+         (line := _yplainline(flow)) == "" then {
+         &pos := p
+         st.lstart := ls
+         break
+         }
+      s ||:= (if nl = 1 then " " else repl("\n", nl - 1)) || line
+      }
+   return s
+end
+
+#
+# Fold the line breaks at &pos in a quoted scalar: a single break becomes
+# a space, n > 1 breaks become n - 1 newlines.  Leading white space on
+# the following line is dropped.
+#
+procedure _yfold(st)
+   local nl
+   nl := 0
+   while ="\n" do {
+      st.lstart := &pos
+      nl +:= 1
+      if _yatmark(st, "---") | _yatmark(st, "...") then fail
+      tab(many(' \t'))
+      }
+   if pos(0) then fail
+   return if nl = 1 then " " else repl("\n", nl - 1)
+end
+
+#
+# Parse a single-quoted scalar; called after the opening quote.
+#
+procedure _ysq(st)
+   local s
+   s := ""
+   repeat {
+      s ||:= tab(upto('\'\n')) |
+         return _yerr(st, "YAML single-quoted scalar missing terminating quote")
+      if ="''" then s ||:= "'"
+      else if ="'" then return s
+      else {
+         s := trim(s, ' \t')
+         s ||:= _yfold(st) |
+            return _yerr(st, "YAML single-quoted scalar missing terminating quote")
+         }
+      }
+end
+
+#
+# Parse a double-quoted scalar; called after the opening quote.
+#
+procedure _ydq(st, rawbytes)
+   local s, lit
+   s := ""
+   lit := 0                    # characters of s that came from escapes
+   repeat {
+      s ||:= tab(upto('"\\\n')) |
+         return _yerr(st, "YAML double-quoted scalar missing terminating quote")
+      if ="\"" then return s
+      if ="\\" then {
+         if ="\n" then {                          # escaped line break
+            st.lstart := &pos
+            tab(many(' \t'))
+            }
+         else {
+            s ||:= _yescape(st, rawbytes) | fail
+            lit := *s
+            }
+         }
+      else {
+         s := s[1:lit + 1] || trim(s[lit + 1:0], ' \t')
+         s ||:= _yfold(st) |
+            return _yerr(st, "YAML double-quoted scalar missing terminating quote")
+         }
+      }
+end
+
+#
+# Return the string for the escape sequence after a backslash.
+# If rawbytes is non-null, the result is one byte (cset metadata):
+# \xNN and \u00NN are that byte, not the UTF-8 encoding of the code point.
+#
+procedure _yescape(st, rawbytes)
+   local c, n, h, cp
+   c := move(1) | return _yerr(st, "Incomplete YAML escape sequence")
+   case c of {
+      "n":  return "\n"
+      "t" | "\t": return "\t"
+      "\"": return "\""
+      "\\": return "\\"
+      "/":  return "/"
+      " ":  return " "
+      "0":  return "\0"
+      "a":  return "\a"
+      "b":  return "\b"
+      "e":  return "\e"
+      "f":  return "\f"
+      "r":  return "\r"
+      "v":  return "\v"
+      "N":  return if \rawbytes then char(16r85) else _jutf8(16r85)
+      "_":  return if \rawbytes then char(16rA0) else _jutf8(16rA0)
+      "L":  {
+         if \rawbytes then
+            return _yerr(st, "YAML cset escape is not a byte")
+         return _jutf8(16r2028)
+         }
+      "P":  {
+         if \rawbytes then
+            return _yerr(st, "YAML cset escape is not a byte")
+         return _jutf8(16r2029)
+         }
+      "x" | "u" | "U": {
+         n := case c of { "x": 2; "u": 4; "U": 8 }
+         h := tab(many('0123456789abcdefABCDEF'))
+         if *\h >= n then {
+            move(n - *h)
+            cp := integer("16r" || h[1:n + 1])
+            if \rawbytes then {
+               if cp > 255 then
+                  return _yerr(st, "YAML cset escape is not a byte")
+               return char(cp)
+               }
+            # char() above 255 is runtime error 205; a surrogate's UTF-8
+            # encoding is not a valid Unicode scalar value either.
+            if cp > 16r10FFFF | 16rD800 <= cp <= 16rDFFF then
+               return _yerr(st, "YAML escape is not a Unicode scalar value")
+            return _jutf8(cp)
+            }
+         return _yerr(st, "YAML escape \\" || c || " needs " || n ||
+                      " hex digits")
+         }
+      }
+   return _yerr(st, "Invalid YAML escape sequence: \\" || c)
+end
+
+#
+# Parse a literal (style "|") or folded (style ">") block scalar; called
+# after the style indicator.  ind is the indentation of the parent node.
+# Leaves &pos at the start of the first line after the scalar.
+#
+procedure _yblockscalar(st, ind, style)
+   local chomp, inc, n, lines, ls, sp, s, te, kind, prev, empties, l, lead,
+         broke, breaks
+
+   every 1 to 2 do {
+      if tab(any('+-')) then chomp := &subject[&pos - 1]
+      else if any('123456789') then inc := integer(move(1))
+      }
+   tab(many(' \t'))
+   if ="#" then tab(upto('\n') | 0)
+   if not (any('\n') | pos(0)) then
+      return _yerr(st, "Invalid YAML block scalar header")
+   if \inc then n := (if ind < 0 then 0 else ind) + inc
+
+   # Collect the content lines, without their indentation.
+   # broke is set when the last collected line ended with a line break.
+   # End of input is not a break: clip and keep must not invent one.
+   lines := []
+   lead := 0
+   while ="\n" do {
+      if *lines > 0 then broke := 1
+      st.lstart := ls := &pos
+      sp := tab(many(' ')) | ""
+      if pos(0) & *sp = 0 then break
+      if any('\n') | pos(0) then {                # empty line
+         if /n & *sp > lead then lead := *sp
+         put(lines, if *sp > \n then sp[n + 1:0] else "")
+         broke := &null
+         next
+         }
+      if /n then {
+         if *sp <= ind then {
+            &pos := ls
+            break
+            }
+         n := *sp
+         if lead > n then
+            return _yerr(st, "YAML block scalar has leading empty lines " ||
+                         "indented more than its content")
+         }
+      if *sp < n | (n = 0 & (_yatmark(st, "---") | _yatmark(st, "..."))) then {
+         &pos := ls
+         break
+         }
+      put(lines, sp[n + 1:0] || tab(upto('\n') | 0))
+      broke := &null
+      }
+
+   # Trailing empty lines are subject to chomping.
+   te := 0
+   while lines[-1] == "" do {
+      pull(lines)
+      te +:= 1
+      }
+
+   s := ""
+   if style == "|" then {
+      every s ||:= !lines || "\n"
+      s := s[1:-1]
+      }
+   else {
+      # Fold: line breaks between two non-empty lines that do not start
+      # with white space become a space; empty lines become newlines.
+      empties := 0
+      every l := !lines do {
+         if l == "" then {
+            empties +:= 1
+            next
+            }
+         kind := if any(' \t', l) then "more" else "normal"
+         if /prev then s ||:= repl("\n", empties)
+         else if prev == "normal" & kind == "normal" then
+            s ||:= (if empties = 0 then " " else repl("\n", empties))
+         else
+            s ||:= repl("\n", empties + 1)
+         s ||:= l
+         prev := kind
+         empties := 0
+         }
+      }
+
+   # breaks is the number of trailing empty lines that ended on a real
+   # line break.  End of input is not one: clip and keep must not add it.
+   # A content line has its own break when another line follows it, or
+   # when it is last and broke is set.
+   breaks := if \broke then te else (if te > 0 then te - 1 else 0)
+   case chomp of {
+      "-":  return s
+      "+":  return s || repl("\n", breaks +
+               (if *lines > 0 & (te > 0 | \broke) then 1 else 0))
+      default:
+         return s || (if *lines > 0 & (te > 0 | \broke) then "\n" else "")
+      }
+end
+
+#
+# Parse an alias; called after the "*".
+#
+procedure _yalias(st)
+   local name
+   name := tab(many(~' \t\n,[]{}')) |
+      return _yerr(st, "Expected YAML alias name")
+   if member(st.anchors, name) then return st.anchors[name]
+   return _yerr(st, "Undefined YAML alias: *" || name)
+end
+
+#
+# Parse a tag; called at the "!".  Returns its text.
+#
+procedure _ytag(st)
+   local p
+   p := &pos
+   move(1)
+   if ="<" then tab(upto('>') + 1 | 0)
+   else tab(many(~' \t\n,[]{}'))
+   return &subject[p:&pos]
+end
+
+#
+# Apply tag to v.  kind is "plain" for the text of a plain scalar (which
+# is resolved here), "quoted" for other scalars, and "node" otherwise.
+#
+procedure _ytagged(st, tag, v, kind)
+   local r, S
+   if /tag then return if kind == "plain" then _yresolve(v) else v
+   if \st.tagredef & match("!!", tag) then tag := "!<" || tag || ">"
+   case tag of {
+      "!" | "!!str": return v
+      "!!int": {
+         # _yresolve() scans a string.  A collection here (for example
+         # !!int [1]) used to raise runtime error 103.
+         if type(v) == "integer" then return v
+         if type(v) ~== "string" then
+            return _yerr(st, "YAML !!int value is not an integer: " || type(v))
+         if type(r := _yresolve(v)) == "integer" then return r
+         return _yerr(st, "YAML !!int value is not an integer: " || image(v))
+         }
+      "!!float": {
+         if type(v) == ("integer" | "real") then return real(v)
+         if type(v) ~== "string" then
+            return _yerr(st, "YAML !!float value is not a number: " || type(v))
+         if r := real(_yresolve(v)) then return r
+         return _yerr(st, "YAML !!float value is not a number: " || image(v))
+         }
+      "!!bool": {
+         if type(v) ~== "string" then
+            return _yerr(st, "YAML !!bool value is not a boolean: " || type(v))
+         if (r := _yresolve(v)) === ("__true__" | "__false__") then return r
+         return _yerr(st, "YAML !!bool value is not a boolean: " || image(v))
+         }
+      "!!null": return &null
+      "!!set": {
+         if type(v) ~== "table" then
+            return _yerr(st, "YAML !!set needs a mapping")
+         S := set()
+         every insert(S, key(v))
+         return S
+         }
+      "!!seq" | "!!map": {
+         if kind == "plain" then return _yresolve(v)
+         return v
+         }
+      default: {
+         if \st.jerror.strict then
+            return _yerr(st, "Unknown YAML tag: " || tag)
+         if kind == "plain" then return _yresolve(v)
+         return v
+         }
+      }
+end
+
+#
+# Resolve the text of a plain scalar by the YAML 1.2 core schema.
+#
+procedure _yresolve(s)
+   case s of {
+      "" | "~" | "null" | "Null" | "NULL": return &null
+      "true" | "True" | "TRUE": return "__true__"
+      "false" | "False" | "FALSE": return "__false__"
+      }
+   if any('-+0123456789.', s) then s ? {
+      if (tab(any('-+')) | &null) & tab(many(&digits)) & pos(0) then
+         return integer(s)
+      &pos := 1
+      if ="0o" & tab(many('01234567')) & pos(0) then
+         return integer("8r" || s[3:0])
+      &pos := 1
+      if ="0x" & tab(many('0123456789abcdefABCDEF')) & pos(0) then
+         return integer("16r" || s[3:0])
+      &pos := 1
+      if _yfloat() & pos(0) then
+         return real(s)
+      }
+   return s
+end
+
+#
+# Match a YAML 1.2 core schema float, other than .inf and .nan:
+#    [-+]? ( \. [0-9]+ | [0-9]+ ( \. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?
+# with a "." or an exponent, so that integers do not match.
+#
+procedure _yfloat()
+   local exp
+   tab(any('-+'))
+   if ="." then
+      tab(many(&digits)) | fail
+   else {
+      tab(many(&digits)) | fail
+      if ="." then tab(many(&digits))
+      }
+   if tab(any('eE')) then {
+      tab(any('-+'))
+      tab(many(&digits)) | fail
+      exp := 1
+      }
+   return upto('.', &subject) | \exp
+end
+
+#
+# Succeed if &pos is at a ":" that separates a key from its value in a
+# flow collection (rather than starting a plain scalar like ":x").
+#
+procedure _yflowcolon()
+   return match(":") &
+      (any(' \t\n,[]{}', &subject, &pos + 1) | &pos = *&subject)
+end
+
+#
+# Skip white space, comments and line breaks inside a flow collection.
+#
+procedure _yfskip(st)
+   repeat {
+      tab(many(' \t'))
+      if any('#') & any(' \t\n', &subject, &pos - 1) then
+         tab(upto('\n') | 0)
+      if ="\n" then {
+         st.lstart := &pos
+         if _yatmark(st, "---") | _yatmark(st, "...") then
+            return _yerr(st, "YAML document marker inside a flow collection")
+         }
+      else return
+      }
+end
+
+#
+# Parse a flow node: a flow collection, quoted scalar, alias, or plain
+# scalar, with optional anchor and tag.
+#
+procedure _yflownode(st, rawbytes)
+   local anchor, tag, v, kind
+   while any('&!') do {
+      if ="&" then
+         anchor := tab(many(~' \t\n,[]{}')) |
+            return _yerr(st, "Expected YAML anchor name")
+      else
+         tag := _ytag(st)
+      _yfskip(st)
+      }
+   if any('[{') then {
+      v := _yflow(st, anchor) | fail
+      kind := "node"
+      }
+   else if ="\"" then {
+      v := _ydq(st, rawbytes) | fail
+      kind := "quoted"
+      }
+   else if ="'" then {
+      v := _ysq(st) | fail
+      kind := "quoted"
+      }
+   else if ="*" then {
+      v := _yalias(st) | fail
+      kind := "node"
+      }
+   else if any('-') & (any(' \t\n,[]{}', &subject, &pos + 1) | &pos = *&subject) then
+      return _yerr(st, "Unexpected - in YAML flow collection")
+   else {
+      v := _yplain(st, -1, 1)
+      kind := "plain"
+      }
+   v := _ytagged(st, tag, v, kind)
+   if \st.jerror.error then fail
+   if \anchor then _ysetanchor(st, anchor, v)
+   return v
+end
+
+#
+# Parse a flow sequence [...] or flow mapping {...}; called at the
+# opening bracket.  A trailing comma is allowed.  A "key: value" entry
+# in a flow sequence is a single-pair mapping.
+#
+procedure _yflow(st, anchor)
+   local L, t, k, kp, v, k1, v1, first, m, explicit, np, qkey, sawcolon
+
+   if ="[" then {
+      L := []
+      # Visible to aliases inside this sequence, as in &a [*a].
+      if \anchor then _ysetanchor(st, anchor, L)
+      repeat {
+         _yfskip(st)
+         if ="]" then return L
+         if pos(0) then
+            return _yerr(st, "Expected terminating ] for YAML flow sequence")
+         if any(',') then
+            return _yerr(st, "Unexpected comma in YAML flow sequence")
+         qkey := &null
+         if _yisqkey() then {
+            move(1)
+            _yfskip(st)
+            qkey := 1
+            }
+         # Plain "<<" is a merge, as in a flow mapping.  A quoted "<<"
+         # starts with '"' and stays an ordinary key.
+         kp := if any('[{"\'*&!') | _yflowcolon() then &null else 1
+         v := if _yflowcolon() then &null else (_yflownode(st) | fail)
+         _yfskip(st)
+         # "? a" is a mapping even when the ": value" is omitted.
+         sawcolon := &null
+         if =":" then sawcolon := 1
+         if \sawcolon | \qkey then {
+            k := v
+            if \sawcolon then {
+               _yfskip(st)
+               v := if any(',]') then &null else
+                  (_yflownode(st, if k === "__unicset__" then 1 else &null) | fail)
+               }
+            else v := &null
+            if \kp & k === "<<" then {
+               m := table()
+               _ymerge(st, m, v) | fail
+               v := m
+               }
+            else {
+               m := table()
+               if not (k === "__unitable__" & v === 1) then m[k] := v
+               v := _jfromtable(m, k, v, 1)
+               }
+            _yfskip(st)
+            }
+         put(L, v)
+         if ="," then next
+         if ="]" then return L
+         if pos(0) then
+            return _yerr(st, "Expected terminating ] for YAML flow sequence")
+         return _yerr(st, "Expected , or ] in YAML flow sequence, got: " ||
+                      _jp_next())
+         }
+      }
+
+   move(1)                                        # "{"
+   t := table()
+   np := 0
+   if \anchor then _ysetanchor(st, anchor, t)
+   if \st.jerror.strict then explicit := table()
+   repeat {
+      _yfskip(st)
+      if ="}" then break
+      if pos(0) then
+         return _yerr(st, "Expected terminating } for YAML flow mapping")
+      if any(',') then
+         return _yerr(st, "Unexpected comma in YAML flow mapping")
+      if _yisqkey() then {
+         move(1)
+         _yfskip(st)
+         }
+      kp := if any('[{"\'*&!') then &null else 1
+      k := if _yflowcolon() then &null else (_yflownode(st) | fail)
+      _yfskip(st)
+      if =":" then {
+         _yfskip(st)
+         v := if any(',}') then &null else
+            (_yflownode(st, if /first & k === "__unicset__" then 1 else &null) | fail)
+         _yfskip(st)
+         }
+      else v := &null
+      if \kp & k === "<<" then
+         _ymerge(st, t, v) | fail
+      else
+         _yenter(st, t, explicit, k, v,
+                 if /first & k === "__unitable__" & v === 1 then 1 else &null) | fail
+      if /first then {
+         first := 1
+         k1 := k
+         v1 := v
+         }
+      np +:= 1
+      if ="," then next
+      if ="}" then break
+      if pos(0) then
+         return _yerr(st, "Expected terminating } for YAML flow mapping")
+      return _yerr(st, "Expected , or } in YAML flow mapping, got: " ||
+                   _jp_next())
+      }
+   return _jfromtable(t, k1, v1, np)
+end
+
+######################
+# END PARSER         #
+######################
+
+##################
+# ENCODER        #
+##################
+
+#
+# Produce a YAML document for u.  If raw is non-null, no Unicon metadata
+# is added.  Mapping keys are sorted, so the output is deterministic.
+#
+procedure _utoy(u, jerror, raw)
+   local L, s
+   if not _ycoll(u, raw) then
+      return (_yscalarout(u, jerror, raw) || "\n") | fail
+   L := []
+   _yblockout(u, 0, jerror, raw, L) | fail
+   s := ""
+   every s ||:= !L || "\n"
+   return s
+end
+
+#
+# Succeed if u is encoded as a non-empty block collection.
+#
+procedure _ycoll(u, raw)
+   case type(u) of {
+      "null" | "string" | "integer" | "real": fail
+      "cset": return /raw
+      "list": return *u > 0
+      "set" | "table": return /raw | *u > 0
+      default: {
+         if match("record " | "object ", image(u)) then
+            return /raw | *_ypairs(u, , raw) > 0
+         fail
+         }
+      }
+end
+
+#
+# Return the pairs [key, value] of the mapping that encodes u, in output
+# order; Unicon metadata, if any, first.
+#
+procedure _ypairs(u, jerror, raw)
+   local P, K, k, nm
+   P := []
+   case type(u) of {
+      "table": {
+         if /raw then put(P, ["__unitable__", 1])
+         K := []
+         every put(K, key(u))
+         every k := !sort(K) do put(P, [k, u[k]])
+         }
+      "set":  put(P, ["__uniset__", sort(u)])
+      "cset": put(P, ["__unicset__", string(u)])
+      default: {
+         # __s and __m are class machinery.  A record may use those names
+         # as ordinary fields.
+         if match("object ", image(u)) then {
+            nm := type(u)
+            nm := nm[1:-7]                        # strip "__state"
+            if /raw then put(P, ["__uniclass__", nm])
+            every k := key(u) do
+               if not (k == ("__s" | "__m")) then put(P, [k, u[k]])
+            }
+         else {
+            if /raw then put(P, ["__unirecord__", type(u)])
+            # key() hides fields named __s and __m.  fieldnames() does not.
+            every k := fieldnames(u) do put(P, [k, u[k]])
+            }
+         }
+      }
+   return P
+end
+
+#
+# Append to L the lines of the block collection u, indented by ind.
+#
+procedure _yblockout(u, ind, jerror, raw, L)
+   local pad, p, v
+   pad := repl(" ", ind)
+   if type(u) == "list" | (\raw & type(u) == "set") then {
+      every v := !(if type(u) == "set" then sort(u) else u) do
+         _yentryout(pad || "-", v, ind, jerror, raw, L, 1) | fail
+      return L
+      }
+   every p := !_ypairs(u, jerror, raw) do
+      _yentryout(pad || (_ykeyout(p[1], jerror, raw) | fail) || ":", p[2],
+                 ind, jerror, raw, L) | fail
+   return L
+end
+
+#
+# Append to L an entry: prefix ("-" or "key:") followed by value v.
+# A collection in a sequence entry starts on the "-" line.
+#
+procedure _yentryout(prefix, v, ind, jerror, raw, L, inseq)
+   local sub
+   if not _ycoll(v, raw) then {
+      put(L, prefix || " " || (_yscalarout(v, jerror, raw) | fail))
+      return L
+      }
+   sub := _yblockout(v, ind + 2, jerror, raw, []) | fail
+   if \inseq then {
+      put(L, prefix || " " || sub[1][ind + 3:0])
+      every put(L, sub[2 to *sub])
+      }
+   else {
+      put(L, prefix)
+      every put(L, !sub)
+      }
+   return L
+end
+
+#
+# Encode a scalar, or an empty collection, on one line.
+#
+procedure _yscalarout(u, jerror, raw)
+   local tmp
+   case type(u) of {
+      "null":    return "null"
+      "string":  return _ystrout(u)
+      "integer": return image(u)
+      "real":    return image(u)
+      "cset":    return _ystrout(string(u))
+      "list" | "set": return "[]"
+      "table":   return "{}"
+      default: {
+         if match("record " | "object ", image(u)) then return "{}"
+         return jerror.set_err(type(u) || " has no YAML equivalent")
+         }
+      }
+end
+
+#
+# Encode a mapping key: scalars as scalars, collections in flow style.
+# The plain scalar "<<" is a merge key, so a real key of that text is quoted.
+#
+procedure _ykeyout(k, jerror, raw)
+   local s
+   if k === "<<" then return _ydqout(k)
+   if _ycoll(k, raw) | type(k) == ("list" | "set" | "table") then {
+      # Compact JSON is not always YAML: 1:"one" is one plain scalar
+      # because ":" is followed by a quote.  A space after ":" and ","
+      # makes the text a flow collection the reader accepts.
+      s := (if \raw then tojson(k) else utoj(k)) |
+         jerror.set_err("Cannot encode YAML key " || image(k))
+      return _yspacejson(s)
+      }
+   return _yscalarout(k, jerror, raw)
+end
+
+#
+# Return JSON text s with a space after each ":" and "," that is not
+# inside a string, so a flow parser sees those as separators.
+#
+procedure _yspacejson(s)
+   local r, c, quoted, esc
+   r := ""
+   s ? {
+      repeat {
+         c := move(1) | break
+         r ||:= c
+         if \quoted then {
+            if \esc then esc := &null
+            else if c == "\\" then esc := 1
+            else if c == "\"" then quoted := &null
+            }
+         else if c == "\"" then quoted := 1
+         else if c == (":" | ",") then r ||:= " "
+         }
+      }
+   return r
+end
+
+#
+# Encode a string as a plain scalar if it reads back as the same string,
+# otherwise as a double-quoted scalar.  Bytes that are not valid UTF-8
+# are escaped as \xNN, so the text is valid UTF-8.  For an ordinary
+# string, \xNN is the UTF-8 character for that code point.  A cset's
+# "__unicset__" value is decoded as the raw bytes instead.
+#
+procedure _ystrout(s)
+   local r
+   if s == "__true__" then return "true"
+   if s == "__false__" then return "false"
+   # _yparse strips a leading BOM from the document.  A string that
+   # starts with those bytes has to be quoted or they are lost.
+   if match("\xef\xbb\xbf", s) then return _ydqout(s)
+   if s == "" | (r := _yresolve(s), type(r) ~== "string" | r ~== s) |
+      any('-?:,[]{}#&*!|>\'"%@` \t', s) | any(' \t', s[-1]) |
+      find(": " | " #", s) | s[-1] == ":" | match("...", s) |
+      upto(&cset[1:33] ++ '\d', s) | not _yisutf8(s) then
+      return _ydqout(s)
+   return s
+end
+
+#
+# Succeed if s is valid UTF-8.
+#
+procedure _yisutf8(s)
+   s ? {
+      while tab(upto(&cset[129:0])) do
+         move(_jutf8len()) | fail
+      }
+   return
+end
+
+procedure _ydqout(s)
+   local r, c, n
+   static esc
+   initial {
+      esc := table()
+      every c := !(&cset[1:33] ++ '\d' ++ &cset[129:0]) do
+         esc[c] := "\\x" || right(map(_yhex(ord(c)), &ucase, &lcase), 2, "0")
+      esc["\0"] := "\\0"
+      esc["\a"] := "\\a"
+      esc["\b"] := "\\b"
+      esc["\t"] := "\\t"
+      esc["\n"] := "\\n"
+      esc["\v"] := "\\v"
+      esc["\f"] := "\\f"
+      esc["\r"] := "\\r"
+      esc["\e"] := "\\e"
+      esc["\""] := "\\\""
+      esc["\\"] := "\\\\"
+      }
+   r := ""
+   s ? {
+      while r ||:= tab(upto(&cset[1:33] ++ '\d"\\' ++ &cset[129:0])) do {
+         if n := _jutf8len() then r ||:= move(n)
+         else r ||:= esc[move(1)]
+         }
+      r ||:= tab(0)
+      }
+   return "\"" || r || "\""
+end
+
+procedure _yhex(n)
+   local s
+   s := ""
+   repeat {
+      s := "0123456789ABCDEF"[n % 16 + 1] || s
+      if (n /:= 16) = 0 then return s
+      }
+end
+
+######################
+# END ENCODER        #
+######################

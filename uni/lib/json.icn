@@ -729,9 +729,10 @@ end
 # JSON value, for Unicon tables.
 #
 procedure _jp_object(jerror)
-   local t, k, k1, first, lead
+   local t, k, k1, v, v1, first, lead, np
 
    t := table()
+   np := 0
    tab(many(' \t\r\n'))
    if ="}" then return t
    repeat {
@@ -772,11 +773,21 @@ procedure _jp_object(jerror)
       # UTF-8 bytes.  The same name later in the object is an ordinary
       # string.  === does not convert, so a list or set key is not an error.
       # The table is turned into a set, cset, record, or class afterwards.
+      #
+      # {"__unitable__":1} is metadata, not an entry.  utoj() writes the
+      # marker and then the real pairs, so a table that itself contains
+      # the key "__unitable__" produces that key twice.  Leaving the
+      # marker out of t keeps the real entry; the two used to collapse
+      # into one slot, and removing the marker removed the data.
       if \lead & k === "__unicset__" & ="\"" then
-         t[k] := _jp_cset_string(jerror) | fail
+         v := _jp_cset_string(jerror) | fail
       else
-         t[k] := _jp_value(jerror) | fail
+         v := _jp_value(jerror) | fail
+      if \lead then v1 := v
+      if not (\lead & k === "__unitable__" & v === 1) then
+         t[k] := v
       lead := &null
+      np +:= 1
 
       tab(many(' \t\r\n'))
       if ="," then {
@@ -790,35 +801,39 @@ procedure _jp_object(jerror)
          return _jp_err(jerror, "Token violated JSON object syntax: " ||
                         _jp_next())
       }
-   return _jfromtable(t, k1)
+   return _jfromtable(t, k1, v1, np)
 end
 
 #
-# Given the table t built from a JSON (or YAML) object and its first key
-# k1, return the Unicon value encoded by utoj(), or t itself if the
-# object does not use the Unicon JSON object encoding:
+# Given the table t built from a JSON (or YAML) object, its first key k1,
+# and that pair's value v1, return the Unicon value encoded by utoj(), or
+# t itself if the object does not use the Unicon JSON object encoding:
 #    {"__uniset__":[...]}           a set; must be the only pair
 #    {"__unicset__":"..."}          a cset; must be the only pair
-#    {"__unitable__":1, ...}        a table; the marker pair is removed
+#    {"__unitable__":1, ...}        a table.  Callers omit the marker pair,
+#                                   so a real "__unitable__" entry is kept
 #    {"__unirecord__":"R", ...}     a record R, if R exists
 #    {"__uniclass__":"C", ...}      an instance of class C, if C exists
-# Only the first key is significant.  Pairs whose keys are not fields of
-# the record or class are ignored.
+# v1 is the first pair's value, not t[k1]: a later pair can reuse the key.
+# np is how many pairs were present.  *t is not that number: two pairs
+# with the same key collapse, and a repeated marker must stay a table
+# holding the later value.  Only the first key is significant.  Pairs
+# whose keys are not fields of the record or class are ignored.
 #
-procedure _jfromtable(t, k1)
-   local v, constr, fields, attribs, i, f
+procedure _jfromtable(t, k1, v1, np)
+   local constr, fields, attribs, i, f
    if not (type(k1) == "string" & match("__uni", k1)) then return t
-   v := t[k1]
+   # Do not write this as (np | *t) = 1.  Comparison resumes an
+   # alternation, so a later pair count would fall back to *t.
+   if /np then np := *t
    case k1 of {
       "__unicset__":
-         if *t = 1 & type(v) == "string" then return cset(v)
+         if np = 1 & type(v1) == "string" then return cset(v1)
       "__uniset__":
-         if *t = 1 & type(v) == "list" then return set(v)
-      "__unitable__":
-         if v === 1 then delete(t, k1)
+         if np = 1 & type(v1) == "list" then return set(v1)
       "__unirecord__" | "__uniclass__": {
-         if constr := proc(v) then {
-            fields := if k1 == "__uniclass__" then membernames(v)
+         if constr := proc(v1) then {
+            fields := if k1 == "__uniclass__" then membernames(v1)
                       else [: fieldnames(constr()) :] | []
             attribs := list(*fields)
             i := 0

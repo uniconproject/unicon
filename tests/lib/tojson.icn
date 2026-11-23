@@ -49,6 +49,23 @@ procedure main()
    j := ""
    every j ||:= " " || ord(!x["__unicset__"])
    write("table e9", *x["__unicset__"], j)
+
+   # The marker is not an entry.  A real "__unitable__" key whose value
+   # is 1 survives, and a later value of 1 does not delete an earlier
+   # pair that was not the marker.
+   x := table()
+   x["__unitable__"] := 1
+   x["a"] := 2
+   write("unitable key: ", vimage(jtous(utoj(x))))
+   write("unitable not marker: ",
+         vimage(jtous("{\"__unitable__\":5,\"__unitable__\":1}")))
+
+   # A repeated marker is a table of the later value, not a set or cset
+   # built from the first value.
+   write("cset dup: ",
+         vimage(jtous("{\"__unicset__\":\"a\",\"__unicset__\":\"b\"}")))
+   write("set dup: ",
+         vimage(jtous("{\"__uniset__\":[1],\"__uniset__\":[2]}")))
 end
 
 #

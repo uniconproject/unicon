@@ -1,0 +1,126 @@
+block mapping and sequence: 1 document(s)
+   {"env": {"HOME": "/tmp", "TRACE": "off"}, "list": ["compact", ["nested", "seq"], {"j": "w", "k": "v"}], "name": "ulsp", "ports": [7979, 8080]}
+flow: 1 document(s)
+   {"a": [1, 2.5, {"b": "c"}], "e": &null, "q": "r", ["x"]: "y"}
+scalars: 1 document(s)
+   {"bool": ["__true__", "__false__", "yes"], "dq": "t\tn\nA\xc3\xa9", "int": [0, -3, 4, 15, 31], "plain": "two lines", "real": [1.5, -0.002, 0.5, 1000.0], "special": [".inf", "12:30", "2026-11-22"], "sq": "it's", &null: [&null, &null]}
+block scalars: 1 document(s)
+   {"fold": "a b\nc\n", "keep": "y\n\n", "last": "end", "lit": "a\n b\n", "strip": "x"}
+anchors and merge: 1 document(s)
+   {"alias": {"x": 1, "y": 2}, "base": {"x": 1, "y": 2}, "m": {"x": 1, "y": 20}}
+tags: 1 document(s)
+   {"i": 7, "n": "5", "s": "12", "set": set{"a", "b"}}
+documents: 3 document(s)
+   1
+   ["a"]
+   "text\n"
+same-line documents: 2 document(s)
+   {"a": "b"}
+   ["a"]
+plain looks like marker: 1 document(s)
+   "hello ---world"
+plain looks like end: 1 document(s)
+   "hello ...world"
+plain then marker: 2 document(s)
+   "hello"
+   "world"
+short merge: 1 document(s)
+   [{"x": 1}, {"y": 2}, {"<<": {"z": 3}}]
+anchor kept: 1 document(s)
+   {"base": "first", "seq": [["first", "second"]]}
+explicit flow key: 1 document(s)
+   [{"a": &null}, {"b": "c"}]
+CRLF: 1 document(s)
+   {"a": 1, "b": ["x"]}
+explicit and empty keys: 1 document(s)
+   {&null: "empty key", ["k", "l"]: "v"}
+ytouf: {"items": [1, 2], "key": "value"}
+utoy integer: same
+utoy string: same
+utoy string: same
+utoy string: same
+utoy cset: same
+utoy set: same
+utoy table: same
+utoy point: same
+utoy Box__state: same
+utoy list: same
+utoy table:
+__unitable__: 1
+1: one
+k:
+  - 1
+  - 2
+[3]: list key
+toyaml:
+- a
+- x: 1
+  y: two
+- - 1
+- c
+- "x\ny"
+- null
+cset e9: 1 233
+cset utf8: 2 169 195
+cset meta: cset 1 233
+cset property: 2 195 169
+unitable key: {"__unitable__": 1, "a": 2}
+merge key: {"<<": "value"}
+merge key plain: {"<<": "value"}
+merge mapping: {"<<": {"z": 1}}
+nested key: {{1: "one"}: "v"}
+record fields: marked S 7
+bom string: same
+self list: same
+self map: same
+self block: same
+strict merge override: 1 document(s)
+   {"base": {"x": 1, "y": 2}, "m": {"x": 1, "y": 20}}
+strict flow merge: 1 document(s)
+   {"x": 1, "y": 20}
+clip at eof: 1 document(s)
+   {"a": "x"}
+keep at eof: 1 document(s)
+   {"a": "x"}
+strip at eof: 1 document(s)
+   {"a": "x"}
+clip with break: 1 document(s)
+   {"a": "x\n"}
+keep with break: 1 document(s)
+   {"a": "x\n"}
+keep empty line: 1 document(s)
+   {"a": "\n"}
+"a: [1, 2": 0 document(s)
+"a: \"open": 0 document(s)
+"a: b: c": 0 document(s)
+"- a\nb: 1": 0 document(s)
+"a:\n\tb: 1": 0 document(s)
+"x: *nope": 0 document(s)
+"k: |x\n  y": 0 document(s)
+"a: 1\n  b: 2": 0 document(s)
+strict duplicate key: 0 document(s)
+lenient duplicate key: 1 document(s)
+   {"a": 2}
+bad unicode escape: 0 document(s)
+surrogate escape: 0 document(s)
+int tag on sequence: 0 document(s)
+float tag on mapping: 0 document(s)
+bool tag on sequence: 0 document(s)
+strict merge duplicate: 0 document(s)
+errors:
+   [yaml] Expected terminating ] for YAML flow sequence
+   [yaml] YAML double-quoted scalar missing terminating quote
+   [yaml] YAML mapping values are not allowed here
+   [yaml] Expected end of YAML document, got: b
+   [yaml] Tabs are not allowed for YAML indentation
+   [yaml] Undefined YAML alias: *nope
+   [yaml] Invalid YAML block scalar header
+   [yaml] YAML mapping values are not allowed here
+   [yaml] Duplicate YAML mapping key: "a"
+   [yaml] YAML escape is not a Unicode scalar value
+   [yaml] YAML escape is not a Unicode scalar value
+   [yaml] YAML !!int value is not an integer: list
+   [yaml] YAML !!float value is not a number: table
+   [yaml] YAML !!bool value is not a boolean: list
+   [yaml] Duplicate YAML mapping key: "y"
+   [yaml] yamltests.tmp:6: Expected terminating ] for YAML flow sequence

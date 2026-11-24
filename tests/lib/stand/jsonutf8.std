@@ -1,0 +1,19 @@
+"write(\"a\\n\", \"q\\\"x\", \"\\x41\", \"\\^c\", \"\\\\\")"  round trip ok
+"ctl \u0000\u0001\u001f\u007f \b\t\n\f\r"  round trip ok
+"'quoted'"  round trip ok
+"a/b"  round trip ok
+"café 中 😀"  round trip ok
+"latin1 \u00e9" -> 108 097 116 105 110 049 032 195 169
+"cut \u00e4\u00b8" -> 099 117 116 032 195 164 194 184
+"surrogate \u00ed\u00a0\u0080" -> 115 117 114 114 111 103 097 116 101 032 195 173 194 160 194 128
+"\u00e9" -> 195 169
+"\u4e2d" -> 228 184 173
+"\ud83d\ude00" -> 240 159 152 128
+"\u0041\u0000" -> 065 000
+"\ud800x" lenient -> 239 191 189 120; strict -> error
+"\u41" lenient -> error; strict -> error
+errors:
+   [json] JSON string has an unpaired surrogate
+   [json] JSON \u escape needs 4 hex digits
+   [json] JSON \u escape needs 4 hex digits
+"1" "[2]" "c"

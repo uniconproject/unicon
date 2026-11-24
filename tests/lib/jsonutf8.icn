@@ -1,0 +1,63 @@
+#
+# jsonutf8.icn -- JSON string encoding and decoding: values with
+#  backslashes, quotes and control characters round-trip exactly; UTF-8
+#  is copied; other bytes are escaped as \u00XX; \u escapes, including
+#  surrogate pairs, decode to UTF-8; object keys in standard JSON.
+#
+
+import json
+
+procedure bytes(s)
+   local r
+   r := ""
+   every r ||:= " " || right(ord(!s), 3, "0")
+   return r[2:0] | ""
+end
+
+procedure main()
+   local s, j, t, err, L
+
+   L := ["write(\"a\\n\", \"q\\\"x\", \"\\x41\", \"\\^c\", \"\\\\\")",
+         "ctl \x00\x01\x1f\x7f \b\t\n\f\r", "'quoted'", "a/b",
+         "caf\xc3\xa9 \xe4\xb8\xad \xf0\x9f\x98\x80"]
+   every s := !L do {
+      j := tojson(s)
+      write(j, if jtous(j) == s then "  round trip ok" else "  CHANGED")
+      }
+
+   # bytes that are not UTF-8 are read as Latin-1
+   every s := "latin1 \xe9" | "cut \xe4\xb8" | "surrogate \xed\xa0\x80" do {
+      j := tojson(s)
+      write(j, " -> ", bytes(jtous(j)))
+      }
+
+   # \u escapes
+   every s := "\"\\u00e9\"" | "\"\\u4e2d\"" | "\"\\ud83d\\ude00\"" |
+         "\"\\u0041\\u0000\"" do
+      write(s, " -> ", bytes(jtous(s)))
+
+   err := open("jsonutf8.err", "w")
+   every s := "\"\\ud800x\"" | "\"\\u41\"" do {
+      write(s, " lenient -> ", bytes(jtous(s, , err)) | "error",
+            "; strict -> ", bytes(jtous(s, 1, err)) | "error")
+      }
+   close(err)
+   write("errors:")
+   err := open("jsonutf8.err")
+   while write("   ", read(err))
+   close(err)
+   remove("jsonutf8.err")
+
+   # tojson() keys are strings
+   t := table()
+   t[1] := "int"
+   t['c'] := "cset"
+   t[[2]] := "list"
+   j := tojson(t)
+   s := jtous(j)
+   L := []
+   every put(L, image(key(s)))
+   s := ""
+   every s ||:= " " || !sort(L)
+   write(s[2:0])
+end

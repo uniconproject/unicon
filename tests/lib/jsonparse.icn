@@ -1,0 +1,80 @@
+#
+# jsonparse.icn -- JSON parser behavior: empty objects, whitespace,
+#  trailing commas, multiple values, file input, strict keys, and error
+#  reporting (first error only, no partial results).
+#
+
+import json
+
+procedure show(label, g)
+   local L
+   L := []
+   while put(L, @g)
+   write(label, ": ", *L, " value(s)")
+   every write("   ", vimage(!L))
+end
+
+procedure main()
+   local err, f, s
+
+   show("{}", create jtous("{}"))
+   show("nested {}", create jtous("{\"capabilities\":{},\"a\":[{}]}"))
+   show("CRLF whitespace", create jtous("{\r\n\"a\" : 1\r\n}\r\n"))
+   show("trailing commas", create jtous("[1,2,] {\"a\":1,}"))
+   show("multiple values", create jtous("1 \"two\" [3]"))
+   show("escapes", create jtous("\"a\\tb\\n\\\"c\\\"\\\\\\/\\u0041\""))
+   show("numbers", create jtous("[0, -1, 2.5, 1e3, -2E-2, 1e+2]"))
+
+   f := open("jsonparse.tmp", "w")
+   write(f, "{\"a\":1}")
+   write(f, "[true, false, null]")
+   close(f)
+   show("jtouf", create jtouf("jsonparse.tmp"))
+   show("jtou file", create jtou("jsonparse.tmp"))
+
+   show("strict string keys", create jtou("{\"k\":1}", 1))
+   show("non-strict value keys", create jtou("{1:2,[3]:4}"))
+
+   # Errors go to the error file; the failing value is not produced.
+   err := open("jsonparse.err", "w")
+   every s := "[1,,2]" | "[1 2]" | "{\"a\" 1}" | "{\"a\":}" | "{\"a\":1" |
+         "\"open" | "012" | "1." | "1e" | "tru" | "[\"\\q\"]" |
+         "{\"a\":[1,{\"b\":nul}]}" | "1 2 @" do
+      show(image(s), create jtous(s, , err))
+   show("strict key", create jtou("{1:2}", 1, "s", err))
+   f := open("jsonparse.tmp", "w")
+   write(f, "{\"a\":1}\n[1,\n 2,\n x]")
+   close(f)
+   show("file with error", create jtou("jsonparse.tmp", , "f", err))
+   close(err)
+
+   write("errors:")
+   err := open("jsonparse.err")
+   while write("   ", read(err))
+   close(err)
+   remove("jsonparse.err")
+   remove("jsonparse.tmp")
+end
+
+#
+# Print x without serial numbers, so the output does not depend on
+# allocation order.  Table keys are sorted by their printed form.
+#
+procedure vimage(x)
+   local s, L, k
+   case type(x) of {
+      "list": {
+         s := ""
+         every s ||:= ", " || vimage(!x)
+         return "[" || (s[3:0] | "") || "]"
+         }
+      "table": {
+         L := []
+         every k := key(x) do put(L, vimage(k) || ": " || vimage(x[k]))
+         s := ""
+         every s ||:= ", " || !sort(L)
+         return "{" || (s[3:0] | "") || "}"
+         }
+      default: return image(x)
+      }
+end

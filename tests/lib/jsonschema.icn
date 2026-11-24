@@ -1,0 +1,25 @@
+#
+# jsonschema.icn -- numeric keywords of jss_validate()/jsf_validate().
+#
+
+import json
+
+procedure main()
+   local schema, d, f
+   schema := "{\"type\":\"object\",\"properties\":{\"n\":{\"type\":" ||
+             "\"integer\",\"multipleOf\":5,\"exclusiveMaximum\":100," ||
+             "\"minimum\":0}}}"
+   every d := "{\"n\":10}" | "{\"n\":12}" | "{\"n\":100}" | "{\"n\":-5}" do
+      write(d, " => ", image(jss_validate(d, schema)) | "failed")
+
+   f := open("jsonschema.tmp", "w")
+   write(f, schema)
+   close(f)
+   f := open("jsonschema.dat", "w")
+   write(f, "{\"n\":15}")
+   close(f)
+   write("file => ", image(jsf_validate("jsonschema.dat", "jsonschema.tmp")) |
+         "failed")
+   remove("jsonschema.tmp")
+   remove("jsonschema.dat")
+end

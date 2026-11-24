@@ -35,8 +35,10 @@ IGNORE=
 #   uxsocket    Unix-domain sockets + fork; AF_UNIX differs on Windows (and fork).
 #   rusage      getrusage() stubbed on NT (fail); needs a Windows implementation or skip.
 #   select-io is enabled on Windows: CRT &input / files use findactivecrt().
+#   pktinfo     pktinfo=yes (destination address/TTL on receive) needs recvmsg();
+#               not implemented on NT, where the attribute fails.
 #
-WINSKIP=pty_uni tcp wait fork fdup filepair kill pipe-select select udp uxsocket rusage
+WINSKIP=pty_uni tcp wait fork fdup filepair kill pipe-select select udp uxsocket rusage pktinfo
 
 BSDSKIP=pty_uni uxsocket
 

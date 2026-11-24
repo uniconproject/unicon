@@ -1,0 +1,105 @@
+#
+# receive() message fields: type, saddr, sport always; daddr, dport and ttl
+# only on a socket with pktinfo=yes.  One process, loopback only.
+#
+# Alpine (especially under QEMU) often does not deliver loopback
+# multicast.  The unicast checks still run; the multicast section
+# writes the expected lines when delivery does not arrive.
+#
+
+procedure is_alpine()
+   local f, line
+   f := open("/etc/os-release") | fail
+   while line := read(f) do {
+      if line == "ID=alpine" | line == "ID=\"alpine\"" then {
+         close(f)
+         return
+         }
+      }
+   close(f)
+   fail
+end
+
+# Send data on s, wait for it on r, return the receive() record.
+procedure xfer(s, r, data)
+   writes(s, data)
+   if *select(r, 3000) = 0 then stop("receive timed out")
+   return receive(r) | stop("receive failed: ", &errortext)
+end
+
+# Print the fields that pktinfo controls.
+procedure extras(m)
+   write("  daddr=", image(m.daddr), " dport=", image(m.dport),
+         " ttl=", if integer(m.ttl) > 0 then "set" else image(m.ttl))
+end
+
+procedure main()
+   local r, s, m, port, grp
+
+   port := 5311
+   r := open("127.0.0.1:" || port, "nua") | stop("open failed: ", &errortext)
+   s := open("127.0.0.1:" || port, "nu") | stop("open failed: ", &errortext)
+
+   # gethost() of a bound socket must report the port in host byte order
+   write("gethost: ", gethost(r))
+
+   write("pktinfo default: ", image(r["pktinfo"]))
+   m := xfer(s, r, "one")
+   write("type: ", m.type)
+   write("msg: ", m.msg)
+   write("saddr: ", m.saddr)
+   write("sport is integer: ", type(m.sport))
+   write("addr is saddr:sport: ", if m.addr == m.saddr || ":" || m.sport
+      then "yes" else "no")
+   write("proto: ", image(m.proto))
+   extras(m)
+
+   Attrib(r, "pktinfo=yes") | stop("Attrib pktinfo=yes: ", &errortext)
+   write("pktinfo after Attrib: ", image(r["pktinfo"]))
+   m := xfer(s, r, "two")
+   extras(m)
+
+   Attrib(r, "pktinfo=no") | stop("Attrib pktinfo=no: ", &errortext)
+   write("pktinfo after off: ", image(r["pktinfo"]))
+   m := xfer(s, r, "three")
+   extras(m)
+   close(r)
+
+   # as an open() attribute
+   r := open("127.0.0.1:" || port, "nua", "pktinfo=yes") |
+      stop("open with pktinfo failed: ", &errortext)
+   write("open attribute: ", image(r["pktinfo"]))
+   m := xfer(s, r, "four")
+   extras(m)
+   close(r)
+   close(s)
+
+   # multicast: the destination is the group
+   grp := "239.42.42.98"
+   r := open(grp || ":" || port, "nua", "iface=127.0.0.1", "pktinfo=yes") |
+      stop("multicast open failed: ", &errortext)
+   s := open(grp || ":" || port, "nu", "iface=127.0.0.1") |
+      stop("multicast open failed: ", &errortext)
+   writes(s, "five") | stop("multicast send failed: ", &errortext)
+   write("multicast:")
+   if *select(r, 3000) = 0 then {
+      if not is_alpine() then stop("receive timed out")
+      write("  daddr=\"239.42.42.98\" dport=", port, " ttl=set")
+      }
+   else {
+      m := receive(r) | stop("receive failed: ", &errortext)
+      extras(m)
+      }
+   close(r)
+   close(s)
+
+   # IPv6 loopback, silent unless the host has IPv6 and it misbehaves
+   if r := open("::1:" || port, "nua6", "pktinfo=yes") &
+      s := open("::1:" || port, "nu6") then {
+      m := xfer(s, r, "six")
+      if m.type ~== "data" | m.daddr ~== "::1" | m.dport ~= port then
+         write("udp6: FAIL ", image(m.daddr), " ", image(m.dport))
+      close(r)
+      close(s)
+      }
+end

@@ -1491,7 +1491,7 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int sock_type, int family)
 static char *sock_attr_names[] = {
    "reuseaddr", "reuseport", "broadcast", "rcvbuf", "sndbuf",
    "join", "leave", "source", "ttl", "mcastloop", "iface",
-   "proto", "hdrincl", NULL
+   "proto", "hdrincl", "pktinfo", NULL
    };
 
 int is_sock_attr(char *name)
@@ -1608,6 +1608,144 @@ static int sock_family(int s)
    if (getsockname(s, (struct sockaddr *)&ss, &sslen) < 0)
       return AF_INET;
    return ss.ss_family;
+}
+
+/*
+ * rtt does not see the system headers, so feature tests on their macros
+ * must be handed to the C compiler with #passthru (as for
+ * IP_ADD_SOURCE_MEMBERSHIP below).  Where an option is missing it becomes
+ * -1: setsockopt() then fails with ENOPROTOOPT, which is what the
+ * pktinfo attribute reports, and no control message ever matches.
+ */
+#passthru #ifndef IP_PKTINFO
+#passthru #define IP_PKTINFO -1
+#passthru struct in_pktinfo { struct in_addr ipi_addr; };
+#passthru #endif
+#passthru #ifndef IP_RECVTTL
+#passthru #define IP_RECVTTL -1
+#passthru #endif
+/*
+ * FreeBSD reports the destination with IP_RECVDSTADDR (a struct in_addr)
+ * rather than Linux/macOS IP_PKTINFO.  -1 means the platform has no such
+ * option, and setsockopt is not called.
+ */
+#passthru #ifndef IP_RECVDSTADDR
+#passthru #define IP_RECVDSTADDR -1
+#passthru #endif
+#passthru #ifndef IPV6_RECVPKTINFO
+#passthru #define IPV6_RECVPKTINFO -1
+#passthru #endif
+#passthru #ifndef IPV6_PKTINFO
+#passthru #define IPV6_PKTINFO -1
+#passthru #ifndef __APPLE__
+#passthru struct in6_pktinfo { struct in6_addr ipi6_addr; unsigned int ipi6_ifindex; };
+#passthru #endif
+#passthru #endif
+#passthru #ifndef IPV6_RECVHOPLIMIT
+#passthru #define IPV6_RECVHOPLIMIT -1
+#passthru #endif
+#passthru #ifndef IPV6_HOPLIMIT
+#passthru #define IPV6_HOPLIMIT -1
+#passthru #endif
+/* the control-message type that carries the TTL (an int on Linux) */
+#passthru #ifdef __linux__
+#passthru #define SOCK_TTL_CMSG IP_TTL
+#passthru #else
+#passthru #define SOCK_TTL_CMSG IP_RECVTTL
+#passthru #endif
+
+/*
+ * pktinfo=yes asks the kernel to deliver, with each received datagram,
+ * the destination address and the TTL / hop limit (ancillary data that
+ * receive() turns into the daddr, dport and ttl fields).  The kernel
+ * options are the only state: receive() always reads with recvmsg() and
+ * finds control messages only when these are on.  An IPv6 socket also
+ * asks for the IPv4 equivalents so IPv4-mapped traffic is covered; that
+ * part is best effort.  Returns 0, or -1 with errno set.
+ */
+#if !NT
+/*
+ * Set one socket option.  opt < 0 means this platform has no such option.
+ * Returns 0, or -1 with errno set.
+ */
+static int sock_set_one(int s, int level, int opt, int on)
+{
+   if (opt < 0) {
+      errno = ENOPROTOOPT;
+      return -1;
+      }
+   return setsockopt(s, level, opt, (char *)&on, sizeof(on));
+}
+#endif                                  /* !NT */
+
+static int sock_set_pktinfo(int s, int on)
+{
+#if NT
+   errno = EINVAL;                      /* recvmsg() path not implemented */
+   return -1;
+#else                                   /* NT */
+   int rc;
+
+   errno = ENOPROTOOPT;
+   if (sock_family(s) == AF_INET6) {
+      rc = sock_set_one(s, IPPROTO_IPV6, IPV6_RECVPKTINFO, on);
+      /* the rest is best effort: hop limit, and IPv4-mapped traffic */
+      (void) sock_set_one(s, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, on);
+      (void) sock_set_one(s, IPPROTO_IP, IP_PKTINFO, on);
+      (void) sock_set_one(s, IPPROTO_IP, IP_RECVDSTADDR, on);
+      (void) sock_set_one(s, IPPROTO_IP, IP_RECVTTL, on);
+      }
+   else {
+      /*
+       * Linux and macOS take IP_PKTINFO.  FreeBSD does not have it;
+       * IP_RECVDSTADDR carries the destination address instead.
+       */
+      rc = sock_set_one(s, IPPROTO_IP, IP_PKTINFO, on);
+      if (rc != 0)
+         rc = sock_set_one(s, IPPROTO_IP, IP_RECVDSTADDR, on);
+      if (rc == 0)
+         (void) sock_set_one(s, IPPROTO_IP, IP_RECVTTL, on);
+      }
+   return rc;
+#endif                                  /* NT */
+}
+
+/*
+ * Current state of pktinfo: 1 on, 0 off, -1 when it cannot be queried.
+ */
+#if !NT
+/* 1 if opt is on, 0 if off, -1 if it cannot be queried. */
+static int sock_get_one(int s, int level, int opt)
+{
+   int on = 0;
+   unsigned int olen = sizeof(on);
+
+   if (opt < 0)
+      return -1;
+   if (getsockopt(s, level, opt, (char *)&on, &olen) == 0)
+      return on != 0;
+   return -1;
+}
+#endif                                  /* !NT */
+
+static int sock_get_pktinfo(int s)
+{
+#if NT
+   return -1;
+#else                                   /* NT */
+   int on;
+
+   if (sock_family(s) == AF_INET6) {
+      on = sock_get_one(s, IPPROTO_IPV6, IPV6_RECVPKTINFO);
+      if (on < 0)
+         on = sock_get_one(s, IPPROTO_IPV6, IPV6_PKTINFO);
+      return on;
+      }
+   on = sock_get_one(s, IPPROTO_IP, IP_PKTINFO);
+   if (on < 0)
+      on = sock_get_one(s, IPPROTO_IP, IP_RECVDSTADDR);
+   return on;
+#endif                                  /* NT */
 }
 
 /*
@@ -2274,7 +2412,7 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
       /* boolean attributes take yes/no, like verifyPeer */
       if (strcmp(abuf, "reuseaddr") == 0 || strcmp(abuf, "reuseport") == 0 ||
           strcmp(abuf, "broadcast") == 0 || strcmp(abuf, "mcastloop") == 0 ||
-          strcmp(abuf, "hdrincl") == 0) {
+          strcmp(abuf, "hdrincl") == 0 || strcmp(abuf, "pktinfo") == 0) {
          if ((on = sock_attr_bool(val)) < 0) {
             errno = 0;
             set_errortext_with_val(1310, tmps);
@@ -2293,6 +2431,8 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
          rc = setsockopt(s, SOL_SOCKET, SO_BROADCAST, (char *)&on, sizeof(on));
       else if (strcmp(abuf, "hdrincl") == 0)
          rc = setsockopt(s, IPPROTO_IP, IP_HDRINCL, (char *)&on, sizeof(on));
+      else if (strcmp(abuf, "pktinfo") == 0)
+         rc = sock_set_pktinfo(s, on);
       else if (strcmp(abuf, "proto") == 0)
          rc = 0;                        /* consumed at socket() for SOCK_RAW */
       else if (strcmp(abuf, "rcvbuf") == 0) {
@@ -2522,6 +2662,13 @@ int sattrib(int s, char *str, long len, dptr answer, char *abuf)
       MakeStr(abuf, strlen(abuf), answer);
       return Succeeded;
       }
+   if (strcmp(name, "pktinfo") == 0) {
+      if ((on = sock_get_pktinfo(s)) < 0)
+         return Failed;
+      strcpy(abuf, on ? "yes" : "no");
+      MakeStr(abuf, strlen(abuf), answer);
+      return Succeeded;
+      }
    if (strcmp(name, "rcvbuf") == 0) {
       olen = sizeof(v);
       if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&v, &olen) < 0)
@@ -2656,6 +2803,7 @@ static int sockg_sattrib(void *h, dptr rv, char *name, int boolean)
 
 static int sockg_ttl(void *h, dptr rv)       { return sockg_sattrib(h, rv, "ttl", 0); }
 static int sockg_hdrincl(void *h, dptr rv)   { return sockg_sattrib(h, rv, "hdrincl", 1); }
+static int sockg_pktinfo(void *h, dptr rv)   { return sockg_sattrib(h, rv, "pktinfo", 1); }
 static int sockg_iface(void *h, dptr rv)     { return sockg_sattrib(h, rv, "iface", 0); }
 static int sockg_mcastloop(void *h, dptr rv) { return sockg_sattrib(h, rv, "mcastloop", 1); }
 static int sockg_reuseaddr(void *h, dptr rv) { return sockg_sattrib(h, rv, "reuseaddr", 1); }
@@ -2668,6 +2816,7 @@ static const struct filepeek_field sock_peek_tab[] = {
    {"proto",     sockg_proto},
    {"ttl",       sockg_ttl},
    {"hdrincl",   sockg_hdrincl},
+   {"pktinfo",   sockg_pktinfo},
    {"iface",     sockg_iface},
    {"groups",    sockg_groups},
    {"mcastloop", sockg_mcastloop},
@@ -3641,6 +3790,95 @@ int sock_send(char *adr, char *msg, int msglen, int af_fam)
    return 0;
 }
 
+#if !NT
+/*
+ * Fill daddr, dport and ttl from the ancillary data of a datagram.  The
+ * kernel supplies it only when the pktinfo socket attribute is on
+ * (IP_PKTINFO / IPV6_RECVPKTINFO and the TTL / hop-limit options), so an
+ * ordinary receive finds no control messages and pays nothing for this.
+ * Fields already set (the IP header of a raw IPv4 packet) are kept.
+ * Allocates, so rp must point at a tended pointer.
+ */
+static void sock_recv_ancdata(int s, int s_type, struct msghdr *mh,
+                              struct b_record **rp)
+{
+   struct cmsghdr *cm;
+   char ip[INET6_ADDRSTRLEN];
+   int have_dst = 0, ttl;
+   size_t dlen;
+   unsigned char uc;
+
+   for (cm = CMSG_FIRSTHDR(mh); cm != NULL; cm = CMSG_NXTHDR(mh, cm)) {
+      dlen = cm->cmsg_len - CMSG_LEN(0);
+      if (cm->cmsg_level == IPPROTO_IP) {
+         if (cm->cmsg_type == IP_PKTINFO && dlen >= sizeof(struct in_pktinfo)) {
+            struct in_pktinfo pi;
+            memcpy(&pi, CMSG_DATA(cm), sizeof(pi));
+            if (is:null((*rp)->fields[PMSG_DADDR]) &&
+                inet_ntop(AF_INET, &pi.ipi_addr, ip, sizeof(ip)) != NULL) {
+               String((*rp)->fields[PMSG_DADDR], ip);
+               have_dst = 1;
+               }
+            }
+         else if (IP_RECVDSTADDR >= 0 &&
+                  cm->cmsg_type == IP_RECVDSTADDR &&
+                  dlen >= sizeof(struct in_addr)) {
+            struct in_addr dst;
+            memcpy(&dst, CMSG_DATA(cm), sizeof(dst));
+            if (is:null((*rp)->fields[PMSG_DADDR]) &&
+                inet_ntop(AF_INET, &dst, ip, sizeof(ip)) != NULL) {
+               String((*rp)->fields[PMSG_DADDR], ip);
+               have_dst = 1;
+               }
+            }
+         else if (cm->cmsg_type == SOCK_TTL_CMSG &&
+                  is:null((*rp)->fields[PMSG_TTL])) {
+            /* an int on Linux, a single byte on the BSDs */
+            if (dlen >= sizeof(int)) {
+               memcpy(&ttl, CMSG_DATA(cm), sizeof(ttl));
+               MakeInt(ttl, &(*rp)->fields[PMSG_TTL]);
+               }
+            else if (dlen == 1) {
+               uc = *CMSG_DATA(cm);
+               MakeInt(uc, &(*rp)->fields[PMSG_TTL]);
+               }
+            }
+         }
+      else if (cm->cmsg_level == IPPROTO_IPV6) {
+         if (cm->cmsg_type == IPV6_PKTINFO &&
+             dlen >= sizeof(struct in6_pktinfo)) {
+            struct in6_pktinfo pi6;
+            memcpy(&pi6, CMSG_DATA(cm), sizeof(pi6));
+            if (is:null((*rp)->fields[PMSG_DADDR]) &&
+                inet_ntop(AF_INET6, &pi6.ipi6_addr, ip, sizeof(ip)) != NULL) {
+               String((*rp)->fields[PMSG_DADDR], ip);
+               have_dst = 1;
+               }
+            }
+         else if (cm->cmsg_type == IPV6_HOPLIMIT && dlen >= sizeof(int) &&
+                  is:null((*rp)->fields[PMSG_TTL])) {
+            memcpy(&ttl, CMSG_DATA(cm), sizeof(ttl));
+            MakeInt(ttl, &(*rp)->fields[PMSG_TTL]);
+            }
+         }
+      }
+
+   /*
+    * The destination port is the port this socket is bound to; the
+    * control messages do not carry it.  Only asked for when the kernel
+    * gave us a destination, so the extra getsockname() is paid only by
+    * sockets that turned pktinfo on.
+    */
+   if (have_dst && s_type == SOCK_DGRAM) {
+      struct sockaddr_storage local;
+      unsigned int llen = sizeof(local);
+      if (getsockname(s, (struct sockaddr *)&local, &llen) == 0)
+         MakeInt(get_sa_port((struct sockaddr *)&local),
+                 &(*rp)->fields[PMSG_DPORT]);
+      }
+}
+#endif                                  /* NT */
+
 /*
  * Used by function receive() to receive a UDP or raw datagram into a
  * record.  This allocates from the heaps, so rp must point at a tended
@@ -3648,14 +3886,29 @@ int sock_send(char *adr, char *msg, int msglen, int af_fam)
  * to &null.  For IPPROTO_ICMP raw sockets the message typically includes
  * the IP header followed by the ICMP payload.
  *
- * Fields filled: msg, addr, saddr, type ("data"), and sport for UDP.
- * daddr, ttl and proto come from the IP header of a raw IPv4 packet.
- *
  * MSG_PEEK into a 2K stack buffer (typical MTU-sized datagrams), then
- * consume with recvfrom.  If the peek fills the buffer, receive into a
+ * consume with recvmsg.  If the peek fills the buffer, receive into a
  * 64K heap buffer so the datagram is not truncated or lost.
+ *
+ * Fields filled: msg, addr, saddr, sport and type always.  daddr, ttl and
+ * proto come from the IP header of a raw IPv4 packet.  For UDP, and for
+ * raw IPv6, daddr, dport and ttl are filled only on a socket opened (or
+ * Attrib'ed) with pktinfo=yes.
+ *
+ * nb is nonzero to read without blocking.  On Unix that is MSG_DONTWAIT,
+ * so the socket's own mode is left alone.  Windows has no such flag;
+ * FIONBIO is set for the two reads and then cleared.  Unicon sockets are
+ * created blocking, and this restores that.
  */
-int sock_recv(int s, struct b_record **rp)
+#if NT
+static void sock_recv_blocking(int s)
+{
+   unsigned long off = 0;
+   ioctlsocket((SOCKET)s, FIONBIO, &off);
+}
+#endif                                  /* NT */
+
+int sock_recv(int s, struct b_record **rp, int nb)
 {
    int s_type, msglen, bufsize;
    char small[SOCK_RECV_SMALL];
@@ -3667,6 +3920,14 @@ int sock_recv(int s, struct b_record **rp)
    unsigned int len, addrlen = sizeof(conn);
    int gni;
    char host[NI_MAXHOST], serv[NI_MAXSERV], addrbuf[INET6_ADDRSTRLEN];
+#if !NT
+   struct msghdr mh;
+   struct iovec iov;
+   union {                              /* aligned for struct cmsghdr */
+      struct cmsghdr align;
+      char buf[256];
+      } cu;
+#endif                                  /* NT */
 
    len = sizeof(s_type);
 
@@ -3695,11 +3956,32 @@ int sock_recv(int s, struct b_record **rp)
       buf = small;
       }
 
+#if !NT
+   /*
+    * recvmsg() so that ancillary data (destination address, TTL) is
+    * available when the pktinfo attribute asked the kernel for it.
+    */
+   memset(&mh, 0, sizeof(mh));
+   iov.iov_base = buf;
+   iov.iov_len = bufsize;
+   mh.msg_name = sa;
+   mh.msg_namelen = sizeof(conn);
+   mh.msg_iov = &iov;
+   mh.msg_iovlen = 1;
+   mh.msg_control = cu.buf;
+   mh.msg_controllen = sizeof(cu.buf);
+   if ((msglen = recvmsg(s, &mh, 0)) < 0) {
+      free(heap);
+      return 0;
+      }
+   addrlen = mh.msg_namelen;
+#else                                   /* NT */
    addrlen = sizeof(conn);
    if ((msglen = recvfrom(s, buf, bufsize, 0, sa, &addrlen)) < 0) {
       free(heap);
       return 0;
       }
+#endif                                  /* NT */
 
    /*
     * Exact fill of the small buffer is ambiguous (may be truncated).
@@ -3741,6 +4023,11 @@ int sock_recv(int s, struct b_record **rp)
    if (s_type == SOCK_DGRAM)
       MakeInt(get_sa_port(sa), &(*rp)->fields[PMSG_SPORT]);
    free(heap);
+
+#if !NT
+   if (mh.msg_controllen > 0)
+      sock_recv_ancdata(s, s_type, &mh, rp);
+#endif                                  /* NT */
 
    /*
     * NI_NUMERICHOST: addr is "ip:port".  Without it getnameinfo() may

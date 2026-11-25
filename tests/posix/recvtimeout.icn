@@ -1,0 +1,81 @@
+#
+# receive(f, timeout) on a UDP socket: milliseconds; 0 does not wait,
+# negative waits without a limit, omitted waits for the next datagram.
+# A receive that times out fails with &errno set (ETIMEDOUT).
+#
+
+
+procedure now()
+   local t
+   t := gettimeofday()
+   return t.sec * 1000 + t.usec / 1000
+end
+
+# cond is 1 when the check held, &null when it did not
+procedure check(label, cond)
+   write(left(label, 44), if \cond then "ok" else "FAIL")
+   return
+end
+
+procedure main()
+   local r, m, t0, el, port, e
+
+   port := 5321
+   # Bind IPv4 explicitly.  On Windows, open(":port") is IPv6-only, so a
+   # datagram sent to 127.0.0.1 never arrives.
+   r := open("127.0.0.1:" || port, "nua") | stop("open: ", &errortext)
+
+   t0 := now()
+   m := receive(r, 0)
+   e := &errno                       # gettimeofday() resets &errno
+   el := now() - t0
+   check("receive(r, 0) on an empty socket fails", ((/m) & 1) | &null)
+   check("  without waiting", ((el < 100) & 1) | &null)
+   check("  and sets &errno", ((e ~= 0) & 1) | &null)
+
+   t0 := now()
+   m := receive(r, 300)
+   el := now() - t0
+   check("receive(r, 300) on an empty socket fails", ((/m) & 1) | &null)
+   check("  after about 300 ms", ((250 <= el < 2000) & 1) | &null)
+
+   send("127.0.0.1:" || port, "one") | stop("send: ", &errortext)
+   # send() can return before loopback queues the datagram (Windows,
+   # FreeBSD, macOS).  0 does not wait, so it has to be there already.
+   # select() establishes that; receive() must then return it.
+   if *select(r, 1000) = 0 then
+      stop("datagram was not queued")
+   m := receive(r, 0)
+   e := &errno
+   check("receive(r, 0) with a datagram queued",
+      (((\m).msg == "one") & 1) | &null)
+   check("  clears &errno", ((e = 0) & 1) | &null)
+
+   send("127.0.0.1:" || port, "two")
+   m := receive(r, 1000)
+   check("receive(r, 1000) with a datagram queued",
+      (((\m).msg == "two") & 1) | &null)
+
+   send("127.0.0.1:" || port, "three")
+   m := receive(r, -1)
+   check("receive(r, -1) with a datagram queued",
+      (((\m).msg == "three") & 1) | &null)
+
+   send("127.0.0.1:" || port, "four")
+   m := receive(r)
+   check("receive(r) with a datagram queued",
+      (((\m).msg == "four") & 1) | &null)
+
+   check("receive(r, \"x\") is a run-time error 101", ((err101(r)) & 1) | &null)
+   close(r)
+end
+
+procedure err101(r)
+   local m
+   &error := 1
+   m := receive(r, "x")
+   if &errornumber = 101 then {
+      &error := 0
+      return 1
+      }
+end

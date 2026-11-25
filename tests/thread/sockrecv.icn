@@ -1,0 +1,59 @@
+#
+# Two timed receives on one UDP socket.  One datagram must not leave the
+# loser blocked in a read after its timeout, and the loser must not
+# give up at once when the other thread takes the datagram.
+#
+
+global result_a, result_b, elapsed_a, elapsed_b
+
+procedure now()
+   local t
+   t := gettimeofday()
+   return t.sec * 1000 + t.usec / 1000
+end
+
+procedure check(label, cond)
+   write(left(label, 44), if \cond then "ok" else "FAIL")
+   return
+end
+
+procedure reader(sock, slot)
+   local t0, m, el, msg
+   t0 := now()
+   m := receive(sock, 800)
+   el := now() - t0
+   msg := if \m then m.msg else "timeout"
+   if slot = 1 then {
+      elapsed_a := el
+      result_a := msg
+      }
+   else {
+      elapsed_b := el
+      result_b := msg
+      }
+end
+
+procedure main()
+   local r, a, b, t0, got, loser, port
+
+   port := 5341
+   r := open("127.0.0.1:" || port, "nua") | stop("open: ", &errortext)
+   a := thread { reader(r, 1) }
+   b := thread { reader(r, 2) }
+   delay(100)
+   send("127.0.0.1:" || port, "one") | stop("send: ", &errortext)
+
+   t0 := now()
+   while (/result_a | /result_b) & (now() - t0 < 2500) do
+      delay(20)
+   if /result_a | /result_b then
+      close(r)
+
+   got := 0
+   if result_a === "one" then got +:= 1
+   if result_b === "one" then got +:= 1
+   loser := if result_a === "one" then elapsed_b else elapsed_a
+   check("one reader got the datagram", ((got = 1) & 1) | &null)
+   check("the other waited out the timeout", ((400 <= loser < 2000) & 1) | &null)
+   close(r)
+end

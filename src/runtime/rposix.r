@@ -766,7 +766,14 @@ dptr rec_structor(char *name)
       return &posix_lock;
       }
    else if (!strcmp(name, "posix_message")) {
+      /*
+       * Two threads can enter receive() before either has published
+       * the constructor.  Build it outside MTX_DR_TBL (dynrecord locks
+       * that itself) and publish the descriptor under the lock so a
+       * reader never sees a half-written pointer.
+       */
       if (is:null(posix_message)) {
+         struct b_proc *bp;
          AsgnCStr(s, "posix_message");
          AsgnCStr(fields[0], "addr");
          AsgnCStr(fields[1], "msg");
@@ -777,9 +784,13 @@ dptr rec_structor(char *name)
          AsgnCStr(fields[6], "sport");
          AsgnCStr(fields[7], "dport");
          AsgnCStr(fields[8], "type");
-         posix_message.dword = D_Proc;
-         posix_message.vword.bptr = (union block *)dynrecord(&s, fields,
-                                                             PMSG_NFIELDS);
+         bp = (struct b_proc *)dynrecord(&s, fields, PMSG_NFIELDS);
+         MUTEX_LOCKID(MTX_DR_TBL);
+         if (is:null(posix_message) && bp != NULL) {
+            posix_message.vword.bptr = (union block *)bp;
+            posix_message.dword = D_Proc;
+            }
+         MUTEX_UNLOCKID(MTX_DR_TBL);
          }
       return &posix_message;
       }
@@ -2857,7 +2868,7 @@ int sock_peek_key_nth(int fd, int i, dptr key)
  * shared by every resolved address. On Windows this is GetTickCount64,
  * declared by windows.h; see sys.h for the older-header fallback.
  */
-static long long sock_now_ms(void)
+long long sock_now_ms(void)
 {
 #if UNIX
    /*
@@ -2884,6 +2895,53 @@ static long long sock_now_ms(void)
 #else                                   /* UNIX */
    return 0;
 #endif                                  /* UNIX */
+}
+
+/*
+ * Wait until socket s has something to read, for at most timeout
+ * milliseconds (0: just check; negative: no limit).  Counted out, so a
+ * garbage collection in another thread does not wait for this one.
+ * Returns 1 when readable, 0 with errno ETIMEDOUT when the time ran
+ * out (as for a connect timeout), -1 on error with errno set.
+ */
+int sock_wait_readable(int s, int timeout)
+{
+   int rc;
+#if NT
+   fd_set rs;
+   struct timeval tv, *tvp = NULL;
+
+   FD_ZERO(&rs);
+   FD_SET(s, &rs);
+   if (timeout >= 0) {
+      tv.tv_sec = timeout / 1000;
+      tv.tv_usec = (timeout % 1000) * 1000;
+      tvp = &tv;
+      }
+   DEC_NARTHREADS;
+   rc = select(s + 1, &rs, NULL, NULL, tvp);
+   INC_NARTHREADS_CONTROLLED;
+   if (rc < 0)
+      errno = WSAGetLastError();
+#else                                   /* NT */
+   struct pollfd pfd;
+
+   pfd.fd = s;
+   pfd.events = POLLIN;
+   pfd.revents = 0;
+   DEC_NARTHREADS;
+   do
+      rc = poll(&pfd, 1, timeout < 0 ? -1 : timeout);
+   while (rc < 0 && errno == EINTR && timeout < 0);
+   INC_NARTHREADS_CONTROLLED;
+#endif                                  /* NT */
+   if (rc > 0)
+      return 1;
+   if (rc == 0) {
+      errno = ETIMEDOUT;
+      return 0;
+      }
+   return -1;
 }
 
 /*
@@ -3908,7 +3966,48 @@ static void sock_recv_blocking(int s)
 }
 #endif                                  /* NT */
 
-int sock_recv(int s, struct b_record **rp, int nb)
+#ifdef Concurrent
+/*
+ * A timed receive holds the file's own mutex across the reads.  On
+ * Windows that also covers the FIONBIO change.  An unlimited receive
+ * does not hold it, so close() can shut the socket.  The macros do
+ * nothing until a thread has been created.
+ */
+static void sock_recv_pause(void)
+{
+#if NT
+   Sleep(1);
+#else                                   /* NT */
+   struct timespec pause;
+   pause.tv_sec = 0;
+   pause.tv_nsec = 1000000L;
+   nanosleep(&pause, NULL);
+#endif                                  /* NT */
+}
+
+static int sock_recv_enter(word mtx, int nb)
+{
+   int busy;
+
+   if (!nb)
+      return 1;
+   MUTEX_TRYLOCKID(mtx, busy);
+   if (busy != 0) {
+      sock_recv_pause();
+      errno = EWOULDBLOCK;
+      return 0;
+      }
+   return 1;
+}
+
+static void sock_recv_leave(word mtx, int nb)
+{
+   if (nb)
+      MUTEX_UNLOCKID(mtx);
+}
+#endif                                  /* Concurrent */
+
+int sock_recv(int s, struct b_record **rp, int nb, word mtx)
 {
    int s_type, msglen, bufsize;
    char small[SOCK_RECV_SMALL];
@@ -3920,6 +4019,7 @@ int sock_recv(int s, struct b_record **rp, int nb)
    unsigned int len, addrlen = sizeof(conn);
    int gni;
    char host[NI_MAXHOST], serv[NI_MAXSERV], addrbuf[INET6_ADDRSTRLEN];
+   int rflags = 0;
 #if !NT
    struct msghdr mh;
    struct iovec iov;
@@ -3927,6 +4027,8 @@ int sock_recv(int s, struct b_record **rp, int nb)
       struct cmsghdr align;
       char buf[256];
       } cu;
+#else                                   /* NT */
+   int nb_set = 0;
 #endif                                  /* NT */
 
    len = sizeof(s_type);
@@ -3940,15 +4042,73 @@ int sock_recv(int s, struct b_record **rp, int nb)
    if (s_type != SOCK_DGRAM && s_type != SOCK_RAW)
       return -1;
 
-   msglen = recvfrom(s, small, SOCK_RECV_SMALL, MSG_PEEK, sa, &addrlen);
-   if (msglen < 0)
+   /*
+    * Two receives on one file share that file's mutex.  A timed
+    * receive holds it across the reads (and, on Windows, the FIONBIO
+    * change).  An unlimited receive does not, so close() can shut the
+    * socket.  The macros do nothing until a thread has been created.
+    */
+#ifdef Concurrent
+   if (!sock_recv_enter(mtx, nb))
       return 0;
+#else                                   /* Concurrent */
+   (void)mtx;
+#endif                                  /* Concurrent */
+#if NT
+   if (nb) {
+      unsigned long on = 1;
+      if (ioctlsocket((SOCKET)s, FIONBIO, &on) != 0) {
+         errno = WSAGetLastError();
+#ifdef Concurrent
+         sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
+         return 0;
+         }
+      nb_set = 1;
+      }
+#else                                   /* NT */
+   if (nb)
+      rflags = MSG_DONTWAIT;
+#endif                                  /* NT */
+
+#if NT
+peek_again:
+#endif                                  /* NT */
+   msglen = recvfrom(s, small, SOCK_RECV_SMALL, MSG_PEEK | rflags,
+                     sa, &addrlen);
+   if (msglen < 0) {
+#if NT
+      errno = WSAGetLastError();
+      /*
+       * An unlimited read holds no lock.  A timed receive on this
+       * socket may have made it nonblocking for a moment.
+       */
+      if (!nb && (errno == EWOULDBLOCK || errno == EAGAIN)) {
+         Sleep(1);
+         goto peek_again;
+         }
+      if (nb_set)
+         sock_recv_blocking(s);
+#endif                                  /* NT */
+#ifdef Concurrent
+      sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
+      return 0;
+      }
 
    if (msglen >= SOCK_RECV_SMALL) {
       bufsize = SOCK_RECV_LARGE;
       heap = malloc(bufsize);
-      if (heap == NULL)
+      if (heap == NULL) {
+#if NT
+         if (nb_set)
+            sock_recv_blocking(s);
+#endif                                  /* NT */
+#ifdef Concurrent
+         sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
          return 0;
+         }
       buf = heap;
       }
    else {
@@ -3970,17 +4130,46 @@ int sock_recv(int s, struct b_record **rp, int nb)
    mh.msg_iovlen = 1;
    mh.msg_control = cu.buf;
    mh.msg_controllen = sizeof(cu.buf);
-   if ((msglen = recvmsg(s, &mh, 0)) < 0) {
+   if ((msglen = recvmsg(s, &mh, rflags)) < 0) {
       free(heap);
+#ifdef Concurrent
+      sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
       return 0;
       }
    addrlen = mh.msg_namelen;
+#ifdef Concurrent
+   sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
 #else                                   /* NT */
    addrlen = sizeof(conn);
-   if ((msglen = recvfrom(s, buf, bufsize, 0, sa, &addrlen)) < 0) {
+   if ((msglen = recvfrom(s, buf, bufsize, rflags, sa, &addrlen)) < 0) {
+      errno = WSAGetLastError();
+      if (!nb && (errno == EWOULDBLOCK || errno == EAGAIN)) {
+         /*
+          * Drop the large buffer before retrying.  The next datagram
+          * may fit in small[], and a later free(heap) must not see
+          * this pointer.
+          */
+         free(heap);
+         heap = NULL;
+         addrlen = sizeof(conn);
+         Sleep(1);
+         goto peek_again;
+         }
       free(heap);
+      if (nb_set)
+         sock_recv_blocking(s);
+#ifdef Concurrent
+      sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
       return 0;
       }
+   if (nb_set)
+      sock_recv_blocking(s);
+#ifdef Concurrent
+   sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
 #endif                                  /* NT */
 
    /*
@@ -4077,7 +4266,10 @@ static struct {
    int pins;            /* sock_get / sock_pin holds across listen/accept */
    int owners;          /* File objects holding this cached listener */
    int closing;         /* close deferred until pins drop to 0 */
-} sock_map[64] = { {0, 0, 0, 0, 0, 0} };
+#ifdef Concurrent
+   word mutexid;        /* shared by every File that aliases this fd */
+#endif                                  /* Concurrent */
+} sock_map[64] = { {0} };
 static int nsock = 0;
 static uword sock_gen_seq = 1;          /* 0 reserved for "not cached" */
 
@@ -4126,6 +4318,9 @@ static int sock_put(char *s, int fd)
    sock_map[nsock].pins = 1;           /* installed and pinned */
    sock_map[nsock].owners = 0;
    sock_map[nsock].closing = 0;
+#ifdef Concurrent
+   sock_map[nsock].mutexid = 0;
+#endif                                  /* Concurrent */
    nsock++;
    MUTEX_UNLOCKID(MTX_SOCK_MAP);
    return 1;
@@ -4136,6 +4331,33 @@ static int sock_put(char *s, int fd)
  * track entry), or 0 if not in the map.  Stored on the File at open so
  * sock_pin can reject a reused fd number.
  */
+/*
+ * Files that alias one cached socket must share its mutex.  The first
+ * caller publishes mtx; later callers get that id back.  An fd that is
+ * not cached keeps the mutex it was given.
+ */
+word sock_shared_mutex(int fd, word mtx)
+{
+#ifdef Concurrent
+   int i;
+
+   MUTEX_LOCKID(MTX_SOCK_MAP);
+   for (i = 0; i < nsock; i++) {
+      if (sock_map[i].fd != fd || sock_map[i].closing)
+         continue;
+      if (sock_map[i].mutexid == 0)
+         sock_map[i].mutexid = mtx;
+      else
+         mtx = sock_map[i].mutexid;
+      break;
+      }
+   MUTEX_UNLOCKID(MTX_SOCK_MAP);
+#else                                   /* Concurrent */
+   (void)fd;
+#endif                                  /* Concurrent */
+   return mtx;
+}
+
 uword sock_listener_gen(int fd)
 {
    int i;
@@ -4236,6 +4458,9 @@ static int sock_track(int fd)
    sock_map[nsock].pins = 0;
    sock_map[nsock].owners = 1;
    sock_map[nsock].closing = 0;
+#ifdef Concurrent
+   sock_map[nsock].mutexid = 0;
+#endif                                  /* Concurrent */
    nsock++;
    MUTEX_UNLOCKID(MTX_SOCK_MAP);
    if (do_close)
@@ -4524,10 +4749,23 @@ static int ssh_chan_register_callbacks(struct SSHfile *sshf, ssh_channel chan)
  */
 int ssh_pump(struct SSHfile *sshf, int block, int want_stdout)
 {
-   int rc;
+   return ssh_pump_timed(sshf, block ? -1 : 0, want_stdout);
+}
+
+/*
+ * ssh_pump_timed() - ssh_pump() with a limit: wait at most timeout
+ * milliseconds (0: do not wait; negative: no limit) for what the caller
+ * wants.  Same results; 2 means the time ran out first.
+ */
+int ssh_pump_timed(struct SSHfile *sshf, int timeout, int want_stdout)
+{
+   int rc, slice;
+   long long deadline = 0, left;
 
    if (sshf == NULL || sshf->closed)
       return -1;
+   if (timeout > 0)
+      deadline = sock_now_ms() + timeout;
 
    for (;;) {
       if (want_stdout ? (sshf->q_stdout > 0) : (sshf->qhead != NULL))
@@ -4535,10 +4773,16 @@ int ssh_pump(struct SSHfile *sshf, int block, int want_stdout)
       if (sshf->chan == NULL || sshf->eof_seen ||
           ssh_channel_is_eof(sshf->chan))
          return 0;
-      rc = ssh_channel_poll_timeout(sshf->chan, block ? 100 : 0, 0);
+      if (timeout < 0)
+         slice = 100;
+      else {
+         left = (timeout == 0) ? 0 : deadline - sock_now_ms();
+         slice = (left <= 0) ? 0 : (left < 100 ? (int)left : 100);
+         }
+      rc = ssh_channel_poll_timeout(sshf->chan, slice, 0);
       if (rc == SSH_ERROR)
          return -1;
-      if (!block) {
+      if (timeout >= 0 && slice == 0) {
          if (want_stdout ? (sshf->q_stdout > 0) : (sshf->qhead != NULL))
             return 1;
          if (sshf->eof_seen || rc == SSH_EOF ||

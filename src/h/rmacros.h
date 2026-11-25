@@ -916,6 +916,14 @@
 #define blkfree  (curblock->free)
 #endif                                  /* Concurrent */
 
+/*
+ * C stack headroom kept free above the low end of a C stack.  interp()
+ * uses it for a native co-expression; cstack_peril() uses it for &main
+ * and for threads.  init.r is built for the compiler as well, so the
+ * macro is not interpreter-only.
+ */
+#define CStackPeril (64 * 1024)
+
 #if COMPILER
 #if ConcurrentCOMPILER
 /*

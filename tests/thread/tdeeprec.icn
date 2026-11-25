@@ -1,0 +1,44 @@
+#
+# tdeeprec.icn -- unbounded recursion in a thread must end in run-time
+#  error 301 or 308, not a crash.  The recursion goes through suspended
+#  builtin generators, so each level also keeps a C frame live: in a
+#  thread with the default C stack, and in a spawn()ed thread with a
+#  64K C stack, the C stack can run out before the evaluation stack.
+#  Which error is reported depends on which stack runs out first.
+#  See also tests/general/deeprec.icn.
+#
+
+procedure viagen(n)
+   local x
+   if n = 0 then return 0
+   every x := !"a" do return 1 + viagen(n-1)
+end
+
+procedure overflow(how)
+   case how of {
+      "thread":       wait(thread viagen(-1))
+      "small thread": wait(spawn(create viagen(-1), 1000, 1000, 64000))
+      }
+   write("no overflow")
+end
+
+procedure report(how)
+   local p, line, r
+   p := open(&progname || " \"" || how || "\" 2>&1", "p") |
+      stop("cannot run ", &progname)
+   while line := read(p) do
+      if /r & find("Run-time error" | "no overflow", line) then r := line
+   close(p)
+   if \r == ("Run-time error 301" | "Run-time error 308") then
+      return "Run-time error 301 or 308"
+   return \r | "no run-time error reported"
+end
+
+procedure main(args)
+   local how
+   if *args > 0 then return overflow(args[1])
+   # sizes are in words
+   setenv("COEXPSIZE", "2000000")
+   every how := "thread" | "small thread" do
+      write(left(how || ":", 14), report(how))
+end

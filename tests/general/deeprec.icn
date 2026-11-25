@@ -11,6 +11,13 @@
 # the evaluation stack can grow.  Every one must end in run-time error 301
 # rather than a crash.
 #
+# Last, with large evaluation stacks, it recurses without bound through
+# suspended builtin generators, so the C stack can run out first: in &main
+# (guarded by the system's guard page) and in a co-expression (whose C
+# stack shares its block with its evaluation stack).  This must end in
+# run-time error 301 or 308; which one depends on the platform's C stack
+# size.
+#
 
 procedure plain(n)
    if n = 0 then return 0
@@ -45,6 +52,8 @@ procedure overflow(how)
       "apply":             sink ! list(1000000)
       "co-expression":     @create plain(-1)
       "co-expr suspend":   @create (every susp(100000))
+      "C stack":           viagen(-1)
+      "co-expr C stack":   @create viagen(-1)
       }
    write("no overflow")
 end
@@ -71,14 +80,26 @@ procedure report(how)
    return \r | "no run-time error reported"
 end
 
+#
+# For runs where either stack may run out first.
+#
+procedure either(r)
+   if r == ("Run-time error 301" | "Run-time error 308") then
+      return "Run-time error 301 or 308"
+   return r
+end
+
 procedure main(args)
    local how
    if *args > 0 then
       return if args[1] == "deep" then deep() else overflow(args[1])
 
-   # sizes are in words
+   # sizes are in words.  The co-expression block is shared with its C
+   # stack, and interp() keeps a margin free at the boundary.  300
+   # suspended-builtin frames have to fit above that margin on a 32-bit
+   # machine, where a word is 4 bytes.
    setenv("MSTKSIZE", "2000000")
-   setenv("COEXPSIZE", "200000")
+   setenv("COEXPSIZE", "800000")
    every write(!run("deep"))
 
    setenv("MSTKSIZE", "40000")
@@ -86,4 +107,9 @@ procedure main(args)
    every how := "plain" | "generator" | "suspend" | "expression" | "apply" |
                 "co-expression" | "co-expr suspend" do
       write(left(how || ":", 17), report(how))
+
+   setenv("MSTKSIZE", "2000000")
+   setenv("COEXPSIZE", "2000000")
+   every how := "C stack" | "co-expr C stack" do
+      write(left(how || ":", 17), either(report(how)))
 end

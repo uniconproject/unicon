@@ -28,6 +28,10 @@ gc: TEST_ENV := BLKSIZE=$(GC_BLKSIZE)
 # The prefix overrides that for this test only.
 tdeepgc: TEST_ENV := BLKSIZE=67108864 STRSIZE=1048576
 
+# The small-thread case needs the Unix overflow handler.  spawn() gives
+# the thread its own C stack, which the evaluation-stack check cannot cover.
+WINSKIP=tdeeprec
+
 # Do the tests
 Test: DoTest
 

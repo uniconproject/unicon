@@ -322,15 +322,26 @@ SSL_CTX * create_ssl_context(dptr attr, int n, int type, int do_verify) {
     }
 
    /*
-    * initialize OpenSSL library
-    * TODO: make this thread safe.
+    * initialize OpenSSL library.  A TLS server thread and its client
+    * both reach this on the first open.  OpenSSL_add_all_algorithms()
+    * is not safe to run twice at once; that race is a SIGSEGV inside
+    * open() (error 302) on OpenSSL 3.0.
     */
+#ifdef Concurrent
+   {
+   static pthread_mutex_t ssl_init_mtx = PTHREAD_MUTEX_INITIALIZER;
+   pthread_mutex_lock(&ssl_init_mtx);
+#endif                                  /* Concurrent */
    if (!SSL_is_initialized) {
      SSL_library_init();
      OpenSSL_add_all_algorithms();  /* load & register all cryptos, etc. */
      SSL_load_error_strings();   /* load all error messages */
      SSL_is_initialized = 1;
    }
+#ifdef Concurrent
+   pthread_mutex_unlock(&ssl_init_mtx);
+   }
+#endif                                  /* Concurrent */
 
    const SSL_METHOD *method;
 

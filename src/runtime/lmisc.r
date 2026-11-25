@@ -375,18 +375,33 @@ int msg_receive(dptr dccp, dptr dncp,
               }
              break;
           default :
+             {
+             struct timespec   ts;
+             struct timeval    tp;
+             /*
+              * Deadline = now + timeout milliseconds, as in x<<@y:
+              * carry microseconds into seconds so tv_nsec stays
+              * below one second.  A wakeup with nothing queued, or
+              * with the value already taken, waits again until this
+              * deadline.  A producer that has exited is not waited on.
+              */
+             gettimeofday(&tp, NULL);
+             tp.tv_usec += (timeout % 1000) * 1000;
+             ts.tv_sec  = tp.tv_sec + timeout / 1000 + tp.tv_usec / 1000000;
+             ts.tv_nsec = (tp.tv_usec % 1000000) * 1000;
+
              MUTEX_LOCKBLK_CONTROLLED(hp, "receive(): list mutex");
              if (hp->size==0){
-                struct timespec   ts;
-                struct timeval    tp;
-                gettimeofday(&tp, NULL);
-                /* Convert from timeval to timespec */
-                ts.tv_sec  = tp.tv_sec;
-                ts.tv_nsec = tp.tv_usec * 1000 + timeout % 1000;
-                ts.tv_sec += timeout / 1000;
-
                 hp->empty++;
-                CV_TIMEDWAIT_EMPTYBLK(hp, ts);
+                while (hp->size==0 && (!dncp || ncp->alive>=0)){
+                   gettimeofday(&tp, NULL);
+                   if (tp.tv_sec > ts.tv_sec ||
+                       (tp.tv_sec == ts.tv_sec &&
+                        tp.tv_usec >= ts.tv_nsec / 1000))
+                      break;
+                   CV_SIGNAL_FULLBLK(hp);
+                   CV_TIMEDWAIT_EMPTYBLK(hp, ts);
+                   }
                 hp->empty--;
                 if (hp->size==0){
                    CV_SIGNAL_FULLBLK(hp);
@@ -400,6 +415,7 @@ int msg_receive(dptr dccp, dptr dncp,
              MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
 
              Return;
+             }
       }
       Fail; /* Unreachable */
 }

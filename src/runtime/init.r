@@ -1600,7 +1600,7 @@ void c_exit(int i)
       tossanswer[ 6 + StrLen(kywd_prog) ] = '\0';
       strcat(tossanswer, " - execution terminated");
       wattrib((wbp)ConsoleBinding, tossanswer, strlen(tossanswer),
-              &answer, tossanswer);
+              &answer, tossanswer, sizeof tossanswer);
       waitkey(ConsoleBinding);
       }
 /* undo the #define exit c_exit */

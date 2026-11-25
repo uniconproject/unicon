@@ -268,7 +268,8 @@ function{1} Clone(argv[argc])
          if (!is:null(argv[n])) {
             if (!cnv:tmp_string(argv[n], sbuf))  /* sbuf not allocated */
                runerr(109, argv[n]);
-            switch (wattrib(w2, StrLoc(argv[n]), StrLen(argv[n]), &sbuf2, answer)) {
+            switch (wattrib(w2, StrLoc(argv[n]), StrLen(argv[n]), &sbuf2,
+                            answer, sizeof answer)) {
             case Failed: fail;
             case RunError: runerr(0, argv[n]);
                }
@@ -1934,7 +1935,7 @@ function{0,1} Font(argv[argc])
             runerr(103,argv[warg]);
          if (setfont(w,&tmp) == Failed) fail;
          }
-      getfntnam(w, buf);
+      getfntnam(w, buf, sizeof buf);
       len = strlen(buf);
 #ifdef Graphics3D
       if (w->context->is_3D) {
@@ -2757,7 +2758,7 @@ function{*} WAttrib(argv[argc])
 
 
                      switch (wattrib(w, StrLoc(sbuf), StrLen(sbuf),
-                                     &sbuf2, answer)) {
+                                     &sbuf2, answer, sizeof answer)) {
                      case Failed:
                         /*
                          * Mark the attribute so we don't produce a result
@@ -2844,7 +2845,7 @@ function{*} WAttrib(argv[argc])
 #endif                                  /* Graphics3D */
 
                   switch (wattrib(w, StrLoc(sbuf), StrLen(sbuf),
-                                  &sbuf2, answer)) {
+                                  &sbuf2, answer, sizeof answer)) {
                   case Failed: continue;
                   case RunError:  runerr(0, argv[n]);
                      }

@@ -132,6 +132,13 @@ AC_ARG_ENABLE([graphics],
 AC_ARG_ENABLE([graphics3d],
 	[AS_HELP_STRING([--disable-graphics3d], [No 3D graphics support])],
 		        [graphics3d=$enableval], [graphics3d=on])
+AC_ARG_ENABLE([sdl-graphics],
+	[AS_HELP_STRING([--enable-sdl-graphics], [2D graphics through SDL3 instead of X11 (default on macOS when SDL3 is found)])],
+		        [sdlgraphics=$enableval], [sdlgraphics=auto])
+AC_ARG_WITH([graphics-libs],
+	[AS_HELP_STRING([--with-graphics-libs=static|shared],
+		[Link SDL3 and FreeType into the executable, or use their shared libraries. Windows defaults to static.])],
+		[graphics_libs=$withval], [graphics_libs=auto])
 AC_ARG_ENABLE([multiprograms],
 	[AS_HELP_STRING([--disable-multiprograms], [No multi programs support])],
 			[multiprograms=$enableval], [multiprograms=on])
@@ -876,17 +883,193 @@ CHECK_ZLIB()
 
 if ! test "x$graphics" = "xno"; then
 
-  CHECK_XLIB()
-  # if we have X11 or if we are running on MS Windows check for graphics libs
-  if test "x$cv_libX11" = xyes -o "ms$unicon_os" = "mswindows" ; then
+  # The SDL3 backend replaces X11 for 2D graphics.  It is the default
+  # on macOS when SDL3 is installed; elsewhere it is asked for.
+  if test "x$sdlgraphics" = "xauto" ; then
+    if test "x$unicon_os" = "xmacos" ; then
+      sdlgraphics=try
+    else
+      sdlgraphics=no
+    fi
+  fi
+  if test "x$sdlgraphics" != "xno" ; then
+    CHECK_SDL3()
+    if test "x$cv_libSDL3" = "xyes" ; then
+      # the canvas draws text with FreeType; find it where SDL3 came from
+      if test "x$freetype_HOME" = "x" ; then
+        pkg_home([freetype], [freetype2])
+      fi
+      # MSYS2 headers live in $MSYSTEM_PREFIX/include/freetype2, which
+      # the compiler does not search, and pkg-config is often not installed.
+      if test "x$freetype_HOME" = "x" ; then
+        if test -n "$MSYSTEM_PREFIX" ; then
+          if test -f "$MSYSTEM_PREFIX/include/freetype2/freetype/freetype.h" ; then
+            freetype_HOME=$MSYSTEM_PREFIX
+          fi
+        fi
+      fi
+      CHECK_FREETYPE()
+      # --without-freetype skips the check above. Do not enable FreeType
+      # again through the static closure or the DLL import library.
+      if test "x$with_freetype" != "xno" ; then
+      if test "x$graphics_libs" = "xauto" ; then
+        if test "ms$unicon_os" = "mswindows" ; then
+          graphics_libs=static
+        else
+          graphics_libs=shared
+        fi
+      fi
+      if test "x$graphics_libs" != "xstatic" -a "x$graphics_libs" != "xshared" ; then
+        AC_MSG_ERROR([--with-graphics-libs must be static or shared])
+      fi
+      # Static: one executable. pkg-config lists the libraries FreeType and
+      # SDL were built against (harfbuzz, brotli, bzip2, and the Windows
+      # system libraries). A probe of one symbol is not enough, because
+      # --static selects libfreetype.a and only some of its objects refer
+      # to those libraries.
+      # Shared: the DLL import libraries. --static would otherwise skip
+      # them unless they are named outright.
+      if test "x$graphics_libs" = "xstatic" ; then
+        if test -z "$PKG_CONFIG" ; then
+          AC_PATH_PROG([PKG_CONFIG], [pkg-config])
+        fi
+        if test -z "$PKG_CONFIG" || \
+           ! $PKG_CONFIG --exists sdl3 || ! $PKG_CONFIG --exists freetype2 ; then
+          AC_MSG_ERROR([static SDL graphics needs pkg-config modules sdl3 and freetype2 (or pass --with-graphics-libs=shared)])
+        fi
+        sdl_static_cflags=`$PKG_CONFIG --static --cflags sdl3`
+        ft_static_cflags=`$PKG_CONFIG --static --cflags freetype2`
+        sdl_static_libs=`$PKG_CONFIG --static --libs sdl3`
+        ft_static_libs=`$PKG_CONFIG --static --libs freetype2`
+        # libfreetype.a calls these from objects a one-symbol probe never
+        # loads. Name any that pkg-config left out. Pull every FreeType
+        # object into the link so configure fails here, not at iconx.
+        for ft_extra in -lharfbuzz -lgraphite2 -lusp10 -lrpcrt4 -lbrotlidec -lbrotlicommon -lbz2
+        do
+          case " $ft_static_libs " in
+          *" $ft_extra "*) ;;
+          *) ft_static_libs="$ft_static_libs $ft_extra" ;;
+          esac
+        done
+        ft_static_libs=`echo " $ft_static_libs " | sed \
+          -e 's/ -lfreetype / -Wl,--whole-archive -lfreetype -Wl,--no-whole-archive /' \
+          -e 's/^ *//' -e 's/ *$//'`
+        ft_cpp=$CPPFLAGS
+        ft_libs=$LIBS
+        LIBS=`echo " $LIBS " | sed \
+          -e 's/ -l:libSDL3.dll.a / /g' \
+          -e 's/ -lSDL3 / /g' \
+          -e 's/ -l:libfreetype.dll.a / /g' \
+          -e 's/ -lfreetype / /g' \
+          -e 's/^ *//' -e 's/ *$//'`
+        LIBS="$ft_static_libs $sdl_static_libs $LIBS"
+        CPPFLAGS="$CPPFLAGS $ft_static_cflags $sdl_static_cflags"
+        FREETYPE_CFLAGS="$ft_static_cflags"
+        AC_MSG_CHECKING([for static SDL3 and FreeType])
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <SDL3/SDL.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
+]], [[return SDL_Init(0) + FT_Open_Face(0, 0, 0, 0);]])],
+          [cv_libSDL3=yes
+           cv_libfreetype=yes
+           AC_MSG_RESULT([yes])
+           AC_DEFINE([HAVE_LIBFREETYPE], [1], [Define to 1 if you have lib freetype])],
+          [AC_MSG_ERROR([static SDL3/FreeType link failed; pass --with-graphics-libs=shared to use the DLLs])])
+      else
+      # Shared libraries. On Windows, --static skips a DLL import library
+      # unless it is named outright.
+      if test "ms$unicon_os" = "mswindows" ; then
+        case " $LIBS " in
+        *" -lSDL3 "*)
+          LIBS=`echo " $LIBS " | sed 's/ -lSDL3 / -l:libSDL3.dll.a /g;s/^ *//;s/ *$//'`
+          ;;
+        esac
+      fi
+      if test "x$cv_libfreetype" = "xyes" -a "ms$unicon_os" = "mswindows" ; then
+        case " $LIBS " in
+        *" -lfreetype "*)
+          ft_libs=$LIBS
+          LIBS=`echo " $LIBS " | sed 's/ -lfreetype / -l:libfreetype.dll.a /g;s/^ *//;s/ *$//'`
+          AC_MSG_CHECKING([for FreeType through its import library])
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <ft2build.h>
+#include FT_FREETYPE_H
+]], [[return FT_Open_Face(0, 0, 0, 0);]])],
+            [AC_MSG_RESULT([yes])],
+            [AC_MSG_RESULT([no])
+             LIBS=$ft_libs])
+          ;;
+        esac
+      fi
+      # If the probe missed FreeType entirely, try the import library alone.
+      if test "x$cv_libfreetype" != "xyes" -a "ms$unicon_os" = "mswindows" ; then
+        ft_cpp=$CPPFLAGS
+        ft_ld=$LDFLAGS
+        ft_libs=$LIBS
+        ft_cflags=
+        ft_lflags=
+        if test "x$freetype_HOME" != "x" ; then
+          ft_cflags="-I${freetype_HOME}/include/freetype2"
+          ft_lflags="-L${freetype_HOME}/lib"
+        elif test -n "$MSYSTEM_PREFIX" ; then
+          ft_cflags="-I${MSYSTEM_PREFIX}/include/freetype2"
+          ft_lflags="-L${MSYSTEM_PREFIX}/lib"
+        fi
+        CPPFLAGS="$CPPFLAGS $ft_cflags"
+        LDFLAGS="$LDFLAGS $ft_lflags"
+        LIBS="-l:libfreetype.dll.a $LIBS"
+        AC_MSG_CHECKING([for FreeType through its import library])
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <ft2build.h>
+#include FT_FREETYPE_H
+]], [[return FT_Open_Face(0, 0, 0, 0);]])],
+          [cv_libfreetype=yes
+           FREETYPE_CFLAGS="$ft_cflags"
+           AC_MSG_RESULT([yes])
+           AC_DEFINE([HAVE_LIBFREETYPE], [1], [Define to 1 if you have lib freetype])],
+          [AC_MSG_RESULT([no])
+           CPPFLAGS=$ft_cpp
+           LDFLAGS=$ft_ld
+           LIBS=$ft_libs])
+      fi
+      fi
+      fi
+      if test "x$cv_libfreetype" = "xyes" ; then
+        sdlgraphics=yes
+      elif test "x$sdlgraphics" = "xyes" ; then
+        AC_MSG_ERROR([SDL graphics requires FreeType (libfreetype-dev or equivalent)])
+      else
+        sdlgraphics=no
+      fi
+    elif test "x$sdlgraphics" = "xyes" ; then
+      AC_MSG_ERROR([SDL graphics requires SDL3 (libsdl3-dev or equivalent)])
+    else
+      sdlgraphics=no
+    fi
+  fi
 
-    CHECK_FREETYPE()
+  if test "x$sdlgraphics" = "xyes" ; then
+    AC_DEFINE([SDLGraphics], [1], [2D graphics through SDL3])
+    CHECK_FONTCONFIG()
+  else
+    CHECK_XLIB()
+  fi
+
+  # if we have X11 or SDL3, or are running on MS Windows, check for graphics libs
+  if test "x$cv_libX11" = xyes -o "x$sdlgraphics" = "xyes" -o "ms$unicon_os" = "mswindows" ; then
+
+    if test "x$sdlgraphics" != "xyes" ; then
+      CHECK_FREETYPE()
+    fi
     # iconc must pass -I.../freetype2 so gcc finds ft2build.h from rt.h
     if test "x$cv_libfreetype" = "xyes" ; then
       AC_DEFINE_UNQUOTED([ICONC_FREETYPE_CPPFLAGS], ["$FREETYPE_CFLAGS"],
         [Extra cpp flags for iconc when compiling user C (ft2build.h).])
     fi
-    CHECK_XFT()
+    if test "x$sdlgraphics" != "xyes" ; then
+      CHECK_XFT()
+    fi
     CHECK_JPEG()
     CHECK_PNG()
 
@@ -898,6 +1081,19 @@ if ! test "x$graphics" = "xno"; then
 	  cv_opengl=yes
 	  AC_DEFINE([HAVE_LIBGL], [1])
 	  AC_DEFINE([HAVE_LIBGLU], [1])
+       elif test "x$sdlgraphics" = "xyes" -a "x$unicon_os" = "xmacos" ; then
+          # SDL graphics on macOS: 3D through the OpenGL framework
+          AC_CHECK_HEADERS([OpenGL/gl.h OpenGL/glu.h],
+                           [cv_opengl=yes], [cv_opengl=no; break])
+          if test "x$cv_opengl" = "xyes" ; then
+             cv_libGL=yes
+             cv_libGLU=yes
+             AC_DEFINE([HAVE_LIBGL], [1])
+             AC_DEFINE([HAVE_LIBGLU], [1])
+             LIBS="$LIBS -framework OpenGL"
+             # Apple deprecated OpenGL; it still works
+             CFLAGS="$CFLAGS -DGL_SILENCE_DEPRECATION"
+          fi
        else
           CHECK_OPENGL()
        fi
@@ -914,7 +1110,7 @@ if ! test "x$graphics" = "xno"; then
     echo "Building with graphics..."
     GRAPHICS=graphics
 
-    if test "ms$unicon_os" != "mswindows" ; then
+    if test "ms$unicon_os" != "mswindows" -a "x$sdlgraphics" != "xyes" ; then
        CHECK_XPM()
        XL="\$(XLIBS)"
     fi
@@ -936,7 +1132,9 @@ if ! test "x$graphics" = "xno"; then
      *bsd*)
         ;;
      *macos*)
-        XLIBS="-L/opt/X11/lib -L/usr/X11R6/lib -L/usr/local/lib -lX11"
+        if test "x$sdlgraphics" != "xyes" ; then
+          XLIBS="-L/opt/X11/lib -L/usr/X11R6/lib -L/usr/local/lib -lX11"
+        fi
 	;;
      *windows*)
         ;;
@@ -1145,7 +1343,13 @@ fi
 # want graphics
 if test "x$graphics" = "xyes" || test "x$graphics" = "xon" ; then
   gtmp="Graphics           :"
-  if test "x$cv_libX11"    = "xyes" ; then
+  if test "x$sdlgraphics" = "xyes" ; then
+    if test "x$cv_libfontconfig" = "xyes" ; then
+      gtmp=" + $gtmp +SDL3 +fontconfig "
+    else
+      gtmp=" + $gtmp +SDL3 "
+    fi
+  elif test "x$cv_libX11"    = "xyes" ; then
     gtmp=" + $gtmp +X11 "
   else
     if test "x$graphics" = "xyes" ; then
@@ -1159,8 +1363,10 @@ if test "x$graphics" = "xyes" || test "x$graphics" = "xon" ; then
 
   if test "x$cv_libpng"  = "xyes" ; then gtmp="$gtmp +PNG " ; else gtmp="$gtmp -PNG " ; fi
 
-  if test "x$cv_libXft"   = "xyes" ; then gtmp="$gtmp +XFT " ; else gtmp="$gtmp -XFT " ; fi
-  if test "ms$unicon_os" != "mswindows" ; then
+  if test "x$sdlgraphics" != "xyes" ; then
+    if test "x$cv_libXft"   = "xyes" ; then gtmp="$gtmp +XFT " ; else gtmp="$gtmp -XFT " ; fi
+  fi
+  if test "ms$unicon_os" != "mswindows" -a "x$sdlgraphics" != "xyes" ; then
     if test "x$cv_libXpm" = "xyes" ; then gtmp="$gtmp +XPM " ; else gtmp="$gtmp -XPM " ; fi
   fi
   if test "x$cv_libfreetype"   = "xyes" ; then

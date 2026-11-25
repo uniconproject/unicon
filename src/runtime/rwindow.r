@@ -1629,11 +1629,7 @@ static int gfread(char *filename, int p)
    if (!(gf_paltbl=(struct palentry *)malloc(256 * sizeof(struct palentry))))
       return Failed;
 
-#ifdef MSWindows
-           if ((gf_f = fopen(filename, "rb")) == NULL)
-#else                                   /* MSWindows */
-           if ((gf_f = fopen(filename, "r")) == NULL)
-#endif                                  /* MSWindows */
+   if ((gf_f = fopen(filename, "rb")) == NULL)
       return Failed;
 
    for (i = 0; i < 256; i++)            /* init palette table */
@@ -2084,11 +2080,7 @@ static int jpegread(char *filename, int p, struct imgdata *imd)
    int i, orient;
    static FILE *jpg_f = NULL;                   /* input file */
 
-#ifdef MSWindows
       if ((jpg_f = fopen(filename, "rb")) == NULL)
-#else                                   /* MSWindows */
-      if ((jpg_f = fopen(filename, "r")) == NULL)
-#endif                                  /* MSWindows */
          return Failed;
 
    cinfo.err = jpeg_std_error(&jerr.pub);
@@ -2253,11 +2245,7 @@ static int pngread(char *filename, int p, struct imgdata *imd)
 
    FILE * png_f = NULL;
 
-   #ifdef MSWindows
       if ((png_f = fopen(filename, "rb")) == NULL) {
-   #else                                        /* MSWindows */
-      if ((png_f = fopen(filename, "r")) == NULL) {
-   #endif                                       /* MSWindows */
          return Failed;
          }
 

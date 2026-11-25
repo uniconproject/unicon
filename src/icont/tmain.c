@@ -270,6 +270,18 @@ void iconx(int argc, char** argv){
 
 #define main icont
 #endif                                  /* MSWindows */
+
+#ifdef SDLWindows
+/*
+ * The GUI translator (wicont) with SDL graphics: the runtime's WinMain()
+ * calls iconx(), as for the native backend.
+ */
+int icont(int argc, char **argv);
+void iconx(int argc, char** argv){
+  icont(argc, argv);
+}
+#define main icont
+#endif                                  /* SDLWindows */
 #endif                                  /* NTConsole */
 
 

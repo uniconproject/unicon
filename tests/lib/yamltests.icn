@@ -1,0 +1,202 @@
+#
+# yamltests.icn -- YAML library: block and flow collections, scalar
+#  styles, anchors and merge keys, tags, multiple documents, file input,
+#  Unicon round trips through utoy(), toyaml(), and error reporting.
+#
+
+import yaml
+
+record point(x, y)
+record marked(__s, x)
+
+class Box(w, h)
+end
+
+procedure show(label, s, strict, err)
+   local L
+   L := []
+   every put(L, ytous(s, strict, err))
+   write(label, ": ", *L, " document(s)")
+   every write("   ", vimage(!L))
+end
+
+procedure main()
+   local err, f, m, s, t, x, y
+
+   show("block mapping and sequence",
+        "name: ulsp\nports:\n  - 7979\n  - 8080\nenv:\n  HOME: /tmp\n" ||
+        "  TRACE: off\nlist:\n- compact\n- - nested\n  - seq\n- k: v\n  j: w\n")
+   show("flow", "{a: [1, 2.5, {b: c}], \"q\": 'r', e: , [x]: y}")
+   show("scalars",
+        "plain: two\n  lines\nsq: 'it''s'\n" ||
+        "dq: \"t\\tn\\n\\x41\\u00e9\"\nint: [0, -3, +4, 0o17, 0x1F]\n" ||
+        "real: [1.5, -2e-3, .5, 1e3]\nnull: [~, null, ]\n" ||
+        "bool: [true, False, yes]\nspecial: [.inf, 12:30, 2026-11-22]\n")
+   show("block scalars",
+        "lit: |\n  a\n   b\n\nfold: >\n  a\n  b\n\n  c\n" ||
+        "strip: |-\n  x\nkeep: |+\n  y\n\nlast: end\n")
+   show("anchors and merge",
+        "base: &b {x: 1, y: 2}\nm:\n  <<: *b\n  y: 20\nalias: *b\n")
+   show("tags", "s: !!str 12\ni: !!int \"7\"\nset: !!set {a, b}\nn: ! 5\n")
+   show("documents", "--- 1\n---\n- a\n...\n--- |\n  text\n")
+   show("same-line documents", "--- a: b\n--- - a\n")
+   # "---world" is not a document marker; a line "---" still ends the scalar.
+   show("plain looks like marker", "hello\n---world\n")
+   show("plain looks like end", "hello\n...world\n")
+   show("plain then marker", "hello\n---\nworld\n")
+   show("short merge", "[<<: {x: 1}, {<<: {y: 2}}, \"<<\": {z: 3}]")
+   show("anchor kept", "base: &a first\nseq:\n  - [*a, &a second]\n")
+   show("explicit flow key", "[? a, ? b: c]")
+   show("CRLF", "a: 1\r\nb:\r\n  - x\r\n")
+   show("explicit and empty keys", "? [k, l]\n: v\n: empty key\n")
+
+   # "wu" writes these bytes unchanged.  CR LF is what a Windows editor
+   # saves; ytouf() must read that without the text-mode translation
+   # that mis-parses the file and shifts error line numbers.
+   f := open("yamltests.tmp", "wu")
+   write(f, "# config\r\nkey: value\r\nitems:\r\n  - 1\r\n  - 2")
+   close(f)
+   write("ytouf: ", vimage(ytouf("yamltests.tmp")))
+
+   # utoy() round trips Unicon values; toyaml() writes plain YAML
+   t := table()
+   t[1] := "one"
+   t["k"] := [1, 2]
+   t[[3]] := "list key"
+   every x := 42 | "a: b" | "true" | "" | 'abc' | set([3, 1, 2]) | t |
+         point(1, "two") | Box(3, [4, set(["s"])]) | ["x", [], table()] do {
+      y := utoy(x)
+      write("utoy ", type(x), ": ",
+            if vimage(ytous(y)) == vimage(x) then "same" else "DIFFERENT")
+      }
+   write("utoy table:")
+   writes(utoy(t))
+   write("toyaml:")
+   writes(toyaml(["a", point(1, "two"), set([1]), 'c', "x\ny", &null]))
+
+   # Non-ASCII cset members stay single bytes.  \xNN / \u00NN in the
+   # metadata string are bytes; the same escapes in a later property
+   # are UTF-8 text.
+   x := cset(char(233))
+   y := ytous(utoy(x))
+   write("cset e9: ", *y, " ", ord(!y))
+   x := cset(char(195) || char(169))
+   y := ytous(utoy(x))
+   s := ""
+   every s ||:= " " || ord(!y)
+   write("cset utf8: ", *y, s)
+   x := ytous("__unicset__: \"\\u00e9\"\n")
+   write("cset meta: ", type(x), " ", *x, " ", ord(!x))
+   x := ytous("__unitable__: 1\n__unicset__: \"\\u00e9\"\n")
+   s := ""
+   every s ||:= " " || ord(!x["__unicset__"])
+   write("cset property: ", *x["__unicset__"], s)
+
+   # The metadata marker is not a table entry.
+   t := table()
+   t["__unitable__"] := 1
+   t["a"] := 2
+   write("unitable key: ", vimage(ytous(utoy(t))))
+
+   # A real key "<<" is quoted, so reading it does not merge.
+   t := table()
+   t["<<"] := "value"
+   write("merge key: ", vimage(ytous(utoy(t))))
+   write("merge key plain: ", vimage(ytous(toyaml(t))))
+   m := table()
+   m["z"] := 1
+   t["<<"] := m
+   write("merge mapping: ", vimage(ytous(utoy(t))))
+
+   # A table key is written as flow JSON.  A numeric key needs a space
+   # after ":" or the reader treats 1:"one" as one plain scalar.
+   t := table()
+   m := table()
+   m[1] := "one"
+   t[m] := "v"
+   write("nested key: ", vimage(ytous(utoy(t))))
+
+   x := marked("S", 7)
+   y := ytous(utoy(x))
+   write("record fields: ", type(y), " ", y.__s, " ", y.x)
+   s := "\xef\xbb\xbf" || "text"
+   write("bom string: ", if ytous(utoy(s)) == s then "same" else "DIFFERENT")
+   x := ytous("&a [*a]")
+   write("self list: ", if \x & x[1] === x then "same" else "DIFFERENT")
+   x := ytous("&a {k: *a}")
+   write("self map: ", if \x & x["k"] === x then "same" else "DIFFERENT")
+   x := ytous("&a\n- *a\n")
+   write("self block: ", if \x & x[1] === x then "same" else "DIFFERENT")
+
+   show("strict merge override",
+        "base: &b {x: 1, y: 2}\nm:\n  <<: *b\n  y: 20\n", 1)
+   show("strict flow merge", "{<<: {x: 1, y: 2}, y: 20}", 1)
+
+   # No final line break at end of input: clip and keep must not add one.
+   show("clip at eof", "a: |\n  x")
+   show("keep at eof", "a: |+\n  x")
+   show("strip at eof", "a: |-\n  x")
+   show("clip with break", "a: |\n  x\n")
+   show("keep with break", "a: |+\n  x\n")
+   show("keep empty line", "a: |+\n\n")
+
+   # Errors go to the error file; the document with the error yields
+   # nothing.
+   err := open("yamltests.err", "w")
+   every x := "a: [1, 2" | "a: \"open" | "a: b: c" | "- a\nb: 1" |
+         "a:\n\tb: 1" | "x: *nope" | "k: |x\n  y" | "a: 1\n  b: 2" do
+      show(image(x), x, , err)
+   show("strict duplicate key", "a: 1\na: 2", 1, err)
+   show("lenient duplicate key", "a: 1\na: 2", , err)
+   show("bad unicode escape", "a: \"\\UFFFFFFFF\"", , err)
+   show("surrogate escape", "a: \"\\uD800\"", , err)
+   show("int tag on sequence", "a: !!int [1]", , err)
+   show("float tag on mapping", "a: !!float {x: 1}", , err)
+   show("bool tag on sequence", "a: !!bool [y]", , err)
+   show("strict merge duplicate",
+        "m:\n  <<: {x: 1}\n  y: 2\n  y: 3\n", 1, err)
+   f := open("yamltests.tmp", "wu")
+   write(f, "ok: 1\r\nlist:\r\n  - [a,\r\n     b\r\n")
+   close(f)
+   every ytou("yamltests.tmp", , "f", err)
+   close(err)
+   write("errors:")
+   err := open("yamltests.err")
+   while write("   ", read(err))
+   close(err)
+   remove("yamltests.err")
+   remove("yamltests.tmp")
+end
+
+#
+# Print x without serial numbers, so the output does not depend on
+# allocation order.  Table keys and set elements are sorted by their
+# printed form.
+#
+procedure vimage(x)
+   local s, L, k
+   case type(x) of {
+      "list": {
+         s := ""
+         every s ||:= ", " || vimage(!x)
+         return "[" || (s[3:0] | "") || "]"
+         }
+      "table": {
+         L := []
+         every k := key(x) do put(L, vimage(k) || ": " || vimage(x[k]))
+         s := ""
+         every s ||:= ", " || !sort(L)
+         return "{" || (s[3:0] | "") || "}"
+         }
+      "set": {
+         L := []
+         every put(L, vimage(!x))
+         s := ""
+         every s ||:= ", " || !sort(L)
+         return "set{" || (s[3:0] | "") || "}"
+         }
+      "point": return "point(" || vimage(x.x) || ", " || vimage(x.y) || ")"
+      "Box__state": return "Box(" || vimage(x.w) || ", " || vimage(x.h) || ")"
+      default: return image(x)
+      }
+end

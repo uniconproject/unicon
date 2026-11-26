@@ -20,7 +20,8 @@ UFILES=gui.u file_dlg.u db.u \
  undoableedit.u undomanager.u url.u webup.u \
  notification.u md5.u crypto.u httprequest.u httpresponse.u exception.u \
  thread.u matrix_util.u struct.u db_util.u database.u addressdb.u \
- union.u pdb_util.u propertydb.u property.u utf8.u unittest.u jsonrpc.u logger.u
+ union.u pdb_util.u propertydb.u property.u utf8.u unittest.u jsonrpc.u logger.u \
+ yaml.u
 
 # COPYINS are library files copied in from other directories for
 # organizational purposes. Inspired by ipl/lib.  They have to be
@@ -34,6 +35,9 @@ selection3D.u: ../3d/selection3D.icn
 	$(CP) ../3d/selection3D.icn .
 	$(UNICON) $(UFLAGS) -c selection3D.icn
 	$(RM) selection3D.icn
+
+yaml.u: yaml.icn json.u
+	$(UNICON) $(UFLAGS) -c yaml.icn
 
 utf8.u: utf8.icn classobject.u
 	$(UNICON) $(UFLAGS) -c utf8.icn

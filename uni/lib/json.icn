@@ -729,17 +729,18 @@ end
 # JSON value, for Unicon tables.
 #
 procedure _jp_object(jerror)
-   local t, k, v, first, skip, constr, attribs, fields, uni, i, f
+   local t, k, k1, v, v1, first, lead, np
 
+   t := table()
+   np := 0
    tab(many(' \t\r\n'))
-   if ="}" then return table()
-   first := 1
+   if ="}" then return t
    repeat {
       # key
       tab(many(' \t\r\n'))
       if any(',') then
          return _jp_err(jerror, "Unexpected comma in JSON object after: " ||
-                        (if \first then "{" else ","))
+                        (if /first then "{" else ","))
       if ="\"" then
          k := _jp_string(jerror) | fail
       else if \jerror.strict then
@@ -747,6 +748,11 @@ procedure _jp_object(jerror)
                         _jp_next())
       else
          k := _jp_value(jerror) | fail
+      if /first then {
+         first := 1
+         k1 := k
+         lead := 1
+         }
 
       # colon
       tab(many(' \t\r\n'))
@@ -766,81 +772,22 @@ procedure _jp_object(jerror)
       # string is bytes: ordinary \u decoding would turn \u00e9 into two
       # UTF-8 bytes.  The same name later in the object is an ordinary
       # string.  === does not convert, so a list or set key is not an error.
-      if \first & k === "__unicset__" & ="\"" then
+      # The table is turned into a set, cset, record, or class afterwards.
+      #
+      # {"__unitable__":1} is metadata, not an entry.  utoj() writes the
+      # marker and then the real pairs, so a table that itself contains
+      # the key "__unitable__" produces that key twice.  Leaving the
+      # marker out of t keeps the real entry; the two used to collapse
+      # into one slot, and removing the marker removed the data.
+      if \lead & k === "__unicset__" & ="\"" then
          v := _jp_cset_string(jerror) | fail
       else
          v := _jp_value(jerror) | fail
-
-      # Unicon type encodings are recognized only in the first pair.
-      skip := &null
-      if \first then {
-         first := &null
-         if not (type(k) == "string" & match("__uni", k)) then
-            t := table()
-         else case k of {
-            # {"__unicset__":"..."}
-            "__unicset__": {
-               if type(v) == "string" then uni := cset(v)
-               t := table()
-               t[k] := v
-               skip := 1
-               }
-            # {"__uniset__":[...]}
-            "__uniset__": {
-               if type(v) == "list" then uni := set(v)
-               t := table()
-               t[k] := v
-               skip := 1
-               }
-            # {"__unirecord__":"RecordName", ...}
-            # If the constructor doesn't exist, return a table instead.
-            "__unirecord__": {
-               if constr := proc(v) then {
-                  fields := [: fieldnames(constr()) :] | []
-                  attribs := list(*fields)
-                  skip := 1
-                  }
-               else t := table()
-               }
-            # {"__uniclass__":"ClassName", ...}
-            # If the constructor doesn't exist, return a table instead.
-            "__uniclass__": {
-               if constr := proc(v) then {
-                  fields := membernames(v)
-                  attribs := list(*fields)
-                  skip := 1
-                  }
-               else t := table()
-               }
-            # {"__unitable__":1, ...}
-            # Don't put "__unitable__":1 into the table.
-            "__unitable__": {
-               t := table()
-               if v === 1 then skip := 1
-               }
-            default: t := table()
-            }
-         }
-
-      if /skip then {
-         if \t then {
-            # a set/cset encoding must be the only pair
-            if type(\uni) ~== "table" then uni := &null
-            t[k] := v
-            }
-         else {
-            # Class/record attribute.  Check field names in case the JSON
-            # was user-constructed instead of from utoj().
-            i := 1
-            every f := !fields do {
-               if f == k then {
-                  attribs[i] := v
-                  break
-                  }
-               i +:= 1
-               }
-            }
-         }
+      if \lead then v1 := v
+      if not (\lead & k === "__unitable__" & v === 1) then
+         t[k] := v
+      lead := &null
+      np +:= 1
 
       tab(many(' \t\r\n'))
       if ="," then {
@@ -854,10 +801,51 @@ procedure _jp_object(jerror)
          return _jp_err(jerror, "Token violated JSON object syntax: " ||
                         _jp_next())
       }
+   return _jfromtable(t, k1, v1, np)
+end
 
-   if \constr then return constr ! attribs     # class/record
-   if \uni then return uni                     # set/cset
-   return t                                    # dictionary/table
+#
+# Given the table t built from a JSON (or YAML) object, its first key k1,
+# and that pair's value v1, return the Unicon value encoded by utoj(), or
+# t itself if the object does not use the Unicon JSON object encoding:
+#    {"__uniset__":[...]}           a set; must be the only pair
+#    {"__unicset__":"..."}          a cset; must be the only pair
+#    {"__unitable__":1, ...}        a table.  Callers omit the marker pair,
+#                                   so a real "__unitable__" entry is kept
+#    {"__unirecord__":"R", ...}     a record R, if R exists
+#    {"__uniclass__":"C", ...}      an instance of class C, if C exists
+# v1 is the first pair's value, not t[k1]: a later pair can reuse the key.
+# np is how many pairs were present.  *t is not that number: two pairs
+# with the same key collapse, and a repeated marker must stay a table
+# holding the later value.  Only the first key is significant.  Pairs
+# whose keys are not fields of the record or class are ignored.
+#
+procedure _jfromtable(t, k1, v1, np)
+   local constr, fields, attribs, i, f
+   if not (type(k1) == "string" & match("__uni", k1)) then return t
+   # Do not write this as (np | *t) = 1.  Comparison resumes an
+   # alternation, so a later pair count would fall back to *t.
+   if /np then np := *t
+   case k1 of {
+      "__unicset__":
+         if np = 1 & type(v1) == "string" then return cset(v1)
+      "__uniset__":
+         if np = 1 & type(v1) == "list" then return set(v1)
+      "__unirecord__" | "__uniclass__": {
+         if constr := proc(v1) then {
+            fields := if k1 == "__uniclass__" then membernames(v1)
+                      else [: fieldnames(constr()) :] | []
+            attribs := list(*fields)
+            i := 0
+            every f := !fields do {
+               i +:= 1
+               if member(t, f) then attribs[i] := t[f]
+               }
+            return constr ! attribs
+            }
+         }
+      }
+   return t
 end
 
 ######################

@@ -1,0 +1,132 @@
+# Queue a series of tasks to a priority thread pool and make sure they
+# are executed in numerical order of priority (highest first).
+#
+#       Don Ward
+#       November 2024
+
+import threads
+
+global priority, order
+global errs
+global tests
+
+$define LOWEST_PR 0
+$define HIGHEST_PR 999999999
+
+procedure main ( args  )
+   local pr, TP, n := 50, i := 0
+   local f, resultFile := "./local/tpp-up--queue.out"
+
+   errs := tests := 0
+   TP := ThreadPool(0 , 1)     # Create a priority pool with no workers
+
+   if /(f := open(resultFile, "w")) then {
+      write(&errout, "Cannot open ", resultFile, " ( ", &errortext, " )")
+      f := &errout
+   }
+
+   if *args > 0 then { # Queue a series of tasks in the priority order specified
+      priority := HIGHEST_PR
+      n := *args
+      every pr := !args do {
+         # pr is a string. We must convert it to a number because (believe it or not)
+         #    max("-7", 0) returns  "-7"
+         if pr := numeric(pr) then {
+            priority <:= pr
+            # Special case -ve priorities in the argument to P to avoid a false failure
+            TP.Dispatch(pr, P, max(pr,0), i+:=1)
+         } else {
+            TP.Dispatch(P, LOWEST_PR, i+:=1)
+            priority <:= 0
+         }
+      }
+      PrQ(TP, "Task list", &output)
+   } else { # Queue a series of tasks with random priorities
+      priority := 100
+      writes(f, "Tasks: ")
+      every i:= 1 to n do {
+         if 0 = (i%10) then writes(f, "\n       ")
+         pr := ?priority
+         # Arbitrarily treat some priorities as zero
+          if 11 <= pr <= 21 then {
+            writes(f, " (", pr, ")")
+            TP.Dispatch(P, LOWEST_PR, i, pr)
+         } else if 42 <= pr <= 52 then {
+            writes(f, " null(", pr, ")")
+            TP.Dispatch(&null, P, LOWEST_PR, i, pr)
+         } else {
+            writes(f, " ", pr)
+            TP.Dispatch(pr, P, pr, i)
+         }
+        }
+      write(f)
+
+      PrQ(TP, "Task list", f)
+   }
+
+   priority := HIGHEST_PR
+   order := 0
+
+   TP.MakePool(1)       # Add a single worker thread, so tasks are done one at a time.
+   TP.ClosePool()       # Wait for every task to finish
+
+  if tests ~= n then {
+     write(&errout, n - tests, " tests not performed")
+   } else if  errs > 0 then {
+     write(&errout, errs, " errors")
+     write(&errout, "see ", resultFile, " for details of the task queue")
+     exit(1)
+  } else {
+     write(&errout, "no errors")
+     exit(0)
+  }
+
+end
+
+# ----------------------------------------------------------------------
+# Check that the priority is monotically non increasing.
+# Don't need mutual exclusion: there is only one thread in the pool.
+procedure P(x, sequence)
+   if x > priority then {
+      write(&errout, "Priority inversion: old = ", priority, " new = ", x)
+      errs +:= 1
+   }
+   if (x = priority) & (sequence < order) then {
+      write(&errout, "non FIFO at : priority = ", x)
+      errs +:= 1
+   }
+   priority := x
+   order := sequence
+   tests +:= 1
+end
+
+# ----------------------------------------------------------------------
+# Print the work queue of the pool to a file
+# In the output the first parameter is the priority, the second is the order
+# of adding to the queue. If there is a third parameter, it is the original
+# priority before setting it to zero. Priority "none" meaans Dispatch was used.
+procedure PrQ(p, mess, f)
+   local n, t, proc, np, priority
+
+   writes(f, \mess, ": ")
+   write(f, "No. of tasks ", n := *(p.ToDo))
+   every t := p.ToDo[1 to n] do {
+      priority := t[1]
+      if numeric(priority) then {
+         proc := t[2]; np := *t - 2
+      } else {
+         proc := priority; priority := &null; np := *t -1
+      }
+      writes(f, left(\priority | "none",6))
+      writes(f, image(proc), "  ", left(np || plural(" parameter", np), 15))
+      writes(f, " [")
+      n := if \priority then 3 else 2
+      every writes(f, " ", image(t[n to *t]))
+      write(f, " ]")
+   }
+end
+
+procedure plural (s,n )
+   if n = 1 then return s else return s || "s"
+end
+

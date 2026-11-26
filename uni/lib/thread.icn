@@ -7,8 +7,8 @@
 #
 
 package threads
-
-
+import lang
+link ximage
 #
 # create a communication channel with thread x
 #
@@ -502,6 +502,329 @@ procedure ClosePool()
         fail
     }
     return #success
+end
+
+# -------------------------------------------------------------------------------
+# Default no of threads = 2 + number of cores
+# We only need to do this calculation once.
+procedure default_pool_size()
+   static n
+   initial {
+      &features ? { ="CPU cores " & n := 2 + ::tab(0) }
+   }
+   return n
+end
+
+# -------------------------------------------------------------------------------
+# A development of the global pool (above) which allows
+#    Separate pools with different characteristics (no of threads, stack sizes etc.).
+#    Queueing tasks based on priority.
+class ThreadPool(
+                 ToDo,      # A List of tasks to execute. Each task is itself a list where
+                            # the first element is a procedure to call and the rest are its parameters.
+                            # In a pool with priority, the priority is prepended to the list.
+                 Idlers,    # A count of waiting worker threads
+                 WorkCv,    # A condition variable for "there is work to do"
+                 Workforce, # The collection of all worker threads for this pool.
+                 Work,      # A mutex protecting the above
+                 strSpace,  # Initial allocation of string space for each thread
+                 blkSpace,  # Initial allocation of block space for each thread
+                 stkSpace,  # Initial allocation of stack space for each thread
+                 havePr     # If non zero, tasks are queued in priority order
+                            #   -1  (default) lower values are more important (dequeued first)
+                            #   +1            higher values are more important
+                 )
+
+   #--------------------------------------------------------------------------------
+   # Construct a pool of n worker threads with the stack, string and block allocations
+   # specified by the parameters of the class constructor.
+   # Subsequent calls add workers to the pool.
+   method MakePool(n: integer: 0)
+      if n <= 0 then n := default_pool_size()
+      # Create the requested number of workers
+      critical Work: {
+         if /strSpace & /blkSpace & /stkSpace then { # Use default allocation
+            every 1 to n do ::put(Workforce, thread classworker(self))
+         } else {
+            every 1 to n do ::put(Workforce,
+                                  ::spawn(create(classworker(self)),
+                                                 blkSpace, strSpace, stkSpace))
+         }
+      }
+      return self
+   end
+
+   #--------------------------------------------------------------------------------
+   # Return the number of worker threads in the pool
+   method Capacity()
+      return *Workforce
+   end
+
+   #--------------------------------------------------------------------------------
+   # Return the number of non-idle threads at this moment
+   method Active()
+      return *Workforce - Idlers
+   end
+
+   # --------------------------------------------------------------------------------
+   # Dispatch a method described by class instance and method name
+   # Can have an optional priority before, and optional arguments after
+   method DispatchMethod(args[])
+      local obj, name, pr
+
+      pr := args[1]
+      if numeric(pr) then {
+         pop(args); push(args, CallMethod); push(args,pr)
+      } else {
+         push(args, CallMethod)
+      }
+
+      Dispatch ! args
+   end
+
+   #--------------------------------------------------------------------------------
+   # Add a task (described by an optional priority plus procedure plus optional parameters)
+   # to the list of tasks to be executed by (one of) the pool of worker threads.
+   # The priority controls whereabouts in the queue the task is placed.
+   # The priorities must be numeric and non negative (but can be real or integer or a mixture).
+   method Dispatch(args[])
+      local priority, pos, lo, hi, pr, p
+
+      pr := args[1]
+      if ::type(pr) == "procedure" then {
+         pr := &null            # No priority supplied
+      } else {
+         if ::type(args[2]) ~== "procedure" then fail
+         if \pr then if (not numeric(pr)) | (pr < 0) then fail
+      }
+
+      if havePr = 0 then { # This is a pool without priority
+         # In a non-priority pool, interpret pr (if supplied) as follows:
+         #   null or =0    Insert task at the back
+         #   >0            Insert task at the front
+         critical Work: (if \pr > 0 then ::push else ::put) (ToDo, args)
+      } else { # A pool with priority
+         # The task will be placed in the work queue ahead of all tasks that are less important
+         # and behind all tasks that are more important. Tasks with the same priority are in FIFO order.
+         # Importance is determined by the value of havePr:
+         #    -1:   lower priority values are more important
+         #    +1:   higher priority values are more important
+         #
+         # Note that if there is more than one worker thread (which will be the normal case) the
+         # order in which tasks are started cannot be guaranteed: They will be dequeued in order but
+         # execution order is dependent on the system thread scheduler.
+
+         if /pr then { # no priority is the least important of all, irrespective of havePr.
+            if type(args[1]) ~== "procedure" then pop(args)
+            critical Work: ::put(ToDo, args)
+         } else {
+            # to guarantee FIFO within priority, subtract a tiny amount so that the task ends up
+            # behind all its siblings that have the same priority. Note that what "subtraction" means
+            # is dependent on whether low values of priority mean more important (the default) or
+            # the other way around.
+            pr := pr - (havePr * 1E-12)
+            ::lock(Work)
+            case *ToDo of {
+               0: { # easy
+                  ::push(ToDo, args)
+               }
+               1: { # simple
+                   if comparePR(ToDo[1][1], pr) = -1 then {
+                     ::push(ToDo, args)
+                  } else {
+                     ::put(ToDo, args)
+                  }
+               }
+               default: { # Binary search for position in the queue
+                  lo := 1; hi := *ToDo;
+                  while lo <= hi do {
+                     pos := lo + (hi -lo)/2
+                     priority := ToDo[pos][1]
+                     case comparePR(priority, pr) of {
+                        -1: { hi := pos - 1 }
+                         1: { lo := pos + 1 }
+                         0: { break }
+                     }
+                  }
+
+                  if comparePR(priority,pr) >= 0 then pos+:= 1
+                  ::insert(ToDo, pos, args)
+               }
+            }
+            ::unlock(Work)
+         }
+      }
+      ::signal(WorkCv)       # Wake up the workforce
+      return # success
+   end
+
+   # ----------------------------------------
+   # Internal method to compare priorities
+   # returns
+   #     -1  p1 less important than p2
+   #      0  p1 and p2 are equally important
+   #     +1  p1 more important than p2
+   method comparePR(p1,p2)
+      # A procedure value is less than any numerical value irrespective of havePr
+      if type(p1) == "procedure" then {
+         if type(p2) == "procedure" then return 0 else return -1
+      } else if type(p2) == "procedure" then {
+         return 1
+      } else {
+         if havePr < 0 then {
+            if p1 < p2 then return 1
+            else if p1 > p2 then return -1
+         } else {
+            if p1 > p2 then return 1
+            else if p1 < p2 then return -1
+         }
+         return 0
+      }
+   end
+
+   #--------------------------------------------------------------------------------
+   # Empty the work queue
+   method Cancel()
+      local n
+      critical Work: {
+         n := *ToDo
+         if n > 0 then {
+            if n > 20 then { # 20 is a guess at when creating a new queue is more efficient
+               ToDo := ::mutex([], Work)
+            } else { # re-use the queue
+               every 1 to n do ::pull(ToDo)
+            }
+         }
+      }
+   end
+
+   #--------------------------------------------------------------------------------
+   # Fail if there is work in progress, or waiting to be done.
+   method IsIdle()
+      ::lock(Work)
+      if ((Idlers ~= *\Workforce) | (*ToDo > 0)) then { ::unlock(Work); fail }
+
+      ::unlock(Work)
+      return   # success
+   end
+
+   #--------------------------------------------------------------------------------
+   # Shut up shop. Remaining work placed in the queue before the call of ClosePool
+   # will be executed before closure. Fails if all work has not been done.
+   method ClosePool()
+      every 1 to *Workforce do Dispatch(stopWork)
+      every ::wait(!Workforce)
+
+      # At this point, Idlers must be zero.
+      if Idlers ~= 0 then {
+        ::write(&errout, "Warning (ClosePool): Forcing count of waiting threads to zero")
+        Idlers := 0
+      }
+
+      Workforce := &null
+
+      # There ought to be no work to do, unless Dispatch() has been
+      # called in parallel with ClosePool()
+      if *ToDo > 0 then {
+         ::write(&errout, "Warning (ClosePool): Some work was left in the queue")
+         ToDo := ::mutex([], Work) # Create a new work queue for a subsequent MakePool()
+         fail
+      }
+      return #success
+   end
+
+   #--------------------------------------------------------------------------------
+   # Print out running tasks
+   # If mutual exclusion fails, carry on anyway because this procedure can
+   # sometimes be used under error conditions when the pool is jammed.
+   method Snapshot(msg, depth)
+      local haveLock, n, p, plist
+
+      haveLock := ::trylock(Work)
+      if 0 < *(plist := Running(depth)) then ::write(\msg)
+      every ::write(&errout, "   ", ::image(!plist))
+      ::unlock(\haveLock)
+   end
+
+   #--------------------------------------------------------------------------------
+   # Return a list of the procedures used by running tasks by searching
+   # for the variable taskProc (declared in  the classworker procedure) up to
+   # depth levels above the current stack frame.
+   method Running(depth)
+      local d, haveLock, runner, runners := []
+
+      /depth := 10
+      haveLock := ::trylock(Work)
+      every runner := !Workforce do {
+         every d := 1 to depth do {
+            if put(runners, ::variable("taskProc", runner, d)) then { break }
+         }
+      }
+      ::unlock(\haveLock)
+      return runners
+   end
+
+   # -------------------------------------------------------------------------------
+   method DefaultPoolSize()
+      return default_pool_size()
+   end
+
+   #--------------------------------------------------------------------------------
+   initially(n, pr, blkSp, strSp, stkSp)
+      # reduce pr to -1 or 0 or +1 with a default of -1
+      havePr := if /pr | pr < 0 then -1 else if pr > 0 then 1 else 0
+      strSpace := \strSp
+      blkSpace := \blkSp
+      stkSpace := \stkSp
+      Work := ::mutex()
+      WorkCv := ::condvar(Work)
+      ToDo := ::mutex([], Work)
+      Idlers := 0
+      Workforce := []
+
+      # Allow a pool with no workers. Can be useful if creating a series of tasks
+      # (with or without priority) and then, once the series is complete, setting it
+      # all running with an explicit call of MakePool.
+      if (/n | n~= 0) then MakePool(n)
+end
+
+
+#--------------------------------------------------------------------------------
+# work thread: repeatedly get a task, which is a list [proc, param1, param2 ....]
+#              and call the procedure with the supplied parameters.
+# The task may have a priority as the first element of the list.
+procedure classworker(mySelf)
+   local task
+   local taskProc # Don't change the name of taskProc without changing Running()
+
+   repeat {
+      ::lock(mySelf.WorkCv)
+      mySelf.Idlers +:= 1
+      while 0 = *(mySelf.ToDo) do ::wait(mySelf.WorkCv)
+      task := ::pop(mySelf.ToDo) #  Remove the next task from the queue
+      mySelf.Idlers -:= 1
+      ::unlock(mySelf.WorkCv)
+
+      # Discard the priority (if any) and recover the procedure placed by Dispatch()
+      taskProc := ::pop(task)
+      if numeric(taskProc) then taskProc := ::pop(task)
+
+      if (taskProc === stopWork) then { return } else { taskProc ! task }
+      task := taskProc := &null     # enable any GC to clear up after previous task
+   }
+end
+
+# --------------------------------------------------------------------------------
+# A delegation procedure to call a method
+procedure CallMethod (obj, methodName, args[] )
+   local p
+
+   if p := lang::find_method(obj, methodName) then {
+      ::push(args, obj)
+      return p ! args
+   } else {
+      write(&errout, "Cannot find ", methodName)
+   }
 end
 
 #--------------------------------------------------------------------------------

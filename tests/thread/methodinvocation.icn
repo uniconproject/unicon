@@ -1,0 +1,106 @@
+# Test that methods can be queued to a thread pool by using CallMethod and DispatchMethod
+#
+#       Don Ward
+#       November 2024
+
+import threads
+
+global f
+
+# --------------------------------------------------------------------------------
+# A test class that adds to and subtracts from an integer total.
+# It expects n requests (given as a parameter to the constructor) and after
+# that many requests a listener thread sends the total to the main thread.
+class AddSub (total, mtx, listener)
+
+   method add(n)
+      write(f, "Doing add ", n)
+      critical mtx: total +:= n
+       @>> \listener
+   end
+
+   method sub(n)
+      write(f, "Doing subtract ", n)
+      critical mtx: total -:= n
+      @>> \listener
+   end
+
+   method result(n)
+      while 0 <= (n -:= 1) do <<@ # Wait until add or sub have been called n times
+      total @>> &main
+   end
+
+   initially(n)
+       listener := thread CallMethod(self, "result", n)
+       mtx := mutex()
+       total := 0
+end
+
+
+# --------------------------------------------------------------------------------
+procedure main ( args )
+   local AS, TP, total := 0, tasks, val, theAnswer
+   local resultFile := "./local/methodinvocation-results.out"
+
+   if /(f := open(resultFile, "w")) then {
+      write(&errout, "Cannot open ", resultFile, " ( ", &errortext, " )")
+      f := &errout
+   }
+
+   if  not (tasks := numeric(\args[1])) then tasks := 50
+   AS := AddSub(tasks)
+   TP := ThreadPool(0, 0) # A pool with no priority and no workers
+
+   # Add the specified number of add or sub requests to the task queue.
+   # Split them approximately evenly between add and sub.
+   # Also split them between using DispatchMethod(...) and Dispatch(CallMethod, ....)
+   every 1 to tasks do {
+      val := ?100
+      if 0 = val%2 then {
+         write(f, "adding ", val)
+         total +:= val
+          if val > 50 then TP.Dispatch(CallMethod, AS, "add", val) else TP.DispatchMethod(AS, "add", val)
+      } else {
+         write(f, "subtracting ", val)
+         total -:= val
+         if val < 50 then TP.Dispatch(CallMethod, AS, "sub", val) else TP.DispatchMethod(AS, "sub", val)
+      }
+   }
+
+   PrQ(TP, "Before MakePool()", f)
+
+   TP.MakePool(0)     # Add the default number of threads to the pool
+   TP.ClosePool()     # Wait for them to finish
+   theAnswer := <<@   # and for the final total
+
+   if theAnswer = total then {
+      write(&errout, "No errors")
+   } else {
+      write(&errout, "Total = ", total, " The answer = ", theAnswer)
+   }
+end
+
+procedure PrQ(p, mess, f)
+   local n, t, proc, np, priority
+
+   writes(f, \mess, ": ")
+   write(f, "No. of tasks ", n := *(p.ToDo))
+   every t := p.ToDo[1 to n] do {
+      priority := t[1]
+      if numeric(priority) then {
+         proc := t[2]; np := *t - 2
+      } else {
+         proc := priority; priority := &null; np := *t -1
+      }
+      writes(f, left(\priority | "none",6))
+      writes(f, image(proc), "  ", left(np || plural(" parameter", np), 15))
+      writes(f, " [")
+      n := if \priority then 3 else 2
+      every writes(f, " ", image(t[n to *t]))
+      write(f, " ]")
+   }
+end
+
+procedure plural (s,n )
+   if n = 1 then return s else return s || "s"
+end

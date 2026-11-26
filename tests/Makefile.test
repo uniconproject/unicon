@@ -78,13 +78,18 @@ endif
 # Optional per-target env (e.g. gc2: TEST_ENV := BLKSIZE=... in a suite Makefile).
 # Strip CR from captured output so stand/*.std can stay LF-only on Windows (see coexpr).
 # Use local/$@.nr (not diff -) — MSYS diff.exe rejects stdin `-` on Windows.
+# A test that does not compile is a FAIL with a $@.diff, so the summary counts
+# it and the rest of the suite still runs.
 %: %.icn local %.std
 	-@$E -n "[Testing $@]... "
-	@$(UC) $(UFLAGS) $<
-	@if [ -f data/$@.dat ] ; then \
+	@rm -f $@$(EXE); $(UC) $(UFLAGS) $< || \
+	{ echo "FAIL (does not compile)"; echo "$@: does not compile" > $@.diff; }
+	@[ -f $@$(EXE) ] || exit 0; \
+	if [ -f data/$@.dat ] ; then \
 	$(TEST_ENV) ./$@ < data/$@.dat  > local/$@.out 2>&1; \
 	else $(TEST_ENV) ./$@ > local/$@.out 2>&1; fi || true
-	@tr -d '\r' < local/$@.out > local/$@.nr; \
+	@[ -f $@$(EXE) ] || exit 0; \
+	tr -d '\r' < local/$@.out > local/$@.nr; \
 	if [ x$(EXE) = x.exe ] && [ -f stand/$@.wstd ] ; then \
 	diff -wq stand/$@.wstd local/$@.nr >/dev/null; \
 	if [ $$? -eq 0 ] ; then echo "w pass"; \
@@ -100,7 +105,7 @@ endif
 	fi; \
 	rm -f local/$@.nr; \
 	fi || true
-	-@rm $@$(EXE)
+	-@rm -f $@$(EXE)
 
 FILES=$(patsubst %.diff,%.report,$(wildcard *.diff))
 ICNFILES=$(patsubst %.diff,%.icn,$(wildcard *.diff))

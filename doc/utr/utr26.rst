@@ -151,10 +151,10 @@ channel or session means not calling ``close()``, the same as any
 other file.
 
 ``receive()`` already returns a general-purpose ``posix_message``
-record (``addr``, ``msg``, ``saddr``, ``daddr``, ``ttl``, ``proto``) for
-UDP and raw datagrams. SSH reuses that type for an ordered
-stdout/stderr/exit-status event stream, using ``addr`` and
-``msg`` (:ref:`section 8.3 <sec-receive>`).
+record (``addr``, ``msg``, ``saddr``, ``daddr``, ``ttl``, ``proto``,
+``sport``, ``dport``, ``type``) for UDP and raw datagrams. SSH reuses
+that record for an ordered stdout/stderr/exit-status event stream,
+using ``type`` and ``msg`` (:ref:`section 8.3 <sec-receive>`).
 
 ``stat(f)`` already ``type_case``s on its argument (string path
 versus open file). SFTP extends both branches
@@ -459,10 +459,10 @@ use ``receive()``:
    s := open("user@host", "hc", "key=/home/user/.ssh/id_ed25519",
              "cmd=echo out; echo err 1>&2; exit 3") | stop(&errortext)
    while m := receive(s) do
-      case m.addr of {
-         "stdout" : writes(&output, m.msg)
-         "stderr" : writes(&errout, m.msg)
-         "exit"   : write(&errout, "[exit ", trim(m.msg), "]")
+      case m.type of {
+         "stdout"     : writes(&output, m.msg)
+         "stderr"     : writes(&errout, m.msg)
+         "exitstatus" : write(&errout, "[exit ", trim(m.msg), "]")
          }
    close(s)
 
@@ -736,23 +736,32 @@ to stdout. Neither ``reads()`` (stdout only) nor
 ``c["stderr"]`` (a separate peek) can preserve that.
 
 ``receive(c)`` on an SSH channel yields the next queued event as a
-``posix_message`` whose ``addr`` is ``"stdout"``, ``"stderr"``, or
-``"exit"`` and whose ``msg`` is the payload. The exit status is
-kept as a **string** so ``receive()``'s return type stays uniform
-across every kind of file it can be called on; Unicon's ``=``
-already coerces numeric strings.
+``posix_message`` whose ``type`` is ``"stdout"``, ``"stderr"``, or
+``"exitstatus"`` (the name of the ``c["exitstatus"]`` peek) and whose
+``msg`` is the payload; ``addr`` and the other fields are ``&null``.
+The exit status is kept as a **string** so ``receive()``'s return
+type stays uniform across every kind of file it can be called on;
+Unicon's ``=`` already coerces numeric strings.
+
+Every record ``receive()`` returns has ``type`` and ``msg``, so one
+``case m.type of`` loop covers datagrams (``"data"``) and channel
+events alike. Note the three different "types" at hand: ``type(m)``
+is ``"posix_message"`` for every message, ``m.type`` is the kind of
+message, and ``c["type"]`` is the kind of file (``"channel"``).
 
 .. code-block:: unicon
 
    c := open(s, "hc", "cmd=process_records")
    while m := receive(c) do
-      case m.addr of {
-         "stdout" : write("OUT: " || m.msg)
-         "stderr" : write("ERR: " || m.msg)
-         "exit"   : write("done, status " || m.msg)
+      case m.type of {
+         "stdout"     : write("OUT: " || m.msg)
+         "stderr"     : write("ERR: " || m.msg)
+         "exitstatus" : write("done, status " || m.msg)
          }
 
-``receive()`` fails once the channel is exhausted.
+``receive()`` fails once the channel is exhausted. ``receive(c, ms)``
+waits at most ``ms`` milliseconds for the next event (0 does not wait)
+and fails with ``&errno`` ``ETIMEDOUT`` when none arrives in time.
 
 .. _sec-queue:
 

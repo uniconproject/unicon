@@ -3240,24 +3240,44 @@ or fails if the conversion cannot be performed.
 \bigskip\hrule\vspace{0.1cm}
 \index{receive}
 \noindent
-{\bf receive(f) : record } \hfill {\bf receive datagram}
+{\bf receive(x, i) : any } \hfill {\bf receive message}
 
 \noindent
-\index{receive datagram}\texttt{receive(f)} reads a datagram addressed
-to the port associated with \texttt{f}, waiting if necessary. The
-returned value is a record of type
-\texttt{posix\_message(addr, msg, saddr, daddr, ttl, proto)},
-containing the sender address (\texttt{host:port}), the message
-bytes, and IP-style \texttt{saddr}/\texttt{daddr}.
-On UDP, \texttt{saddr} is the numeric peer and \texttt{daddr} is
-null. On an IPv4 raw datagram that includes a header,
-\texttt{saddr}, \texttt{daddr}, \texttt{ttl}, and \texttt{proto}
-come from that header.
-For an SSH channel file, \texttt{receive(c)} instead
-yields the next channel event in arrival order: \texttt{addr} is
-\texttt{"stdout"}, \texttt{"stderr"}, or \texttt{"exit"}, and
-\texttt{msg} holds the data (the exit status as a string for
-\texttt{"exit"}).
+\index{receive message}\texttt{receive(x, i)} produces the next message
+from \texttt{x}, waiting at most \texttt{i} milliseconds for one.
+\texttt{i}~=~0 does not wait and a negative \texttt{i} waits without a
+limit, as for \texttt{i~<<@~x}. When \texttt{i} is omitted, a receive
+from a thread does not wait and a receive from a file waits for the
+next message. \texttt{receive()} fails if no message arrives in time;
+for a file, \texttt{\&errno} is then \texttt{ETIMEDOUT}.
+
+For a thread \texttt{T}, \texttt{receive(T)} takes a value from
+\texttt{T}'s outbox and \texttt{receive()} takes one from the current
+thread's inbox, like \texttt{<@T} and \texttt{<@}.
+
+For a socket or an SSH channel, \texttt{receive(f)} produces a record
+\texttt{posix\_message(addr, msg, saddr, daddr, ttl, proto, sport, dport, type)}.
+Every such record has \texttt{type}, what kind of message it is, and
+\texttt{msg}, its payload; fields that do not apply are null. Dispatch
+with \texttt{case m.type of}: \texttt{type(m)} is
+\texttt{"posix\_message"} for every message, and \texttt{f["type"]} is
+the kind of file, not of message.
+
+For a datagram (UDP, multicast, raw) \texttt{type} is \texttt{"data"}
+and \texttt{addr} is the sender as a numeric \texttt{ip:port}.
+\texttt{saddr} and \texttt{sport} are the sender. On an IPv4 raw
+datagram that includes a header, \texttt{saddr}, \texttt{daddr},
+\texttt{ttl}, and \texttt{proto} come from that header. On UDP,
+\texttt{daddr}, \texttt{dport} and \texttt{ttl} are null unless the
+socket was opened or set with \texttt{pktinfo=yes}, which asks the
+kernel to report them: fields that cost nothing are always filled,
+\texttt{pktinfo} adds the rest.
+
+For an SSH channel, \texttt{receive(c)} produces the next channel
+event in arrival order: \texttt{type} is \texttt{"stdout"},
+\texttt{"stderr"}, or \texttt{"exitstatus"}, and \texttt{msg} holds the
+data (the exit status as a string, as \texttt{c["exitstatus"]} names
+it). It fails once the channel is exhausted.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{remove}

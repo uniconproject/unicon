@@ -732,19 +732,27 @@ and the message in it. The server uses the address to send the reply.
 The record returned by \texttt{receive()} is
 \texttt{posix\_message}: \texttt{addr} is the sender in
 \texttt{"}\texttt{\textit{host}}\texttt{:}\texttt{\textit{port}}\texttt{"}
-form, \texttt{msg} is the payload. \texttt{saddr} and
-\texttt{daddr} are the IP-header names for source and destination.
-On UDP, \texttt{saddr} is the numeric peer address and
-\texttt{daddr} is null. On an IPv4 raw receive that includes a
-header, \texttt{saddr}/\texttt{daddr}/\texttt{ttl}/\texttt{proto}
-come from that header.
+form (numeric address), \texttt{msg} is the payload, and
+\texttt{type} is \texttt{"data"} for a datagram. \texttt{saddr}/\texttt{sport}
+and \texttt{daddr}/\texttt{dport} are the IP-header names for source and
+destination. On UDP, \texttt{saddr} and \texttt{sport} are the peer;
+\texttt{daddr}, \texttt{dport} and \texttt{ttl} are null unless the
+socket has \texttt{pktinfo=yes}, which asks the kernel to report them
+(it costs a little per datagram, so it is off by default). On an IPv4
+raw receive that includes a header,
+\texttt{saddr}/\texttt{daddr}/\texttt{ttl}/\texttt{proto}
+come from that header. Dispatch on \texttt{r.type}, not
+\texttt{type(r)}, which is \texttt{"posix\_message"} for every
+message.
 
 To write a UDP client, use mode \texttt{"nu"}
 Since UDP is not reliable, the \texttt{receive()} is guarded
 with a \texttt{select()}; otherwise, the program might hang forever if
 the reply is lost. The timeout of five seconds in the call to
 \texttt{select()} is arbitrary and might not be long enough on a
-congested network or to access a very remote host. Notice the second
+congested network or to access a very remote host. \texttt{receive()}
+also takes the timeout itself: \texttt{receive(s, 5000)} fails if no
+datagram arrives within five seconds. Notice the second
 argument to \texttt{getserv()}; it restricts the search for Internet
 service information to a particular network protocol, in this case UDP.
 
@@ -1135,8 +1143,8 @@ accumulated stderr (a peek, not a drain), and whether remote EOF has arrived
 On a session, \texttt{s["authmethods"]} is a list of advertised
 method names; \texttt{s["kex"]} is the key-exchange algorithm.
 \texttt{receive(c)} yields ordered events as
-\texttt{posix\_message} records whose \texttt{addr} is
-\texttt{"stdout"}, \texttt{"stderr"}, or \texttt{"exit"}.
+\texttt{posix\_message} records whose \texttt{type} is
+\texttt{"stdout"}, \texttt{"stderr"}, or \texttt{"exitstatus"}.
 
 SFTP uses the same session. Mode \texttt{"hs"} with
 \texttt{path=} transfers a remote file (or lists a remote directory,

@@ -1,0 +1,1768 @@
+###########################################################################
+#
+#       File:     ivibtab.icn
+#
+#       Subject:  Unicon IDE's integrated IVIB builder.
+#
+#       Authors:  Jonah Schnettler, Matthew Lane
+#
+#                 Contents of this file are adapted from ivib/main.icn,
+#                 written by: Robert Parlett (parlett@dial.pipex.com)
+#
+#       Date:     November 8th, 2021
+#
+############################################################################
+#
+#  This file builds the components of ivib needed to integrate it into
+#  ui as a panel next to the editor, instead of a separate dialog window,
+#  leaving ivib's standalone program intact.
+#
+############################################################################
+#
+#  Requires:  graphics, version 2 GUI libraries, and ivib components
+#
+############################################################################
+
+import lang
+import util
+import gui
+
+$include "guih.icn"
+
+link "ivib/attribtab", "ivib/basiccanvascomponentui", "ivib/buttongroupset",
+     "ivib/canvas", "ivib/canvasborder", "ivib/canvasborderdialog",
+     "ivib/canvasborderui", "ivib/canvasbutton", "ivib/canvasbuttondialog",
+     "ivib/canvasbuttongroup", "ivib/canvascheckbox",
+     "ivib/canvascheckboxdialog", "ivib/canvascheckboxgroup",
+     "ivib/canvascheckboxmenuedit", "ivib/canvascheckboxmenuitem",
+     "ivib/canvascheckboxui", "ivib/canvascomponent",
+     "ivib/canvascomponentdialog", "ivib/canvascomponentui",
+     "ivib/canvascustom", "ivib/canvascustomdialog", "ivib/canvascustomui",
+     "ivib/canvaseditabletextlist", "ivib/canvaseditabletextlistdialog",
+     "ivib/canvaseditabletextlistui", "ivib/canvaseditlist",
+     "ivib/canvaseditlistdialog", "ivib/canvaseditlistui",
+     "ivib/canvashscrollbarui", "ivib/canvasicon", "ivib/canvasiconbutton",
+     "ivib/canvasiconbuttondialog", "ivib/canvasiconbuttonui",
+     "ivib/canvasicondialog", "ivib/canvasiconui", "ivib/canvasimage",
+     "ivib/canvasimagedialog", "ivib/canvasimageui", "ivib/canvaslabel",
+     "ivib/canvaslabeldialog", "ivib/canvaslabelui", "ivib/canvaslist",
+     "ivib/canvaslistdialog", "ivib/canvaslistui", "ivib/canvasmenu",
+     "ivib/canvasmenubar", "ivib/canvasmenubardialog",
+     "ivib/canvasmenubarui", "ivib/canvasmenubutton",
+     "ivib/canvasmenubuttonui", "ivib/canvasmenucomponent",
+     "ivib/canvasmenucomponentdialog", "ivib/canvasmenuseparator",
+     "ivib/canvasmenuseparatoredit", "ivib/canvasoverlayitem",
+     "ivib/canvasoverlayset", "ivib/canvasoverlaysetdialog",
+     "ivib/canvasoverlaysetui", "ivib/canvaspanel", "ivib/canvaspaneldialog",
+     "ivib/canvaspanelui", "ivib/canvasscrollbar",
+     "ivib/canvasscrollbardialog", "ivib/canvastabitem", "ivib/canvastable",
+     "ivib/canvastablecolumn", "ivib/canvastabledialog",
+     "ivib/canvastableui", "ivib/canvastabset", "ivib/canvastabsetdialog",
+     "ivib/canvastabsetui", "ivib/canvastextbutton",
+     "ivib/canvastextbuttondialog", "ivib/canvastextbuttonui",
+     "ivib/canvastextfield", "ivib/canvastextfielddialog",
+     "ivib/canvastextfieldui", "ivib/canvastextlist",
+     "ivib/canvastextlistdialog", "ivib/canvastextlistui",
+     "ivib/canvastextmenuitem", "ivib/canvastoolbar",
+     "ivib/canvastoolbardialog", "ivib/canvastoolbarui",
+     "ivib/canvasvscrollbarui", "ivib/cdialog", "ivib/checkboxgroupset",
+     "ivib/choicedialog", "ivib/code", "ivib/commondialog",
+     "ivib/componentsort", "ivib/custom", "ivib/eventtab",
+     "ivib/gridelement", "ivib/gridset", "ivib/group", "ivib/groupset",
+     "ivib/groupsetdialog", "ivib/hcomponentsort", "ivib/infodialog",
+     "ivib/ivibmigrate", "ivib/main", "ivib/menucomponentedit",
+     "ivib/menutree", "ivib/menutreenode", "ivib/savechangesdialog",
+     "ivib/utils", "ivib/vcomponentsort", "ivib/canvashlineui",
+     "ivib/canvasline", "ivib/canvaslinedialog", "ivib/canvasvlineui",
+     "ivib/canvastreeui", "ivib/canvastree", "ivib/canvastreedialog",
+     "ivib/canvaslistspinui", "ivib/canvaslistspin",
+     "ivib/canvaslistspindialog", "ivib/canvasrangespinui",
+     "ivib/canvasrangespin", "ivib/canvasrangespindialog",
+     "ivib/canvashsliderui", "ivib/canvasslider", "ivib/canvassliderdialog",
+     "ivib/canvasvsliderui", "ivib/canvashsizerui", "ivib/canvassizer",
+     "ivib/canvassizerdialog", "ivib/canvasvsizerui"
+link ide, mainbar
+
+#
+# Layout markers recognized at the end of an ivib-generated source file.
+# ivib/code.icn writes v2_marker; ivib_maindialog is used by ivib/code.icn
+# to keep a copy of the source it writes.
+#
+global v1_marker, v2_marker, ivib_maindialog
+
+############################################################################
+#
+# Tool bar holding the ivib object and command buttons.  Buttons are laid
+# out per_row to a row; the bar's size follows the number of buttons.
+# The Files/IVIB panel is half the IDE window, so the default row is short
+# enough that 44-pixel icons stay inside a 1024-pixel-wide IDE.
+#
+class IvibToolBar : ToolBar(x1, y1, img_w, img_h, bg, per_row, count)
+   method add_button(t)
+      if /img_w then {
+         img_w := t.img_w
+         img_h := t.img_h
+      }
+      if count > 0 & count % per_row = 0 then {
+         y1 +:= img_h
+         x1 := 0
+      }
+      t.set_pos(x1, y1)
+      # Mouse tools.  Keyboard focus stays in the editor.
+      t.set_no_keyboard()
+      bg.add(t)
+      self.add(t)
+      x1 +:= img_w
+      count +:= 1
+      set_size(per_row * img_w, y1 + img_h)
+   end
+
+   initially(n)
+      self.ToolBar.initially()
+      per_row := \n | 8
+      x1 := y1 := count := 0
+      bg := ButtonGroup()
+end
+
+############################################################################
+#
+# PopupMenu.popup() places the menu at the pointer using window
+# coordinates, as positions relative to the menu's parent.  That works in
+# standalone ivib, where the parent is the dialog; here the parent is
+# the IvibTab, so convert.
+#
+class IvibPopupMenu : PopupMenu()
+   method set_pos(x, y)
+      if \parent then {
+         x -:= parent.x
+         y -:= parent.y
+      }
+      self.PopupMenu.set_pos(x, y)
+   end
+end
+
+############################################################################
+#
+# The ivib canvas and its tool bar, embedded as a component of the IDE.
+#
+# Each editor tab gets its own canvas (with its own undo/redo history),
+# loaded from the ivib layout found at the end of that tab's buffer.
+# The canvas follows the current editor tab while the Files/IVIB view is
+# shown.  "Generate UI Code" writes the generated code and layout into
+# the editor buffer, not straight to disk; saving the buffer saves it.
+#
+$define CANVAS_SURROUND 30
+#
+class IvibTab : Component(
+   canvas,                  # The drawing canvas
+   prefs,                   # Preferences structure
+   filename_label,          # Label for current filename
+   info_label,              # Label for other info
+   pos_label,               # Label for positional info
+   undo_list,               # List of canvases for undo command
+   redo_list,               # List of canvases for redo command
+   extra_undo,              # Additional undo for canceling certain commands
+   orig_canvas_width,       # Size of a new canvas
+   orig_canvas_height,      #
+   tool_area_height,        # Height of the tool bar and labels
+   popup_component,         # Popup on component
+   popup_dialog,            # Popup on dialog
+   last_icon_dir,           # Used by the component dialogs (via canvas.parent)
+   last_layout_dir,
+   undo_button,             # Toolbar buttons
+   redo_button,
+   source,                  # Used by ivib/code.icn
+   uis,                     # The CanvasComponentUIs (also used by Mainbar)
+   editor_tab,              # Editor tab the canvas belongs to
+   layouts,                 # Saved state of other tabs: tab -> [canvas, undo, redo]
+   temp_dir                 # Private directory for code-generation scratch files
+   )
+
+########################################################
+# Messages and menu shading.
+#
+
+   #
+   # Show a message in the info label and the IDE's message box.
+   #
+   method message(s)
+      (\info_label).set_label(s)
+      (\(\uidlog).MsgBox).set_contents(["Ivib: " || s])
+      return
+   end
+
+   #
+   # Errors from the canvas and its dialogs (ivib's CommonDialog pops up a
+   # dialog here).  Like that version, this always fails.
+   #
+   method alert_error(s)
+      message(s)
+      fail
+   end
+
+   method shade_selection_options()
+      (\(\uidlog).menubar).set_selections_menu_shaded()
+   end
+
+   method clear_selection_options()
+      (\(\uidlog).menubar).set_selections_menu_cleared()
+   end
+
+   #
+   # Shade/unshade the undo and redo buttons and menu items.
+   #
+   method update_undo_shading()
+      local mb
+      mb := (\uidlog).menubar
+      if *undo_list > 0 then {
+         undo_button.clear_is_shaded()
+         (\mb).clear_ivib_undo_shaded()
+      } else {
+         undo_button.set_is_shaded()
+         (\mb).set_ivib_undo_shaded()
+      }
+      if *redo_list > 0 then {
+         redo_button.clear_is_shaded()
+         (\mb).clear_ivib_redo_shaded()
+      } else {
+         redo_button.set_is_shaded()
+         (\mb).set_ivib_redo_shaded()
+      }
+   end
+
+########################################################
+# Undo and redo.
+#
+
+   method clear_undo()
+      self.undo_list := []
+      update_undo_shading()
+   end
+
+   method clear_redo()
+      self.redo_list := []
+      update_undo_shading()
+   end
+
+   #
+   # Push an undo item
+   #
+   method push_undo_list(d)
+      push(undo_list, d)
+      #
+      # Reduce to correct size.
+      #
+      while *undo_list > self.prefs.undo_size do
+         pull(undo_list)
+      update_undo_shading()
+   end
+
+   method push_redo_list(d)
+      push(redo_list, d)
+      update_undo_shading()
+   end
+
+   #
+   # Store current canvas in extra_undo variable
+   #
+   method save_extra_undo()
+      self.extra_undo := self.canvas.dup()
+   end
+
+   #
+   # Retrieve from extra_undo
+   #
+   method use_extra_undo()
+      self.undo_to(\self.extra_undo)
+      self.extra_undo := &null
+      reset_canvas_pos(self.canvas)
+   end
+
+   #
+   # Push copy of current canvas onto undo list.
+   #
+   method push_undo()
+      self.push_onto_undo(self.canvas.dup())
+   end
+
+   #
+   # Push a canvas onto undo list, resetting the redo list.
+   #
+   method push_onto_undo(d)
+      self.redo_list := []
+      self.push_undo_list(d)
+   end
+
+   method op_Undo()
+      local c
+      c := pop(undo_list) | fail
+      self.push_redo_list(self.canvas.dup())
+      update_undo_shading()
+      self.undo_to(c)
+      reset_canvas_pos(self.canvas)
+      info_label.set_label("Undone")
+      self.canvas.set_modified()
+   end
+
+   method op_Redo()
+      local c
+      c := pop(redo_list) | fail
+      push(undo_list, self.canvas.dup())
+      update_undo_shading()
+      self.undo_to(c)
+      reset_canvas_pos(self.canvas)
+      info_label.set_label("Redone")
+      self.canvas.set_modified()
+   end
+
+   #
+   # Replace current canvas with c.
+   #
+   method undo_to(c)
+      local i
+      #
+      # Dispose of current canvas.  Its items are not children of the
+      # canvas, so release their windows too.
+      #
+      every (!self.canvas.items).finally()
+      self.canvas.finally()
+
+      if (\self.parent_dialog).focus === self.canvas then
+         self.parent_dialog.focus := &null
+      every i := 1 to *self.children do
+         if self.children[i] === self.canvas then {
+            self.children[i] := self.canvas := c
+            break
+         }
+
+      #
+      # Setup rest of fields in new canvas.
+      #
+      self.canvas.set_parent(self)
+      self.canvas.init()
+      self.canvas.restore()
+
+      if *self.canvas.selections > 0 then
+         clear_selection_options()
+      else
+         shade_selection_options()
+      return
+   end
+
+########################################################
+# Following the editor tabs.
+#
+
+   #
+   # Succeed if the ivib panel is currently shown.
+   #
+   method is_shown()
+      return (\(\uidlog).menubar).ivib_shown()
+   end
+
+   #
+   # The dialog hands every event to every child.  While this panel is
+   # hidden, drop them.  The canvas moves or resizes the selected control
+   # on an arrow key and does not itself check who has the keyboard, so
+   # those keys are forwarded only when the canvas has focus.  Other keys
+   # are forwarded only then too: a keystroke in the editor must not clear
+   # a run of arrow moves.  Mouse events are always forwarded; the canvas
+   # and the toolbar act only when the pointer is over them.  A press on
+   # the canvas, including its resize corner, gives the canvas the keyboard.
+   #
+   method handle_event(e)
+      local c, f
+      is_shown() | return
+      if e === (&lpress | &rpress) &
+         (self.canvas.in_region() | self.canvas.in_resize_corner()) then
+         (\self.parent_dialog).set_focus(self.canvas, e)
+      f := (\self.parent_dialog).focus
+      every c := !self.children do {
+         if \c.is_shaded_flag then
+            next
+         if c === self.canvas then {
+            if self.canvas_wants_event(e, f) then
+               c.handle_event(e)
+            }
+         else
+            c.handle_event(e)
+         if /self.parent_dialog.is_open | \self.parent_dialog.unique_flag then
+            break
+         }
+   end
+
+   #
+   # Succeed if e should be delivered to the canvas.  Mouse button events
+   # always are.  Keys are, only while the canvas has the keyboard.
+   #
+   method canvas_wants_event(e, f)
+      if e === (&lpress | &rpress | &mpress |
+                &ldrag | &rdrag | &mdrag |
+                &lrelease | &rrelease | &mrelease) then
+         return
+      if f === self.canvas then
+         return
+   end
+
+   #
+   # The file name of editor tab t, or fail if it has none yet.
+   #
+   method tab_path(t)
+      local f
+      f := \t.filename | fail
+      if f[-1] == "*" then f := f[1:-1]
+      if f == ("" | "Untitled" | "scratch") then fail
+      return (\t.filedirectory | "") || f
+   end
+
+   #
+   # Make the canvas follow the current editor tab.  Called when the
+   # current tab changes and when the ivib panel is shown.  Nothing is
+   # done while the panel is hidden; the canvas catches up when shown.
+   #
+   method sync_with_tab()
+      local t, st, gone
+      is_shown() | return
+      \self.cwin | return            # not displayed yet
+      t := (\ide).CurrentTabItem() | return
+      if t === self.editor_tab then {
+         update_filename()
+         return
+      }
+
+      #
+      # Keep the state of the tab we are leaving, and forget closed tabs.
+      #
+      if \self.editor_tab then
+         layouts[self.editor_tab] := [self.canvas, self.undo_list, self.redo_list]
+      gone := []
+      every st := key(layouts) do
+         if not (st === !uidlog.FileTabSet.children) then
+            put(gone, st)
+      every delete(layouts, !gone)
+
+      self.editor_tab := t
+      if st := \layouts[t] then {
+         delete(layouts, t)
+         self.undo_list := st[2]
+         self.redo_list := st[3]
+         update_undo_shading()
+         self.undo_to(st[1])
+         reset_canvas_pos(self.canvas)
+         update_filename()
+      }
+      else
+         load_from_buffer()
+   end
+
+   #
+   # Show the current tab's file name for the canvas.
+   #
+   method update_filename()
+      self.canvas.filename := tab_path(\self.editor_tab) | &null
+      set_filename_label()
+   end
+
+   #
+   # Load the canvas from the layout at the end of the current buffer,
+   # or start a new canvas if there is none.
+   #
+   method load_from_buffer()
+      local lines, c, s
+      lines := (\ide).CurrentEditBox().get_contents() | []
+      self.clear_undo()
+      self.clear_redo()
+      if c := parse_layout(lines) then {
+         c.set_size(c.w, c.h)
+         reset_canvas_pos(c)
+         self.undo_to(c)
+         s := "Loaded layout"
+      } else {
+         new_canvas()
+         s := if find_marker(lines) then "Bad layout; started a new one"
+              else "No layout yet; Generate UI Code adds one"
+      }
+      update_filename()
+      if \(\c).modified then
+         self.canvas.set_modified()
+      else
+         self.canvas.clear_modified()
+      self.canvas.erase_and_display()
+      self.canvas.update_pos_label()
+      info_label.set_label(s)
+   end
+
+   #
+   # Replace the canvas with a new, empty one.
+   #
+   method new_canvas()
+      local c
+      c := Canvas()
+      c.set_size(orig_canvas_width, orig_canvas_height)
+      reset_canvas_pos(c)
+      self.undo_to(c)
+   end
+
+########################################################
+# Methods to set filename of canvas object.
+#
+
+   #
+   # Set filename_label to reflect current status of canvas.  When the
+   # layout is modified, mark the editor tab modified too, so the IDE
+   # offers to save it (saving regenerates the code; see IDE.save_file).
+   #
+   method set_filename_label()
+      local s
+      s := file_name(\self.canvas.filename) | "Untitled"
+      if \self.canvas.modified then {
+         s ||:= " *"
+         if \self.editor_tab & not (self.editor_tab.label[-1] == "*") then {
+            self.editor_tab.label ||:= "*"
+            uidlog.FileTabSet.resize()
+         }
+      }
+      self.filename_label.set_label(s)
+   end
+
+########################################################
+# Methods for component alignment in canvas.
+#
+
+   method op_Centre_horiz()
+      canvas.centre_horiz_selections()
+   end
+
+   method op_Centre_vert()
+      canvas.centre_vert_selections()
+   end
+
+   method op_select_up()
+      canvas.select_up()
+   end
+
+   method op_Align_horiz()
+      canvas.align_horiz_selections()
+   end
+
+   method op_Align_vert()
+      canvas.align_vert_selections()
+   end
+
+   method op_Grid()
+      canvas.grid_selections()
+   end
+
+   method op_Reorder()
+      canvas.reorder_selections()
+   end
+
+   method op_even_horiz()
+      canvas.even_selections_horizontally()
+   end
+
+   method op_even_vert()
+      canvas.even_selections_vertically()
+   end
+
+   method op_end_to_end_horiz()
+      canvas.end_to_end_selections_horizontally()
+   end
+
+   method op_end_to_end_vert()
+      canvas.end_to_end_selections_vertically()
+   end
+
+   method op_even_horiz_container()
+      canvas.even_selections_container_horizontally()
+   end
+
+   method op_even_vert_container()
+      canvas.even_selections_container_vertically()
+   end
+
+   method op_equalize_widths()
+      canvas.equalize_width_selections()
+   end
+
+   method op_equalize_heights()
+      canvas.equalize_height_selections()
+   end
+
+   method op_copy_attribs()
+      canvas.copy_attribs()
+   end
+
+########################################################
+# Methods to create components and add them to the canvas.
+#
+
+   #
+   # Add a new CanvasComponent using the given CanvasComponentUI to
+   # create it.
+   #
+   method create_in_canvas(object_ui)
+      local t
+      self.push_undo()
+      t := object_ui.create_canvas_component(self.canvas)
+      add_new_object(t)
+   end
+
+   method op_CheckBoxGroup()
+      canvas.selections_to_cbg()
+   end
+
+   method op_ButtonGroup()
+      canvas.selections_to_bg()
+   end
+
+   #
+   # Add a new object to the canvas.
+   #
+   method add_new_object(c)
+      static add_count
+      initial
+         add_count := 0
+      c.set_name(self.canvas.get_new_name(c.name))
+      #
+      # Default x, y.  Try to avoid successive adds covering each other.
+      #
+      /c.x_spec := 10 + 7 * (add_count % 4)
+      /c.y_spec := 10 + 7 * (add_count % 4)
+      add_count +:= 1
+      c.set_align("l", "t")
+      c.set_parent_Canvas(self.canvas)
+      c.set_parent(self.canvas)
+      c.init()
+      c.resize()
+      c.firstly()
+      self.canvas.add(c)
+      self.canvas.set_modified()
+      self.canvas.invalidate()
+   end
+
+########################################################
+# Copy, deletion, fixing and unfixing of components.
+#
+
+   method op_Copy()
+      canvas.copy_selections()
+   end
+
+   method op_Delete()
+      canvas.delete_selections()
+   end
+
+   method op_fix()
+      canvas.fix()
+   end
+
+   method op_unfix()
+      canvas.unfix()
+   end
+
+########################################################
+# Dialogs.
+#
+
+   #
+   # Canvas dialog preferences.
+   #
+   method op_preferences()
+      local t, d
+      t := self.canvas.dup()
+      d := canvas.dialog()
+      d.show_modal(self.parent_dialog)
+      if \d.get_okay_result() then {
+         self.push_onto_undo(t)
+         self.canvas.set_modified()
+         self.canvas.erase_and_display()
+         self.canvas.update_pos_label()
+      }
+   end
+
+   #
+   # Dialog for the selected component, or the canvas if none.
+   #
+   method op_dialog()
+      local d, t
+      if /self.canvas.selected then
+         op_preferences()
+      else {
+         t := canvas.dup()
+         d := canvas.selected.dialog()
+         d.show_modal(self.parent_dialog)
+         if \d.get_okay_result() then {
+            self.push_onto_undo(t)
+            canvas.set_modified()
+            canvas.invalidate()
+            canvas.update_pos_label()
+         }
+      }
+   end
+
+   method op_check_boxes()
+      local t, d
+      t := self.canvas.dup()
+      d := GroupSetDialog(canvas.checkbox_groups)
+      d.show_modal(self.parent_dialog)
+      if \d.get_okay_result() then {
+         self.push_onto_undo(t)
+         self.canvas.set_modified()
+      }
+   end
+
+   method op_button_groups()
+      local t, d
+      t := self.canvas.dup()
+      d := GroupSetDialog(canvas.button_groups)
+      d.show_modal(self.parent_dialog)
+      if \d.get_okay_result() then {
+         self.push_onto_undo(t)
+         self.canvas.set_modified()
+      }
+   end
+
+########################################################
+# Layout parsing.
+#
+
+   #
+   # Return the index of the layout marker line in lines, if any.
+   #
+   method find_marker(lines)
+      local i
+      every i := *lines to 1 by -1 do
+         if trim(lines[i], ' \t\r') == (v1_marker | v2_marker) then
+            return i
+   end
+
+   #
+   # Succeed if s is a class declaration.  When name is given, it must
+   # be that class and not a longer name that merely starts the same way.
+   #
+   method is_class_line(s, name)
+      s := trim(s, ' \t\r')
+      s ? {
+         if ="class " then {
+            tab(many(' \t'))
+            if /name then
+               return
+            if =name & (pos(0) | any(' \t:(')) then
+               return
+            }
+         }
+   end
+
+   #
+   # Succeed if s opens a class, procedure, or method.  Leading
+   # whitespace is ignored so an indented method pairs with its end.
+   # initially is not a block: the class's end closes it too.  Counting
+   # it leaves the class open, and the next generation appends another.
+   #
+   method is_block_start(s)
+      s := trim(s, ' \t\r')
+      s ? {
+         tab(many(' \t')) | &pos
+         if ="class " | ="procedure " | ="method " then
+            return
+         }
+   end
+
+   #
+   # Succeed if s is an end of a class, procedure, or method.  Leading
+   # whitespace is ignored, and a trailing comment is allowed.
+   #
+   method is_end_line(s)
+      s := trim(s, ' \t\r')
+      s ? {
+         tab(many(' \t')) | &pos
+         if ="end" then {
+            tab(many(' \t'))
+            if pos(0) | ="#" then
+               return
+            }
+         }
+   end
+
+   #
+   # Index of the end that closes the class at class_i, or fail.
+   #
+   method class_end(lines, class_i)
+      local i, depth
+      depth := 0
+      every i := class_i to *lines do {
+         if is_block_start(lines[i]) then
+            depth +:= 1
+         else if is_end_line(lines[i]) then
+            depth -:= 1
+         if depth = 0 then
+            return i
+         }
+   end
+
+   #
+   # Succeed if s is blank or a comment.
+   #
+   method is_comment_or_blank(s)
+      s := trim(s, ' \t\r')
+      if s == "" | s[1] == "#" then
+         return
+   end
+
+   #
+   # Succeed if s can sit directly above a generated class without being
+   # part of an earlier procedure: a declaration interpose_code must see
+   # so it does not emit a second copy.
+   #
+   method is_preamble(s)
+      local t
+      t := trim(s, ' \t\r')
+      if t == "" | t[1] == "#" | t[1] == "$" then
+         return
+      t ? {
+         if ="import " | ="link " | ="global " | ="invocable " | ="record " then
+            return
+         }
+   end
+
+   #
+   # First line of the preamble that belongs to the class at class_i.
+   #
+   method preamble_start(lines, class_i)
+      local start
+      start := class_i
+      while start > 1 & is_preamble(lines[start - 1]) do
+         start -:= 1
+      return start
+   end
+
+   #
+   # Index of the dialog class that owns the marker.  Prefer the canvas's
+   # own class name, so a helper inserted before the marker is not rewritten.
+   # Otherwise use the class that ends closest to the marker.
+   #
+   method find_dialog_class(lines, marker_i)
+      local i, name, best, best_end, end_i
+      name := (\self.canvas).get_name()
+      if \name then
+         every i := marker_i - 1 to 1 by -1 do
+            if is_class_line(lines[i], name) &
+               (end_i := class_end(lines, i)) & end_i < marker_i then
+               return i
+      every i := 1 to marker_i - 1 do
+         if is_class_line(lines[i]) &
+            (end_i := class_end(lines, i)) & end_i < marker_i &
+            (/best_end | end_i > best_end) then {
+            best := i
+            best_end := end_i
+            }
+      return \best
+   end
+
+   #
+   # Lines after the encoded layout.  The encoding is the run of "#"
+   # lines that follows the marker; a blank line ends it, as in parse_layout.
+   #
+   method layout_suffix(lines, marker_i)
+      local j, s, tail
+      tail := []
+      j := marker_i + 1
+      while j <= *lines do {
+         s := trim(lines[j], ' \t\r')
+         if *s > 0 & s[1] == "#" then
+            j +:= 1
+         else
+            break
+         }
+      every put(tail, lines[j to *lines])
+      return tail
+   end
+
+   #
+   # Split lines into the text before the dialog, the dialog class that
+   # interpose_code may rewrite, and the text that must be kept verbatim.
+   # Fails if the marker has no class that closes before it.
+   #
+   method split_dialog(lines, marker_i)
+      local class_i, end_i, start, src_end, i, src, prefix, tail
+      class_i := find_dialog_class(lines, marker_i) | fail
+      end_i := class_end(lines, class_i) | fail
+      end_i < marker_i | fail
+      start := preamble_start(lines, class_i)
+      #
+      # Comments between the class and the marker stay with the class.
+      # Real code there is not rewritten; it is returned in the tail.
+      #
+      src_end := marker_i
+      every i := end_i + 1 to marker_i - 1 do {
+         if not is_comment_or_blank(lines[i]) then {
+            src_end := i
+            break
+            }
+         }
+      src := lines[start:src_end]
+      put(src, v2_marker)
+      prefix := lines[1:start]
+      tail := []
+      if src_end < marker_i then
+         every put(tail, lines[src_end to marker_i - 1])
+      every put(tail, !layout_suffix(lines, marker_i))
+      return [prefix, src, tail]
+   end
+
+   #
+   # Record each name imported by s.  Fails if s is not an import line.
+   #
+   method import_names(s, names)
+      local name
+      s := trim(s, ' \t\r')
+      s ? {
+         if ="import " then {
+            tab(many(' \t'))
+            while name := tab(many(&letters ++ &digits ++ '_')) do {
+               names[name] := 1
+               tab(many(' \t,')) | break
+               }
+            return
+            }
+         }
+   end
+
+   #
+   # Succeed if every name on this import line is already in have.
+   #
+   method imports_covered(s, have)
+      local names, n, any
+      names := table()
+      import_names(s, names) | fail
+      every n := key(names) do {
+         any := 1
+         if /have[n] then
+            fail
+         }
+      return \any
+   end
+
+   #
+   # Succeed if s is the gui header include that imports_out emits.
+   #
+   method is_guih_include(s)
+      s := trim(s, ' \t\r')
+      s ? {
+         if ="$include" then {
+            tab(many(' \t'))
+            if ="\"guih.icn\"" | ="'guih.icn'" then
+               return
+            }
+         }
+   end
+
+   #
+   # Drop a generated import or guih include that the prefix already has.
+   # Declarations above an earlier procedure are outside the rewritten
+   # slice, so interpose_code would otherwise write them again.
+   #
+   method drop_repeated_imports(prefix, res)
+      local have, guih, s, out, seen_class
+      have := table()
+      every s := !prefix do
+         import_names(s, have) | (is_guih_include(s) & (guih := 1))
+      out := []
+      every s := !res do {
+         if /seen_class & is_class_line(s) then
+            seen_class := 1
+         if /seen_class & imports_covered(s, have) then
+            next
+         if /seen_class & \guih & is_guih_include(s) then
+            next
+         put(out, s)
+         }
+      return out
+   end
+
+   #
+   # Return the Canvas encoded at the end of lines.  Fails, with a
+   # message for a damaged layout, if there is none.
+   #
+   # The encoder splits the string every 70 characters, and field names
+   # in that string contain spaces, so a space or tab at the end of a
+   # line is part of the data.  Only a trailing carriage return is
+   # removed.
+   #
+   method parse_layout(lines)
+      local i, marker, s, t, c, d
+      i := find_marker(lines) | fail
+      marker := trim(lines[i], ' \t\r')
+      t := ""
+      every s := lines[i + 1 to *lines] do {
+         s := trim(s, '\r')
+         if *s > 0 & s[1] == "#" then
+            t ||:= s[2:0]
+         else
+            break
+      }
+      if *t = 0 then
+         return alert_error("Malformed ivib layout")
+
+      if marker == v1_marker then {
+         t := migrate(t) | return alert_error("Unable to migrate ivib v1 layout")
+         c := layout_decode(t) | return alert_error("Invalid ivib layout")
+         d := InfoDialog(["Ivib v1 layout successfully loaded.",
+                          "",
+                          "NB - some manual editing may be needed after",
+                          "the code is next generated."],
+                         "Ivib v1 import",
+                         310,
+                         "Close",
+                         "l")
+         d.show_modal(self.parent_dialog)
+         #
+         # Mark as modified so the v2 changes can simply be generated.
+         #
+         c.modified := 1
+      }
+      else
+         c := layout_decode(t) | return alert_error("Invalid ivib layout")
+
+      instanceof(c, "Canvas") | return alert_error("Invalid ivib layout")
+      return c
+   end
+
+   #
+   # The editor undid or redid a generated buffer.  Rebuild the canvas
+   # from that text.  A canvas left as it was before the undo still
+   # holds the controls the user just removed, and the next save writes
+   # them back.  A canvas cached for another tab is dropped so showing
+   # that tab reloads the editor text.
+   #
+   method layout_replaced(lines, eb)
+      local t, c, keep
+      t := tab_owning(eb) | return
+      if t ~=== \self.editor_tab then {
+         delete(layouts, t)
+         return
+         }
+      self.clear_undo()
+      self.clear_redo()
+      if c := parse_layout(lines) then {
+         # init() during undo_to can set modified.  Remember the flag
+         # the layout itself carried (a migrated v1 file).  A null flag
+         # must not fail this method, or the canvas stays on the undone
+         # controls.
+         keep := &null
+         if \c.modified then
+            keep := c.modified
+         c.set_size(c.w, c.h)
+         reset_canvas_pos(c)
+         self.undo_to(c)
+         if \keep then
+            self.canvas.set_modified()
+         else
+            self.canvas.clear_modified()
+      } else {
+         new_canvas()
+         self.canvas.clear_modified()
+         }
+      update_filename()
+      if is_shown() then {
+         self.canvas.erase_and_display()
+         self.canvas.update_pos_label()
+         }
+      return
+   end
+
+   #
+   # The editor tab whose text list is eb.
+   #
+   method tab_owning(eb)
+      local t, kids
+      every t := !(\(\uidlog).FileTabSet).children do {
+         kids := \t.children
+         if *kids > 0 & kids[1] === eb then
+            return t
+         }
+   end
+
+########################################################
+# Code generation.
+#
+
+   #
+   # The source of a minimal dialog class, used when the buffer does not
+   # have an ivib dialog yet.
+   #
+   method skeleton()
+      return ["import gui",
+              "$include \"guih.icn\"",
+              "",
+              "class Untitled : Dialog()",
+              "   method component_setup()",
+              "      self.setup()",
+              "   end",
+              "",
+              "   method end_dialog()",
+              "      #To close overall program use: exit(0)",
+              "      #To close a single dialog window use: dispose()",
+              "   end",
+              "",
+              "   method init_dialog()",
+              "   end",
+              "",
+              "   method setup()",
+              "   end",
+              "",
+              "   initially",
+              "      self.Dialog.initially()",
+              "      self.connect(self, \"dispose\", CLOSE_BUTTON_EVENT)",
+              "end",
+              "",
+              "#You can invoke your ivib layout with something like this:",
+              "#procedure main()",
+              "#   local d",
+              "#   d := Untitled()",
+              "#   d.show_modal()",
+              "#end",
+              ""]
+   end
+
+   #
+   # Succeed for a path that does not depend on the current directory.
+   # save_file() calls chdir() before generation, so a cached relative
+   # scratch directory would point somewhere else on the next save.
+   #
+   method path_is_absolute(p)
+      if *p > 0 & p[1] == ("/" | "\\") then return
+      if *p >= 3 & any(&letters, p) & p[2] == ":" & any('/\\', p[3]) then
+         return
+      fail
+   end
+
+   #
+   # Absolute form of p.  p must already exist.  The caller's working
+   # directory is restored.
+   #
+   method absolute_path(p)
+      local cwd, abs
+      path_is_absolute(p) & return p
+      cwd := chdir() | fail
+      if not chdir(p) then fail
+      abs := chdir()
+      chdir(cwd)
+      return abs
+   end
+
+   #
+   # A private directory for scratch files.  Mode 0700 so another local
+   # user cannot plant symlinks in it.  mkdir fails if the name exists,
+   # which also rejects a symlink planted under that name.  The cached
+   # path is absolute.
+   #
+   method ensure_temp_dir()
+      local base, d, i, abs
+      \self.temp_dir & return self.temp_dir
+      base := ("" ~== getenv("TMPDIR" | "TEMP" | "TMP")) |
+              (if &features == "MS Windows" then "." else "/tmp")
+      every i := 1 to 100 do {
+         d := base || "/uivib-" || ?999999
+         if mkdir(d, 8r700) then {
+            abs := absolute_path(d) |
+               return alert_error("Couldn't resolve " || d)
+            self.temp_dir := abs
+            return abs
+         }
+      }
+      return alert_error("Couldn't create a temporary directory")
+   end
+
+   #
+   # A name for a scratch file that does not exist yet.
+   #
+   method temp_name()
+      local dir, s
+      dir := ensure_temp_dir() | fail
+      repeat {
+         s := dir || "/uivib" || ?999999 || ".icn"
+         if not close(open(s)) then
+            return s
+      }
+   end
+
+   #
+   # Return lines with the code and layout for the current canvas put
+   # in place.  Code generation (ivib/code.icn) works on files, so this
+   # goes through scratch files.  An existing file is rewritten only when
+   # it already contains an ivib layout marker; a setup() method alone is
+   # not enough, or a normal class would be treated as a dialog.  Only the
+   # dialog class is passed to interpose_code.  The rest of the buffer,
+   # including a helper class and any code after the encoded layout, is
+   # copied through unchanged.
+   #
+   method gen_into_lines(lines)
+      local src, prefix, tail, in_name, out_name, f, res, ok, i, parts
+      tail := []
+      if i := find_marker(lines) then {
+         if parts := split_dialog(lines, i) then {
+            prefix := parts[1]
+            src := parts[2]
+            tail := parts[3]
+         }
+         else {
+            # Marker without a usable class: keep the buffer and append
+            # a new dialog.  Code after the old encoding is kept too.
+            src := skeleton()
+            prefix := lines[1:i]
+            tail := layout_suffix(lines, i)
+         }
+      }
+      else {
+         # No ivib dialog yet: generate one and append it.
+         src := skeleton()
+         prefix := lines
+      }
+
+      in_name := temp_name() | fail
+      out_name := in_name[1:-4] || "-out.icn"
+      if f := open(in_name, "w") then {
+         every write(f, trim(!src, '\r'))
+         close(f)
+         if self.canvas.gen_code().interpose_code(in_name, out_name) &
+            (f := open(out_name)) then {
+            res := []
+            while put(res, read(f))
+            close(f)
+            ok := 1
+         }
+      }
+      else
+         alert_error("Couldn't open " || in_name)
+      every remove(in_name | out_name | (out_name || ".temp"))
+      \ok | fail
+
+      res := drop_repeated_imports(prefix, res)
+      if \prefix then {
+         prefix := copy(prefix)
+         while *prefix > 0 & trim(prefix[-1], ' \t\r') == "" do
+            pull(prefix)
+         if *prefix > 0 then
+            put(prefix, "")
+         res := prefix ||| res
+      }
+      while *\tail > 0 & trim(tail[1], ' \t\r') == "" do
+         pop(tail)
+      if *\tail > 0 then {
+         if *res > 0 & trim(res[-1], ' \t\r') ~== "" then
+            put(res, "")
+         res |||:= tail
+      }
+      return res
+   end
+
+   #
+   # The "Generate UI Code" command: generate the code for the canvas
+   # into the current editor buffer.  The buffer is marked modified;
+   # saving it writes the file.
+   #
+   method op_push_code_to_ui()
+      sync_with_tab()
+      return generate_code()
+   end
+
+   #
+   # Generate the code into the current buffer, which must be the one
+   # the canvas belongs to.  Unless saving (the buffer is about to be
+   # written), mark the buffer modified.
+   #
+   method generate_code(saving)
+      local t, eb, res
+      t := (\ide).CurrentTabItem() | fail
+      t === \self.editor_tab | return alert_error("Show the Files/IVIB view first")
+      eb := ide.CurrentEditBox() | fail
+      res := gen_into_lines(eb.get_contents() | []) | fail
+      # set_contents() clears the editor undo list, so a layout save
+      # would drop earlier source edits.  Record this replacement instead.
+      # Undo and redo of that step call layout_replaced so the canvas
+      # matches the text; otherwise the next save writes the undone layout.
+      eb.replace_contents(res, self)
+      self.canvas.clear_modified()
+      if /saving & not (t.label[-1] == "*") then {
+         t.label ||:= "*"
+         uidlog.FileTabSet.resize()
+      }
+      uidlog.FileBrowser.addreplace(res, t.filename, 0)
+      message("Generated UI code into " || (tab_path(t) | t.filename))
+      return
+   end
+
+   #
+   # If the canvas belongs to editor tab t and has changes that are not
+   # in the buffer yet, generate them into the buffer.  Used before t is
+   # saved.
+   #
+   # Succeeds when there is nothing to generate.  Fails only when the
+   # canvas has changes and generation fails, so the caller can refuse
+   # to save or close over the lost layout.
+   method generate_if_modified(t)
+      local st, prev
+      t === (\ide).CurrentTabItem() | return
+      if t === \self.editor_tab then {
+         if /self.canvas.modified then return
+         return generate_code(1)
+      }
+      # The panel was hidden, or another tab is showing, so this tab's
+      # canvas is stored rather than current.
+      st := \layouts[t] | return
+      if /st[1].modified then return
+      prev := [self.canvas, self.editor_tab, self.undo_list, self.redo_list]
+      self.canvas := st[1]
+      self.editor_tab := t
+      self.undo_list := st[2]
+      self.redo_list := st[3]
+      generate_code(1) | {
+         self.canvas := prev[1]
+         self.editor_tab := prev[2]
+         self.undo_list := prev[3]
+         self.redo_list := prev[4]
+         fail
+      }
+      layouts[t] := [self.canvas, self.undo_list, self.redo_list]
+      self.canvas := prev[1]
+      self.editor_tab := prev[2]
+      self.undo_list := prev[3]
+      self.redo_list := prev[4]
+      update_undo_shading()
+      return
+   end
+
+########################################################
+# Components.
+#
+
+   #
+   # Load component operation.
+   #
+   method op_component_load(x, y)
+      local fd, s, f, c, d
+      fd := FileDialog()
+      fd.set_directory(\last_layout_dir)
+      fd.show_modal(self.parent_dialog)
+      s := fd.get_result() | fail
+      last_layout_dir := fd.get_directory()
+      f := ::open(s) | return alert_error("Couldn't open " || s)
+      c := layout_decode(read(f)) | {
+         close(f)
+         return alert_error("Invalid file format")
+         }
+      close(f)
+      instanceof(c, "CanvasComponent") | return alert_error("Invalid file format")
+
+      self.push_undo()
+
+      c.set_pos(x, y)
+
+      #
+      # Set up the fields recursively by duplicating the uninitialized object.
+      #
+      d := c.dup(self.canvas, self.canvas)
+      d.set_parent(self.canvas)
+      d.init()
+      d.resize()
+      d.firstly()
+
+      #
+      # Now add it to the canvas.
+      #
+      self.canvas.add(d)
+      self.canvas.set_modified()
+      self.invalidate()
+   end
+
+   #
+   # Popup Dialog to set component load position.
+   #
+   method op_popup_dialog_component_load()
+      op_component_load(popup_dialog.x - canvas.x, popup_dialog.y - canvas.y)
+   end
+
+   #
+   # Load component at position (10, 10)
+   #
+   method op_component_load_10()
+      op_component_load(10, 10)
+   end
+
+   method op_component_save()
+      canvas.component_save()
+   end
+
+   #
+   # Put the canvas at its place below the tool bar.
+   #
+   method reset_canvas_pos(c)
+      c.set_pos(CANVAS_SURROUND, self.tool_area_height + CANVAS_SURROUND)
+      if c === self.canvas then {
+         self.resize()
+         c.erase_and_display()
+         c.update_pos_label()
+      }
+   end
+
+   #
+   # The canvas items are not children of the canvas; reposition them
+   # whenever the component is resized or moved, so they follow the
+   # canvas when the ivib panel is shown, hidden or resized.
+   #
+   method resize()
+      self.Component.resize()
+      every (!(\self.canvas).items).resize()
+   end
+
+########################################################
+# Configuration file, shared with standalone ivib.
+#
+
+   method get_config_file_name()
+      local s
+      s := ("" ~== getenv("HOME")) | "."
+      return s || "/.ivibrc"
+   end
+
+   method read_config_file()
+      local f
+      self.prefs := Prefs()
+      if f := ::open(get_config_file_name()) then {
+         self.prefs := layout_decode(read(f))
+         close(f)
+         if not instanceof(self.prefs, "Prefs") then {
+            self.prefs := Prefs()
+            return alert_error("Invalid config file format")
+         }
+      }
+   end
+
+########################################################
+
+   initially
+      local c, tb, ui, listener, ui_button, m, y, push_code_button,
+         checkboxgroup_button, buttongroup_button, delete_button,
+         centre_horiz_button, centre_vert_button, align_horiz_button,
+         align_vert_button, grid_button, copy_button, popup_dialog_dialog,
+         popup_dialog_generate,
+         popup_dialog_component_load, popup_component_dialog,
+         popup_component_delete, popup_component_fix, popup_component_unfix,
+         popup_component_save
+
+      self.Component.initially()
+
+      /v1_marker := "### Ivib layout ###"
+      /v2_marker := "### Ivib-v2 layout ##"
+      ivib_maindialog := self
+      layouts := table()
+      undo_list := []
+      redo_list := []
+
+      c := Clear(self)
+      self.add(c)
+
+      read_config_file()
+
+      uis := [CanvasTextButtonUI(),
+              CanvasLabelUI(),
+              CanvasTextFieldUI(),
+              CanvasBorderUI(),
+              CanvasIconButtonUI(),
+              CanvasIconUI(),
+              CanvasImageUI(),
+              CanvasCheckBoxUI(),
+              CanvasMenuBarUI(),
+              CanvasVScrollBarUI(),
+              CanvasHScrollBarUI(),
+              CanvasPanelUI(),
+              CanvasTabSetUI(),
+              CanvasMenuButtonUI(),
+              CanvasOverlaySetUI(),
+              CanvasTextListUI(),
+              CanvasEditableTextListUI(),
+              CanvasListUI(),
+              CanvasEditListUI(),
+              CanvasToolBarUI(),
+              CanvasListSpinUI(),
+              CanvasRangeSpinUI(),
+              CanvasHSliderUI(),
+              CanvasVSliderUI(),
+              CanvasHLineUI(),
+              CanvasVLineUI(),
+              CanvasHSizerUI(),
+              CanvasVSizerUI(),
+              CanvasTableUI(),
+              CanvasCustomUI(),
+              CanvasTreeUI()
+              ]
+
+      tb := IvibToolBar()
+      tb.set_pos(0, 0)
+
+      every ui := !uis do {
+         listener := ObjectActionListener(self, ui)
+         if ui_button := ui.get_button() then {
+            tb.add_button(ui_button)
+            ui_button.connect(listener, "on_event", ACTION_EVENT)
+         }
+      }
+
+      checkboxgroup_button := IconButton()
+      checkboxgroup_button.set_img(
+                                   $include "ivib/icon/icn22.icon"
+                                   )
+      checkboxgroup_button.set_tooltip("CheckBoxGroup")
+      tb.add_button(checkboxgroup_button)
+
+      buttongroup_button := IconButton()
+      buttongroup_button.set_img(
+                                 $include "ivib/icon/icn23.icon"
+                                 )
+      buttongroup_button.set_tooltip("ButtonGroup")
+      tb.add_button(buttongroup_button)
+
+      delete_button := IconButton()
+      delete_button.set_img(
+                            $include "ivib/icon/icn24.icon"
+                            )
+      delete_button.set_tooltip("Delete")
+      tb.add_button(delete_button)
+
+      undo_button := IconButton()
+      undo_button.set_img(
+                          $include "ivib/icon/icn25.icon"
+                          )
+      undo_button.set_tooltip("Undo")
+      tb.add_button(undo_button)
+
+      redo_button := IconButton()
+      redo_button.set_img(
+                          $include "ivib/icon/icn26.icon"
+                          )
+      redo_button.set_tooltip("Redo")
+      tb.add_button(redo_button)
+
+      centre_horiz_button := IconButton()
+      centre_horiz_button.set_img(
+                                  $include "ivib/icon/icn27.icon"
+                                  )
+      centre_horiz_button.set_tooltip("Centre Horizontally")
+      tb.add_button(centre_horiz_button)
+
+      centre_vert_button := IconButton()
+      centre_vert_button.set_img(
+                                 $include "ivib/icon/icn28.icon"
+                                 )
+      centre_vert_button.set_tooltip("Centre Vertically")
+      tb.add_button(centre_vert_button)
+
+      align_horiz_button := IconButton()
+      align_horiz_button.set_img(
+                                 $include "ivib/icon/icn29.icon"
+                                 )
+      align_horiz_button.set_tooltip("Align Horizontally")
+      tb.add_button(align_horiz_button)
+
+      align_vert_button := IconButton()
+      align_vert_button.set_img(
+                                $include "ivib/icon/icn30.icon"
+                                )
+      align_vert_button.set_tooltip("Align Vertically")
+      tb.add_button(align_vert_button)
+
+      grid_button := IconButton()
+      grid_button.set_img(
+                          $include "ivib/icon/icn31.icon"
+                          )
+      grid_button.set_tooltip("Grid")
+      tb.add_button(grid_button)
+
+      copy_button := IconButton()
+      copy_button.set_img(
+                          $include "ivib/icon/icn32.icon"
+                          )
+      copy_button.set_tooltip("Copy")
+      tb.add_button(copy_button)
+
+      push_code_button := IconButton()
+      push_code_button.set_img(
+                               $include "ivib/icon/save.icon"
+                               )
+      push_code_button.set_tooltip("Generate UI Code into the editor")
+      tb.add_button(push_code_button)
+
+      self.add(tb)
+      y := tb.h_spec + 3
+
+      #
+      # Create the three text labels below the tool bar.
+      #
+      filename_label := Label()
+      filename_label.set_size(150, 25)
+      filename_label.set_draw_border()
+      filename_label.set_pos(0, y)
+      filename_label.set_label("")
+      self.add(filename_label)
+
+      info_label := Label()
+      info_label.set_size("100%-275", 25)
+      info_label.set_draw_border()
+      info_label.set_pos(150, y)
+      info_label.set_label("")
+      self.add(info_label)
+
+      pos_label := Label()
+      pos_label.set_attribs("font=" || (GuiThemePickFont() | "serif,10"))
+      pos_label.set_size(125, 25)
+      pos_label.set_draw_border()
+      pos_label.set_pos("100%-125", y)
+      pos_label.set_label("")
+      self.add(pos_label)
+
+      popup_dialog := IvibPopupMenu()
+      m := Menu()
+      popup_dialog.set_menu(m)
+      popup_dialog_dialog := TextMenuItem()
+      popup_dialog_dialog.set_label("Dialog")
+      m.add(popup_dialog_dialog)
+      popup_dialog_generate := TextMenuItem()
+      popup_dialog_generate.set_label("Generate UI Code")
+      m.add(popup_dialog_generate)
+      popup_dialog_component_load := TextMenuItem()
+      popup_dialog_component_load.set_label("Load Component")
+      m.add(popup_dialog_component_load)
+      self.add(popup_dialog)
+
+      popup_component := IvibPopupMenu()
+      m := Menu()
+      popup_component.set_menu(m)
+      popup_component_dialog := TextMenuItem()
+      popup_component_dialog.set_label("Dialog")
+      m.add(popup_component_dialog)
+
+      popup_component_fix := TextMenuItem()
+      popup_component_fix.set_label("Fix")
+      m.add(popup_component_fix)
+
+      popup_component_unfix := TextMenuItem()
+      popup_component_unfix.set_label("Unfix")
+      m.add(popup_component_unfix)
+
+      popup_component_delete := TextMenuItem()
+      popup_component_delete.set_label("Delete")
+      m.add(popup_component_delete)
+
+      popup_component_save := TextMenuItem()
+      popup_component_save.set_label("Save Component")
+      m.add(popup_component_save)
+      self.add(popup_component)
+
+      popup_dialog_component_load.connect(self, "op_popup_dialog_component_load", ACTION_EVENT)
+      popup_dialog_generate.connect(self, "op_push_code_to_ui", ACTION_EVENT)
+      checkboxgroup_button.connect(self, "op_CheckBoxGroup", ACTION_EVENT)
+      buttongroup_button.connect(self, "op_ButtonGroup", ACTION_EVENT)
+      delete_button.connect(self, "op_Delete", ACTION_EVENT)
+      undo_button.connect(self, "op_Undo", ACTION_EVENT)
+      redo_button.connect(self, "op_Redo", ACTION_EVENT)
+      centre_horiz_button.connect(self, "op_Centre_horiz", ACTION_EVENT)
+      centre_vert_button.connect(self, "op_Centre_vert", ACTION_EVENT)
+      align_horiz_button.connect(self, "op_Align_horiz", ACTION_EVENT)
+      align_vert_button.connect(self, "op_Align_vert", ACTION_EVENT)
+      grid_button.connect(self, "op_Grid", ACTION_EVENT)
+      copy_button.connect(self, "op_Copy", ACTION_EVENT)
+      push_code_button.connect(self, "op_push_code_to_ui", ACTION_EVENT)
+      popup_component_fix.connect(self, "op_fix", ACTION_EVENT)
+      popup_component_unfix.connect(self, "op_unfix", ACTION_EVENT)
+      popup_dialog_dialog.connect(self, "op_preferences", ACTION_EVENT)
+      popup_component_dialog.connect(self, "op_dialog", ACTION_EVENT)
+      popup_component_save.connect(self, "op_component_save", ACTION_EVENT)
+      popup_component_delete.connect(self, "op_Delete", ACTION_EVENT)
+
+      self.tool_area_height := y + 25
+
+      #
+      # Set up the Canvas object.
+      #
+      orig_canvas_height := 360
+      orig_canvas_width := 600
+      canvas := Canvas()
+      canvas.set_size(orig_canvas_width, orig_canvas_height)
+      canvas.set_pos(CANVAS_SURROUND, self.tool_area_height + CANVAS_SURROUND)
+      self.add(canvas)
+
+      update_undo_shading()
+end
+
+#
+# Decode a layout, a saved component, or the ivib config file.
+# lang::decode() would call whatever procedure the file names, so a
+# comment of the form class|exit| closes the IDE.  Only the classes a
+# real layout contains are constructed, and a builtin is never called.
+#
+procedure layout_decode(s)
+   local d
+   d := LayoutDecode(s)
+   return d.decode()
+end
+
+class LayoutDecode : Decode()
+   #
+   # Succeed if cname is one of the classes written into a layout.
+   # Older files prefixed those names with ivib__.
+   #
+   method is_layout_class(cname)
+      local base, p
+      if *cname = 0 then fail
+      base := cname
+      if *cname > 6 & cname[1:7] == "ivib__" then
+         base := cname[7:0]
+      if not (base == ("CDialog" | "ButtonGroupSet" | "CheckBoxGroupSet" |
+                       "Group" | "GroupSet" | "Prefs") |
+              (*base >= 6 & base[1:7] == "Canvas")) then
+         fail
+      # proc(name, 0) is a builtin.  exit and system are builtins.
+      if ::proc(cname, 0) then fail
+      p := ::proc(cname) | fail
+      ::proc(cname || "__methods") | fail
+      ::image(p) ? {
+         if ="procedure " then
+            return
+         }
+   end
+
+   method decode_class()
+      local cname, p, res
+      cname := line_in() | fail
+      is_layout_class(cname) | fail
+      p := ::proc(cname) | fail
+      res := p()
+      seen[tag_count +:= 1] := res
+      res.decode_obj(self) | fail
+      res.post_decode()
+      return res
+   end
+
+   #
+   # A record name is looked up and called the same way.  Layouts do
+   # not encode records; only a real record constructor may be called.
+   #
+   method decode_record()
+      local rname, n, res, i, p
+      (rname := line_in() &
+       n := ::integer(line_in())) | fail
+      p := ::proc(rname) | fail
+      ::image(p) ? {
+         if ="record constructor " then
+            res := p() | fail
+         else
+            fail
+         }
+      seen[tag_count +:= 1] := res
+      every i := 1 to n do
+         res[i] := decode() | fail
+      return res
+   end
+end

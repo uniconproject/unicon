@@ -166,6 +166,7 @@ $endif
       uidlog.FileBrowser.addreplace(CurrentEditBox().contents,
                                     uidlog.FileTabSet.which_one.filename, 0)
       uidlog.FileTabSet.resize()
+      (\uidlog.ivib_maindialog).sync_with_tab()
       uidlog.menubar.set_font()
    end
 
@@ -176,7 +177,9 @@ $endif
    #
    # Close File Menu Item Method
    #
-   method handle_closefile(ev, c)
+   # exiting is set when called from on_exit(), so the last tab is not
+   # replaced with a new Untitled buffer.
+   method handle_closefile(ev, c, exiting)
       local modified, decision, fname, r
       /c := CurrentTabItem()
       /c.filedirectory := chdir()
@@ -194,9 +197,16 @@ $endif
          }
 
       if \decision == "Cancel" then return "Cancel"
-      if \decision == "Save" then on_save_btn(, c)
+      # A failed save must leave the tab open.  on_save_btn() fails when
+      # the user cancels Save As or the write (including UI generation) fails.
+      if \decision == "Save" then
+         on_save_btn(, c) | return "Cancel"
 
-      if *uidlog.FileTabSet.children = 1 then exit(0)
+      # Keep an empty buffer rather than exit when the last one is closed.
+      # While exiting, do not replace it: on_exit() would close the
+      # replacement and never finish.
+      if /exiting & *uidlog.FileTabSet.children = 1 then
+         new_tabitem( , 0, "Untitled", "")
 
       if /modified then { # close a non-modified buffer (no * suffix)
          uidlog.FileTabSet.remove(c)
@@ -208,28 +218,34 @@ $endif
          uidlog.MsgBox.set_contents(["closed " || c.filename])
          delete(opened_files_set, fname)
          }
-      uidlog.FileBrowser.nodereplace(ide.CurrentTabItem().filename)
-      uidlog.FileTabSet.set_which_one(uidlog.FileTabSet.children[-1])
-      handle_update()
-      uidlog.FileTabSet.resize()
+      if *uidlog.FileTabSet.children > 0 then {
+         uidlog.FileBrowser.nodereplace(ide.CurrentTabItem().filename)
+         uidlog.FileTabSet.set_which_one(uidlog.FileTabSet.children[-1])
+         handle_update()
+         uidlog.FileTabSet.resize()
+         }
+      return
    end
 
    method on_save_btn(ev, c)
       if /c then c := CurrentTabItem()
       # if not .icn (i.e. unmodified .icn source), save if asked
       # .icn's get turned into .icn*'s but other extensions do not.
-      if not (c.label[-4:0] == ".icn") then {
-         if c.label == (("Untitled"||(""|"*"))|("scratch"||(""|"*"))) then
-            on_saveas_btn()
-         else {
-            if c.label[-5:0] == ".icn*" then {
-               c.label := c.label[1:-1]
-               if not (save_file(c)) then c.label ||:= "*"
-               }
-            else
-                save_file(c)
-            }
+      if c.label[-4:0] == ".icn" then return
+      if c.label == (("Untitled"||(""|"*"))|("scratch"||(""|"*"))) then {
+         on_saveas_btn() | fail
+         return
          }
+      if c.label[-5:0] == ".icn*" then {
+         c.label := c.label[1:-1]
+         if not (save_file(c)) then {
+            c.label ||:= "*"
+            fail
+            }
+         return
+         }
+      save_file(c) | fail
+      return
    end
 
    method on_saveas_btn(ev)
@@ -313,7 +329,17 @@ $endif
          uidlog.FileBrowser.addreplace(L, file_name(filename), 0)
          CurrentTabItem().filename := file_name(filename)
          CurrentTabItem().filedirectory := filename[1:-*file_name(filename)]
-         save_file(CurrentTabItem())
+         # set_label() above dropped the modified mark.  Put it back unless
+         # generation and the write both succeed, or a later Save returns
+         # immediately and Exit will not ask.
+         save_file(CurrentTabItem()) | {
+            c := CurrentTabItem()
+            if c.label[-1] ~== "*" then {
+               c.label ||:= "*"
+               uidlog.FileTabSet.resize()
+               }
+            fail
+            }
 
          # If we changed from non-.icn to .icn extension, do a close/reopen
          # to enable syntax coloring. Open first, so whole IDE doesn't exit
@@ -330,6 +356,7 @@ $endif
          if CurrentTabItem().filename === project then updateproject()
 
          handle_update()
+         return
          }
    end
 
@@ -349,8 +376,16 @@ $endif
    # Save File Menu Item Method
    #
    method save_file(c)
-      local ufile, l
+      local ufile, l, d
       chdir(c.filedirectory)
+      # Put pending changes of the integrated ivib's layout in the buffer.
+      # Failure here means the canvas changes would be discarded by the write.
+      if d := \uidlog.ivib_maindialog then
+         d.generate_if_modified(c) | {
+            \uidlog.MsgBox.set_contents(["Couldn't generate UI code for " ||
+                                         c.filename])
+            fail
+            }
       l := CurrentEditBox().get_contents() | []
       ufile := open(c.filename, "cu") | {
          \uidlog.MsgBox.set_contents([c.filename ||
@@ -1122,6 +1157,10 @@ $endif
       uidlog.menubar.on_view_window_filesmsgs(ev)
    end
 
+   method on_viewfilesivib_btn(ev)
+      uidlog.menubar.on_view_window_filesivib(ev)
+   end
+
    method on_viewfilesclassbrowser_btn(ev)
       uidlog.menubar.on_view_window_filesclassbrowser(ev)
    end
@@ -1313,7 +1352,8 @@ $endif
    #
    method Toolbar(pnlToolbar)
       local save_btn, saveas_btn, makeexe_btn, run_btn
-      local viewfilesmsgs_btn, viewall_btn, viewfiles_btn, viewfilesbrowser_btn
+      local viewfilesmsgs_btn, viewall_btn, viewfiles_btn, viewfilesbrowser_btn,
+         viewfilesivib_btn
 
       new_btn := IconButton()
       new_btn.set_pos("0.5%", "5%")
@@ -1416,7 +1456,7 @@ $endif
       find_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>~~~>>>~~~~~~~>6>~~~>6>~~~~~~~>>>~~~>>>~~~~~~>>>>>~>>>>>~~~~~>6>>>~>6>>>~~~~>>>>>>>>>>>>>~~>>6>>>5>>6>>>>>~>>6>>>5>>6>>>>>~>>6>>>5>>6>>>>>~>>>>>>>~>>>>>>>~>6>>>~~~~~>6>>>~>6>>>~~~~~>6>>>~>>>>>~~~~~>>>>>~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(find_btn)
       toggle_find_dir_btn := IconButton()
-      toggle_find_dir_btn.set_pos("76.5%", "5%")
+      toggle_find_dir_btn.set_pos("80.5%", "5%")
       toggle_find_dir_btn.set_size("4.5%", "90%")
       toggle_find_dir_btn.set_draw_border()
       toggle_find_dir_btn.set_tooltip("Toggle Search Direction")
@@ -1453,8 +1493,17 @@ $endif
       viewfilesmsgs_btn.clear_toggles()
       viewfilesmsgs_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(viewfilesmsgs_btn)
+      viewfilesivib_btn := IconButton()
+      viewfilesivib_btn.set_pos("52.5%", "5%")
+      viewfilesivib_btn.set_size("4.5%", "90%")
+      viewfilesivib_btn.set_draw_border()
+      viewfilesivib_btn.set_tooltip("View Files/IVIB")
+      viewfilesivib_btn.connect(self, "on_viewfilesivib_btn", ACTION_EVENT)
+      viewfilesivib_btn.clear_toggles()
+      viewfilesivib_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>`````>>`````>~~>`````>>`````>~~>`````>>`````>~~>`````>>`````>~~>`666`>>`````>~~>`666`>>`````>~~>`666`>>`````>~~>`````>>`````>~~>`````>>`````>~~>>>>>>>>>>>>>>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
+      uidlog.pnlToolbar.add(viewfilesivib_btn)
       viewfilesbrowser_btn := IconButton()
-      viewfilesbrowser_btn.set_pos("52.5%", "5%")
+      viewfilesbrowser_btn.set_pos("56.5%", "5%")
       viewfilesbrowser_btn.set_size("4.5%", "90%")
       viewfilesbrowser_btn.set_draw_border()
       viewfilesbrowser_btn.set_tooltip("View Files/Class Browser")
@@ -1463,7 +1512,7 @@ $endif
       viewfilesbrowser_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(viewfilesbrowser_btn)
       procedure_btn := IconButton()
-      procedure_btn.set_pos("56.5%", "5%")
+      procedure_btn.set_pos("60.5%", "5%")
       procedure_btn.set_size("4.5%", "90%")
       procedure_btn.set_draw_border()
       procedure_btn.set_tooltip("Insert Procedure")
@@ -1472,7 +1521,7 @@ $endif
       procedure_btn.set_img("16,c1,~~wwww~~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~~wwwwssss~~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~~ssssnnnn~~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~~nnnn~~")
       uidlog.pnlToolbar.add(procedure_btn)
       class_btn := IconButton()
-      class_btn.set_pos("60.5%", "5%")
+      class_btn.set_pos("64.5%", "5%")
       class_btn.set_size("4.5%", "90%")
       class_btn.set_draw_border()
       class_btn.set_tooltip("Insert Class")
@@ -1481,7 +1530,7 @@ $endif
       class_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~wwwww~~~~~yy~~~wjjjjjw~~~yLLy~~wjjjjjw~~~yLLy~~wjjjsssss~~yy~~~wjjsFFS++s~~~~~~wjjsFFS++s~~~~~~~wwsSS+nnnnn~~~~~~~s++nAANaan~~~qq~s++nAANaan~~qDDq~ssnNNaaan~~qDDq~~~naaaaan~~~qq~uu~naaaaan~~~~~uHHu~nnnnn~~~~~~uHHu~~~~~~~~~~~~~uu~~~~~~~~~~")
       uidlog.pnlToolbar.add(class_btn)
       method_btn := IconButton()
-      method_btn.set_pos("64.5%", "5%")
+      method_btn.set_pos("68.5%", "5%")
       method_btn.set_size("4.5%", "90%")
       method_btn.set_draw_border()
       method_btn.set_tooltip("Insert Method")
@@ -1490,7 +1539,7 @@ $endif
       method_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~yy~~~~~~~~~~~~~yLLy~~~~~~~~~~~~yLLy~~~~~~~~~~~~~yy~~~~~qq~~~~~~~~~~~~~qDDq~~~~~~~~~~~~qDDq~~~~~~~~~~~~~qq~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~uu~~~~~~~~~~~~~uHHu~~~~~~~~~~~~uHHu~~~~~~~~~~~~~uu~~~~~~~~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(method_btn)
       makeexe_btn := IconButton()
-      makeexe_btn.set_pos("68.5%", "5%")
+      makeexe_btn.set_pos("72.5%", "5%")
       makeexe_btn.set_size("4.5%", "90%")
       makeexe_btn.set_draw_border()
       makeexe_btn.set_tooltip("Compile")
@@ -1499,7 +1548,7 @@ $endif
       makeexe_btn.set_img("18,c1,~~~~~~~~~~~~~~~~~~~3333333333333333~~3444444444444430~~34JJJJJJJJJJJJ30~~34JJJJJJ60606030~~3433333333333330~~3466666666666630~~3466666666666630~~3460060606006630~~3460660606066630~~3460066066006630~~3460660606066630~~3460060606006630~~3466666666666630~~3466666666666630~~3333333333333330~~0000000000000000~~~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(makeexe_btn)
       run_btn := IconButton()
-      run_btn.set_pos("72.5%", "5%")
+      run_btn.set_pos("76.5%", "5%")
       run_btn.set_size("4.5%", "90%")
       run_btn.set_draw_border()
       run_btn.set_tooltip("Run")
@@ -1509,8 +1558,8 @@ $endif
       uidlog.pnlToolbar.add(run_btn)
 
       text_field_search := TextField()
-      text_field_search.set_pos("80.5%", "7%")
-      text_field_search.set_size("16%", "90%")
+      text_field_search.set_pos("84.5%", "7%")
+      text_field_search.set_size("12%", "90%")
       text_field_search.set_draw_border()
       text_field_search.set_tooltip("Find this")
       text_field_search.connect(self, "on_text_field_search", ACTION_EVENT)

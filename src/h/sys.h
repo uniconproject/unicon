@@ -2,6 +2,15 @@
  * sys.h -- system include files.
  */
 
+/*
+ * macOS hides IPV6_PKTINFO unless this is set before the first include
+ * of netinet/in.h.  OpenSSL headers can pull that in, so it has to be
+ * set before any system include.
+ */
+#if defined(__APPLE__) && !defined(__APPLE_USE_RFC_3542)
+#define __APPLE_USE_RFC_3542
+#endif
+
 #ifdef ConsoleWindow
 #undef putc
 #undef printf

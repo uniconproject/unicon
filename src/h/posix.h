@@ -23,6 +23,14 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+/*
+ * sys.h sets __APPLE_USE_RFC_3542 before any include that can pull in
+ * netinet/in.h.  The names are still requested here in case this header
+ * is used on its own.
+ */
+#if defined(__APPLE__) && !defined(__APPLE_USE_RFC_3542)
+#define __APPLE_USE_RFC_3542
+#endif
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>

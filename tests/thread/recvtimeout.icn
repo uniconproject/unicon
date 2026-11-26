@@ -1,0 +1,84 @@
+#
+# receive(T, timeout) from a thread's outbox: timeout is milliseconds,
+# 0 (the default) does not wait, negative waits without a limit.
+#
+
+global stolen
+procedure now()
+   local t
+   t := gettimeofday()
+   return t.sec * 1000 + t.usec / 1000
+end
+
+# cond is 1 when the check held, &null when it did not
+procedure check(label, cond)
+   write(left(label, 44), if \cond then "ok" else "FAIL")
+   return
+end
+
+procedure main()
+   local T, m, t0, el
+
+   T := thread { delay(400); "late" @>; delay(2000) }
+
+   t0 := now()
+   m := receive(T)
+   check("receive(T) before the value is sent fails", ((/m) & 1) | &null)
+   check("  without waiting", ((now() - t0 < 100) & 1) | &null)
+
+   t0 := now()
+   m := receive(T, 150)
+   el := now() - t0
+   check("receive(T, 150) times out", ((/m) & 1) | &null)
+   check("  after about 150 ms (not 0)", ((100 <= el < 1000) & 1) | &null)
+
+   m := receive(T, 3000)
+   el := now() - t0
+   check("receive(T, 3000) gets the value", ((m === "late") & 1) | &null)
+   check("  once it is sent", ((300 <= el < 3000) & 1) | &null)
+
+   check("receive(T, 0) with nothing left fails", ((not receive(T, 0)) & 1) | &null)
+   wait(T)
+
+   # Any negative value waits without a limit, not only -1.  -5 used to
+   # build a deadline that had already passed and fail at once.
+   T := thread { delay(200); "neg" @>; delay(1000) }
+   t0 := now()
+   m := receive(T, -5)
+   el := now() - t0
+   check("receive(T, -5) waits for the value", ((m === "neg") & 1) | &null)
+   check("  instead of failing at once", ((80 <= el < 2000) & 1) | &null)
+   wait(T)
+
+   # A finished producer is broadcast on its outbox.  Do not sit out
+   # the rest of a timeout after that.
+   T := thread { &null }
+   delay(50)
+   t0 := now()
+   m := receive(T, 2000)
+   el := now() - t0
+   check("receive from a finished thread fails", ((/m) & 1) | &null)
+   check("  without using the timeout", ((el < 500) & 1) | &null)
+
+   # Another receiver may take the value this wait was woken for.
+   # Keep waiting until the deadline instead of failing early.
+   T := thread { delay(200); "only" @>; delay(3000) }
+   stolen := &null
+   thief := thread {
+      while /stolen do {
+         if receive(T, 0) === "only" then stolen := 1
+         else delay(1)
+         }
+      }
+   t0 := now()
+   m := receive(T, 700)
+   el := now() - t0
+   stolen := 1
+   if \m then
+      check("timed receive was not cut short", ((80 <= el < 2000) & 1) | &null)
+   else
+      check("timed receive was not cut short", ((400 <= el < 2500) & 1) | &null)
+   check("  value or a real timeout", (((\m === "only") | (/m)) & 1) | &null)
+   wait(thief)
+   wait(T)
+end

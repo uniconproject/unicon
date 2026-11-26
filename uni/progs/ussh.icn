@@ -78,11 +78,11 @@ procedure main(argv)
       # One-shot remote command: preserve stdout/stderr order via receive().
       #
       while m := receive(s) do {
-         if m.addr == "stdout" then
+         if m.type == "stdout" then
             writes(&output, m.msg)
-         else if m.addr == "stderr" then
+         else if m.type == "stderr" then
             writes(&errout, m.msg)
-         else if m.addr == "exit" then
+         else if m.type == "exitstatus" then
             write(&errout, "[exit ", trim(m.msg), "]")
          }
       close(s)

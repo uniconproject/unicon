@@ -87,8 +87,9 @@ fill that gap.
 **Datagram I/O matches UDP.** Raw sockets are not connected.
 ``writes()`` uses ``sendto(2)`` with the destination saved at
 ``open()``. Incoming packets use ``receive()``, which returns a
-record with ``addr``, ``msg``, ``saddr``, ``daddr``, and (for IPv4 raw
-datagrams that include a header) ``ttl`` and ``proto``.
+record with ``addr``, ``msg``, ``type`` (``"data"``), ``saddr``,
+``sport``, ``daddr``, and (for IPv4 raw datagrams that include a
+header) ``ttl`` and ``proto``.
 Those extra fields are also available as ``r.ttl`` /
 ``r.saddr``. Use ``receive()``, not ``read()`` / ``reads()``.
 
@@ -230,6 +231,8 @@ fail instead of raising. Raw sockets add ``proto`` (fixed at
        ``2`` (``igmp``), ``89`` (``ospf``)
    * - ``hdrincl``
      - ``"yes"`` or ``&null`` (not ``"no"``)
+   * - ``pktinfo``
+     - ``"yes"`` or ``&null``; UDP/multicast only
    * - ``ttl``
      - Hop limit (integer), e.g. ``64``
    * - ``iface``
@@ -270,16 +273,20 @@ opening another handle (or, with ``hdrincl=yes``, putting the
 destination in a supplied IP header).
 
 ``receive()`` peeks with ``MSG_PEEK`` into a 2K buffer, then
-consumes with ``recvfrom``. If the peek fills 2K, the consume
+consumes with ``recvmsg`` (``recvfrom`` on Windows). If the peek fills 2K, the consume
 uses a 64K buffer so a large datagram is not truncated. The
 result is a ``posix_message``: ``addr`` is the peer (often
 ``a.b.c.d:0`` for raw IPv4), ``msg`` is the byte string.
 ``saddr`` / ``daddr`` use the usual IP-header names: on an IPv4
 raw receive they are the header source and destination; on UDP,
-``saddr`` is the numeric peer address and ``daddr`` is
-unpopulated. When the receive buffer starts
+``saddr``/``sport`` are the numeric peer and ``daddr``/``dport``/``ttl``
+are null unless the socket has ``pktinfo=yes`` (attribute readable
+as ``f["pktinfo"]``). When the receive buffer starts
 with an IPv4 header, ``ttl`` and ``proto`` are that header's
-hop limit and protocol; otherwise those fields are null.
+hop limit and protocol; otherwise those fields are null. The rule
+is that fields that cost nothing (the header is already in the
+buffer) are always filled, and ``pktinfo`` adds the ones that need
+the kernel's help.
 
 On many IPv4 stacks a raw receive buffer starts with the IP
 header, then the protocol message. Linux ICMP is the usual
@@ -288,8 +295,10 @@ example. Strip it before decoding ICMP or IGMP
 deliver the upper layer only; there is no IPv6 header-strip
 helper yet.
 
-``select()`` works on the handle. Session wrappers use it to
-implement timeouts around ``receive()``.
+``receive(f, ms)`` waits at most ``ms`` milliseconds (0 does not
+wait) and fails with ``&errno`` ``ETIMEDOUT`` when nothing arrives.
+``select()`` also works on the handle, for waiting on several at
+once.
 
 As with UDP, ``read()`` / ``reads()`` are the wrong verbs for
 datagrams. Use ``receive()``.

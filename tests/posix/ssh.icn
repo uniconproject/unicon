@@ -73,7 +73,8 @@ end
 #   UNICON_SSH_KNOWNHOSTS known_hosts path (else host-key check is skipped)
 #   UNICON_SSH_SFTPPATH   remote directory for SFTP checks (optional)
 procedure live_test()
-   local host, addr, opts, s, line, got, c, info, remote, L, chunk
+   local host, addr, opts, s, line, got, c, info, remote, L, chunk, stray, m,
+      first, e
 
    host := getenv("UNICON_SSH_TESTHOST") | {
       write("live round-trip: skipped (set UNICON_SSH_TESTHOST)")
@@ -99,10 +100,28 @@ procedure live_test()
       return
       }
    got := ""
-   while m := receive(s) do
-      got ||:= m.addr || "=" || trim(m.msg, '\n') || ";"
-   write("live receive: ", if find("stdout=", got) & find("exit=", got)
-      then "pass" else "fail")
+   stray := &null
+   while m := receive(s) do {
+      # SSH events carry only type and msg; every other field is &null
+      if \(m.addr | m.saddr | m.daddr | m.ttl | m.proto | m.sport | m.dport)
+         then stray := 1
+      got ||:= m.type || "=" || trim(m.msg, '\n') || ";"
+      }
+   write("live receive: ", if find("stdout=", got) & find("stderr=", got) &
+      find("exitstatus=3", got) & /stray then "pass" else "fail")
+   close(s)
+
+   # receive(c, timeout): nothing for a while, then output
+   opts := ssh_opts(addr, "hc", "cmd=sleep 1; echo late")
+   s := open ! opts | {
+      write("live receive timeout: open failed: ", &errortext)
+      return
+      }
+   first := receive(s, 200) | &null      # times out: the command sleeps
+   e := &errno
+   m := receive(s, 5000) | &null
+   write("live receive timeout: ", if /first & e ~= 0 & \m &
+      m.type == "stdout" & trim(m.msg, '\n') == "late" then "pass" else "fail")
    close(s)
 
    #

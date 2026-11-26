@@ -766,7 +766,14 @@ dptr rec_structor(char *name)
       return &posix_lock;
       }
    else if (!strcmp(name, "posix_message")) {
+      /*
+       * Two threads can enter receive() before either has published
+       * the constructor.  Build it outside MTX_DR_TBL (dynrecord locks
+       * that itself) and publish the descriptor under the lock so a
+       * reader never sees a half-written pointer.
+       */
       if (is:null(posix_message)) {
+         struct b_proc *bp;
          AsgnCStr(s, "posix_message");
          AsgnCStr(fields[0], "addr");
          AsgnCStr(fields[1], "msg");
@@ -774,8 +781,16 @@ dptr rec_structor(char *name)
          AsgnCStr(fields[3], "daddr");
          AsgnCStr(fields[4], "ttl");
          AsgnCStr(fields[5], "proto");
-         posix_message.dword = D_Proc;
-         posix_message.vword.bptr = (union block *)dynrecord(&s, fields, 6);
+         AsgnCStr(fields[6], "sport");
+         AsgnCStr(fields[7], "dport");
+         AsgnCStr(fields[8], "type");
+         bp = (struct b_proc *)dynrecord(&s, fields, PMSG_NFIELDS);
+         MUTEX_LOCKID(MTX_DR_TBL);
+         if (is:null(posix_message) && bp != NULL) {
+            posix_message.vword.bptr = (union block *)bp;
+            posix_message.dword = D_Proc;
+            }
+         MUTEX_UNLOCKID(MTX_DR_TBL);
          }
       return &posix_message;
       }
@@ -1380,13 +1395,13 @@ char* print_sockaddr(struct sockaddr* sa, char* buf, int buflen ) {
 /*
  * get port, IPv4 or IPv6:
  */
-short get_sa_port(struct sockaddr *sa)
+int get_sa_port(struct sockaddr *sa)
 {
-    if (sa->sa_family == AF_INET) {
-        return (((struct sockaddr_in*)sa)->sin_port);
-    }
-
-    return (((struct sockaddr_in6*)sa)->sin6_port);
+    if (sa->sa_family == AF_INET)
+        return ntohs(((struct sockaddr_in*)sa)->sin_port);
+    if (sa->sa_family == AF_INET6)
+        return ntohs(((struct sockaddr_in6*)sa)->sin6_port);
+    return 0;
 }
 
 char* print_sockaddrport(struct sockaddr* sa, char* buf, int buflen ) {
@@ -1487,7 +1502,7 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int sock_type, int family)
 static char *sock_attr_names[] = {
    "reuseaddr", "reuseport", "broadcast", "rcvbuf", "sndbuf",
    "join", "leave", "source", "ttl", "mcastloop", "iface",
-   "proto", "hdrincl", NULL
+   "proto", "hdrincl", "pktinfo", NULL
    };
 
 int is_sock_attr(char *name)
@@ -1604,6 +1619,144 @@ static int sock_family(int s)
    if (getsockname(s, (struct sockaddr *)&ss, &sslen) < 0)
       return AF_INET;
    return ss.ss_family;
+}
+
+/*
+ * rtt does not see the system headers, so feature tests on their macros
+ * must be handed to the C compiler with #passthru (as for
+ * IP_ADD_SOURCE_MEMBERSHIP below).  Where an option is missing it becomes
+ * -1: setsockopt() then fails with ENOPROTOOPT, which is what the
+ * pktinfo attribute reports, and no control message ever matches.
+ */
+#passthru #ifndef IP_PKTINFO
+#passthru #define IP_PKTINFO -1
+#passthru struct in_pktinfo { struct in_addr ipi_addr; };
+#passthru #endif
+#passthru #ifndef IP_RECVTTL
+#passthru #define IP_RECVTTL -1
+#passthru #endif
+/*
+ * FreeBSD reports the destination with IP_RECVDSTADDR (a struct in_addr)
+ * rather than Linux/macOS IP_PKTINFO.  -1 means the platform has no such
+ * option, and setsockopt is not called.
+ */
+#passthru #ifndef IP_RECVDSTADDR
+#passthru #define IP_RECVDSTADDR -1
+#passthru #endif
+#passthru #ifndef IPV6_RECVPKTINFO
+#passthru #define IPV6_RECVPKTINFO -1
+#passthru #endif
+#passthru #ifndef IPV6_PKTINFO
+#passthru #define IPV6_PKTINFO -1
+#passthru #ifndef __APPLE__
+#passthru struct in6_pktinfo { struct in6_addr ipi6_addr; unsigned int ipi6_ifindex; };
+#passthru #endif
+#passthru #endif
+#passthru #ifndef IPV6_RECVHOPLIMIT
+#passthru #define IPV6_RECVHOPLIMIT -1
+#passthru #endif
+#passthru #ifndef IPV6_HOPLIMIT
+#passthru #define IPV6_HOPLIMIT -1
+#passthru #endif
+/* the control-message type that carries the TTL (an int on Linux) */
+#passthru #ifdef __linux__
+#passthru #define SOCK_TTL_CMSG IP_TTL
+#passthru #else
+#passthru #define SOCK_TTL_CMSG IP_RECVTTL
+#passthru #endif
+
+/*
+ * pktinfo=yes asks the kernel to deliver, with each received datagram,
+ * the destination address and the TTL / hop limit (ancillary data that
+ * receive() turns into the daddr, dport and ttl fields).  The kernel
+ * options are the only state: receive() always reads with recvmsg() and
+ * finds control messages only when these are on.  An IPv6 socket also
+ * asks for the IPv4 equivalents so IPv4-mapped traffic is covered; that
+ * part is best effort.  Returns 0, or -1 with errno set.
+ */
+#if !NT
+/*
+ * Set one socket option.  opt < 0 means this platform has no such option.
+ * Returns 0, or -1 with errno set.
+ */
+static int sock_set_one(int s, int level, int opt, int on)
+{
+   if (opt < 0) {
+      errno = ENOPROTOOPT;
+      return -1;
+      }
+   return setsockopt(s, level, opt, (char *)&on, sizeof(on));
+}
+#endif                                  /* !NT */
+
+static int sock_set_pktinfo(int s, int on)
+{
+#if NT
+   errno = EINVAL;                      /* recvmsg() path not implemented */
+   return -1;
+#else                                   /* NT */
+   int rc;
+
+   errno = ENOPROTOOPT;
+   if (sock_family(s) == AF_INET6) {
+      rc = sock_set_one(s, IPPROTO_IPV6, IPV6_RECVPKTINFO, on);
+      /* the rest is best effort: hop limit, and IPv4-mapped traffic */
+      (void) sock_set_one(s, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, on);
+      (void) sock_set_one(s, IPPROTO_IP, IP_PKTINFO, on);
+      (void) sock_set_one(s, IPPROTO_IP, IP_RECVDSTADDR, on);
+      (void) sock_set_one(s, IPPROTO_IP, IP_RECVTTL, on);
+      }
+   else {
+      /*
+       * Linux and macOS take IP_PKTINFO.  FreeBSD does not have it;
+       * IP_RECVDSTADDR carries the destination address instead.
+       */
+      rc = sock_set_one(s, IPPROTO_IP, IP_PKTINFO, on);
+      if (rc != 0)
+         rc = sock_set_one(s, IPPROTO_IP, IP_RECVDSTADDR, on);
+      if (rc == 0)
+         (void) sock_set_one(s, IPPROTO_IP, IP_RECVTTL, on);
+      }
+   return rc;
+#endif                                  /* NT */
+}
+
+/*
+ * Current state of pktinfo: 1 on, 0 off, -1 when it cannot be queried.
+ */
+#if !NT
+/* 1 if opt is on, 0 if off, -1 if it cannot be queried. */
+static int sock_get_one(int s, int level, int opt)
+{
+   int on = 0;
+   unsigned int olen = sizeof(on);
+
+   if (opt < 0)
+      return -1;
+   if (getsockopt(s, level, opt, (char *)&on, &olen) == 0)
+      return on != 0;
+   return -1;
+}
+#endif                                  /* !NT */
+
+static int sock_get_pktinfo(int s)
+{
+#if NT
+   return -1;
+#else                                   /* NT */
+   int on;
+
+   if (sock_family(s) == AF_INET6) {
+      on = sock_get_one(s, IPPROTO_IPV6, IPV6_RECVPKTINFO);
+      if (on < 0)
+         on = sock_get_one(s, IPPROTO_IPV6, IPV6_PKTINFO);
+      return on;
+      }
+   on = sock_get_one(s, IPPROTO_IP, IP_PKTINFO);
+   if (on < 0)
+      on = sock_get_one(s, IPPROTO_IP, IP_RECVDSTADDR);
+   return on;
+#endif                                  /* NT */
 }
 
 /*
@@ -2270,7 +2423,7 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
       /* boolean attributes take yes/no, like verifyPeer */
       if (strcmp(abuf, "reuseaddr") == 0 || strcmp(abuf, "reuseport") == 0 ||
           strcmp(abuf, "broadcast") == 0 || strcmp(abuf, "mcastloop") == 0 ||
-          strcmp(abuf, "hdrincl") == 0) {
+          strcmp(abuf, "hdrincl") == 0 || strcmp(abuf, "pktinfo") == 0) {
          if ((on = sock_attr_bool(val)) < 0) {
             errno = 0;
             set_errortext_with_val(1310, tmps);
@@ -2289,6 +2442,8 @@ int apply_sock_attrs(int s, int prebind, dptr attr, int nattr,
          rc = setsockopt(s, SOL_SOCKET, SO_BROADCAST, (char *)&on, sizeof(on));
       else if (strcmp(abuf, "hdrincl") == 0)
          rc = setsockopt(s, IPPROTO_IP, IP_HDRINCL, (char *)&on, sizeof(on));
+      else if (strcmp(abuf, "pktinfo") == 0)
+         rc = sock_set_pktinfo(s, on);
       else if (strcmp(abuf, "proto") == 0)
          rc = 0;                        /* consumed at socket() for SOCK_RAW */
       else if (strcmp(abuf, "rcvbuf") == 0) {
@@ -2518,6 +2673,13 @@ int sattrib(int s, char *str, long len, dptr answer, char *abuf)
       MakeStr(abuf, strlen(abuf), answer);
       return Succeeded;
       }
+   if (strcmp(name, "pktinfo") == 0) {
+      if ((on = sock_get_pktinfo(s)) < 0)
+         return Failed;
+      strcpy(abuf, on ? "yes" : "no");
+      MakeStr(abuf, strlen(abuf), answer);
+      return Succeeded;
+      }
    if (strcmp(name, "rcvbuf") == 0) {
       olen = sizeof(v);
       if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&v, &olen) < 0)
@@ -2652,6 +2814,7 @@ static int sockg_sattrib(void *h, dptr rv, char *name, int boolean)
 
 static int sockg_ttl(void *h, dptr rv)       { return sockg_sattrib(h, rv, "ttl", 0); }
 static int sockg_hdrincl(void *h, dptr rv)   { return sockg_sattrib(h, rv, "hdrincl", 1); }
+static int sockg_pktinfo(void *h, dptr rv)   { return sockg_sattrib(h, rv, "pktinfo", 1); }
 static int sockg_iface(void *h, dptr rv)     { return sockg_sattrib(h, rv, "iface", 0); }
 static int sockg_mcastloop(void *h, dptr rv) { return sockg_sattrib(h, rv, "mcastloop", 1); }
 static int sockg_reuseaddr(void *h, dptr rv) { return sockg_sattrib(h, rv, "reuseaddr", 1); }
@@ -2664,6 +2827,7 @@ static const struct filepeek_field sock_peek_tab[] = {
    {"proto",     sockg_proto},
    {"ttl",       sockg_ttl},
    {"hdrincl",   sockg_hdrincl},
+   {"pktinfo",   sockg_pktinfo},
    {"iface",     sockg_iface},
    {"groups",    sockg_groups},
    {"mcastloop", sockg_mcastloop},
@@ -2704,7 +2868,7 @@ int sock_peek_key_nth(int fd, int i, dptr key)
  * shared by every resolved address. On Windows this is GetTickCount64,
  * declared by windows.h; see sys.h for the older-header fallback.
  */
-static long long sock_now_ms(void)
+long long sock_now_ms(void)
 {
 #if UNIX
    /*
@@ -2731,6 +2895,53 @@ static long long sock_now_ms(void)
 #else                                   /* UNIX */
    return 0;
 #endif                                  /* UNIX */
+}
+
+/*
+ * Wait until socket s has something to read, for at most timeout
+ * milliseconds (0: just check; negative: no limit).  Counted out, so a
+ * garbage collection in another thread does not wait for this one.
+ * Returns 1 when readable, 0 with errno ETIMEDOUT when the time ran
+ * out (as for a connect timeout), -1 on error with errno set.
+ */
+int sock_wait_readable(int s, int timeout)
+{
+   int rc;
+#if NT
+   fd_set rs;
+   struct timeval tv, *tvp = NULL;
+
+   FD_ZERO(&rs);
+   FD_SET(s, &rs);
+   if (timeout >= 0) {
+      tv.tv_sec = timeout / 1000;
+      tv.tv_usec = (timeout % 1000) * 1000;
+      tvp = &tv;
+      }
+   DEC_NARTHREADS;
+   rc = select(s + 1, &rs, NULL, NULL, tvp);
+   INC_NARTHREADS_CONTROLLED;
+   if (rc < 0)
+      errno = WSAGetLastError();
+#else                                   /* NT */
+   struct pollfd pfd;
+
+   pfd.fd = s;
+   pfd.events = POLLIN;
+   pfd.revents = 0;
+   DEC_NARTHREADS;
+   do
+      rc = poll(&pfd, 1, timeout < 0 ? -1 : timeout);
+   while (rc < 0 && errno == EINTR && timeout < 0);
+   INC_NARTHREADS_CONTROLLED;
+#endif                                  /* NT */
+   if (rc > 0)
+      return 1;
+   if (rc == 0) {
+      errno = ETIMEDOUT;
+      return 0;
+      }
+   return -1;
 }
 
 /*
@@ -3637,17 +3848,166 @@ int sock_send(char *adr, char *msg, int msglen, int af_fam)
    return 0;
 }
 
+#if !NT
+/*
+ * Fill daddr, dport and ttl from the ancillary data of a datagram.  The
+ * kernel supplies it only when the pktinfo socket attribute is on
+ * (IP_PKTINFO / IPV6_RECVPKTINFO and the TTL / hop-limit options), so an
+ * ordinary receive finds no control messages and pays nothing for this.
+ * Fields already set (the IP header of a raw IPv4 packet) are kept.
+ * Allocates, so rp must point at a tended pointer.
+ */
+static void sock_recv_ancdata(int s, int s_type, struct msghdr *mh,
+                              struct b_record **rp)
+{
+   struct cmsghdr *cm;
+   char ip[INET6_ADDRSTRLEN];
+   int have_dst = 0, ttl;
+   size_t dlen;
+   unsigned char uc;
+
+   for (cm = CMSG_FIRSTHDR(mh); cm != NULL; cm = CMSG_NXTHDR(mh, cm)) {
+      dlen = cm->cmsg_len - CMSG_LEN(0);
+      if (cm->cmsg_level == IPPROTO_IP) {
+         if (cm->cmsg_type == IP_PKTINFO && dlen >= sizeof(struct in_pktinfo)) {
+            struct in_pktinfo pi;
+            memcpy(&pi, CMSG_DATA(cm), sizeof(pi));
+            if (is:null((*rp)->fields[PMSG_DADDR]) &&
+                inet_ntop(AF_INET, &pi.ipi_addr, ip, sizeof(ip)) != NULL) {
+               String((*rp)->fields[PMSG_DADDR], ip);
+               have_dst = 1;
+               }
+            }
+         else if (IP_RECVDSTADDR >= 0 &&
+                  cm->cmsg_type == IP_RECVDSTADDR &&
+                  dlen >= sizeof(struct in_addr)) {
+            struct in_addr dst;
+            memcpy(&dst, CMSG_DATA(cm), sizeof(dst));
+            if (is:null((*rp)->fields[PMSG_DADDR]) &&
+                inet_ntop(AF_INET, &dst, ip, sizeof(ip)) != NULL) {
+               String((*rp)->fields[PMSG_DADDR], ip);
+               have_dst = 1;
+               }
+            }
+         else if (cm->cmsg_type == SOCK_TTL_CMSG &&
+                  is:null((*rp)->fields[PMSG_TTL])) {
+            /* an int on Linux, a single byte on the BSDs */
+            if (dlen >= sizeof(int)) {
+               memcpy(&ttl, CMSG_DATA(cm), sizeof(ttl));
+               MakeInt(ttl, &(*rp)->fields[PMSG_TTL]);
+               }
+            else if (dlen == 1) {
+               uc = *CMSG_DATA(cm);
+               MakeInt(uc, &(*rp)->fields[PMSG_TTL]);
+               }
+            }
+         }
+      else if (cm->cmsg_level == IPPROTO_IPV6) {
+         if (cm->cmsg_type == IPV6_PKTINFO &&
+             dlen >= sizeof(struct in6_pktinfo)) {
+            struct in6_pktinfo pi6;
+            memcpy(&pi6, CMSG_DATA(cm), sizeof(pi6));
+            if (is:null((*rp)->fields[PMSG_DADDR]) &&
+                inet_ntop(AF_INET6, &pi6.ipi6_addr, ip, sizeof(ip)) != NULL) {
+               String((*rp)->fields[PMSG_DADDR], ip);
+               have_dst = 1;
+               }
+            }
+         else if (cm->cmsg_type == IPV6_HOPLIMIT && dlen >= sizeof(int) &&
+                  is:null((*rp)->fields[PMSG_TTL])) {
+            memcpy(&ttl, CMSG_DATA(cm), sizeof(ttl));
+            MakeInt(ttl, &(*rp)->fields[PMSG_TTL]);
+            }
+         }
+      }
+
+   /*
+    * The destination port is the port this socket is bound to; the
+    * control messages do not carry it.  Only asked for when the kernel
+    * gave us a destination, so the extra getsockname() is paid only by
+    * sockets that turned pktinfo on.
+    */
+   if (have_dst && s_type == SOCK_DGRAM) {
+      struct sockaddr_storage local;
+      unsigned int llen = sizeof(local);
+      if (getsockname(s, (struct sockaddr *)&local, &llen) == 0)
+         MakeInt(get_sa_port((struct sockaddr *)&local),
+                 &(*rp)->fields[PMSG_DPORT]);
+      }
+}
+#endif                                  /* NT */
+
 /*
  * Used by function receive() to receive a UDP or raw datagram into a
  * record.  This allocates from the heaps, so rp must point at a tended
- * pointer.  For IPPROTO_ICMP raw sockets the message typically includes
+ * pointer, and receive() must already have set every field of the record
+ * to &null.  For IPPROTO_ICMP raw sockets the message typically includes
  * the IP header followed by the ICMP payload.
  *
  * MSG_PEEK into a 2K stack buffer (typical MTU-sized datagrams), then
- * consume with recvfrom.  If the peek fills the buffer, receive into a
+ * consume with recvmsg.  If the peek fills the buffer, receive into a
  * 64K heap buffer so the datagram is not truncated or lost.
+ *
+ * Fields filled: msg, addr, saddr, sport and type always.  daddr, ttl and
+ * proto come from the IP header of a raw IPv4 packet.  For UDP, and for
+ * raw IPv6, daddr, dport and ttl are filled only on a socket opened (or
+ * Attrib'ed) with pktinfo=yes.
+ *
+ * nb is nonzero to read without blocking.  On Unix that is MSG_DONTWAIT,
+ * so the socket's own mode is left alone.  Windows has no such flag;
+ * FIONBIO is set for the two reads and then cleared.  Unicon sockets are
+ * created blocking, and this restores that.
  */
-int sock_recv(int s, struct b_record **rp)
+#if NT
+static void sock_recv_blocking(int s)
+{
+   unsigned long off = 0;
+   ioctlsocket((SOCKET)s, FIONBIO, &off);
+}
+#endif                                  /* NT */
+
+#ifdef Concurrent
+/*
+ * A timed receive holds the file's own mutex across the reads.  On
+ * Windows that also covers the FIONBIO change.  An unlimited receive
+ * does not hold it, so close() can shut the socket.  The macros do
+ * nothing until a thread has been created.
+ */
+static void sock_recv_pause(void)
+{
+#if NT
+   Sleep(1);
+#else                                   /* NT */
+   struct timespec pause;
+   pause.tv_sec = 0;
+   pause.tv_nsec = 1000000L;
+   nanosleep(&pause, NULL);
+#endif                                  /* NT */
+}
+
+static int sock_recv_enter(word mtx, int nb)
+{
+   int busy;
+
+   if (!nb)
+      return 1;
+   MUTEX_TRYLOCKID(mtx, busy);
+   if (busy != 0) {
+      sock_recv_pause();
+      errno = EWOULDBLOCK;
+      return 0;
+      }
+   return 1;
+}
+
+static void sock_recv_leave(word mtx, int nb)
+{
+   if (nb)
+      MUTEX_UNLOCKID(mtx);
+}
+#endif                                  /* Concurrent */
+
+int sock_recv(int s, struct b_record **rp, int nb, word mtx)
 {
    int s_type, msglen, bufsize;
    char small[SOCK_RECV_SMALL];
@@ -3657,7 +4017,19 @@ int sock_recv(int s, struct b_record **rp)
    struct sockaddr_storage conn;
    struct sockaddr* sa = (struct sockaddr*) &conn;
    unsigned int len, addrlen = sizeof(conn);
+   int gni;
    char host[NI_MAXHOST], serv[NI_MAXSERV], addrbuf[INET6_ADDRSTRLEN];
+   int rflags = 0;
+#if !NT
+   struct msghdr mh;
+   struct iovec iov;
+   union {                              /* aligned for struct cmsghdr */
+      struct cmsghdr align;
+      char buf[256];
+      } cu;
+#else                                   /* NT */
+   int nb_set = 0;
+#endif                                  /* NT */
 
    len = sizeof(s_type);
 
@@ -3670,15 +4042,73 @@ int sock_recv(int s, struct b_record **rp)
    if (s_type != SOCK_DGRAM && s_type != SOCK_RAW)
       return -1;
 
-   msglen = recvfrom(s, small, SOCK_RECV_SMALL, MSG_PEEK, sa, &addrlen);
-   if (msglen < 0)
+   /*
+    * Two receives on one file share that file's mutex.  A timed
+    * receive holds it across the reads (and, on Windows, the FIONBIO
+    * change).  An unlimited receive does not, so close() can shut the
+    * socket.  The macros do nothing until a thread has been created.
+    */
+#ifdef Concurrent
+   if (!sock_recv_enter(mtx, nb))
       return 0;
+#else                                   /* Concurrent */
+   (void)mtx;
+#endif                                  /* Concurrent */
+#if NT
+   if (nb) {
+      unsigned long on = 1;
+      if (ioctlsocket((SOCKET)s, FIONBIO, &on) != 0) {
+         errno = WSAGetLastError();
+#ifdef Concurrent
+         sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
+         return 0;
+         }
+      nb_set = 1;
+      }
+#else                                   /* NT */
+   if (nb)
+      rflags = MSG_DONTWAIT;
+#endif                                  /* NT */
+
+#if NT
+peek_again:
+#endif                                  /* NT */
+   msglen = recvfrom(s, small, SOCK_RECV_SMALL, MSG_PEEK | rflags,
+                     sa, &addrlen);
+   if (msglen < 0) {
+#if NT
+      errno = WSAGetLastError();
+      /*
+       * An unlimited read holds no lock.  A timed receive on this
+       * socket may have made it nonblocking for a moment.
+       */
+      if (!nb && (errno == EWOULDBLOCK || errno == EAGAIN)) {
+         Sleep(1);
+         goto peek_again;
+         }
+      if (nb_set)
+         sock_recv_blocking(s);
+#endif                                  /* NT */
+#ifdef Concurrent
+      sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
+      return 0;
+      }
 
    if (msglen >= SOCK_RECV_SMALL) {
       bufsize = SOCK_RECV_LARGE;
       heap = malloc(bufsize);
-      if (heap == NULL)
+      if (heap == NULL) {
+#if NT
+         if (nb_set)
+            sock_recv_blocking(s);
+#endif                                  /* NT */
+#ifdef Concurrent
+         sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
          return 0;
+         }
       buf = heap;
       }
    else {
@@ -3686,11 +4116,61 @@ int sock_recv(int s, struct b_record **rp)
       buf = small;
       }
 
-   addrlen = sizeof(conn);
-   if ((msglen = recvfrom(s, buf, bufsize, 0, sa, &addrlen)) < 0) {
+#if !NT
+   /*
+    * recvmsg() so that ancillary data (destination address, TTL) is
+    * available when the pktinfo attribute asked the kernel for it.
+    */
+   memset(&mh, 0, sizeof(mh));
+   iov.iov_base = buf;
+   iov.iov_len = bufsize;
+   mh.msg_name = sa;
+   mh.msg_namelen = sizeof(conn);
+   mh.msg_iov = &iov;
+   mh.msg_iovlen = 1;
+   mh.msg_control = cu.buf;
+   mh.msg_controllen = sizeof(cu.buf);
+   if ((msglen = recvmsg(s, &mh, rflags)) < 0) {
       free(heap);
+#ifdef Concurrent
+      sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
       return 0;
       }
+   addrlen = mh.msg_namelen;
+#ifdef Concurrent
+   sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
+#else                                   /* NT */
+   addrlen = sizeof(conn);
+   if ((msglen = recvfrom(s, buf, bufsize, rflags, sa, &addrlen)) < 0) {
+      errno = WSAGetLastError();
+      if (!nb && (errno == EWOULDBLOCK || errno == EAGAIN)) {
+         /*
+          * Drop the large buffer before retrying.  The next datagram
+          * may fit in small[], and a later free(heap) must not see
+          * this pointer.
+          */
+         free(heap);
+         heap = NULL;
+         addrlen = sizeof(conn);
+         Sleep(1);
+         goto peek_again;
+         }
+      free(heap);
+      if (nb_set)
+         sock_recv_blocking(s);
+#ifdef Concurrent
+      sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
+      return 0;
+      }
+   if (nb_set)
+      sock_recv_blocking(s);
+#ifdef Concurrent
+   sock_recv_leave(mtx, nb);
+#endif                                  /* Concurrent */
+#endif                                  /* NT */
 
    /*
     * Exact fill of the small buffer is ambiguous (may be truncated).
@@ -3707,33 +4187,45 @@ int sock_recv(int s, struct b_record **rp)
       return 0;
       }
 
-   StrLen((*rp)->fields[1]) = msglen;
-   StrLoc((*rp)->fields[1]) = alcstr(buf, msglen);
+   {
+      char *p = alcstr(buf, msglen);
+      StrLoc((*rp)->fields[PMSG_MSG]) = p;
+      StrLen((*rp)->fields[PMSG_MSG]) = msglen;
+   }
+   StrLoc((*rp)->fields[PMSG_TYPE]) = "data";
+   StrLen((*rp)->fields[PMSG_TYPE]) = 4;
 
-   (*rp)->fields[2] = nulldesc;          /* saddr */
-   (*rp)->fields[3] = nulldesc;          /* daddr */
-   (*rp)->fields[4] = nulldesc;          /* ttl */
-   (*rp)->fields[5] = nulldesc;          /* proto */
    if (s_type == SOCK_RAW && msglen >= 20 && ((buf[0] >> 4) & 0xf) == 4) {
       char ip[INET_ADDRSTRLEN];
       struct in_addr in;
-      MakeInt((unsigned char)buf[8], &(*rp)->fields[4]);
-      MakeInt((unsigned char)buf[9], &(*rp)->fields[5]);
+      MakeInt((unsigned char)buf[8], &(*rp)->fields[PMSG_TTL]);
+      MakeInt((unsigned char)buf[9], &(*rp)->fields[PMSG_PROTO]);
       memcpy(&in, buf + 12, 4);
       if (inet_ntop(AF_INET, &in, ip, sizeof(ip)) != NULL)
-         String((*rp)->fields[2], ip);
+         String((*rp)->fields[PMSG_SADDR], ip);
       memcpy(&in, buf + 16, 4);
       if (inet_ntop(AF_INET, &in, ip, sizeof(ip)) != NULL)
-         String((*rp)->fields[3], ip);
+         String((*rp)->fields[PMSG_DADDR], ip);
       }
    else if (print_sockaddr(sa, addrbuf, INET6_ADDRSTRLEN) != NULL)
-      String((*rp)->fields[2], addrbuf);
+      String((*rp)->fields[PMSG_SADDR], addrbuf);
+   if (s_type == SOCK_DGRAM)
+      MakeInt(get_sa_port(sa), &(*rp)->fields[PMSG_SPORT]);
    free(heap);
 
-   s = getnameinfo(sa, addrlen, host,
-                                NI_MAXHOST,
-                               serv, NI_MAXSERV, NI_NUMERICSERV);
-   if (s == 0)
+#if !NT
+   if (mh.msg_controllen > 0)
+      sock_recv_ancdata(s, s_type, &mh, rp);
+#endif                                  /* NT */
+
+   /*
+    * NI_NUMERICHOST: addr is "ip:port".  Without it getnameinfo() may
+    * resolve the sender to a host name (a reverse DNS lookup per
+    * datagram, which can block) and addr would not be an address.
+    */
+   gni = getnameinfo(sa, addrlen, host, NI_MAXHOST, serv, NI_MAXSERV,
+                     NI_NUMERICSERV | NI_NUMERICHOST);
+   if (gni == 0)
       snprintf(addrstr, sizeof(addrstr), "%s:%s", host, serv);
    else {
      if ((print_sockaddr(sa, addrbuf, INET6_ADDRSTRLEN)) == NULL) {
@@ -3743,7 +4235,7 @@ int sock_recv(int s, struct b_record **rp)
      snprintf(addrstr, sizeof(addrstr), "%s:%d", addrbuf, get_sa_port(sa));
    }
 
-   String((*rp)->fields[0], addrstr);
+   String((*rp)->fields[PMSG_ADDR], addrstr);
 
    return 1;
 }
@@ -3774,7 +4266,10 @@ static struct {
    int pins;            /* sock_get / sock_pin holds across listen/accept */
    int owners;          /* File objects holding this cached listener */
    int closing;         /* close deferred until pins drop to 0 */
-} sock_map[64] = { {0, 0, 0, 0, 0, 0} };
+#ifdef Concurrent
+   word mutexid;        /* shared by every File that aliases this fd */
+#endif                                  /* Concurrent */
+} sock_map[64] = { {0} };
 static int nsock = 0;
 static uword sock_gen_seq = 1;          /* 0 reserved for "not cached" */
 
@@ -3823,6 +4318,9 @@ static int sock_put(char *s, int fd)
    sock_map[nsock].pins = 1;           /* installed and pinned */
    sock_map[nsock].owners = 0;
    sock_map[nsock].closing = 0;
+#ifdef Concurrent
+   sock_map[nsock].mutexid = 0;
+#endif                                  /* Concurrent */
    nsock++;
    MUTEX_UNLOCKID(MTX_SOCK_MAP);
    return 1;
@@ -3833,6 +4331,33 @@ static int sock_put(char *s, int fd)
  * track entry), or 0 if not in the map.  Stored on the File at open so
  * sock_pin can reject a reused fd number.
  */
+/*
+ * Files that alias one cached socket must share its mutex.  The first
+ * caller publishes mtx; later callers get that id back.  An fd that is
+ * not cached keeps the mutex it was given.
+ */
+word sock_shared_mutex(int fd, word mtx)
+{
+#ifdef Concurrent
+   int i;
+
+   MUTEX_LOCKID(MTX_SOCK_MAP);
+   for (i = 0; i < nsock; i++) {
+      if (sock_map[i].fd != fd || sock_map[i].closing)
+         continue;
+      if (sock_map[i].mutexid == 0)
+         sock_map[i].mutexid = mtx;
+      else
+         mtx = sock_map[i].mutexid;
+      break;
+      }
+   MUTEX_UNLOCKID(MTX_SOCK_MAP);
+#else                                   /* Concurrent */
+   (void)fd;
+#endif                                  /* Concurrent */
+   return mtx;
+}
+
 uword sock_listener_gen(int fd)
 {
    int i;
@@ -3933,6 +4458,9 @@ static int sock_track(int fd)
    sock_map[nsock].pins = 0;
    sock_map[nsock].owners = 1;
    sock_map[nsock].closing = 0;
+#ifdef Concurrent
+   sock_map[nsock].mutexid = 0;
+#endif                                  /* Concurrent */
    nsock++;
    MUTEX_UNLOCKID(MTX_SOCK_MAP);
    if (do_close)
@@ -4221,10 +4749,23 @@ static int ssh_chan_register_callbacks(struct SSHfile *sshf, ssh_channel chan)
  */
 int ssh_pump(struct SSHfile *sshf, int block, int want_stdout)
 {
-   int rc;
+   return ssh_pump_timed(sshf, block ? -1 : 0, want_stdout);
+}
+
+/*
+ * ssh_pump_timed() - ssh_pump() with a limit: wait at most timeout
+ * milliseconds (0: do not wait; negative: no limit) for what the caller
+ * wants.  Same results; 2 means the time ran out first.
+ */
+int ssh_pump_timed(struct SSHfile *sshf, int timeout, int want_stdout)
+{
+   int rc, slice;
+   long long deadline = 0, left;
 
    if (sshf == NULL || sshf->closed)
       return -1;
+   if (timeout > 0)
+      deadline = sock_now_ms() + timeout;
 
    for (;;) {
       if (want_stdout ? (sshf->q_stdout > 0) : (sshf->qhead != NULL))
@@ -4232,10 +4773,16 @@ int ssh_pump(struct SSHfile *sshf, int block, int want_stdout)
       if (sshf->chan == NULL || sshf->eof_seen ||
           ssh_channel_is_eof(sshf->chan))
          return 0;
-      rc = ssh_channel_poll_timeout(sshf->chan, block ? 100 : 0, 0);
+      if (timeout < 0)
+         slice = 100;
+      else {
+         left = (timeout == 0) ? 0 : deadline - sock_now_ms();
+         slice = (left <= 0) ? 0 : (left < 100 ? (int)left : 100);
+         }
+      rc = ssh_channel_poll_timeout(sshf->chan, slice, 0);
       if (rc == SSH_ERROR)
          return -1;
-      if (!block) {
+      if (timeout >= 0 && slice == 0) {
          if (want_stdout ? (sshf->q_stdout > 0) : (sshf->qhead != NULL))
             return 1;
          if (sshf->eof_seen || rc == SSH_EOF ||

@@ -163,7 +163,7 @@ Output::
 
    hello-multicast
 
-``r.addr`` is the sender (host plus an ephemeral port).
+``r.addr`` is the sender (numeric host plus an ephemeral port); ``r.saddr`` and ``r.sport`` give the two parts separately.
 
 A wildcard bind plus explicit joins is the other shape:
 
@@ -313,6 +313,11 @@ is still a list of length 1.
        (OSPF); typical on raw sockets
    * - ``hdrincl``
      - ``"yes"`` or ``&null``; typical on raw sockets
+   * - ``pktinfo``
+     - ``"yes"`` or ``&null``; when set, ``receive()`` fills ``daddr``
+       (for multicast, the group), ``dport`` and ``ttl`` on
+       UDP/multicast. One switch covers the destination and the
+       received TTL. Off by default; not supported on Windows
 
 .. code-block:: unicon
 

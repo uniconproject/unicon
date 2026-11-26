@@ -2190,32 +2190,44 @@ end
 #endif                                  /* Concurrent */
 end
 
-"receive() - receive a UDP datagram."
-#ifdef Concurrent
+"receive(f, timeout) - receive the next message from a thread or a socket."
+/*
+ * timeout is in milliseconds: 0 does not wait, a negative value waits
+ * without a limit.  When it is omitted a thread receive does not wait
+ * (like <@) and a file receive waits for the next message.
+ */
 function{0,1} receive(f, timeout)
-#else                                   /* Concurrent */
-function{0,1} receive(f)
-#endif                                  /* Concurrent */
 
 #ifdef Concurrent
-  if !def:C_integer(timeout, 0) then
-     runerr(101, timeout)
   if is:null(f) then {
+     if !def:C_integer(timeout, 0) then
+        runerr(101, timeout)
      abstract { return any_value }
      body {
         tended struct descrip d;
 
-        if (msg_receive(&k_current, NULL, &d, 0) == A_Continue)
+        /*
+         * Any negative value waits without a limit.  Only -1 does that
+         * inside msg_receive(); -2 is a different path, and any other
+         * negative builds a deadline that has already passed.
+         */
+        if (timeout < 0)
+           timeout = -1;
+        if (msg_receive(&k_current, NULL, &d, timeout) == A_Continue)
            return d;
         fail;
         }
      }
   else if is:coexpr(f) then {
+     if !def:C_integer(timeout, 0) then
+        runerr(101, timeout)
      abstract { return any_value }
      body {
         tended struct descrip d;
 
-        if (msg_receive(&k_current, &f, &d, 0) == A_Continue)
+        if (timeout < 0)
+           timeout = -1;
+        if (msg_receive(&k_current, &f, &d, timeout) == A_Continue)
            return d;
         fail;
         }
@@ -2224,17 +2236,24 @@ function{0,1} receive(f)
 #endif                                  /* Concurrent */
   if !is:file(f) then
       runerr(105, f)
+  if !def:C_integer(timeout, -1) then
+     runerr(101, timeout)
    abstract {
       return record
       }
    body {
       tended struct b_record *rp;
       static dptr constr;
-      int nfields, status, ret;
+      int nfields, status, ret, i;
+      word fmtx = 0;
 
       status = BlkD(f,File)->status;
       if (!(status & Fs_Socket))
          runerr(175, f);
+#ifdef Concurrent
+      /* Keep the id: a later allocation can move the file block. */
+      fmtx = BlkD(f, File)->mutexid;
+#endif                                  /* Concurrent */
 
       if (!constr)
          if (!(constr = rec_structor("posix_message")))
@@ -2242,15 +2261,25 @@ function{0,1} receive(f)
 
       nfields = (int) BlkD(*constr,Proc)->nfields;
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+      /*
+       * alcrecd() does not initialize the fields.  Make every one &null
+       * before anything else allocates, so a garbage collection never
+       * sees a stale descriptor and fields that do not apply to this
+       * kind of file stay &null.
+       */
+      for (i = 0; i < nfields; i++)
+         rp->fields[i] = nulldesc;
 
 #if HAVE_LIBSSH
       if (status & Fs_SSH) {
          /*
           * The next channel event in true arrival order: a
-          * posix_message whose addr is "stdout", "stderr" or "exit"
-          * and whose msg is the data (the exit status as a string).
-          * Fails once the channel is exhausted.  Hold the shared
-          * session mutex around pump/dequeue (Concurrent).
+          * posix_message whose type is "stdout", "stderr" or
+          * "exitstatus" and whose msg is the data (the exit status as a
+          * string, as c["exitstatus"] names it).  addr and the other
+          * fields are &null.  Fails once the channel is exhausted, or
+          * with &errno ETIMEDOUT when timeout runs out first.  The timeout
+          * includes waiting for the shared session mutex (Concurrent).
           */
          struct SSHfile *sshf = BlkD(f,File)->fd.sshf;
          struct SSHchunk *ck;
@@ -2264,10 +2293,77 @@ function{0,1} receive(f)
             fail;
 
 #ifdef Concurrent
-         MUTEX_LOCKID_CONTROLLED(ssh_mtx);
+         /*
+          * The session lock is shared with sibling channels.  The
+          * timeout covers acquiring it as well as the pump, so a
+          * receive that does not wait cannot block behind one that does.
+          */
+         if (timeout >= 0) {
+            int lk = 0;
+            struct timespec ts;
+            struct timeval tp;
+            long long left;
+
+            if (timeout > 0) {
+               gettimeofday(&tp, NULL);
+               tp.tv_usec += (timeout % 1000) * 1000;
+               ts.tv_sec = tp.tv_sec + timeout / 1000 +
+                  tp.tv_usec / 1000000;
+               ts.tv_nsec = (tp.tv_usec % 1000000) * 1000;
+               }
+            MUTEX_TRYLOCKID(ssh_mtx, lk);
+            if (lk == EBUSY && timeout > 0) {
+               DEC_NARTHREADS;
+               /*
+                * Do not call pthread_mutex_timedlock: the macOS SDK
+                * does not declare it, and rtt would keep the call
+                * anyway because it does not know __APPLE__.  Retry
+                * the trylock until the deadline.
+                */
+               for (;;) {
+                  struct timeval now;
+
+                  gettimeofday(&now, NULL);
+                  if (now.tv_sec > ts.tv_sec ||
+                      (now.tv_sec == ts.tv_sec &&
+                       now.tv_usec >= ts.tv_nsec / 1000)) {
+                     lk = ETIMEDOUT;
+                     break;
+                     }
+                  lk = pthread_mutex_trylock(mutexes[ssh_mtx]);
+                  if (lk != EBUSY)
+                     break;
+#if NT
+                  Sleep(1);
+#else                                   /* NT */
+                  {
+                  struct timespec pause;
+                  pause.tv_sec = 0;
+                  pause.tv_nsec = 1000000L;
+                  nanosleep(&pause, NULL);
+                  }
+#endif                                  /* NT */
+                  }
+               INC_NARTHREADS_CONTROLLED;
+               }
+            if (lk != 0) {
+               IntVal(amperErrno) = ETIMEDOUT;
+               fail;
+               }
+            if (timeout > 0) {
+               gettimeofday(&tp, NULL);
+               left = (long long)(ts.tv_sec - tp.tv_sec) * 1000 +
+                  ((ts.tv_nsec / 1000) - tp.tv_usec) / 1000;
+               if (left < 0)
+                  left = 0;
+               timeout = (int)left;
+               }
+            }
+         else
+            MUTEX_LOCKID_CONTROLLED(ssh_mtx);
 #endif                                  /* Concurrent */
          DEC_NARTHREADS;
-         prc = ssh_pump(sshf, 1, 0);
+         prc = ssh_pump_timed(sshf, timeout, 0);
          INC_NARTHREADS_CONTROLLED;
          if (prc < 0) {
 #ifdef Concurrent
@@ -2282,6 +2378,13 @@ function{0,1} receive(f)
 #endif                                  /* Concurrent */
             fail;                       /* exhausted */
             }
+         if (prc == 2) {
+#ifdef Concurrent
+            MUTEX_UNLOCKID(ssh_mtx);
+#endif                                  /* Concurrent */
+            IntVal(amperErrno) = ETIMEDOUT;
+            fail;                       /* timed out */
+            }
 
          ck = sshf->qhead;
          sshf->qhead = ck->next;
@@ -2292,19 +2395,20 @@ function{0,1} receive(f)
          switch (ck->tag) {
             case SSH_CHUNK_STDOUT: tag = "stdout"; break;
             case SSH_CHUNK_STDERR: tag = "stderr"; break;
-            default:               tag = "exit";   break;
+            default:               tag = "exitstatus"; break;
             }
-         StrLoc(rp->fields[0]) = tag;
-         StrLen(rp->fields[0]) = strlen(tag);
+         StrLoc(rp->fields[PMSG_TYPE]) = tag;
+         StrLen(rp->fields[PMSG_TYPE]) = strlen(tag);
          len = ck->len - ck->off;
-         Protect(StrLoc(rp->fields[1]) = alcstr(ck->data + ck->off, len),
+         Protect(StrLoc(rp->fields[PMSG_MSG]) =
+                    alcstr(ck->data + ck->off, len),
                  {
 #ifdef Concurrent
                   MUTEX_UNLOCKID(ssh_mtx);
 #endif                                  /* Concurrent */
                   free(ck); runerr(0);
                   });
-         StrLen(rp->fields[1]) = len;
+         StrLen(rp->fields[PMSG_MSG]) = len;
          free(ck);
 #ifdef Concurrent
          MUTEX_UNLOCKID(ssh_mtx);
@@ -2317,11 +2421,58 @@ function{0,1} receive(f)
 #endif                                  /* HAVE_LIBSSH */
 
       IntVal(amperErrno) = 0;
-      if ((ret = sock_recv(BlkD(f,File)->fd.fd, &rp)) == 0) {
+      /*
+       * A finite timeout waits, counted out, then reads without blocking
+       * and retries until the deadline.  poll can report the socket
+       * readable and another thread can still take that datagram; a
+       * blocking read then would hang past the timeout.  0 tries once
+       * and does not wait.  No limit is one blocking read.
+       */
+      if (timeout >= 0) {
+         long long deadline, left;
+         int s, tried, rc;
+
+         deadline = sock_now_ms() + (long long)timeout;
+         s = BlkD(f,File)->fd.fd;
+         tried = 0;
+         for (;;) {
+            left = deadline - sock_now_ms();
+            if (timeout > 0 && left <= 0) {
+               IntVal(amperErrno) = ETIMEDOUT;
+               fail;
+               }
+            if (timeout == 0 && tried) {
+               IntVal(amperErrno) = ETIMEDOUT;
+               fail;
+               }
+            rc = sock_wait_readable(s, timeout == 0 ? 0 : (int)left);
+            if (rc < 0 && errno == EINTR)
+               continue;
+            if (rc <= 0) {
+               IntVal(amperErrno) = errno;
+               fail;
+               }
+            tried = 1;
+            ret = sock_recv(s, &rp, 1, fmtx);
+            if (ret == 1)
+               break;
+            if (ret == -1)
+               runerr(171, f);
+            if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
+               IntVal(amperErrno) = errno;
+               fail;
+               }
+            if (timeout == 0) {
+               IntVal(amperErrno) = ETIMEDOUT;
+               fail;
+               }
+            }
+         }
+      else if ((ret = sock_recv(BlkD(f,File)->fd.fd, &rp, 0, fmtx)) == 0) {
          IntVal(amperErrno) = errno;
          fail;
          }
-      if (ret == -1)
+      else if (ret == -1)
          runerr(171, f);
 
       result.dword = D_Record;

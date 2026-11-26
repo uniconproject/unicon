@@ -1822,6 +1822,13 @@ Deliberate Syntax Error
             else
 #endif                                  /* HAVE_LIBSSL */
               fl->fd.fd = fd;
+#ifdef Concurrent
+            /*
+             * A second open of the same listener is another File on the
+             * same socket.  Share the mutex so FIONBIO stays exclusive.
+             */
+            fl->mutexid = sock_shared_mutex(fd, fl->mutexid);
+#endif                                  /* Concurrent */
 #ifdef PosixFns
             /*
              * Remember the listener-cache generation so select()/accept

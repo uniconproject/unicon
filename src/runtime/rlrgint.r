@@ -41,6 +41,16 @@
 
 #define B            ((word)1 << NB)
 
+/*
+ * Base-10 conversion divides by a power of ten that is less than B,
+ *  because divi1() needs its divisor to fit in one digit.  10^9 is
+ *  used with 32-bit digits and 10^4 otherwise, which needs NB >= 14.
+ *  These are C constant expressions rather than #if tests, because
+ *  NB is not a plain number to rtt's preprocessor.
+ */
+#define BigDecChunk        (NB >= 32 ? 1000000000 : 10000)
+#define BigDecChunkDigits  (NB >= 32 ? 9 : 4)
+
 /* Lrgint digits in a word */
 
 #define WORDLEN  (WordBits / NB + (WordBits % NB != 0))
@@ -339,7 +349,7 @@ int bigtos(dptr da, dptr dx)
           DIG(temp,0),
           alen);
    p = q += slen;
-#ifdef VMS
+#if VMS
    {
       DIGIT *tempdg;
       for (;;) {
@@ -350,12 +360,34 @@ int bigtos(dptr da, dptr dx)
       }
    }
 #else
-   while (cmpi1(DIG(temp,0),
-                (word)0, alen))
-      *--p = '0' + divi1(DIG(temp,0),
-                         (word)10,
-                         DIG(temp,0),
-                         alen);
+   {
+      /*
+       * Divide by BigDecChunk rather than 10, giving BigDecChunkDigits
+       *  digits per pass, and drop leading zero digits as the quotient
+       *  shrinks.
+       */
+      DIGIT *d = DIG(temp,0);
+      word len = alen;
+      for (;;) {
+         uword r = divi1(d, (word)BigDecChunk, d, len);
+         int j;
+         while (len > 1 && d[0] == 0) {
+            d++;
+            len--;
+            }
+         if (len == 1 && d[0] == 0) {
+            do {
+               *--p = '0' + r % 10;
+               r /= 10;
+               } while (r);
+            break;
+            }
+         for (j = 0; j < BigDecChunkDigits; j++) {
+            *--p = '0' + r % 10;
+            r /= 10;
+            }
+         }
+   }
 #endif                  /* VMS */
    if (a->sign)
       *--p = '-';
@@ -405,11 +437,23 @@ void bigprint(FILE *f, dptr da)
  */
 static void decout(FILE *f, DIGIT *n, word l)
 {
-   DIGIT i = divi1(n, (word)10, n, l);
+   /*
+    * Divide by BigDecChunk: each level of recursion prints
+    *  BigDecChunkDigits digits, and leading zero digits of the quotient
+    *  are dropped.
+    */
+   DIGIT i = divi1(n, (word)BigDecChunk, n, l);
 
-   if (cmpi1(n, (word)0, l))
+   while (l > 1 && n[0] == 0) {
+      n++;
+      l--;
+      }
+   if (n[0] != 0) {
       decout(f, n, l);
-   putc('0' + i, f);
+      fprintf(f, "%0*lu", (int)BigDecChunkDigits, (unsigned long)i);
+      }
+   else
+      fprintf(f, "%lu", (unsigned long)i);
 }
 
 /*

@@ -41,28 +41,29 @@ struct b_coexpr *create(continuation fnc, struct b_proc *cproc, int ntemps, int 
     * Get a new co-expression stack and initialize.
     */
 
-#ifdef Concurrent
    /*
-    * Make sure we have enough space for the coexpression refresh block and
-    * queues before we begin to prevent GC from happening somewhere in the
-    * middle before we initialize all bits
+    * Make sure we have enough space for the refresh block (and, under
+    * Concurrent, the queues) before we begin, so that no GC happens
+    * while the new co-expression block is only partly initialized.
     * see ralc.r:alccoexp() and ralc.r:alcrefresh() for information on
     * how much memory to reserve.
     */
    if (!reserve(Blocks, (word)(
+#ifdef Concurrent
                 sizeof(struct b_list) * 3 +
                 sizeof(struct b_lelem) * 3 +
                 (CE_INBOX_SIZE + CE_OUTBOX_SIZE + CE_CEQUEUE_SIZE) * sizeof(struct descrip) +
-                sizeof(struct b_refresh) +
-                (nl - 1) * sizeof(struct descrip)))
-                )
-#if COMPILER
-               return NULL;
-#else                                   /* COMPILER */
-               Fail;
-#endif                                  /* COMPILER */
-
 #endif                                  /* Concurrent */
+                sizeof(struct b_refresh) +
+                (na + nl) * sizeof(struct descrip)))
+                ) {
+      err_msg(0, NULL);
+#if COMPILER
+      return NULL;
+#else                                   /* COMPILER */
+      Fail;
+#endif                                  /* COMPILER */
+      }
 
 #ifdef MultiProgram
    Protect(sblkp = alccoexp(0, 0), err_msg(0, NULL));

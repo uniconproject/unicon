@@ -86,9 +86,9 @@ FILE *OpenConsole()
    if (!ConsoleBinding) {
       char ConsoleTitle[256];
       struct b_list *hp;
-#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
+#ifdef Concurrent
        struct threadstate *curtstate;
-#endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
+#endif                                  /* Concurrent */
 
       /*
        * If we haven't already allocated regions, we are called due to a
@@ -111,7 +111,7 @@ FILE *OpenConsole()
          curblock = (struct region *)malloc(sizeof (struct region));
          curstring->size = MaxStrSpace;
          curblock->size  = MaxAbrSize;
-#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
+#ifdef Concurrent
          curtstate = &roottstate;
 #if !ConcurrentCOMPILER
          curpstate->tstate = curtstate;
@@ -124,7 +124,7 @@ FILE *OpenConsole()
          curtstate->Curstring = curstring;
          curtstate->Curblock = curblock;
          curtstate->c = (struct b_coexpr *) malloc((msize) 1000);
-#endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
+#endif                                  /* Concurrent */
 
 #if COMPILER
          initalloc();

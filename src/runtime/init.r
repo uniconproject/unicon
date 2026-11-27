@@ -167,13 +167,7 @@ struct region *curstring, *curblock;
 #ifdef HAVE_TLS
      __thread struct threadstate *tls_curtstate;
 #endif                                  /* HAVE_TLS */
-
-#ifdef HAVE_KEYWORD__THREAD
-      __thread struct threadstate roottstate;
-      __thread struct threadstate *curtstate;
-#else                                   /* HAVE_KEYWORD__THREAD */
       struct threadstate roottstate;
-#endif                                  /* HAVE_KEYWORD__THREAD */
 #else                                   /* Concurrent */
       struct threadstate roottstate;
       struct threadstate *curtstate;
@@ -723,9 +717,9 @@ void init_progstate(struct progstate *pstate);
 #if !COMPILER
    FILE *fname = 0;
 #endif                                  /* COMPILER */
-#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
+#ifdef Concurrent
     struct threadstate *curtstate;
-#endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
+#endif                                  /* Concurrent */
 
    prog_name = name;                    /* Set icode file name */
 
@@ -757,9 +751,9 @@ void init_progstate(struct progstate *pstate);
 #endif                                  /* MultiProgram */
    init_threadstate(curtstate);
 
-#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
+#ifdef Concurrent
    TSTATE_SET(curtstate);
-#endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
+#endif                                  /* Concurrent */
 
 #ifdef MultiProgram
    StrLen(rootpstate.Kywd_prog) = strlen(prog_name);
@@ -2103,11 +2097,7 @@ static word unicon_getrandom(void)
 
    /* + map &time */
 
-#ifndef HAVE_KEYWORD__THREAD
    krandom += millisec() + 1009 * (ATOMIC_ADD(ncalls, 1) + 1);
-#else
-   krandom += millisec() + 1009 * (int) curtstate;
-#endif
    return krandom;
 #else                                   /* NoRandomize */
    return 0;

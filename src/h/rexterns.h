@@ -96,9 +96,7 @@ extern word maxcondvars;
 extern int is_concurrent;
 extern struct threadstate *global_curtstate;
 
-#ifndef HAVE_KEYWORD__THREAD
-   extern pthread_key_t tstate_key;
-#endif
+extern pthread_key_t tstate_key;
 #ifdef HAVE_TLS
    extern __thread struct threadstate *tls_curtstate;
 #endif                                  /* HAVE_TLS */
@@ -221,15 +219,7 @@ extern struct descrip amperErrno;
 #endif                                  /* MultiProgram */
 
 #ifdef Concurrent
-   #ifdef HAVE_KEYWORD__THREAD
-   /*
-    * HAVE_KEYWORD__THREAD should be detected by autoconf (and isn't yet).
-    */
-   extern __thread struct threadstate roottstate;
-   extern __thread struct threadstate *curtstate;
-   #else                                        /* HAVE_KEYWORD__THREAD */
    extern struct threadstate roottstate;
-   #endif                                       /* HAVE_KEYWORD__THREAD */
 #else                                   /* Concurrent */
    extern struct threadstate roottstate;
    extern struct threadstate *curtstate;

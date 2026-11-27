@@ -799,7 +799,7 @@ void makesem(struct b_coexpr *cp) {
    #endif                               /* NamedSemaphores */
    }
 
-#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
+#ifdef Concurrent
 pthread_key_t tstate_key;
 struct threadstate * alloc_tstate()
 {
@@ -807,7 +807,7 @@ struct threadstate * alloc_tstate()
    if (ts == NULL) syserr("alloc_tstate(): Out of memory");
    return ts;
 }
-#endif                                  /* Concurrent && !HAVE_KEYWORD__THREAD */
+#endif                                  /* Concurrent */
 
 /*
  * nctramp() -- trampoline for calling new_context(0,0).
@@ -821,11 +821,9 @@ void *nctramp(void *arg)
 #ifdef Concurrent
 /*   sigset_t mask; */
 
-#ifndef HAVE_KEYWORD__THREAD
     struct threadstate *curtstate;
     curtstate = (ce->tstate ? ce->tstate : alloc_tstate());
     TSTATE_SET(curtstate);
-#endif                                  /* HAVE_KEYWORD__THREAD */
 
   /*
    * Mask all allowed signals, the main thread takes care of them
@@ -1445,9 +1443,7 @@ void tlschain_remove(struct threadstate *tstate)
    tlschain_unlink(tstate);
    if (tstate->c && tstate->c->isProghead) return;
 
-#ifndef HAVE_KEYWORD__THREAD
-   free(tstate);                        /* else it is thread-local storage */
-#endif                                  /* HAVE_KEYWORD__THREAD */
+   free(tstate);
 }
 
 /*
@@ -1479,9 +1475,7 @@ static void release_thread_tstate(struct b_coexpr *cp)
       if (ce->tstate == ts)
          ce->tstate = NULL;
 
-#ifndef HAVE_KEYWORD__THREAD
-   free(ts);                            /* else it is thread-local storage */
-#endif                                  /* HAVE_KEYWORD__THREAD */
+   free(ts);
 }
 
 /*

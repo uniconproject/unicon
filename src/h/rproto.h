@@ -1185,9 +1185,7 @@ void handle_thread_error(int val, int func, char* msg);
 void init_threadstate(struct threadstate *ts);
 
 #ifdef Concurrent
-#ifndef HAVE_KEYWORD__THREAD
 struct threadstate *get_tstate();
-#endif                                  /* HAVE_KEYWORD__THREAD */
 void thread_control(int action);
 #ifdef SerialBatches
 word serial_batch(void *ctr, int isatomic);

@@ -553,6 +553,7 @@ int interp_x(int fsig,dptr cargp)
 #endif                                   /* TSTATARG */
    {
    register word opnd;
+   register word rop;                   /* opcode being dispatched */
    register word *rsp;
    register dptr rargp;
    register struct ef_marker *newefp;
@@ -779,6 +780,22 @@ int interp_x(int fsig,dptr cargp)
       }
 #endif                                  /* MultiProgram */
 
+#ifdef Concurrent
+      /* If there is a pending GC request, then block/sleep*/
+      if (ATOMIC_LOAD(thread_call)){
+        ExInterp_sp;
+        thread_control(TC_ANSWERCALL);
+        /*EntInterp_sp;*/
+        }
+#endif                                  /* Concurrent */
+
+/*
+ * Opcodes that cannot make a loop by themselves come back here and skip
+ * the polls above.  Every loop passes through a goto, a failure, an
+ * invocation or a call to C, and those go to the top of the loop.
+ */
+dispatch_nopoll:
+
 #if HAVE_PROFIL && e_tick
       if (ticker.l[0] + ticker.l[1] + ticker.l[2] + ticker.l[3] +
           ticker.l[4] + ticker.l[5] + ticker.l[6] + ticker.l[7] != oldtick) {
@@ -878,7 +895,8 @@ int interp_x(int fsig,dptr cargp)
       }
 #endif                                  /* E_Line || E_Loc */
 
-      lastop = GetOp;           /* Instruction fetch */
+      rop = GetOp;              /* Instruction fetch */
+      lastop = rop;
 
 #ifdef StackPic
       ExInterp_sp;
@@ -906,16 +924,8 @@ Deliberate Syntax Error
       EVValEx(lastop,E_Opcode,word mylastop,mylastop=lastop,lastop=mylastop);
 #endif                                  /* E_Opcode */
 
-#ifdef Concurrent
-      /* If there is a pending GC request, then block/sleep*/
-      if (ATOMIC_LOAD(thread_call)){
-        ExInterp_sp;
-        thread_control(TC_ANSWERCALL);
-        /*EntInterp_sp;*/
-        }
-#endif                                  /* Concurrent */
 
-      switch ((int)lastop) {            /*
+      switch ((int)rop) {            /*
                                  * Switch on opcode.  The cases are
                                  * organized roughly by functionality
                                  * to make it easier to find things.
@@ -1497,7 +1507,7 @@ invokej:
             if (type == I_Fail)
                goto efail_noev;
             if (type == I_Continue)
-               break;
+               continue;                   /* poll */
             else {
 
                rargp = carg;            /* valid only for Vararg or Builtin */
@@ -1555,7 +1565,7 @@ invokej:
                goto C_rtn_term;
                }
             }
-            break;
+            continue;                   /* poll */
             }
 
          case Op_Keywd:         /* keyword */
@@ -1915,7 +1925,7 @@ Lsusp_uw:
             glbl_argp = pfp->pf_argp;
             pfp = pfp->pf_pfp;
             value_tmp = nulldesc;
-            break;
+            continue;                   /* poll */
             }
 
                                 /* ---Returns--- */
@@ -2041,7 +2051,7 @@ Pret_uw:
              * but don't we get duplicate E_Pret's due to unwinding here?
              */
 
-            break;
+            continue;                   /* poll */
             }
 
                                 /* ---Failures--- */
@@ -2066,7 +2076,7 @@ efail_noev:
                 */
 
               if (efp == 0) {
-                 break;
+                 continue;                   /* poll */
                  }
 
                oldipc = ripc;            /* fixing the line zero return */
@@ -2082,7 +2092,7 @@ efail_noev:
                   InterpEVValS((word *) ripc.opnd - 1, E_Syntax); /* -new- */
 
                InterpPoll();
-               break;
+               continue;                   /* poll */
                }
 
             else {
@@ -2177,7 +2187,7 @@ efail_noev:
                   }
 
                InterpPoll();
-               break;
+               continue;                   /* poll */
                }
 
          case Op_Pfail: {       /* fail from procedure */
@@ -2281,7 +2291,7 @@ EntInterp_sp;
             ripc.opnd = (word *)opnd;
 
             MUTEX_UNLOCKID(MTX_OP_AGOTO);
-            break;
+            continue;                   /* poll */
 
          case Op_Agoto:         /* goto absolute address */
             AbsOperandFence();
@@ -2289,7 +2299,7 @@ L_agoto:
             InterpPoll();
             opnd = GetWord;
             ripc.opnd = (word *)opnd;
-            break;
+            continue;                   /* poll */
 
          case Op_Init:          /* initial */
 #ifdef Concurrent
@@ -2341,7 +2351,7 @@ init_skipped:
             PutOp(Op_Goto);
             opnd = GetWord;                     /* skip the operand */
 #endif                                  /*Concurrent*/
-            break;
+            continue;                   /* poll */
 
          case Op_EInit:
             /* no-op on non-concurrent VM's, but still have to skip operand */
@@ -2492,7 +2502,7 @@ init_skipped:
             else
                rsp -= 2;
 #endif                                  /* CoExpr */
-            break;
+            continue;                   /* poll */
             }
 
          case Op_Coret: {       /* return from co-expression */
@@ -2510,7 +2520,7 @@ init_skipped:
             SYNC_CURTSTATE_CE();
             EntInterp_sp;
 #endif                                  /* CoExpr */
-            break;
+            continue;                   /* poll */
 
             }
 
@@ -2538,7 +2548,7 @@ init_skipped:
             SYNC_CURTSTATE_CE();
             EntInterp_sp;
 #endif                                  /* CoExpr */
-            break;
+            continue;                   /* poll */
 
             }
          case Op_Quit:          /* quit */
@@ -2555,7 +2565,7 @@ init_skipped:
             syserr(buf);
             }
          }
-         continue;
+         goto dispatch_nopoll;
 
 C_rtn_term:
          EntInterp_sp;

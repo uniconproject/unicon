@@ -749,150 +749,93 @@ struct descrip posix_group = {D_Null};
 struct descrip posix_servent = {D_Null};
 struct descrip posix_hostent = {D_Null};
 
+/*
+ * Build the constructor for record type name, with the n field names in
+ * fldnames, and publish it in *dp.  Two threads can ask for the same type
+ * before either has published it.  Build it outside MTX_DR_TBL (the
+ * iconc dynrecord() takes that lock itself), then publish it under the
+ * lock.  Readers check *dp under the lock too, so a thread that finds it
+ * set also sees its block.  Returns NULL if dynrecord() fails.
+ */
+static dptr posix_structor(dptr dp, char *name, char **fldnames, int n)
+{
+   int i, built;
+   struct descrip s;
+   struct descrip fields[14];
+   struct b_proc *bp;
+
+   MUTEX_LOCKID(MTX_DR_TBL);
+   built = !is:null(*dp);
+   MUTEX_UNLOCKID(MTX_DR_TBL);
+   if (!built) {
+      AsgnCStr(s, name);
+      for (i = 0; i < n; i++)
+         AsgnCStr(fields[i], fldnames[i]);
+      bp = (struct b_proc *)dynrecord(&s, fields, n);
+      MUTEX_LOCKID(MTX_DR_TBL);
+      if (is:null(*dp) && bp != NULL) {
+         dp->vword.bptr = (union block *)bp;
+         dp->dword = D_Proc;
+         }
+      built = !is:null(*dp);
+      MUTEX_UNLOCKID(MTX_DR_TBL);
+      }
+   return built ? dp : NULL;
+}
+
+static char *posix_lock_fields[] = { "value", "pid" };
+static char *posix_message_fields[PMSG_NFIELDS] = {
+   "addr", "msg", "saddr", "daddr", "ttl", "proto", "sport", "dport", "type" };
+static char *posix_servent_fields[] = { "name", "aliases", "port", "proto" };
+static char *posix_hostent_fields[] = { "name", "aliases", "addresses" };
+static char *posix_timeval_fields[] = { "sec", "usec" };
+static char *posix_rusage_fields[] = { "utime", "stime", "maxrss", "minflt",
+   "majflt", "inblock", "oublock", "nvcsw", "nivcsw" };
+static char *posix_group_fields[] = { "name", "passwd", "gid", "members" };
+static char *posix_passwd_fields[] = { "name", "passwd", "uid", "gid",
+   "gecos", "dir", "shell" };
+static char *posix_stat_fields[] = { "dev", "ino", "mode", "nlink", "uid",
+   "gid", "rdev", "size", "atime", "mtime", "ctime", "blksize", "blocks",
+   "symlink" };
+
 dptr rec_structor(char *name)
 {
    int i;
    struct descrip s;
-   struct descrip fields[14];
 
-   if (!strcmp(name, "posix_lock")) {
-      if (is:null(posix_lock)) {
-         AsgnCStr(s, "posix_lock");
-         AsgnCStr(fields[0], "value");
-         AsgnCStr(fields[1], "pid");
-         posix_lock.dword = D_Proc;
-         posix_lock.vword.bptr = (union block *)dynrecord(&s, fields, 2);
-         }
-      return &posix_lock;
-      }
-   else if (!strcmp(name, "posix_message")) {
-      /*
-       * Two threads can enter receive() before either has published
-       * the constructor.  Build it outside MTX_DR_TBL (dynrecord locks
-       * that itself) and publish the descriptor under the lock so a
-       * reader never sees a half-written pointer.
-       */
-      if (is:null(posix_message)) {
-         struct b_proc *bp;
-         AsgnCStr(s, "posix_message");
-         AsgnCStr(fields[0], "addr");
-         AsgnCStr(fields[1], "msg");
-         AsgnCStr(fields[2], "saddr");
-         AsgnCStr(fields[3], "daddr");
-         AsgnCStr(fields[4], "ttl");
-         AsgnCStr(fields[5], "proto");
-         AsgnCStr(fields[6], "sport");
-         AsgnCStr(fields[7], "dport");
-         AsgnCStr(fields[8], "type");
-         bp = (struct b_proc *)dynrecord(&s, fields, PMSG_NFIELDS);
-         MUTEX_LOCKID(MTX_DR_TBL);
-         if (is:null(posix_message) && bp != NULL) {
-            posix_message.vword.bptr = (union block *)bp;
-            posix_message.dword = D_Proc;
-            }
-         MUTEX_UNLOCKID(MTX_DR_TBL);
-         }
-      return &posix_message;
-      }
-   else if (!strcmp(name, "posix_servent")) {
-      if (is:null(posix_servent)) {
-         AsgnCStr(s, "posix_servent");
-         AsgnCStr(fields[0], "name");
-         AsgnCStr(fields[1], "aliases");
-         AsgnCStr(fields[2], "port");
-         AsgnCStr(fields[3], "proto");
-         posix_servent.dword = D_Proc;
-         posix_servent.vword.bptr = (union block *)dynrecord(&s, fields, 4);
-         }
-      return &posix_servent;
-      }
-   else if (!strcmp(name, "posix_hostent")) {
-      if (is:null(posix_hostent)) {
-         AsgnCStr(s, "posix_hostent");
-         AsgnCStr(fields[0], "name");
-         AsgnCStr(fields[1], "aliases");
-         AsgnCStr(fields[2], "addresses");
-         posix_hostent.dword = D_Proc;
-         posix_hostent.vword.bptr = (union block *)dynrecord(&s, fields, 3);
-         }
-      return &posix_hostent;
-      }
-   else if (!strcmp(name, "posix_timeval")) {
-      if (is:null(posix_timeval)) {
-         AsgnCStr(s, "posix_timeval");
-         AsgnCStr(fields[0], "sec");
-         AsgnCStr(fields[1], "usec");
-         posix_timeval.dword = D_Proc;
-         posix_timeval.vword.bptr = (union block *)dynrecord(&s, fields, 2);
-         }
-      return &posix_timeval;
-      }
-   else if (!strcmp(name, "posix_rusage")) {
-      if (is:null(posix_rusage)) {
-         AsgnCStr(s, "posix_rusage");
-         AsgnCStr(fields[0], "utime");
-         AsgnCStr(fields[1], "stime");
-         AsgnCStr(fields[2], "maxrss");
-         AsgnCStr(fields[3], "minflt");
-         AsgnCStr(fields[4], "majflt");
-         AsgnCStr(fields[5], "inblock");
-         AsgnCStr(fields[6], "oublock");
-         AsgnCStr(fields[7], "nvcsw");
-         AsgnCStr(fields[8], "nivcsw");
-         posix_rusage.dword = D_Proc;
-         posix_rusage.vword.bptr = (union block *)dynrecord(&s, fields, 9);
-         }
-      return &posix_rusage;
-      }
-   else if (!strcmp(name, "posix_group")) {
-      if (is:null(posix_group)) {
-         AsgnCStr(s, "posix_group");
-         AsgnCStr(fields[0], "name");
-         AsgnCStr(fields[1], "passwd");
-         AsgnCStr(fields[2], "gid");
-         AsgnCStr(fields[3], "members");
-         posix_group.dword = D_Proc;
-         posix_group.vword.bptr = (union block *)dynrecord(&s, fields, 4);
-         }
-      return &posix_group;
-      }
-   else if (!strcmp(name, "posix_passwd")) {
-      if (is:null(posix_passwd)) {
-         AsgnCStr(s, "posix_passwd");
-         AsgnCStr(fields[0], "name");
-         AsgnCStr(fields[1], "passwd");
-         AsgnCStr(fields[2], "uid");
-         AsgnCStr(fields[3], "gid");
-         AsgnCStr(fields[4], "gecos");
-         AsgnCStr(fields[5], "dir");
-         AsgnCStr(fields[6], "shell");
-         posix_passwd.dword = D_Proc;
-         posix_passwd.vword.bptr = (union block *)dynrecord(&s, fields, 7);
-         }
-      return &posix_passwd;
-      }
-   else if (!strcmp(name, "posix_stat")) {
-      if (is:null(posix_stat)) {
-         AsgnCStr(s, "posix_stat");
-         AsgnCStr(fields[0], "dev");
-         AsgnCStr(fields[1], "ino");
-         AsgnCStr(fields[2], "mode");
-         AsgnCStr(fields[3], "nlink");
-         AsgnCStr(fields[4], "uid");
-         AsgnCStr(fields[5], "gid");
-         AsgnCStr(fields[6], "rdev");
-         AsgnCStr(fields[7], "size");
-         AsgnCStr(fields[8], "atime");
-         AsgnCStr(fields[9], "mtime");
-         AsgnCStr(fields[10], "ctime");
-         AsgnCStr(fields[11], "blksize");
-         AsgnCStr(fields[12], "blocks");
-         AsgnCStr(fields[13], "symlink");
-         posix_stat.dword = D_Proc;
-         posix_stat.vword.bptr = (union block *)dynrecord(&s, fields, 14);
-         }
-      return &posix_stat;
-      }
+   if (!strcmp(name, "posix_lock"))
+      return posix_structor(&posix_lock, "posix_lock",
+                            posix_lock_fields, ElemCount(posix_lock_fields));
+   else if (!strcmp(name, "posix_message"))
+      return posix_structor(&posix_message, "posix_message",
+                            posix_message_fields,
+                            ElemCount(posix_message_fields));
+   else if (!strcmp(name, "posix_servent"))
+      return posix_structor(&posix_servent, "posix_servent",
+                            posix_servent_fields,
+                            ElemCount(posix_servent_fields));
+   else if (!strcmp(name, "posix_hostent"))
+      return posix_structor(&posix_hostent, "posix_hostent",
+                            posix_hostent_fields,
+                            ElemCount(posix_hostent_fields));
+   else if (!strcmp(name, "posix_timeval"))
+      return posix_structor(&posix_timeval, "posix_timeval",
+                            posix_timeval_fields,
+                            ElemCount(posix_timeval_fields));
+   else if (!strcmp(name, "posix_rusage"))
+      return posix_structor(&posix_rusage, "posix_rusage",
+                            posix_rusage_fields,
+                            ElemCount(posix_rusage_fields));
+   else if (!strcmp(name, "posix_group"))
+      return posix_structor(&posix_group, "posix_group",
+                            posix_group_fields, ElemCount(posix_group_fields));
+   else if (!strcmp(name, "posix_passwd"))
+      return posix_structor(&posix_passwd, "posix_passwd",
+                            posix_passwd_fields,
+                            ElemCount(posix_passwd_fields));
+   else if (!strcmp(name, "posix_stat"))
+      return posix_structor(&posix_stat, "posix_stat",
+                            posix_stat_fields, ElemCount(posix_stat_fields));
 
    /*
     * called rec_structor on something else ?! try globals...

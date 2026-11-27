@@ -107,7 +107,7 @@
 
 /*
  * Field indexes of the posix_message record returned by receive().
- * Keep in step with rec_structor() in rposix.r.
+ * Keep in step with posix_message_fields in rposix.r.
  */
 #define PMSG_ADDR       0       /* peer "host:port" (datagrams) */
 #define PMSG_MSG        1       /* payload */

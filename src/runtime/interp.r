@@ -55,6 +55,29 @@ word lastop;                    /* Last operator evaluated */
  * release store, which is what the fences stand for.  PutInstr publishes
  * in every build, so these are not under Concurrent.
  */
+/*
+ * An opcode is an int and its operands are words.  Where a word is wider
+ * than an int the linker keeps operands word-aligned by following the
+ * opcode with an Op_Noop when it has to (opndalign() in lcode.c), so
+ * every word that is rewritten at run time stays aligned.  GetWord steps
+ * over that padding by rounding the ipc up to a word boundary; the Noop
+ * is not executed.  OpBefore(p) is the address of the opcode whose first
+ * operand is at p.  No opcode with an operand is an Op_Noop, so a Noop
+ * just before the operand is padding and the opcode is the int before it.
+ * Icode that pads before the opcode instead (older icode files, and the
+ * little the runtime system builds itself) works unchanged: its operands
+ * directly follow their opcodes, and its Noops are executed.
+ */
+#if WordBits == IntBits
+#define AlignIpc()
+#define OpBefore(p) ((p) - 1)
+#else                                   /* WordBits == IntBits */
+#begdef AlignIpc()
+   (ripc.opnd = (word *)(((uword)ripc.opnd + WordSize - 1) & -(uword)WordSize))
+#enddef
+#define OpBefore(p) ((p)[-1] == Op_Noop ? (p) - 2 : (p) - 1)
+#endif                                  /* WordBits == IntBits */
+
 #ifdef ThreadSanitizer
 #define GetOp (word)__atomic_load_n(ripc.op++, __ATOMIC_ACQUIRE)
 #define PublishOp(p, x) __atomic_store_n((p), (x), __ATOMIC_RELEASE)
@@ -113,14 +136,9 @@ static void init_rewrite(word *after)
    inst at;
    word target = (word)after + after[-1];
 
-   at.opnd = after;
-#if WordBits == IntBits
-   at.opnd[-1] = target;
-   PublishOp(&at.op[-2], Op_Agoto);
-#else                                   /* WordBits == IntBits */
-   at.opnd[-1] = target;
-   PublishOp(&at.op[-3], Op_Agoto);
-#endif                                  /* WordBits == IntBits */
+   at.opnd = after - 1;
+   at.opnd[0] = target;
+   PublishOp(OpBefore(at.op), Op_Agoto);
 }
 
 /*
@@ -373,7 +391,11 @@ if ((signal = ((int (*)(dptr))*(optab[lastop]))(rargp), ripc = IPC_MEM, signal) 
  * GetWord fetches the next icode word.  PutWord(x) stores x at the current
  * icode word.
  */
+#if WordBits == IntBits
 #define GetWord (*ripc.opnd++)
+#else                                   /* WordBits == IntBits */
+#define GetWord (AlignIpc(), *ripc.opnd++)
+#endif                                  /* WordBits == IntBits */
 #define PutWord(x) ripc.opnd[-1] = (x)
 #define PutOp(x) ripc.op[-1] = (x)
 
@@ -408,11 +430,32 @@ if ((signal = ((int (*)(dptr))*(optab[lastop]))(rargp), ripc = IPC_MEM, signal) 
 #enddef
 #else if WordBits == IntBits*2
 #begdef PutInstr(x,y,op_offset)
-   do { ripc.opnd[-1] = (y); PublishOp(&ripc.op[-1-2*op_offset], (x)); } while(0)
+   do { ripc.opnd[-1] = (y);
+        PublishOp(OpBefore(&ripc.op[-2*op_offset]), (x)); } while(0)
 #enddef
 #else
 deliberate syntax error
 #endif
+
+/*
+ * InterpPoll polls for window events every so often.  It is done where
+ * every loop passes: backward branches are Op_Agoto (Op_Goto rewrites
+ * itself on first use), and every, repeated alternation and the other
+ * failure-driven loops go through efail to resume interpreted code.
+ * Recursion that ends does one or the other at each level.
+ */
+#if defined(LineCodes) && defined(Polling)
+#begdef InterpPoll()
+   if (!pollctr--) {
+      ExInterp_sp;
+      pollctr = pollevent();
+      EntInterp_sp;
+      if (pollctr == -1) fatalerr(141, NULL);
+      }
+#enddef
+#else                                   /* LineCodes && Polling */
+#define InterpPoll()
+#endif                                  /* LineCodes && Polling */
 
 /*
  * DerefArg(n) dereferences the nth argument.
@@ -1307,20 +1350,7 @@ L_astatic:
             Call_Gen;
 
          case Op_Noop:          /* no-op */
-
-#ifdef LineCodes
-#ifdef Polling
-            if (!pollctr--) {
-               ExInterp_sp;
-               pollctr = pollevent();
-               EntInterp_sp;
-               if (pollctr == -1) fatalerr(141, NULL);
-               }
-#endif                                  /* Polling */
-
-
-#endif                          /* LineCodes */
-
+            InterpPoll();
             break;
 
 
@@ -1339,15 +1369,7 @@ L_astatic:
             }
 
          case Op_Line:          /* source line number */
-
-#if defined(LineCodes) && defined(Polling)
-            if (!pollctr--) {
-               ExInterp_sp;
-               pollctr = pollevent();
-               EntInterp_sp;
-               if (pollctr == -1) fatalerr(141, NULL);
-               }
-#endif                                  /* LineCodes && Polling */
+            InterpPoll();
             line_num = GetWord;
 #ifdef MultiProgram
             lastline = line_num;
@@ -2059,6 +2081,7 @@ efail_noev:
                if (pfp != NULL &&  sp != rsp)
                   InterpEVValS((word *) ripc.opnd - 1, E_Syntax); /* -new- */
 
+               InterpPoll();
                break;
                }
 
@@ -2153,6 +2176,7 @@ efail_noev:
                      break;
                   }
 
+               InterpPoll();
                break;
                }
 
@@ -2262,6 +2286,7 @@ EntInterp_sp;
          case Op_Agoto:         /* goto absolute address */
             AbsOperandFence();
 L_agoto:
+            InterpPoll();
             opnd = GetWord;
             ripc.opnd = (word *)opnd;
             break;
@@ -2270,12 +2295,16 @@ L_agoto:
 #ifdef Concurrent
             {
             struct init_site *site;
-            word *after = ripc.opnd + 1;
+            int *initop = ripc.op - 1;
+            word *after;
+
+            AlignIpc();
+            after = ripc.opnd + 1;
 
             ExInterp_sp;                        /* may wait counted out */
             MUTEX_LOCKID_CONTROLLED_ALWAYS(MTX_INITIAL);
             for (;;) {
-               if (ripc.op[-1] == Op_Agoto) {    /* done */
+               if (*initop == Op_Agoto) {        /* done */
                   MUTEX_UNLOCKID_ALWAYS(MTX_INITIAL);
                   goto L_agoto;
                   }
@@ -2309,10 +2338,8 @@ L_agoto:
             }
 init_skipped:
 #else                                   /*Concurrent*/
-            *--ripc.op = Op_Goto;
-            opnd = sizeof(*ripc.op) + sizeof(*rsp);
-            opnd += (word)ripc.opnd;
-            ripc.opnd = (word *)opnd;
+            PutOp(Op_Goto);
+            opnd = GetWord;                     /* skip the operand */
 #endif                                  /*Concurrent*/
             break;
 

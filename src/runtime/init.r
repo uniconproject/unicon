@@ -545,11 +545,20 @@ deliberate syntax errror
 
    /*
     * Make sure the version number of the icode matches the interpreter version.
-    * The string must equal IVersion or IVersion || "Z".
+    * The string must equal IVersion or IVersion || "Z".  Icode of the
+    * previous version (IPrevVersion) is also accepted; see version.h.
+    * One of those versions has to match.  An empty string or a bare "Z"
+    * does not.
     */
-   if (strncmp((char *)hdr->config, IVersion, strlen(IVersion)) ||
-       ((((char *)hdr->config)[strlen(IVersion)]) &&
-        strcmp(((char *)hdr->config) + strlen(IVersion), "Z"))  ) {
+   {
+   char *v = (char *)hdr->config;
+   if (strncmp(v, IVersion, strlen(IVersion)) == 0)
+      v += strlen(IVersion);
+   else if (strncmp(v, IPrevVersion, strlen(IPrevVersion)) == 0)
+      v += strlen(IPrevVersion);
+   else
+      v = NULL;
+   if (v == NULL || (*v && strcmp(v, "Z"))) {
       fprintf(stderr,"icode version mismatch in %s\n", name);
       fprintf(stderr,"\ticode version: %s\n",(char *)hdr->config);
       fprintf(stderr,"\texpected version: %s\n",IVersion);
@@ -557,6 +566,7 @@ deliberate syntax errror
       if (versioncheck_only) exit(-1);
       error(name, "cannot run");
       }
+   }
 
    /*
     * Stop if we were only asked to do a version check.

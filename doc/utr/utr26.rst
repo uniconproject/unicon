@@ -273,7 +273,7 @@ must contain ``=``.
      - Remote login password
      - Also answers keyboard-interactive; see :ref:`sec-auth`
    * - ``verifyPeer=``
-     - ``yes`` (default) or ``no``
+     - ``yes`` (default), ``no`` or ``accept-new``
      - Same spelling as TLS; overrides mode ``-``
    * - ``hostkeyfile=``
      - Path to an OpenSSH ``known_hosts`` file
@@ -303,6 +303,12 @@ The ``-`` mode-character flag disables peer verification on TLS
 explicit ``verifyPeer=`` overrides the mode flag. ``Fs_Encrypt``
 and ``Fs_SSH`` are mutually exclusive contexts, so there is no
 conflict.
+
+SSH also takes ``verifyPeer=accept-new``, like OpenSSH's
+``StrictHostKeyChecking=accept-new``: a host with no key on file is
+trusted and its key is added to the ``known_hosts`` file
+(``hostkeyfile=``, else libssh's default), which is created if
+missing; a host whose key differs from the one on file still fails.
 
 A leading integer attribute is a connect timeout in milliseconds
 and is applied as libssh's ``SSH_OPTIONS_TIMEOUT`` /
@@ -444,9 +450,10 @@ mode, ``select()`` with ``&input``, CRLF for display):
       close(s)
    end
 
-``term=``, ``cols=``, and ``rows=`` override the PTY. Mode
-``"h-"`` skips ``known_hosts`` (useful on a first connect before
-the key is installed). Password auth uses ``password=`` instead
+``term=``, ``cols=``, and ``rows=`` override the PTY. On a first
+connect, before the key is on file, ``verifyPeer=accept-new``
+records the host's key; mode ``"h-"`` skips ``known_hosts``
+altogether. Password auth uses ``password=`` instead
 of, or in addition to, ``key=``.
 
 .. _sec-ex-cmd:
@@ -1075,11 +1082,12 @@ attribute. There is no separate handshake+auth timeout beyond
 what that covers, and no exec timeout -- a stuck command blocks
 until ``close()``, matching ordinary blocking sockets.
 
-**Trust-on-first-use.** Verification is check-only
-(``ssh_session_is_known_server``). A new host fails with 1333
+**Trust-on-first-use.** By default verification is check-only
+(``ssh_session_is_known_server``): a new host fails with 1333
 unless the caller uses ``h-`` or installs the key in
-``known_hosts`` out of band. The runtime does not write the
-store.
+``known_hosts`` out of band. Only ``verifyPeer=accept-new``
+writes the store, and then only to add a host that has no key on
+file; it never replaces a key.
 
 **``~`` in ``key=``.** Not expanded. The helper and ``ussh``
 expand ``~/`` themselves.
@@ -1113,7 +1121,11 @@ early and then opening another on the same session is checked too;
 the use-after-free that once followed shows only under valgrind or
 a sanitizer, so there the test is a smoke test. A 1 MB SFTP
 ``writes()`` checks that large writes are split into packets the
-server accepts.
+server accepts. ``verifyPeer=accept-new`` is checked on a scratch
+``known_hosts`` file: the first contact adds the key, a later
+strict open trusts it, a changed key fails without touching the
+file, and a file whose last line has no newline still gets the new
+entry on a line of its own.
 
 ``tests/posix/Makefile`` skips the test when the feature is
 absent. Expected default output is ``tests/posix/stand/ssh.std``.

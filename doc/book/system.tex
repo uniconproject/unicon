@@ -1115,7 +1115,10 @@ from the local tty, else 80$\times$24). With neither
 running agent are tried. \texttt{password=} also answers a server that
 offers only keyboard-interactive login. Mode \texttt{"h-"} or \texttt{verifyPeer=no}
 skips host-key verification (\texttt{verifyPeer=} overrides the mode
-flag, as on TLS).
+flag, as on TLS). \texttt{verifyPeer=accept-new}, like OpenSSH's
+\texttt{StrictHostKeyChecking=accept-new}, trusts a host that has no
+key on file and adds its key to the known\_hosts file (created if
+missing); a host whose key changed still fails.
 Without \texttt{cmd=}, mode \texttt{"h"} opens an interactive shell on a PTY.
 Use \texttt{net::ssh\_interactive(s)} (Unicon class library) to attach
 the local tty: raw mode, \texttt{select} mux with \texttt{\&input}, and

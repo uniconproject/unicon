@@ -4559,6 +4559,8 @@ int sock_purge(int fd)
  * Authentication attributes are tried in the order they appear in the
  * open() call, not in a hardcoded priority order.
  */
+#define SSH_VERIFY_ACCEPT_NEW  2   /* verifyPeer=accept-new */
+
 #define SSH_AUTH_ATTR_KEY      1
 #define SSH_AUTH_ATTR_PASSWORD 2
 
@@ -5195,7 +5197,9 @@ static int ssh_request_interactive_pty(ssh_channel chan, const char *term,
  * Mode "hs" (ssh_sftp) is a transport-only session intended for an
  * immediate SFTP open on the same handle.  channel=yes is the
  * default.  Passing do_verify = 0 (the '-' mode char) skips host-key
- * verification; verifyPeer=yes|no overrides that flag, matching TLS.
+ * verification; verifyPeer=yes|no overrides that flag, matching TLS,
+ * and verifyPeer=accept-new trusts and records a host's key the first
+ * time it is seen.
  * cmd= without mode 'c', and channel=no with 'c' or cmd=, are bad
  * attributes.
  *
@@ -5239,6 +5243,36 @@ static void ssh_chan_request_envs(ssh_channel chan, char *buf, size_t len)
       ssh_channel_request_env(chan, p, eq + 1);
       *eq = '=';
       }
+}
+
+/*
+ * End the known_hosts file with a newline before libssh appends to
+ * it: ssh_session_update_known_hosts() writes its entry without one,
+ * and an entry glued onto the last line would leave both unusable.
+ * Returns 0, or -1 when the file cannot be fixed.  No Unicon
+ * allocation (runs unregistered).
+ */
+static int ssh_known_hosts_end_line(ssh_session sess)
+{
+   char *path = NULL;
+   FILE *fp;
+   int c = '\n', rc = 0;
+
+   if (ssh_options_get(sess, SSH_OPTIONS_KNOWNHOSTS, &path) != SSH_OK)
+      return 0;                         /* libssh reports it on update */
+   if ((fp = fopen(path, "rb")) != NULL) {
+      if (fseek(fp, -1L, SEEK_END) == 0)
+         c = getc(fp);
+      fclose(fp);
+      }
+   if (c != '\n' && c != EOF) {
+      if ((fp = fopen(path, "ab")) == NULL || putc('\n', fp) == EOF)
+         rc = -1;
+      if (fp != NULL && fclose(fp) != 0)
+         rc = -1;
+      }
+   ssh_string_free_char(path);
+   return rc;
 }
 
 /*
@@ -5451,7 +5485,11 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
             }
          }
       else if (strcmp(tmps, "verifyPeer") == 0) {
-         do_verify = sock_attr_bool(val);
+         /* accept-new: OpenSSH's StrictHostKeyChecking=accept-new */
+         if (strcmp(val, "accept-new") == 0)
+            do_verify = SSH_VERIFY_ACCEPT_NEW;
+         else
+            do_verify = sock_attr_bool(val);
          if (do_verify < 0) {
             set_errortext_with_val(1331, tmps);
             goto attr_fail;
@@ -5531,7 +5569,19 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
       goto ssh_fail;
 
    if (do_verify) {
-      if (ssh_session_is_known_server(sess) != SSH_KNOWN_HOSTS_OK) {
+      int known = ssh_session_is_known_server(sess);
+      /*
+       * accept-new trusts a host seen for the first time (no entry,
+       * or no known_hosts file yet) and records its key; a changed
+       * key, or a key of another type, still fails.
+       */
+      if (do_verify == SSH_VERIFY_ACCEPT_NEW &&
+          (known == SSH_KNOWN_HOSTS_UNKNOWN ||
+           known == SSH_KNOWN_HOSTS_NOT_FOUND) &&
+          ssh_known_hosts_end_line(sess) == 0 &&
+          ssh_session_update_known_hosts(sess) == SSH_OK)
+         known = SSH_KNOWN_HOSTS_OK;
+      if (known != SSH_KNOWN_HOSTS_OK) {
          err = 1333;
          goto ssh_fail;
          }

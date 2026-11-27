@@ -179,6 +179,7 @@ procedure live_test()
 
    env_test(addr)
    password_test(addr)
+   accept_new_test(addr)
 
    #
    # Close channels before the server has sent their exit status, then
@@ -327,4 +328,79 @@ procedure password_test(addr)
    opts[4] := "password=" || pass || "-wrong"
    s := (open ! opts) | &null
    write("live wrong password fails: ", failed_with_text(s))
+end
+
+# verifyPeer=accept-new against a known_hosts file of the test's own:
+# the first contact records the host's key, a later strict open trusts
+# it, and a different key on file still fails.
+procedure accept_new_test(addr)
+   local kh, s, f, line, n, key, opts, ok
+
+   kh := "unicon_ssh_known_hosts.tmp"
+   remove(kh)
+   key := ("key=" || getenv("UNICON_SSH_TESTKEY")) | &null
+
+   opts := [addr, "h", "channel=no", "verifyPeer=accept-new", "hostkeyfile=" || kh]
+   put(opts, \key)
+   s := open ! opts | &null
+   n := 0
+   if f := open(kh) then {
+      while line := read(f) do n +:= 1
+      close(f)
+      }
+   write("live accept-new first contact: ",
+         if \s & n = 1 then "pass" else "fail")
+   close(\s)
+
+   opts := [addr, "h", "channel=no", "hostkeyfile=" || kh]
+   put(opts, \key)
+   s := open ! opts | &null
+   write("live accept-new key trusted later: ", if \s then "pass" else "fail")
+   close(\s)
+
+   # Put another key on file for the same host name.
+   if f := open(kh) then {
+      line := read(f)
+      close(f)
+      if f := open(kh, "w") then {
+         line ? write(f, tab(upto(' ')), " ssh-ed25519 AAAAC3NzaC1lZDI1NTE5",
+                         "AAAAIByleCQFVscHQ1c8tCY2d/CoKj556T4gkv5+Gnklru1G")
+         close(f)
+         }
+      }
+   opts := [addr, "h", "channel=no", "verifyPeer=accept-new", "hostkeyfile=" || kh]
+   put(opts, \key)
+   s := open ! opts | &null
+   ok := if /s & *&errortext > 0 then "pass" else "fail"
+   n := 0
+   if f := open(kh) then {
+      while line := read(f) do n +:= 1
+      close(f)
+      }
+   write("live accept-new changed key fails: ", if ok == "pass" & n = 1 then "pass" else "fail")
+   close(\s)
+
+   # A store whose last line has no newline: the new entry must still
+   # go on a line of its own.
+   if f := open(kh, "w") then {
+      writes(f, "unicon-test-other.invalid ssh-ed25519 AAAAC3NzaC1lZDI1NTE5",
+                "AAAAIByleCQFVscHQ1c8tCY2d/CoKj556T4gkv5+Gnklru1G")
+      close(f)
+      }
+   opts := [addr, "h", "channel=no", "verifyPeer=accept-new", "hostkeyfile=" || kh]
+   put(opts, \key)
+   s := open ! opts | &null
+   close(\s)
+   n := 0
+   if f := open(kh) then {
+      while line := read(f) do n +:= 1
+      close(f)
+      }
+   opts := [addr, "h", "channel=no", "hostkeyfile=" || kh]
+   put(opts, \key)
+   s := open ! opts | &null
+   write("live accept-new after unterminated line: ",
+         if \s & n = 2 then "pass" else "fail")
+   close(\s)
+   remove(kh)
 end

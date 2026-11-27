@@ -5181,6 +5181,102 @@ static int ssh_request_interactive_pty(ssh_channel chan, const char *term,
  * On failure sets &errortext and returns NULL, so open() can fail
  * rather than raise a runtime error, matching the SSL connect path.
  */
+/*
+ * env= values ("NAME=VALUE"), kept as consecutive NUL-terminated
+ * strings in one malloc'd buffer: attribute strings live in the
+ * Unicon heap and may move while later attributes are parsed.
+ */
+static int ssh_env_add(char **buf, size_t *len, char *nv)
+{
+   char *eq = strchr(nv, '=');
+   size_t n = strlen(nv) + 1;
+   char *nb;
+
+   if (eq == NULL || eq == nv)
+      return -1;
+   nb = realloc(*buf, *len + n);
+   if (nb == NULL)
+      return -1;
+   memcpy(nb + *len, nv, n);
+   *buf = nb;
+   *len += n;
+   return 0;
+}
+
+/*
+ * Send each env= variable on a newly opened channel, before its exec
+ * or shell request.  A variable the server refuses is ignored, as
+ * OpenSSH's SetEnv does.  No Unicon allocation (runs unregistered).
+ */
+static void ssh_chan_request_envs(ssh_channel chan, char *buf, size_t len)
+{
+   char *p, *eq;
+
+   for (p = buf; p != NULL && p < buf + len; p += strlen(p) + 1) {
+      eq = strchr(p, '=');
+      *eq = '\0';
+      ssh_channel_request_env(chan, p, eq + 1);
+      *eq = '=';
+      }
+}
+
+/*
+ * Keyboard-interactive login, answering the server's password prompt
+ * with password.  Only a round with one hidden prompt is answered, and
+ * only once, so a wrong password is not tried again and the password
+ * never answers a second question (a one-time code asked in the same
+ * round, or a user name, which echoes).  Rounds without prompts (some
+ * servers send one after the password) pass through.
+ * Returns 1 when authenticated.
+ */
+static int ssh_auth_kbdint(ssh_session sess, char *password)
+{
+   int rc, np, rounds = 0, answered = 0;
+   char echo;
+
+   rc = ssh_userauth_kbdint(sess, NULL, NULL);
+   while (rc == SSH_AUTH_INFO && rounds++ < 8) {
+      np = ssh_userauth_kbdint_getnprompts(sess);
+      if (np > 0) {
+         if (answered || np != 1)
+            return 0;
+         echo = 0;
+         if (ssh_userauth_kbdint_getprompt(sess, 0, &echo) == NULL || echo)
+            return 0;
+         if (ssh_userauth_kbdint_setanswer(sess, 0, password) < 0)
+            return 0;
+         answered = 1;
+         }
+      rc = ssh_userauth_kbdint(sess, NULL, NULL);
+      }
+   return rc == SSH_AUTH_SUCCESS;
+}
+
+/*
+ * Password login: the "password" method, or keyboard-interactive when
+ * the server offers only that (OpenSSH servers using PAM often do).
+ * Either way the password is sent once.  Returns 1 when authenticated.
+ */
+static int ssh_auth_password(ssh_session sess, char *password)
+{
+   int methods;
+
+   methods = ssh_userauth_list(sess, NULL);
+   if (methods == 0) {
+      /* no method list yet: a "none" attempt asks the server for it */
+      if (ssh_userauth_none(sess, NULL) == SSH_AUTH_SUCCESS)
+         return 1;
+      methods = ssh_userauth_list(sess, NULL);
+      }
+   if (!(methods & SSH_AUTH_METHOD_PASSWORD) &&
+       (methods & SSH_AUTH_METHOD_INTERACTIVE))
+      return ssh_auth_kbdint(sess, password);
+   /* the server offers neither: don't send the password at all */
+   if (methods != 0 && !(methods & SSH_AUTH_METHOD_PASSWORD))
+      return 0;
+   return ssh_userauth_password(sess, NULL, password) == SSH_AUTH_SUCCESS;
+}
+
 struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
                                    int do_verify, int ssh_cmd, int ssh_sftp)
 {
@@ -5200,6 +5296,8 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
    C_integer pty_cols = 0, pty_rows = 0;
    int a, authed, err;
    int want_channel = 1;                /* channel=yes by default */
+   char *envbuf = NULL;                 /* env= values, see ssh_env_add() */
+   size_t envlen = 0;
 
    /*
     * Split "user@host[:port]" (or "[ipv6]:port") into storage that
@@ -5273,11 +5371,12 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
          continue;
       if (!cnv:C_string(attr[a], tmps)) {
          set_errortext(1331);
-         return NULL;
+         goto attr_fail;
          }
-      if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
+      /* a value may itself end in '=' (env=NAME=, a base64 password) */
+      if (strlen(tmps) < 3 || tmps[0] == '=') {
          set_errortext_with_val(1331, tmps);
-         return NULL;
+         goto attr_fail;
          }
       /*
        * Split a private copy at the '=' sign; cnv:C_string can return
@@ -5287,13 +5386,13 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
       val = strchr(tmps, '=');
       if (val == NULL) {
          set_errortext_with_val(1331, tmps);
-         return NULL;
+         goto attr_fail;
          }
       *val = '\0';
       val++;
       if (strlen(val) == 0) {
          set_errortext_with_val(1331, tmps);
-         return NULL;
+         goto attr_fail;
          }
       if (strcmp(tmps, "user") == 0)
          userattr = val;
@@ -5311,6 +5410,12 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
          hostkeyfile = val;
       else if (strcmp(tmps, "cmd") == 0)
          cmd = val;
+      else if (strcmp(tmps, "env") == 0) {
+         if (ssh_env_add(&envbuf, &envlen, val) < 0) {
+            set_errortext_with_val(1331, "env");
+            goto attr_fail;
+            }
+         }
       else if (strcmp(tmps, "term") == 0)
          term = val;
       else if (strcmp(tmps, "cols") == 0)
@@ -5321,19 +5426,19 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
          want_channel = sock_attr_bool(val);
          if (want_channel < 0) {
             set_errortext_with_val(1331, tmps);
-            return NULL;
+            goto attr_fail;
             }
          }
       else if (strcmp(tmps, "verifyPeer") == 0) {
          do_verify = sock_attr_bool(val);
          if (do_verify < 0) {
             set_errortext_with_val(1331, tmps);
-            return NULL;
+            goto attr_fail;
             }
          }
       else {
          set_errortext_with_val(1331, tmps);
-         return NULL;
+         goto attr_fail;
          }
       }
 
@@ -5343,26 +5448,31 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
 
    if (ssh_cmd && ssh_sftp) {
       set_errortext_with_val(1331, "c");
-      return NULL;
+      goto attr_fail;
       }
    /* cmd= is selected by mode 'c', not by the attribute alone */
    if (cmd != NULL && !ssh_cmd) {
       set_errortext_with_val(1331, "cmd");
-      return NULL;
+      goto attr_fail;
       }
    /* mode "hs": SFTP, not a shell/exec channel */
    if (ssh_sftp)
       want_channel = 0;
+   /* env= sets variables on a channel: none with channel=no or "hs" */
+   if (!want_channel && envbuf != NULL) {
+      set_errortext_with_val(1331, "env");
+      goto attr_fail;
+      }
    /* channel=no with 'c' or cmd= is contradictory */
    if (!want_channel && (ssh_cmd || cmd != NULL)) {
       set_errortext_with_val(1331, "channel");
-      return NULL;
+      goto attr_fail;
       }
 
    sess = ssh_new();
    if (sess == NULL) {
       set_errortext(1330);
-      return NULL;
+      goto attr_fail;
       }
    ssh_options_set(sess, SSH_OPTIONS_HOST, host);
    if (user != NULL)
@@ -5384,7 +5494,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
    if (sshf == NULL) {
       ssh_free(sess);
       set_errortext(1330);
-      return NULL;
+      goto attr_fail;
       }
    memset(sshf, 0, sizeof(struct SSHfile));
 
@@ -5427,7 +5537,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
             }
          }
       else {
-         if (ssh_userauth_password(sess, NULL, password) == SSH_AUTH_SUCCESS)
+         if (ssh_auth_password(sess, password))
             authed = 1;
          }
       }
@@ -5452,6 +5562,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
          goto ssh_fail;
       if (ssh_channel_open_session(chan) != SSH_OK)
          goto ssh_fail;
+      ssh_chan_request_envs(chan, envbuf, envlen);
       if (cmd != NULL) {
          if (ssh_channel_request_exec(chan, cmd) != SSH_OK)
             goto ssh_fail;
@@ -5469,6 +5580,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
 
    sshf->sess = sess;
    sshf->chan = chan;                   /* NULL when channel=no */
+   free(envbuf);
    return sshf;
 
 ssh_fail:
@@ -5479,6 +5591,11 @@ ssh_fail:
    ssh_disconnect(sess);
    ssh_free(sess);
    ssh_free_file_state(sshf);
+   free(envbuf);
+   return NULL;
+
+attr_fail:
+   free(envbuf);
    return NULL;
 }
 
@@ -5687,6 +5804,8 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
    ssh_channel chan = NULL;
    int a;
    C_integer pty_cols = 0, pty_rows = 0;
+   char *envbuf = NULL;                 /* env= values, see ssh_env_add() */
+   size_t envlen = 0;
 
    /* resolve to the session owner: opening on a channel opens a sibling */
    owner = (sf->parent != NULL) ? sf->parent : sf;
@@ -5702,7 +5821,7 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
          }
       if (!cnv:C_string(attr[a], tmps)) {
          set_errortext(1331);
-         return NULL;
+         goto attr_fail;
          }
       /*
        * Mode-only tokens ("hc", "w", ...) carry no '=' and are
@@ -5710,9 +5829,10 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
        */
       if (strchr(tmps, '=') == NULL)
          continue;
-      if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
+      /* a value may itself end in '=' (env=NAME=, a base64 password) */
+      if (strlen(tmps) < 3 || tmps[0] == '=') {
          set_errortext_with_val(1331, tmps);
-         return NULL;
+         goto attr_fail;
          }
       Protect(tmps = alcstr(tmps, (word)strlen(tmps)+1), fatalerr(0,NULL));
       val = strchr(tmps, '=');
@@ -5720,10 +5840,16 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
       val++;
       if (strlen(val) == 0) {
          set_errortext_with_val(1331, tmps);
-         return NULL;
+         goto attr_fail;
          }
       if (strcmp(tmps, "cmd") == 0)
          cmd = val;
+      else if (strcmp(tmps, "env") == 0) {
+         if (ssh_env_add(&envbuf, &envlen, val) < 0) {
+            set_errortext_with_val(1331, "env");
+            goto attr_fail;
+            }
+         }
       else if (strcmp(tmps, "term") == 0)
          term = val;
       else if (strcmp(tmps, "cols") == 0)
@@ -5732,14 +5858,14 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
          pty_rows = atol(val);
       else {
          set_errortext_with_val(1331, tmps);
-         return NULL;
+         goto attr_fail;
          }
       }
 
    sshf = malloc(sizeof(struct SSHfile));
    if (sshf == NULL) {
       set_errortext(1334);
-      return NULL;
+      goto attr_fail;
       }
    memset(sshf, 0, sizeof(struct SSHfile));
 
@@ -5751,6 +5877,7 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
       goto chan_fail;
    if (ssh_channel_open_session(chan) != SSH_OK)
       goto chan_fail;
+   ssh_chan_request_envs(chan, envbuf, envlen);
    if (cmd != NULL) {
       if (ssh_channel_request_exec(chan, cmd) != SSH_OK)
          goto chan_fail;
@@ -5769,6 +5896,7 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
    sshf->parent = owner;
    sshf->next = owner->children;
    owner->children = sshf;
+   free(envbuf);
    return sshf;
 
 chan_fail:
@@ -5777,6 +5905,11 @@ chan_fail:
    if (chan != NULL)
       ssh_channel_free(chan);
    ssh_free_file_state(sshf);
+   free(envbuf);
+   return NULL;
+
+attr_fail:
+   free(envbuf);
    return NULL;
 }
 

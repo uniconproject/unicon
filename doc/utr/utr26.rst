@@ -271,6 +271,7 @@ must contain ``=``.
      - Same name as TLS/crypto; distinct from SSH ``password=``
    * - ``password=``
      - Remote login password
+     - Also answers keyboard-interactive; see :ref:`sec-auth`
    * - ``verifyPeer=``
      - ``yes`` (default) or ``no``
      - Same spelling as TLS; overrides mode ``-``
@@ -283,6 +284,9 @@ must contain ``=``.
    * - ``channel=``
      - ``yes`` (default) or ``no``
      - ``no`` is transport-only
+   * - ``env=``
+     - ``NAME=VALUE`` environment variable for the channel
+     - Repeatable; contradicts ``channel=no``; see :ref:`sec-env`
    * - ``term=``
      - Remote ``TERM`` for a PTY
      - Default ``$TERM`` or ``xterm``
@@ -315,12 +319,40 @@ priority. If **neither** is given, the implementation falls back
 to ``ssh_userauth_publickey_auto()`` -- default identities under
 ``~/.ssh`` and a running agent -- not to password authentication.
 Agent use through this fallback is supported; an explicit
-``agent=`` attribute and keyboard-interactive auth remain out of
-scope.
+``agent=`` attribute remains out of scope.
+
+``password=`` uses the server's ``password`` method, or
+keyboard-interactive when the server offers only that (OpenSSH
+servers using PAM with ``PasswordAuthentication no`` do). Either way
+the password is sent once. For keyboard-interactive, a round with
+one hidden prompt is answered with the password; rounds with no
+prompts pass through. A second round of prompts (a wrong password),
+a round with more than one prompt, or a prompt that echoes, such as
+a user name or a one-time code question, fails the ``open()``. When
+the server offers neither method, the password is not sent.
 
 ``key=`` does not expand ``~``. Callers (and the ``ussh`` demo)
 must expand a leading ``~/`` themselves; libssh treats the path
 literally.
+
+.. _sec-env:
+
+5.2 Channel environment
+-----------------------
+
+``env=NAME=VALUE`` sets an environment variable on the channel
+before its command or shell starts, like OpenSSH's ``SetEnv``. The
+attribute splits at its first ``=``, so the value may contain
+further ``=`` characters; it may be repeated, and it applies to
+``open(host, "h"/"hc", ...)`` and to ``open(s, "hc", ...)`` on an
+existing session. The server accepts only the names its
+configuration allows (OpenSSH ``AcceptEnv``); a variable it refuses
+is ignored, as with ``SetEnv``.
+
+.. code-block:: unicon
+
+   c := open("user@host", "hc", "cmd=printenv LC_MODE",
+             "env=LC_MODE=batch") | stop(&errortext)
 
 .. _sec-examples:
 
@@ -1021,9 +1053,8 @@ Guards are ``#if HAVE_LIBSSH`` throughout ``rstructs.h``,
 13. Status and remaining work
 =============================
 
-**Keyboard-interactive authentication** and an explicit agent
-attribute. The ``publickey_auto`` fallback already talks to a
-running agent.
+**An explicit agent attribute.** The ``publickey_auto`` fallback
+already talks to a running agent.
 
 **Non-blocking I/O as the primary concurrency model.**
 ``select()`` readiness is implemented; the I/O calls themselves
@@ -1061,8 +1092,10 @@ Appendix: test coverage
 ``tests/posix/ssh.icn`` is deterministic without a server: it
 checks that ``&features`` reports ``secure shell``, and that bad
 attributes, ``channel=maybe``, ``channel=no`` combined with
-``hc``/``cmd=``, ``cmd=`` without mode ``c``, and a connect to a
-closed local port all fail with ``&errortext`` set. A live
+``hc``/``cmd=``, ``cmd=`` without mode ``c``, ``env=`` without a
+name or ``=`` or with ``channel=no``, and a connect to a closed
+local port all fail with ``&errortext`` set, and that an ``env=``
+value ending in ``=`` is accepted. A live
 round-trip runs only when
 ``UNICON_SSH_TESTHOST`` is set (host or ``user@host``), with
 optional ``UNICON_SSH_TESTPORT``, ``UNICON_SSH_TESTKEY``,
@@ -1070,7 +1103,12 @@ optional ``UNICON_SSH_TESTPORT``, ``UNICON_SSH_TESTKEY``,
 path covers exec stdout, ``c["exitstatus"]``,
 ``receive()`` event tags, partial-line ``reads()`` of a
 ``printf`` with no newline, and SFTP write/read/stat/remove of a
-binary payload.
+binary payload. With ``UNICON_SSH_ENVOK`` (a variable name the
+server accepts, as in ``AcceptEnv``) it checks ``env=`` on a new
+session and on a channel opened from one, and that a refused
+variable is ignored. With ``UNICON_SSH_TESTPASS`` it logs in with
+``password=`` and checks that a wrong password fails; a server that
+offers only keyboard-interactive tests that path.
 
 ``tests/posix/Makefile`` skips the test when the feature is
 absent. Expected default output is ``tests/posix/stand/ssh.std``.

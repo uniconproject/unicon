@@ -168,7 +168,11 @@ alcbignum_macro(alcbignum,0)
 #ifdef Concurrent
 int alcce_q(dptr q, int size){
    struct b_list *hp;
-   if((hp = alclist(-1, size)) == NULL)
+   /*
+    * Start with a few slots; c_put() grows the list as needed, and max
+    * (not the slot count) is the queue's limit.
+    */
+   if((hp = alclist(-1, CE_QUEUE_SLOTS)) == NULL)
       return Failed;
 
    MUTEX_INITBLK(hp);
@@ -195,15 +199,15 @@ int alcce_queues(struct b_coexpr *ep){
    if (!reserve(Blocks, (word)(
                 sizeof(struct b_list) * 3 +
                 sizeof(struct b_lelem) * 3 +
-                (CE_INBOX_SIZE + CE_OUTBOX_SIZE + CE_CEQUEUE_SIZE) * sizeof(struct descrip)))
+                3 * CE_QUEUE_SLOTS * sizeof(struct descrip)))
                 )
                 return Failed;
 
-   if (alcce_q(&(ep->outbox), 1024) == Failed)
+   if (alcce_q(&(ep->outbox), CE_OUTBOX_SIZE) == Failed)
       return Failed;
-   if (alcce_q(&(ep->inbox), 1024) == Failed)
+   if (alcce_q(&(ep->inbox), CE_INBOX_SIZE) == Failed)
       return Failed;
-   if (alcce_q(&(ep->cequeue), 64) == Failed)
+   if (alcce_q(&(ep->cequeue), CE_CEQUEUE_SIZE) == Failed)
       return Failed;
 
    ep->handdata = NULL;

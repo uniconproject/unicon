@@ -52,7 +52,7 @@ struct b_coexpr *create(continuation fnc, struct b_proc *cproc, int ntemps, int 
 #ifdef Concurrent
                 sizeof(struct b_list) * 3 +
                 sizeof(struct b_lelem) * 3 +
-                (CE_INBOX_SIZE + CE_OUTBOX_SIZE + CE_CEQUEUE_SIZE) * sizeof(struct descrip) +
+                3 * CE_QUEUE_SLOTS * sizeof(struct descrip) +
 #endif                                  /* Concurrent */
                 sizeof(struct b_refresh) +
                 (na + nl) * sizeof(struct descrip)))

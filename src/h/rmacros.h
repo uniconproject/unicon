@@ -818,6 +818,7 @@
    #define CE_INBOX_SIZE        1024
    #define CE_OUTBOX_SIZE       1024
    #define CE_CEQUEUE_SIZE      64
+   #define CE_QUEUE_SLOTS       MinListSlots   /* initial slots of each queue */
 
    /* used in fmath.r, log() */
    #define lastbase             (curtstate->Lastbase)

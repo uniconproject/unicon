@@ -1108,7 +1108,10 @@ server accepts, as in ``AcceptEnv``) it checks ``env=`` on a new
 session and on a channel opened from one, and that a refused
 variable is ignored. With ``UNICON_SSH_TESTPASS`` it logs in with
 ``password=`` and checks that a wrong password fails; a server that
-offers only keyboard-interactive tests that path.
+offers only keyboard-interactive tests that path. Closing channels
+early and then opening another on the same session is checked too;
+the use-after-free that once followed shows only under valgrind or
+a sanitizer, so there the test is a smoke test.
 
 ``tests/posix/Makefile`` skips the test when the feature is
 absent. Expected default output is ``tests/posix/stand/ssh.std``.

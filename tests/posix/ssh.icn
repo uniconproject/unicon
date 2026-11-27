@@ -180,6 +180,31 @@ procedure live_test()
    env_test(addr)
    password_test(addr)
 
+   #
+   # Close channels before the server has sent their exit status, then
+   # keep using the session: the late packets must not reach the closed
+   # channels' state.
+   #
+   opts := ssh_opts(addr, "h", "channel=no")
+   s := open ! opts | {
+      write("live early close: open failed: ", &errortext)
+      return
+      }
+   every 1 to 20 do {
+      c := open(s, "hc", "cmd=sleep 0.02; echo late; exit 3") | break
+      close(c)
+      delay(30)
+      }
+   got := ""
+   if c := open(s, "hc", "cmd=echo after_early_close") then {
+      while m := receive(c, 5000) do
+         if m.type == "stdout" then got ||:= m.msg
+      close(c)
+      }
+   write("live early close: ",
+      if find("after_early_close", got) then "pass" else "fail")
+   close(s)
+
    # Optional SFTP checks when a remote writable directory is provided
    remote := getenv("UNICON_SSH_SFTPPATH") | {
       write("live sftp: skipped (set UNICON_SSH_SFTPPATH)")

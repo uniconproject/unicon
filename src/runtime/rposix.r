@@ -4682,6 +4682,27 @@ static int ssh_chan_register_callbacks(struct SSHfile *sshf, ssh_channel chan)
 }
 
 /*
+ * ssh_chan_release() - detach a channel's callbacks and free it.
+ * libssh keeps a channel freed before the server has closed it until
+ * the server's close arrives, and runs its callbacks for whatever
+ * comes first (a late exit status, say).  Those callbacks point at
+ * the SSHfile and the callbacks struct, both freed once the file is
+ * closed, so take them off the channel first.
+ */
+static void ssh_chan_release(struct SSHfile *sshf, ssh_channel chan, int do_close)
+{
+   if (chan == NULL)
+      return;
+   if (sshf != NULL && sshf->cbs != NULL)
+      ssh_remove_channel_callbacks(chan, (ssh_channel_callbacks)sshf->cbs);
+   if (do_close) {
+      ssh_channel_send_eof(chan);
+      ssh_channel_close(chan);
+      }
+   ssh_channel_free(chan);
+}
+
+/*
  * ssh_pump() - let libssh process incoming packets so the channel
  * callbacks can run.  Returns 1 once the queue has what the caller
  * wants (a stdout chunk when want_stdout, else any chunk), 0 at EOF
@@ -5586,8 +5607,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
 ssh_fail:
    INC_NARTHREADS_CONTROLLED;
    set_ssh_errortext(sess, err);
-   if (chan != NULL)
-      ssh_channel_free(chan);
+   ssh_chan_release(sshf, chan, 0);
    ssh_disconnect(sess);
    ssh_free(sess);
    ssh_free_file_state(sshf);
@@ -5625,9 +5645,7 @@ void ssh_close_file(struct SSHfile *sshf)
       }
 
    if (sshf->chan != NULL) {
-      ssh_channel_send_eof(sshf->chan);
-      ssh_channel_close(sshf->chan);
-      ssh_channel_free(sshf->chan);
+      ssh_chan_release(sshf, sshf->chan, 1);
       sshf->chan = NULL;
       }
 
@@ -5657,9 +5675,7 @@ void ssh_close_file(struct SSHfile *sshf)
             ch->sdir = NULL;
             }
          if (ch->chan != NULL) {
-            ssh_channel_send_eof(ch->chan);
-            ssh_channel_close(ch->chan);
-            ssh_channel_free(ch->chan);
+            ssh_chan_release(ch, ch->chan, 1);
             ch->chan = NULL;
             }
          ch->sftp = NULL;               /* owned here, freed below */
@@ -5902,8 +5918,7 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
 chan_fail:
    INC_NARTHREADS_CONTROLLED;
    set_ssh_errortext(owner->sess, 1334);
-   if (chan != NULL)
-      ssh_channel_free(chan);
+   ssh_chan_release(sshf, chan, 0);
    ssh_free_file_state(sshf);
    free(envbuf);
    return NULL;

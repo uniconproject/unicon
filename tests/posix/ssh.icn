@@ -206,6 +206,8 @@ procedure live_test()
       if find("after_early_close", got) then "pass" else "fail")
    close(s)
 
+   gc_attr_test(addr)
+
    # Optional SFTP checks when a remote writable directory is provided
    remote := getenv("UNICON_SSH_SFTPPATH") | {
       write("live sftp: skipped (set UNICON_SSH_SFTPPATH)")
@@ -403,4 +405,40 @@ procedure accept_new_test(addr)
          if \s & n = 2 then "pass" else "fail")
    close(\s)
    remove(kh)
+end
+
+#
+# Attribute values must survive a collection while the attributes after
+# them are converted.  A large attribute after cmd= makes one likely when
+# the string region is small; tests/posix/Makefile runs this test with
+# STRSIZE=100000.
+#
+procedure gc_attr_test(addr)
+   local opts, s, c, got, i, before, seen, bad
+
+   opts := ssh_opts(addr, "h", "channel=no")
+   s := open ! opts | {
+      write("live attributes across a collection: open failed: ", &errortext)
+      return
+      }
+   seen := bad := 0
+   every i := 1 to 40 do {
+      before := &collections
+      c := open(s, "hc", "cmd=echo marker_" || i,
+                "rows=24" || repl(" ", 20000 + 997 * i)) | {
+         bad +:= 1
+         next
+         }
+      got := ""
+      while got ||:= reads(c, 64)
+      close(c)
+      if &collections > before then {
+         seen +:= 1
+         if not find("marker_" || i, got) then bad +:= 1
+         }
+      }
+   close(s)
+   write("live attributes across a collection: ",
+         if seen = 0 then "skipped (no collection during open)"
+         else if bad = 0 then "pass" else "fail")
 end

@@ -1128,7 +1128,9 @@ file, and a file whose last line has no newline still gets the new
 entry on a line of its own.
 
 ``tests/posix/Makefile`` skips the test when the feature is
-absent. Expected default output is ``tests/posix/stand/ssh.std``.
+absent, and runs it with ``STRSIZE=100000`` so that live opens see a
+garbage collection; a ``cmd=`` followed by a large attribute is then
+checked to still run as given. Expected default output is ``tests/posix/stand/ssh.std``.
 
 References
 ==========

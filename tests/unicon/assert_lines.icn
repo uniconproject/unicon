@@ -1,0 +1,35 @@
+$define __debug__
+$define ID(x) x
+
+# &line and argument splitting around multiline macro calls.
+# Each write prints the line number it stands on.
+
+procedure main()
+   local x, L
+   x := 1
+   assert(x > 0,
+      "x must be positive")
+   write("after a multiline assert: ", &line)
+$ifdef NOT_DEFINED
+   write("skipped")
+$endif
+   write("after a skipped block: ", ID(&line
+      ))
+   write("next line: ", &line)
+
+   # Commas inside [ ] and { } do not split the argument.
+   L := [[1, 2]]
+   assert(L[1, 2] = 2, "subscript with a comma")
+   assert(*[1, 2] = 2)
+
+   # A # comment inside the call is not argument text, even with ( or '.
+   assert(x > 0,   # don't allow negatives (see below
+      "label after a comment")
+
+   # A nested assert is expanded too.
+   assert(assert(x = 1) & x = 1, "nested")
+
+   # Backtracking into an assert does not report a false failure.
+   if assert(x > 0) & x > 10 then write("big") else write("small")
+   write("end: ", &line)
+end

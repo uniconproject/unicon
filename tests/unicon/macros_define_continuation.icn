@@ -1,0 +1,35 @@
+# Object-like $define: continue only when \ is the very last character (C splice).
+# Spaces before \ and on the next line are kept in the replacement text.
+$define GREETING "hello " || \
+"there"
+$define SUMCONT(a,b) ((a) + \
+(b))
+$define SPACED "hello" || \
+   " world"
+# The splice is textual, so a quote may cross it. Spaces on the next
+# line stay. A trailing comment is not part of the value.
+$define SPLIT "hel\
+lo"
+$define GAP "a\
+   b"
+$define QUOTED "say \"hi\""
+$define COMMENTED "ab\
+c" # trailing
+# A comment ends the line: a \ at its end does not continue the value, so
+# the next line is a $define of its own. A # inside quotes is not a comment.
+$define CMT 1 # note \
+$define CMT2 2
+$define HASH "a#b\
+c"
+
+procedure main()
+   write(GREETING)
+   write(SUMCONT(2, 3))
+   write(SPACED)
+   write(SPLIT)
+   write(GAP)
+   write(QUOTED)
+   write(COMMENTED)
+   write(CMT, " ", CMT2)
+   write(HASH)
+end

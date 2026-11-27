@@ -1,0 +1,22 @@
+$define __debug__
+
+# A program's own assert method, and an assert procedure heading, are
+# not expanded as the built-in assert macro.
+
+class Checker()
+   method assert(c, msg)
+      write("Checker.assert: ", msg)
+      return c
+   end
+end
+
+procedure assert(c, msg)
+   write("procedure assert: ", msg)
+end
+
+procedure main()
+   local o
+   o := Checker()
+   o.assert(1, "called as a method")
+   write("done")
+end

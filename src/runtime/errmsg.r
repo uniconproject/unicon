@@ -7,6 +7,100 @@ extern struct errtab errtab[];          /* error numbers and messages */
 char *logopt;                            /* Log option destination */
 
 /*
+ * Built-in assert/assert_not (preproce.icn) raise runerr(219, payload) where
+ * payload is a marker byte, the condition text, and optionally RS and the
+ * label.  A 219 without a marker (a plain runerr(219, x) in user code) is
+ * reported like any other run-time error.
+ */
+#define AssertMarker    28            /* FS: leading byte => assert */
+#define AssertNotMarker 29            /* GS: leading byte => assert_not */
+#define AssertRunerrSep 30            /* RS: delimiter after expr */
+#define AssertPrefix    "assertion failed: "
+
+/*
+ * Succeeds if v is the payload of a built-in assert or assert_not.
+ */
+static int is_assert_payload(dptr v)
+{
+   unsigned char c;
+   if (!is:string(*v) || StrLen(*v) == 0)
+      return 0;
+   c = (unsigned char)StrLoc(*v)[0];
+   return c == AssertMarker || c == AssertNotMarker;
+}
+
+/*
+ * Write "assertion failed: <expr>[, <label>]" for an assert payload to f.
+ * Used on the fatal path, where other threads may be stopped, so it must
+ * not allocate.
+ */
+static void assert_put_text(FILE *f, dptr v)
+{
+   char *s = StrLoc(*v) + 1;
+   word len = StrLen(*v) - 1, j;
+
+   fputs(AssertPrefix, f);
+   for (j = 0; j < len; j++) {
+      if ((unsigned char)s[j] == AssertRunerrSep)
+         fputs(", ", f);
+      else
+         putc(s[j], f);
+      }
+}
+
+/*
+ * When an assert failure is converted to expression failure (&error),
+ * set &errortext to "assertion failed: <expr>[, <label>]" and &errorvalue
+ * to the "<expr>[, <label>]" part of it.  Returns 0 if allocation fails,
+ * leaving both as they were.
+ */
+static int assert_set_keywords(void)
+{
+   char *s, *p, *newtxt;
+   word len, j, nsep, outlen, plen = sizeof(AssertPrefix) - 1;
+
+   CURTSTATE();
+
+   if (!is:string(k_errorvalue) || StrLen(k_errorvalue) == 0)
+      return 0;
+   len = StrLen(k_errorvalue) - 1;
+   /*
+    * Count separators before allocating. Each one grows by a byte when it
+    * becomes ", ", and the whole payload is kept: a fixed buffer used to
+    * drop the tail of a long label.
+    */
+   nsep = 0;
+   s = StrLoc(k_errorvalue) + 1;
+   for (j = 0; j < len; j++)
+      if ((unsigned char)s[j] == AssertRunerrSep)
+         nsep++;
+   if (nsep > len || len > (MaxStrLen - plen) / 2)
+      return 0;
+   outlen = plen + len + nsep;
+   newtxt = alcstr(NULL, outlen);
+   if (newtxt == NULL)
+      return 0;
+   /* alcstr may have collected, so take the payload pointer again. */
+   s = StrLoc(k_errorvalue) + 1;
+   p = newtxt;
+   memcpy(p, AssertPrefix, plen);
+   p += plen;
+   for (j = 0; j < len; j++) {
+      if ((unsigned char)s[j] == AssertRunerrSep) {
+         *p++ = ',';
+         *p++ = ' ';
+         }
+      else
+         *p++ = s[j];
+      }
+   StrLoc(k_errortext) = newtxt;
+   StrLen(k_errortext) = outlen;
+   StrLoc(k_errorvalue) = newtxt + plen;
+   StrLen(k_errorvalue) = outlen - plen;
+   return 1;
+}
+
+/*
  * set &errornumber and &errortext to a given (run-time error) number
  */
 void set_errortext(int i)
@@ -135,6 +229,7 @@ void err_msg(int n, dptr v)
    register struct errtab *p;
    char *lfile = NULL;
    FILE *logfptr = NULL;
+   int assert_fmt = 0;
 
 #ifdef Messaging
    int saveerrno = errno;
@@ -184,20 +279,39 @@ void err_msg(int n, dptr v)
          break;
          }
 
+   if (k_errornumber == 219 && have_errval && is_assert_payload(&k_errorvalue))
+      assert_fmt = 1;
+
    EVVal((word)k_errornumber,E_Error);
 
    if (pfp != NULL) {
       if (IntVal(kywd_err) == 0 || !err_conv) {
-         fprintf(stderr, "\nRun-time error %d\n", k_errornumber);
+         /* Assertion failures: "[file:line] assertion failed: ...", no banner. */
+         if (assert_fmt) {
 #if COMPILER
-         if (line_info)
-            fprintf(stderr, "File %s; Line %d\n", file_name, line_num);
+            if (line_info)
+               fprintf(stderr, "[%s:%d] ", file_name, line_num);
 #else                                   /* COMPILER */
-         fprintf(stderr, "File %s; Line %ld\n", findfile(ipc.opnd),
-            (long)findline(ipc.opnd));
+            fprintf(stderr, "[%s:%ld] ", findfile(ipc.opnd),
+               (long)findline(ipc.opnd));
 #endif                                  /* COMPILER */
+            assert_put_text(stderr, &k_errorvalue);
+            putc('\n', stderr);
+            }
+         else {
+            fprintf(stderr, "\nRun-time error %d\n", k_errornumber);
+#if COMPILER
+            if (line_info)
+               fprintf(stderr, "File %s; Line %d\n", file_name, line_num);
+#else                                   /* COMPILER */
+            fprintf(stderr, "File %s; Line %ld\n", findfile(ipc.opnd),
+               (long)findline(ipc.opnd));
+#endif                                  /* COMPILER */
+            }
          }
       else {
+         if (assert_fmt)
+            (void)assert_set_keywords();
          IntVal(kywd_err)--;
          if (logfptr != NULL)
             fclose(logfptr);
@@ -206,12 +320,13 @@ void err_msg(int n, dptr v)
       }
    else
       fprintf(stderr, "\nRun-time error %d in startup code\n", n);
-   fprintf(stderr, "%s\n", StrLoc(k_errortext));
-
-   if (have_errval) {
-      fprintf(stderr, "offending value: ");
-      outimage(stderr, &k_errorvalue, 0);
-      putc('\n', stderr);
+   if (!assert_fmt) {
+      fprintf(stderr, "%.*s\n", (int)StrLen(k_errortext), StrLoc(k_errortext));
+      if (have_errval) {
+         fprintf(stderr, "offending value: ");
+         outimage(stderr, &k_errorvalue, 0);
+         putc('\n', stderr);
+         }
       }
 
 #ifdef Messaging
@@ -233,19 +348,33 @@ void err_msg(int n, dptr v)
    fprintf(stderr, "Traceback:\n");
 
    if (logfptr != NULL) {
-      fprintf(logfptr, "Run-time error %d\n", k_errornumber);
+      if (assert_fmt) {
 #if COMPILER
-      if (line_info)
-         fprintf(logfptr, "File %s; Line %d\n", file_name, line_num);
+         if (line_info)
+            fprintf(logfptr, "[%s:%d] ", file_name, line_num);
 #else                                   /* COMPILER */
-      fprintf(logfptr, "File %s; Line %ld\n", findfile(ipc.opnd),
-              (long)findline(ipc.opnd));
+         fprintf(logfptr, "[%s:%ld] ", findfile(ipc.opnd),
+                 (long)findline(ipc.opnd));
 #endif                                  /* COMPILER */
-      fprintf(logfptr, "%s\n", StrLoc(k_errortext));
-      if (have_errval) {
-         fprintf(logfptr, "offending value: ");
-         outimage(logfptr, &k_errorvalue, 0);
+         assert_put_text(logfptr, &k_errorvalue);
          putc('\n', logfptr);
+         }
+      else {
+         fprintf(logfptr, "Run-time error %d\n", k_errornumber);
+#if COMPILER
+         if (line_info)
+            fprintf(logfptr, "File %s; Line %d\n", file_name, line_num);
+#else                                   /* COMPILER */
+         fprintf(logfptr, "File %s; Line %ld\n", findfile(ipc.opnd),
+                 (long)findline(ipc.opnd));
+#endif                                  /* COMPILER */
+         fprintf(logfptr, "%.*s\n", (int)StrLen(k_errortext),
+                 StrLoc(k_errortext));
+         if (have_errval) {
+            fprintf(logfptr, "offending value: ");
+            outimage(logfptr, &k_errorvalue, 0);
+            putc('\n', logfptr);
+            }
          }
       fprintf(logfptr, "Traceback:\n");
      }

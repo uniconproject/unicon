@@ -1,0 +1,18 @@
+# A triple-quoted string may start on a continued line of a macro call.
+# The lines after the call keep their real line numbers.
+$define ID(x) x
+
+procedure main()
+   assert(
+"""ignored
+label""")
+   write("line ", &line)
+   write(ID(
+"""hello
+world"""))
+   write(ID("""same
+line"""))
+   write(ID(
+1 || """a
+b"""))
+end

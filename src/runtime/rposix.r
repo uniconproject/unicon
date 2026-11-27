@@ -5698,13 +5698,15 @@ void ssh_close_file(struct SSHfile *sshf)
    ssh_free_file_state(sshf);
 }
 
+#define SSH_SFTP_WRITE_MAX 32768   /* bytes per sftp_write() */
+
 /*
  * ssh_file_write() - write all n bytes to an SSH channel or SFTP file.
  * Retries short writes.  Returns n on success, or -1 with &errortext set.
  */
 int ssh_file_write(struct SSHfile *sshf, char *s, word n)
 {
-   word total = 0;
+   word total = 0, chunk;
    int rc;
 
    if (sshf == NULL || sshf->closed) {
@@ -5716,7 +5718,15 @@ int ssh_file_write(struct SSHfile *sshf, char *s, word n)
    if (sshf->sfile != NULL) {
       DEC_NARTHREADS;
       while (total < n) {
-         rc = sftp_write(sshf->sfile, s + total, (size_t)(n - total));
+         /*
+          * Servers drop SFTP packets past their own limit (256 KB for
+          * OpenSSH), ending the session, and libssh does not split a
+          * large write itself.  32 KB is the size every server takes.
+          */
+         chunk = n - total;
+         if (chunk > SSH_SFTP_WRITE_MAX)
+            chunk = SSH_SFTP_WRITE_MAX;
+         rc = sftp_write(sshf->sfile, s + total, (size_t)chunk);
          if (rc < 0) {
             INC_NARTHREADS_CONTROLLED;
             set_ssh_errortext(sshf->sess, 1335);

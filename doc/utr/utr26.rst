@@ -1111,7 +1111,9 @@ variable is ignored. With ``UNICON_SSH_TESTPASS`` it logs in with
 offers only keyboard-interactive tests that path. Closing channels
 early and then opening another on the same session is checked too;
 the use-after-free that once followed shows only under valgrind or
-a sanitizer, so there the test is a smoke test.
+a sanitizer, so there the test is a smoke test. A 1 MB SFTP
+``writes()`` checks that large writes are split into packets the
+server accepts.
 
 ``tests/posix/Makefile`` skips the test when the feature is
 absent. Expected default output is ``tests/posix/stand/ssh.std``.

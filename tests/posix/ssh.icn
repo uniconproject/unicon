@@ -103,7 +103,7 @@ end
 #                         with PAM), these exercise keyboard-interactive.
 procedure live_test()
    local host, addr, opts, s, line, got, c, info, remote, L, chunk, stray, m,
-      first, e
+      first, e, big
 
    host := getenv("UNICON_SSH_TESTHOST") | {
       write("live round-trip: skipped (set UNICON_SSH_TESTHOST)")
@@ -231,6 +231,20 @@ procedure live_test()
    remove(s, remote || "/unicon_ssh_bin.bin") |
       stop("live sftp remove failed: ", &errortext)
    write("live sftp remove: pass")
+
+   # One writes() bigger than a server takes in a single SFTP packet.
+   big := repl("unicon_sftp_big\n", 65536)        # 1 MB
+   c := open(s, "hs", "path=" || remote || "/unicon_ssh_big.txt", "w") |
+        stop("live sftp big write-open failed: ", &errortext)
+   writes(c, big) | stop("live sftp big writes failed: ", &errortext)
+   close(c)
+   c := open(s, "hs", "path=" || remote || "/unicon_ssh_big.txt") |
+        stop("live sftp big read-open failed: ", &errortext)
+   got := ""
+   while got ||:= reads(c, 100000) do if *got >= *big then break
+   close(c)
+   write("live sftp big write: ", if got == big then "pass" else "fail")
+   remove(s, remote || "/unicon_ssh_big.txt")
    close(s)
 end
 

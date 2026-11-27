@@ -1089,6 +1089,13 @@ unless the caller uses ``h-`` or installs the key in
 writes the store, and then only to add a host that has no key on
 file; it never replaces a key.
 
+**``ssh_config``.** libssh reads ``~/.ssh/config`` and the system
+``ssh_config`` for each new session, before ``open()`` sets the
+connect timeout, ``hostkeyfile=`` and host-key checking, so those
+win: a ``StrictHostKeyChecking no`` or a ``UserKnownHostsFile``
+there cannot turn verification off or point it at another file.
+Without ``hostkeyfile=``, a ``UserKnownHostsFile`` there is used.
+
 **``~`` in ``key=``.** Not expanded. The helper and ``ussh``
 expand ``~/`` themselves.
 

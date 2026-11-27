@@ -5591,6 +5591,17 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
       unsigned int p = (unsigned int)port;
       ssh_options_set(sess, SSH_OPTIONS_PORT, &p);
       }
+   /*
+    * Read ~/.ssh/config and the system ssh_config now rather than in
+    * ssh_connect(), so that the options set below win over them: a
+    * StrictHostKeyChecking no or a UserKnownHostsFile there must not
+    * undo the host-key checks that open() asks for.
+    */
+   if (ssh_options_parse_config(sess, NULL) != 0) {
+      set_ssh_errortext(sess, 1330);
+      ssh_free(sess);
+      goto attr_fail;
+      }
    if (timeout > 0) {
       long sec = timeout / 1000;
       long usec = (timeout % 1000) * 1000;
@@ -5599,6 +5610,10 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
       }
    if (hostkeyfile != NULL)
       ssh_options_set(sess, SSH_OPTIONS_KNOWNHOSTS, hostkeyfile);
+   if (do_verify) {
+      int strict = 1;                   /* StrictHostKeyChecking yes */
+      ssh_options_set(sess, SSH_OPTIONS_STRICTHOSTKEYCHECK, &strict);
+      }
 
    sshf = malloc(sizeof(struct SSHfile));
    if (sshf == NULL) {

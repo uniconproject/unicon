@@ -330,11 +330,6 @@
 #ifdef Concurrent
    #define PthreadCoswitch 1
    #define TSLIST
-   /*
-    * The default at present does not use __thread.
-    * To use __thread, uncomment the following line
-    * "#define HAVE_KEYWORD__THREAD"
-    */
 #endif                          /* Concurrent */
 
 /*

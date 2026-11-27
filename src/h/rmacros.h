@@ -107,7 +107,7 @@
 
 /*
  * Field indexes of the posix_message record returned by receive().
- * Keep in step with rec_structor() in rposix.r.
+ * Keep in step with posix_message_fields in rposix.r.
  */
 #define PMSG_ADDR       0       /* peer "host:port" (datagrams) */
 #define PMSG_MSG        1       /* payload */
@@ -842,13 +842,6 @@
       is_concurrent=1; global_curtstate = NULL; } while (0)
 
 /*
-#ifdef HAVE_KEYWORD__THREAD
-#define CURTSTATE()
-#define CURTSTATE_CE()
-#else
-*/
-
-/*
  * A thread's state is kept under tstate_key, and also, where the compiler
  * supports them, in a thread-local variable, which is much cheaper to read
  * than pthread_getspecific().  TSTATE_SET() sets both.
@@ -896,7 +889,6 @@
 #define CURTSTATVAR()
 #endif                                  /* ConcurrentCOMPILER */
 #endif                                  /* TSTATARG */
-/*#endif*/
 
 #define ssize    (curtstate->Curstring->size)
 #define strbase  (curtstate->Curstring->base)

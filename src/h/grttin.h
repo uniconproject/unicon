@@ -330,7 +330,8 @@ typedef int DIR;
 #if HAVE_LIBSSL
 typedef int SSL_CTX, SSL, SSL_METHOD;
 typedef int BIO, EVP_PKEY, EVP_MD, EVP_CIPHER, EVP_MD_CTX, EVP_CIPHER_CTX;
-typedef int EVP_PKEY_CTX, X509;
+typedef int EVP_PKEY_CTX, X509, X509_NAME, X509_STORE, X509_STORE_CTX;
+typedef int X509_VERIFY_PARAM;
 typedef int /* STACK_OF(X509) */ stack_st_X509;
 #endif                                  /* LIBSSL */
 

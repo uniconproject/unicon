@@ -1774,15 +1774,25 @@ static int crypto_peek_hex(unsigned char *p, int n, dptr rv)
    return FILEPEEK_OK;
 }
 
-static int crypto_peek_x509_name(void *vnm, dptr rv)
+static int crypto_peek_x509_name(const X509_NAME *nm, dptr rv)
 {
    char buf[256];
-   if (vnm == NULL)
+   if (nm == NULL)
       return FILEPEEK_FAIL;
-   if (X509_NAME_oneline(vnm, buf, sizeof(buf)) == NULL)
+   if (X509_NAME_oneline(nm, buf, sizeof(buf)) == NULL)
       return FILEPEEK_FAIL;
    return crypto_peek_alcstr(buf, rv);
 }
+
+/*
+ * OpenSSL 4.1 deprecates ASN1_STRING_length() for ASN1_STRING_get_length(),
+ * which returns size_t.  SAN entries are short, so int is enough.
+ */
+#host #if OPENSSL_VERSION_NUMBER >= 0x40100000L
+#host #define crypto_asn1_len(s) ((int)ASN1_STRING_get_length(s))
+#host #else
+#host #define crypto_asn1_len(s) ASN1_STRING_length(s)
+#host #endif
 
 static int crypto_peek_san_put(dptr lst, char *tag, const unsigned char *data, int len)
 {
@@ -1840,25 +1850,25 @@ static int crypto_peek_san(X509 *cert, dptr rv)
       switch (gn->type) {
          case GEN_DNS:
             p = ASN1_STRING_get0_data(gn->d.dNSName);
-            len = ASN1_STRING_length(gn->d.dNSName);
+            len = crypto_asn1_len(gn->d.dNSName);
             if (p != NULL && len > 0)
                rc = crypto_peek_san_put(&lst, "DNS:", p, len);
             break;
          case GEN_EMAIL:
             p = ASN1_STRING_get0_data(gn->d.rfc822Name);
-            len = ASN1_STRING_length(gn->d.rfc822Name);
+            len = crypto_asn1_len(gn->d.rfc822Name);
             if (p != NULL && len > 0)
                rc = crypto_peek_san_put(&lst, "email:", p, len);
             break;
          case GEN_URI:
             p = ASN1_STRING_get0_data(gn->d.uniformResourceIdentifier);
-            len = ASN1_STRING_length(gn->d.uniformResourceIdentifier);
+            len = crypto_asn1_len(gn->d.uniformResourceIdentifier);
             if (p != NULL && len > 0)
                rc = crypto_peek_san_put(&lst, "URI:", p, len);
             break;
          case GEN_IPADD:
             p = ASN1_STRING_get0_data(gn->d.iPAddress);
-            len = ASN1_STRING_length(gn->d.iPAddress);
+            len = crypto_asn1_len(gn->d.iPAddress);
             if (p == NULL)
                break;
             if (len == 4)
@@ -1888,6 +1898,22 @@ static int crypto_peek_san(X509 *cert, dptr rv)
       return FILEPEEK_FAIL;
    *rv = lst;
    return FILEPEEK_OK;
+}
+
+/*
+ * Has the certificate's notAfter time passed?  OpenSSL 4.0 deprecates
+ * X509_cmp_current_time().  ASN1_TIME_cmp_time_t(), from 1.1.1, gives
+ * the same answer: expired when notAfter is now or earlier, and not
+ * expired when the time cannot be read.
+ */
+static int crypto_cert_expired(X509 *cert)
+{
+#host #if OPENSSL_VERSION_NUMBER >= 0x10101000L
+   int c = ASN1_TIME_cmp_time_t(X509_get0_notAfter(cert), time(NULL));
+   return c == -1 || c == 0;
+#host #else
+   return X509_cmp_current_time(X509_get0_notAfter(cert)) < 0;
+#host #endif
 }
 
 static int crypto_peek_asn1_time(void *vt, dptr rv)
@@ -2029,8 +2055,7 @@ static int cg_expired(void *h, dptr rv)
    struct CryptoFile *cf = h;
    if (cf->cert == NULL)
       return FILEPEEK_FAIL;
-   return filepeek_yes(
-      X509_cmp_current_time(X509_get0_notAfter(cf->cert)) < 0, rv);
+   return filepeek_yes(crypto_cert_expired(cf->cert), rv);
 }
 
 static int cg_fingerprint(void *h, dptr rv)
@@ -2512,10 +2537,66 @@ static int tlsg_expired(void *h, dptr rv)
    int rc;
    if (cert == NULL)
       return FILEPEEK_FAIL;
-   rc = filepeek_yes(X509_cmp_current_time(X509_get0_notAfter(cert)) < 0, rv);
+   rc = filepeek_yes(crypto_cert_expired(cert), rv);
    X509_free(cert);
    return rc;
 }
+
+#host #if OPENSSL_VERSION_NUMBER >= 0x10002000L
+#host #if OPENSSL_VERSION_NUMBER >= 0x40100000L
+/*
+ * Let every verify error through except a name mismatch.
+ */
+static int tls_name_cb(int ok, X509_STORE_CTX *ctx)
+{
+   int err;
+   if (ok)
+      return 1;
+   err = X509_STORE_CTX_get_error(ctx);
+   return err != X509_V_ERR_HOSTNAME_MISMATCH &&
+          err != X509_V_ERR_IP_ADDRESS_MISMATCH;
+}
+#host #endif
+
+/*
+ * Does cert name host, as a DNS name or an IP address?  OpenSSL 4.1
+ * deprecates X509_check_host() and X509_check_ip_asc() and asks for the
+ * name to be set in the verify parameters and checked by
+ * X509_verify_cert().  Only the name is asked about here, so trust,
+ * dates and the rest of the chain are left to certverified.
+ */
+static int tls_cert_names_host(X509 *cert, char *host)
+{
+#host #if OPENSSL_VERSION_NUMBER >= 0x40100000L
+   X509_STORE *store;
+   X509_STORE_CTX *ctx;
+   X509_VERIFY_PARAM *vpm;
+   int rc = 0;
+
+   store = X509_STORE_new();
+   ctx = X509_STORE_CTX_new();
+   if (store != NULL && ctx != NULL &&
+       X509_STORE_CTX_init(ctx, store, cert, NULL) == 1) {
+      vpm = X509_STORE_CTX_get0_param(ctx);
+      if (tls_host_is_ip(host))
+         rc = X509_VERIFY_PARAM_set1_ip_asc(vpm, host);
+      else
+         rc = X509_VERIFY_PARAM_set1_host(vpm, host, 0);
+      if (rc == 1) {
+         X509_STORE_CTX_set_verify_cb(ctx, tls_name_cb);
+         rc = X509_verify_cert(ctx);
+         }
+      }
+   X509_STORE_CTX_free(ctx);
+   X509_STORE_free(store);
+   return rc == 1;
+#host #else
+   if (tls_host_is_ip(host))
+      return X509_check_ip_asc(cert, host, 0) == 1;
+   return X509_check_host(cert, host, 0, 0, NULL) == 1;
+#host #endif
+}
+#host #endif
 
 static int tlsg_hostnamematch(void *h, dptr rv)
 {
@@ -2544,12 +2625,9 @@ static int tlsg_hostnamematch(void *h, dptr rv)
       return filepeek_yes(0, rv);
       }
 #host #if OPENSSL_VERSION_NUMBER >= 0x10002000L
-   if (tls_host_is_ip(host))
-      rc = X509_check_ip_asc(cert, host, 0);
-   else
-      rc = X509_check_host(cert, host, 0, 0, NULL);
+   rc = tls_cert_names_host(cert, host);
    X509_free(cert);
-   return filepeek_yes(rc == 1, rv);
+   return filepeek_yes(rc, rv);
 #host #else
    X509_free(cert);
    return filepeek_yes(0, rv);

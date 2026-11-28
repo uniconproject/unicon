@@ -56,11 +56,32 @@ int sock_getstrg(register char *buf, int maxi, dptr file)
       stmp++;
       }
 
-   if (stmp - buf < r) {
-      if(stmp == buf)
-         i = stmp - buf + 1;
+   if (stmp - buf < r)
+      i = stmp - buf + 1;               /* include the newline */
+   else if (r < maxi) {
+      /*
+       * The bytes queued so far are not a whole line.  A non-blocking
+       * socket must leave them there: consuming them and then failing
+       * the read when the newline has not arrived yet drops the line,
+       * and the following read returns only the newline.
+       */
+#ifndef NT
+      {
+      int fd, flags;
+#if HAVE_LIBSSL
+      if (BlkD(*file, File)->status & Fs_Encrypt)
+         fd = SSL_get_fd(BlkD(*file, File)->fd.ssl);
       else
-         i = stmp - buf;
+#endif                                  /* LIBSSL */
+         fd = (int)BlkD(*file,File)->fd.fd;
+      flags = fcntl(fd, F_GETFL, 0);
+      if (flags != -1 && (flags & O_NONBLOCK)) {
+         set_syserrortext(EAGAIN);
+         return -3;
+         }
+      }
+#endif                                  /* NT */
+      i = r;
       }
    else
       i = r;
@@ -85,6 +106,8 @@ int sock_getstrg(register char *buf, int maxi, dptr file)
       set_errortext(1040);
       return -3;
       }
+   if (r <= 0)
+      return -1;
    return r;
    }
 #endif                                  /* NT */

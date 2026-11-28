@@ -3,7 +3,7 @@
 # 0 (the default) does not wait, negative waits without a limit.
 #
 
-global stolen
+global stolen, mtx
 procedure now()
    local t
    t := gettimeofday()
@@ -62,18 +62,20 @@ procedure main()
 
    # Another receiver may take the value this wait was woken for.
    # Keep waiting until the deadline instead of failing early.
+   # stolen is shared with the thief, so it is only touched under mtx.
    T := thread { delay(200); "only" @>; delay(3000) }
    stolen := &null
+   mtx := mutex()
    thief := thread {
-      while /stolen do {
-         if receive(T, 0) === "only" then stolen := 1
+      while (critical mtx: /stolen) do {
+         if receive(T, 0) === "only" then critical mtx: stolen := 1
          else delay(1)
          }
       }
    t0 := now()
    m := receive(T, 700)
    el := now() - t0
-   stolen := 1
+   critical mtx: stolen := 1
    if \m then
       check("timed receive was not cut short", ((80 <= el < 2000) & 1) | &null)
    else

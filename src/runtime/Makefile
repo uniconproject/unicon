@@ -21,7 +21,7 @@ HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 GRAPHICSHDRS = ../h/graphics.h ../h/xwin.h
 GRAPHICSRI = rxwin.ri rmswin.ri rwin3d.ri ropengl.ri rd3d.ri
 
-.PHONY: update_rev
+.PHONY: update_rev pgo-clean
 
 # default: iconx
 
@@ -70,6 +70,14 @@ CONSOLEOBJS=  xrwindow.$(O) xrsys.$(O) xinit.$(O) xfwindow.$(O) xfsys.$(O) xrwin
 
 OBJS=	$(XOBJS) $(EXEICONTARGET)
 
+# Profile-guided optimization (configure --enable-pgo).  PGO_CFLAGS and
+# PGO_LDFLAGS are empty except when the "pgo" target of the top-level
+# Makefile rebuilds iconx, instrumented and then with the profile.  Only
+# the iconx objects (XOBJS) and the iconx link get them; the compiler
+# run-time library (rt.a) is built without.
+PGO_CFLAGS=
+PGO_LDFLAGS=
+
 interp_all: update_rev 
 	$(MAKE) $(UNICONX)
 
@@ -108,7 +116,7 @@ $(UNICONWX)-relink: $(OBJS)
 else
 # NTCONDEP is set to NTCON on windows only to add a dependency that sets NTCONSOLE
 $(UNICONX) $(ICONXEXE): $(OBJS) ../../rt/lib/libucommon.a ../../rt/lib/libuconsole.a ../../rt/lib/libgdbm.a ../../rt/lib/libtp.a
-	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o $(UNICONX)  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -luconsole
+	$(CC) $(LDFLAGS) $(PGO_LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o $(UNICONX)  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) -luconsole
 	$(CP) $(UNICONX)$(EXE) ../../bin
 	$(STRIP) ../../bin/$(UNICONX)$(EXE);
 
@@ -127,7 +135,7 @@ icon.$(O):
 # urtt's preprocessor does not see $(CPPFLAGS); pass -I so config.h finds auto.h (iconx and iconc).
 x%.$(O): %.r $(HDRS)
 	$(SLNT)$(RTT) $(RTT_JFLAG) $(NTCONSOLE) -x -I$(dir $(AUTO_H)) $<
-	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c x$*.c
+	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) $(PGO_CFLAGS) -c x$*.c
 	$(SLNT)$(RM) x$*.c
 
 xdata.$(O): data.r $(HDRS) ../h/kdefs.h ../h/fdefs.h ../h/odefs.h
@@ -138,7 +146,7 @@ xfwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
 
 xkeyword.$(O): keyword.r $(HDRS) ../h/feature.h ../h/revision.h
 	$(SLNT)$(RTT) $(RTT_JFLAG) $(NTCONSOLE) -x -I$(dir $(AUTO_H)) keyword.r
-	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c xkeyword.c
+	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) $(PGO_CFLAGS) -c xkeyword.c
 	$(SLNT)$(RM) xkeyword.c
 
 xrposix.$(O): rposix.r rcrypto.ri $(HDRS) ../h/posix.h
@@ -195,6 +203,11 @@ $(RTL_COBJS): compiler-rtl-stamp ;
 
 ../common/drawstring3d.o: ../common/drawstring3d.cc
 	cd ../common; $(MAKE) drawstring3d.o
+
+# Remove the iconx objects so that the pgo target of the top-level Makefile
+# can rebuild them with other flags.
+pgo-clean:
+	$(RM) $(XOBJS)
 
 Pure Clean clean:
 	$(RM) *.$(O) compiler-rtl-stamp

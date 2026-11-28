@@ -719,6 +719,9 @@ UNICONWX
 UNICONT
 UNICONX
 NM
+PGO_USE_CFLAGS
+PGO_GEN_CFLAGS
+PGO
 ALLOCA
 RANLIB
 CPP
@@ -815,6 +818,7 @@ enable_tsan
 enable_ubsan
 enable_msan
 enable_hwasan
+enable_pgo
 enable_uniconx
 with_zlib
 with_xlib
@@ -1518,6 +1522,10 @@ Optional Features:
   --enable-hwasan         Enable HardwareAssisted AddressSanitizer
                           (-fsanitize=hwaddress); AArch64-oriented alternative
                           to ASan; incompatible with ASan/TSan/MSan
+  --enable-pgo            Build iconx with profile-guided optimization (gcc
+                          only): make builds an instrumented iconx, runs the
+                          test suite to train it, then rebuilds iconx with the
+                          profile
   --enable-uniconx        Change executable names to co-exist with Icon
 
 Optional Packages:
@@ -3883,6 +3891,14 @@ then :
   enableval=$enable_hwasan; hwasan=$enableval
 else $as_nop
   hwasan=no
+fi
+
+# Check whether --enable-pgo was given.
+if test ${enable_pgo+y}
+then :
+  enableval=$enable_pgo; pgo=$enableval
+else $as_nop
+  pgo=no
 fi
 
 
@@ -9339,6 +9355,147 @@ fi
 if test "x$orig_cxxflags" != "x" ; then
   CXXFLAGS="$CXXFLAGS $orig_cxxflags"
 fi
+
+PGO=
+PGO_GEN_CFLAGS=
+PGO_USE_CFLAGS=
+if test x"$pgo" = x"yes" ; then
+  if test x"$cross_compiling" = x"yes" ; then
+    as_fn_error $? "--enable-pgo runs the test suite with the iconx it builds, so it cannot be used when cross-compiling" "$LINENO" 5
+  fi
+  if test x"$unicon_os" = x"windows" ; then
+    as_fn_error $? "--enable-pgo is not supported on Windows yet" "$LINENO" 5
+  fi
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC is gcc and not clang" >&5
+printf %s "checking whether $CC is gcc and not clang... " >&6; }
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#if !defined(__GNUC__) || defined(__clang__)
+#error not gcc
+#endif
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else $as_nop
+
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+		as_fn_error $? "--enable-pgo requires gcc; $CC is not gcc (profile-guided optimization with clang is not supported yet)" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -Werror -fprofile-generate -fprofile-update=atomic"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Werror -fprofile-generate -fprofile-update=atomic" >&5
+printf %s "checking whether $CC supports -Werror -fprofile-generate -fprofile-update=atomic... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+				CFLAGS="$ac_c_flag_save"
+				PGO_GEN_CFLAGS="-fprofile-generate -fprofile-update=atomic"
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "--enable-pgo requires -fprofile-generate -fprofile-update=atomic, which $CC does not support" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -Werror -fprofile-use -fprofile-correction -Wno-missing-profile"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Werror -fprofile-use -fprofile-correction -Wno-missing-profile" >&5
+printf %s "checking whether $CC supports -Werror -fprofile-use -fprofile-correction -Wno-missing-profile... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+				CFLAGS="$ac_c_flag_save"
+				PGO_USE_CFLAGS="-fprofile-use -fprofile-correction -Wno-missing-profile"
+
+
+else $as_nop
+
+			CFLAGS="$ac_c_flag_save"
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+			as_fn_error $? "--enable-pgo requires -fprofile-use -fprofile-correction, which $CC does not support" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  PGO=pgo
+fi
+
+
+
 
 if test "x$concurrency" != "xno"; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for C11 atomics" >&5

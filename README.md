@@ -100,6 +100,15 @@ If openssl development library is not present on the system, the configure scrip
 configure: error: "ssl requires libssl-dev or equivalent"
 ```
 
+Profile-guided optimization of the interpreter is off by default. With gcc,
+```
+./configure --enable-pgo
+```
+makes `make` build an instrumented `iconx`, run the test suite (`make Test`) to
+train it, and then rebuild `iconx` with the collected profile. The build takes
+longer, since `iconx` is compiled three times and the tests are run once. The
+profile is kept in `pgo-profile` in the build directory and `make clean` removes it.
+
 ### Linux
 Use the package manager in your Linux distribution to get the build utilities and C compiler.
 For example, on a Debian system

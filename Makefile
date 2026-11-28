@@ -27,6 +27,7 @@ default_target: allsrc
 	$(MAKE) -C $(TOPDIR)/ipl/lib
 	$(MAKE) -C $(TOPDIR)/uni
 	@if test -n "$(PLUGINS)"; then $(MAKE) -C $(TOPDIR)/plugins; fi
+	@if test -n "$(PGO)"; then $(MAKE) pgo; fi
 	$(MAKE) docrule
 	$(MAKE) htmldocrule
 	@echo ============ Build Features ============ > unicon-features.log
@@ -36,7 +37,7 @@ default_target: allsrc
 	@cat unicon-features.log
 	@echo "add $(shell cd $(TOPDIR) && pwd)/bin to your path or do \"make install\" to install Unicon on your system"
 
-.PHONY: plugins update_rev doc config help seed-makedefs-uni
+.PHONY: plugins update_rev doc config help seed-makedefs-uni pgo
 
 # Optional $(wildcard config.status): do not require config.status before it exists
 # (e.g. debian/rules clean / dh_auto_clean runs make distclean without configuring).
@@ -186,6 +187,39 @@ Ibin:		$(TOPDIR)/bin/icont
 
 plugins:
 		$(MAKE) -C $(TOPDIR)/plugins
+
+# Profile-guided optimization of iconx (configure --enable-pgo; gcc only).
+# default_target comes here once ipl and uni are built, since the tests that
+# train the profile need them.  iconx is rebuilt twice, and only iconx: first
+# instrumented, then, after "make Test" has run with it, optimized with the
+# profile it wrote to PGO_DIR.  A failed test does not stop the build, the
+# profile of the tests that did run is still used; the result is reported
+# and the output of the run is kept in PGO_DIR/train.log.  The tests are
+# run one at a time (-j1) even in a parallel build, as "make Test" does
+# when it is run by hand.
+
+PGO_DIR=$(UNICON_TOP_BUILDDIR)/pgo-profile
+
+pgo:
+		@echo "   [PGO] building instrumented $(UNICONX)"
+		rm -rf $(PGO_DIR)
+		mkdir -p $(PGO_DIR)
+		$(MAKE) -C $(TOPDIR)/src/runtime pgo-clean
+		$(MAKE) -C $(TOPDIR)/src/runtime interp_all \
+		   PGO_CFLAGS="$(PGO_GEN_CFLAGS) -fprofile-dir=$(PGO_DIR)" \
+		   PGO_LDFLAGS="-fprofile-generate"
+		@echo "   [PGO] training: make Test (output in $(PGO_DIR)/train.log)"
+		@if $(MAKE) -j1 Test > $(PGO_DIR)/train.log 2>&1; then :; else \
+		   echo "   [PGO] warning: the training run failed, see $(PGO_DIR)/train.log"; \
+		fi
+		@echo "   [PGO] training `grep 'Result:' $(PGO_DIR)/train.log | tail -1`"
+		@if test -z "`find $(PGO_DIR) -name '*.gcda' -print | head -1`"; then \
+		   echo "   [PGO] warning: the training run wrote no profile; $(UNICONX) will not be optimized with one"; \
+		fi
+		@echo "   [PGO] rebuilding $(UNICONX) with the profile"
+		$(MAKE) -C $(TOPDIR)/src/runtime pgo-clean
+		$(MAKE) -C $(TOPDIR)/src/runtime interp_all \
+		   PGO_CFLAGS="$(PGO_USE_CFLAGS) -fprofile-dir=$(PGO_DIR)"
 
 # Documentation
 
@@ -535,6 +569,7 @@ Benchmark-icont:
 clean Clean:
 		$(MAKE) seed-makedefs-uni
 		rm -rf icon.* $(TOPDIR)/bin/[A-Za-z]* $(TOPDIR)/lib/[a-z]*
+		rm -rf $(PGO_DIR)
 		cd $(TOPDIR)/uni;			$(MAKE) Clean
 		cd $(TOPDIR)/ipl;			$(MAKE) Clean
 		cd $(TOPDIR)/src;			$(MAKE) Clean

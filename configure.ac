@@ -235,6 +235,9 @@ AC_ARG_ENABLE([msan],
 AC_ARG_ENABLE([hwasan],
 	[AS_HELP_STRING([--enable-hwasan], [Enable HardwareAssisted AddressSanitizer (-fsanitize=hwaddress); AArch64-oriented alternative to ASan; incompatible with ASan/TSan/MSan])],
 			[hwasan=$enableval], [hwasan=no])
+AC_ARG_ENABLE([pgo],
+	[AS_HELP_STRING([--enable-pgo], [Build iconx with profile-guided optimization (gcc only): make builds an instrumented iconx, runs the test suite to train it, then rebuilds iconx with the profile])],
+			[pgo=$enableval], [pgo=no])
 
 AC_ARG_ENABLE([uniconx],
 	[AS_HELP_STRING([--enable-uniconx], [Change executable names to co-exist with Icon])],
@@ -591,6 +594,47 @@ fi
 if test "x$orig_cxxflags" != "x" ; then
   CXXFLAGS="$CXXFLAGS $orig_cxxflags"
 fi
+
+dnl Profile-guided optimization of iconx (--enable-pgo).  The flags are kept
+dnl out of CFLAGS: the "pgo" target of the top-level Makefile hands them to
+dnl src/runtime, first to build an instrumented iconx and, after the test
+dnl suite has run as training, to rebuild iconx with the profile.  The
+dnl counters are updated atomically because the runtime system is threaded.
+dnl This is the gcc flow; clang needs llvm-profdata to merge its raw
+dnl profiles, so it is refused rather than left to build something else.
+PGO=
+PGO_GEN_CFLAGS=
+PGO_USE_CFLAGS=
+if test x"$pgo" = x"yes" ; then
+  if test x"$cross_compiling" = x"yes" ; then
+    AC_MSG_ERROR([--enable-pgo runs the test suite with the iconx it builds, so it cannot be used when cross-compiling])
+  fi
+  if test x"$unicon_os" = x"windows" ; then
+    AC_MSG_ERROR([--enable-pgo is not supported on Windows yet])
+  fi
+  AC_MSG_CHECKING([[whether $CC is gcc and not clang]])
+  AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([[
+#if !defined(__GNUC__) || defined(__clang__)
+#error not gcc
+#endif
+	]], [[]])],
+	[AC_MSG_RESULT([yes])],
+	[
+		AC_MSG_RESULT([no])
+		AC_MSG_ERROR([--enable-pgo requires gcc; $CC is not gcc (profile-guided optimization with clang is not supported yet)])
+	])
+  AC_CFLAG([-Werror -fprofile-generate -fprofile-update=atomic],
+	[AC_MSG_ERROR([--enable-pgo requires -fprofile-generate -fprofile-update=atomic, which $CC does not support])],
+	[PGO_GEN_CFLAGS="-fprofile-generate -fprofile-update=atomic"])
+  AC_CFLAG([-Werror -fprofile-use -fprofile-correction -Wno-missing-profile],
+	[AC_MSG_ERROR([--enable-pgo requires -fprofile-use -fprofile-correction, which $CC does not support])],
+	[PGO_USE_CFLAGS="-fprofile-use -fprofile-correction -Wno-missing-profile"])
+  PGO=pgo
+fi
+AC_SUBST([PGO])
+AC_SUBST([PGO_GEN_CFLAGS])
+AC_SUBST([PGO_USE_CFLAGS])
 
 dnl When concurrency is enabled, use C11 atomics (<stdatomic.h>) for the
 dnl runtime's lock-free flags and counters if the compiler provides them;

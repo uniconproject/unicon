@@ -818,6 +818,7 @@
    #define CE_INBOX_SIZE        1024
    #define CE_OUTBOX_SIZE       1024
    #define CE_CEQUEUE_SIZE      64
+   #define CE_QUEUE_SLOTS       MinListSlots   /* initial slots of each queue */
 
    /* used in fmath.r, log() */
    #define lastbase             (curtstate->Lastbase)
@@ -1632,32 +1633,45 @@
       } while (0)
 
 /*
+ *  The mutex table.  A mutex is known by its index, mutexes[] being a
+ *  fixed directory of chunks of MutexChunkSize pointers.  get_mutex()
+ *  adds a chunk when the last one is full.  A chunk is never moved or
+ *  freed and the directory has a fixed size, so the slot of a mutex stays
+ *  where it is for the life of the program.  Locking loads it without a
+ *  lock: a thread that has already counted out for a collection may still
+ *  be doing so (thread_control takes MTX_COND_TC after NARthreads drops),
+ *  and stopping the threads does not cover it.
+ */
+#define MutexChunkBits  13
+#define MutexChunkSize  ((word)1 << MutexChunkBits)
+#define MutexChunks     8192
+
+/*
  *  Lock mutex mutexes[mtx].
  */
-
+#define MUTEXID(mtx) \
+      (mutexes[(mtx) >> MutexChunkBits][(mtx) & (MutexChunkSize - 1)])
 
 #define MUTEX_INITID( mtx, attr )                                       \
       do {                                                              \
         int __rv;                                                       \
-        mutexes[mtx] = malloc(sizeof(pthread_mutex_t));                 \
-        if ((__rv=pthread_mutex_init(mutexes[mtx], attr)) != 0) \
+        MUTEXID(mtx) = malloc(sizeof(pthread_mutex_t));                 \
+        if ((__rv=pthread_mutex_init(MUTEXID(mtx), attr)) != 0)         \
           handle_thread_error(__rv, FUNC_MUTEX_INIT, NULL);             \
       } while (0)
 
-#define MUTEXID(mtx) mutexes[mtx]
-
 //BASIC: don't define __rv or check is_concurrent, enclosing code will do it
 #define MUTEX_LOCKID_BASIC(mtx)                                         \
-      if ((__rv=pthread_mutex_lock(mutexes[mtx])) != 0)                 \
+      if ((__rv=pthread_mutex_lock(MUTEXID(mtx))) != 0)                 \
           handle_thread_error(__rv, FUNC_MUTEX_LOCK, NULL);
 
 #define MUTEX_UNLOCKID_BASIC(mtx)                                       \
-          if ((__rv=pthread_mutex_unlock(mutexes[mtx])) != 0)           \
+          if ((__rv=pthread_mutex_unlock(MUTEXID(mtx))) != 0)           \
             handle_thread_error(__rv, FUNC_MUTEX_UNLOCK, NULL);
 
 
 #define MUTEX_TRYLOCKID_BASIC(mtx, isbusy)                              \
-      if ((isbusy=pthread_mutex_trylock(mutexes[mtx])) != 0) {          \
+      if ((isbusy=pthread_mutex_trylock(MUTEXID(mtx))) != 0) {          \
         if (isbusy != EBUSY){                                           \
           handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, NULL);        \
           isbusy = 0;                                                   \
@@ -1839,7 +1853,7 @@
         }                                       \
       } while (0)
 
-#define MUTEX_GETBLK(bp) mutexes[bp->mutexid]
+#define MUTEX_GETBLK(bp) MUTEXID((bp)->mutexid)
 
 #define CV_INITBLK(bp)                          \
       do {                                      \

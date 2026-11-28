@@ -39,7 +39,7 @@ static void     lemitl          (int op,int lab,char *name);
 static void     lemitn          (int op,word n,char *name);
 static void     lemitproc       (word name,int nargs,int ndyn,int nstat,int fstat);
 static void     lemitr          (int op,word loc,char *name);
-static void     misalign        (void);
+static void     opndalign       (void);
 static void     outblock        (char *addr,int count);
 static void     setfile         (void);
 static void     wordout         (word oword);
@@ -528,8 +528,6 @@ static void lemit(int op, char *name)
 
 static void lemitl(int op, int lab, char *name)
    {
-   misalign();
-
 #ifdef DeBugLinker
    if (Dflag)
       fprintf(dbgfile, "%ld:\t%d\tL%d\t\t\t# %s\n", (long)pc, op, lab, name);
@@ -539,6 +537,7 @@ static void lemitl(int op, int lab, char *name)
       labels  = (word *) trealloc(labels, NULL, &maxlabels, sizeof(word),
          lab - maxlabels + 1, "labels");
    outop(op);
+   opndalign();
    if (labels[lab] <= 0) {              /* forward reference */
       outword(labels[lab]);
       labels[lab] = WordSize - pc;      /* add to front of reference chain */
@@ -549,8 +548,6 @@ static void lemitl(int op, int lab, char *name)
 
 static void lemitn(int op, word n, char *name)
    {
-   misalign();
-
 #ifdef DeBugLinker
    if (Dflag)
       fprintf(dbgfile, "%ld:\t%d\t%ld\t\t\t# %s\n", (long)pc, op, (long)n,
@@ -558,34 +555,37 @@ static void lemitn(int op, word n, char *name)
 #endif                                  /* DeBugLinker */
 
    outop(op);
+   opndalign();
    outword(n);
    }
 
 
 static void lemitr(int op, word loc, char *name)
    {
-   misalign();
-   loc -= pc + ((IntBits/ByteBits) + WordSize);
+#ifdef DeBugLinker
+   word opc = pc;
+#endif                                  /* DeBugLinker */
+
+   outop(op);
+   opndalign();
+   loc -= pc + WordSize;
 
 #ifdef DeBugLinker
    if (Dflag) {
       if (loc >= 0)
-         fprintf(dbgfile, "%ld:\t%d\t*+%ld\t\t\t# %s\n",(long) pc, op,
+         fprintf(dbgfile, "%ld:\t%d\t*+%ld\t\t\t# %s\n",(long) opc, op,
             (long)loc, name);
       else
-         fprintf(dbgfile, "%ld:\t%d\t*-%ld\t\t\t# %s\n",(long) pc, op,
+         fprintf(dbgfile, "%ld:\t%d\t*-%ld\t\t\t# %s\n",(long) opc, op,
             (long)-loc, name);
       }
 #endif                                  /* DeBugLinker */
 
-   outop(op);
    outword(loc);
    }
 
 static void lemitin(int op, word offset, int n, char *name)
    {
-   misalign();
-
 #ifdef DeBugLinker
    if (Dflag)
       fprintf(dbgfile, "%ld:\t%d\t%d,S+%ld\t\t\t# %s\n", (long)pc, op, n,
@@ -593,6 +593,7 @@ static void lemitin(int op, word offset, int n, char *name)
 #endif                                  /* DeBugLinker */
 
    outop(op);
+   opndalign();
    outword(n);
    outword(offset);
    }
@@ -606,14 +607,13 @@ static void lemitin(int op, word offset, int n, char *name)
  */
 static void lemitint(int op, word i, char *name)
    {
-   misalign();
-
 #ifdef DeBugLinker
    if (Dflag)
       fprintf(dbgfile,"%ld:\t%d\t%ld\t\t\t# %s\n",(long)pc,op,(word)i,name);
 #endif                                  /* DeBugLinker */
 
    outop(op);
+   opndalign();
    outword(i);
    }
 
@@ -1651,13 +1651,14 @@ static void align()
    }
 
 /*
- * misalign() outputs a Noop instruction for padding if pc + sizeof(int)
- *  is not a multiple of WordSize.  This is for operations that output
- *  an int opcode followed by an operand that needs to be word-aligned.
+ * opndalign() is called between an int opcode and an operand that needs
+ *  to be word-aligned.  If pc is not a multiple of WordSize it outputs a
+ *  Noop as padding, which the interpreter skips when it fetches the
+ *  operand (GetWord) and so never executes.
  */
-static void misalign()
+static void opndalign()
    {
-   if ((pc + IntBits/ByteBits) % WordSize != 0)
+   if (pc % WordSize != 0)
       lemit(Op_Noop, "noop [pad]");
    }
 

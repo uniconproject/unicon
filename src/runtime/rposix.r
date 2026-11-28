@@ -2840,6 +2840,26 @@ long long sock_now_ms(void)
 #endif                                  /* UNIX */
 }
 
+#if NT
+/*
+ * MinGW defines EWOULDBLOCK as a CRT errno, often 11 or 140.
+ * Winsock reports that condition as WSAEWOULDBLOCK (10035).  receive()
+ * retries when errno is EWOULDBLOCK, so store the CRT name.
+ */
+static int sock_wsa_errno(void)
+{
+   int e = WSAGetLastError();
+
+   if (e == WSAEWOULDBLOCK)
+      return EWOULDBLOCK;
+   if (e == WSAEINTR)
+      return EINTR;
+   if (e == WSAETIMEDOUT)
+      return ETIMEDOUT;
+   return e;
+}
+#endif                                  /* NT */
+
 /*
  * Wait until socket s has something to read, for at most timeout
  * milliseconds (0: just check; negative: no limit).  Counted out, so a
@@ -2865,7 +2885,7 @@ int sock_wait_readable(int s, int timeout)
    rc = select(s + 1, &rs, NULL, NULL, tvp);
    INC_NARTHREADS_CONTROLLED;
    if (rc < 0)
-      errno = WSAGetLastError();
+      errno = sock_wsa_errno();
 #else                                   /* NT */
    struct pollfd pfd;
 
@@ -4001,7 +4021,7 @@ int sock_recv(int s, struct b_record **rp, int nb, word mtx)
    if (nb) {
       unsigned long on = 1;
       if (ioctlsocket((SOCKET)s, FIONBIO, &on) != 0) {
-         errno = WSAGetLastError();
+         errno = sock_wsa_errno();
 #ifdef Concurrent
          sock_recv_leave(mtx, nb);
 #endif                                  /* Concurrent */
@@ -4021,7 +4041,7 @@ peek_again:
                      sa, &addrlen);
    if (msglen < 0) {
 #if NT
-      errno = WSAGetLastError();
+      errno = sock_wsa_errno();
       /*
        * An unlimited read holds no lock.  A timed receive on this
        * socket may have made it nonblocking for a moment.
@@ -4087,7 +4107,7 @@ peek_again:
 #else                                   /* NT */
    addrlen = sizeof(conn);
    if ((msglen = recvfrom(s, buf, bufsize, rflags, sa, &addrlen)) < 0) {
-      errno = WSAGetLastError();
+      errno = sock_wsa_errno();
       if (!nb && (errno == EWOULDBLOCK || errno == EAGAIN)) {
          /*
           * Drop the large buffer before retrying.  The next datagram

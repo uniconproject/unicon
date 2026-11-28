@@ -58,40 +58,47 @@
        #ifdef FieldTableCompression
 
           #if IntBits == 16
-             #define IVersion "I12.U.30FT/16/16"
+             #define IVerSizes "FT/16/16"
           #endif                                /* IntBits == 16 */
 
           #if IntBits == 32
 #if WordBits==64
-             #define IVersion "I12.U.30FT/32/64"
+             #define IVerSizes "FT/32/64"
 #else
-             #define IVersion "I12.U.30FT/32/32"
+             #define IVerSizes "FT/32/32"
 #endif
           #endif                                /* IntBits == 32 */
 
           #if IntBits == 64
-             #define IVersion "I12.U.30FT/64/64"
+             #define IVerSizes "FT/64/64"
           #endif                                /* IntBits == 64 */
 
        #else                            /* FieldTableCompression */
 
           #if IntBits == 16
-             #define IVersion "I12.U.30/16/32"
+             #define IVerSizes "/16/32"
           #endif                                /* IntBits == 16 */
 
           #if IntBits == 32
 #if WordBits==64
-             #define IVersion "I12.U.30/32/64"
+             #define IVerSizes "/32/64"
 #else
-             #define IVersion "I12.U.30/32/32"
+             #define IVerSizes "/32/32"
 #endif
           #endif                                /* IntBits == 32 */
 
           #if IntBits == 64
-             #define IVersion "I12.U.30/64/64"
+             #define IVerSizes "/64/64"
           #endif                                /* IntBits == 64 */
 
        #endif                           /* FieldTableCompression */
+
+       /*
+        * Icode version 31 pads a word operand after its opcode, where
+        * version 30 padded before the opcode.  The interpreter runs both.
+        */
+       #define IVersion "I12.U.31" IVerSizes
+       #define IPrevVersion "I12.U.30" IVerSizes
 
 #endif                                  /* COMPILER */
 

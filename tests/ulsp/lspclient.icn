@@ -72,7 +72,7 @@ end
 # Send the queued messages and return a list of what ulsp sent back.
 #
 procedure lsp_run(name)
-   local infile, outfile, f, m, body, replies, len, s
+   local infile, outfile, f, m, body, replies, len, s, ulsp
    lsp_request("shutdown", &null)
    lsp_notify("exit", &null)
    infile := "local/" || name || ".lspin"
@@ -83,11 +83,13 @@ procedure lsp_run(name)
       writes(f, "Content-Length: ", *body, "\r\n\r\n", body)
    }
    close(f)
-   # ULSP names the server to test, e.g. an installed ulsp
-   system((getenv("ULSP") | "../../bin/ulsp") || " --stdio --loglevel 0 < " || infile || " > " || outfile)
+   # ULSP names the server to test, e.g. an installed ulsp (see Makefile)
+   ulsp := getenv("ULSP") | "../../bin/ulsp"
+   system(ulsp || " --stdio --loglevel 0 < " || infile || " > " || outfile)
    f := open(outfile) | stop("cannot read ", outfile)
    s := reads(f, -1) | ""
    close(f)
+   *s > 0 | stop("no replies from ", ulsp)
    replies := []
    s ? while tab(find("Content-Length: ")) do {
       move(16)

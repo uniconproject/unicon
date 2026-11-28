@@ -187,7 +187,13 @@ end
 # The unicon translator that came with this ulsp, or "unicon".
 #
 procedure unicon_command()
-   return (&features ? (="Binaries at " & tab(0))) || "unicon" | "unicon"
+   local bin
+   if bin := (&features ? (="Binaries at " & tab(0))) & *bin > 0 then {
+      # an installed Unicon reports its bin directory without a final /
+      if not any('/\\', bin[-1]) then bin ||:= "/"
+      return bin || "unicon"
+   }
+   return "unicon"
 end
 
 procedure temp_dir()

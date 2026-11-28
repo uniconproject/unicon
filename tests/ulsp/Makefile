@@ -2,11 +2,15 @@
 # ulsp test
 #
 # Each test queues LSP messages with lspclient.icn, runs ulsp --stdio on
-# them (../../bin/ulsp, or $ULSP if set), and prints the replies. The
-# documents the tests open are in src/.
+# them, and prints the replies. The documents the tests open are in src/.
 #
 
 include ../Makedefs
+
+# The ulsp that goes with $(UC): ../../bin/ulsp for ../../bin/unicon, and
+# the installed ulsp when UC is an installed unicon found on the PATH
+ULSP?=$(if $(findstring /,$(UC)),$(dir $(UC))ulsp,ulsp)
+export ULSP
 
 TARGETS=$(filter-out lspclient,$(patsubst %.icn,%,$(wildcard *.icn)))
 SKIP=

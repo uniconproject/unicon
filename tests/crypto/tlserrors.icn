@@ -1,0 +1,61 @@
+#
+# A TLS server whose handshake fails reports why in &errortext:
+# 1324 when the client offers no protocol version the server allows,
+# 1323 when there is no cipher both sides accept.
+#
+
+link tlsutil
+
+global srv_err
+
+procedure serve(opt)
+   local sock
+   if sock := open ! opt then {
+      srv_err := "connected"
+      close(sock)
+      }
+   else
+      srv_err := (&errornumber | "?") || " " || (&errortext | "?")
+end
+
+#
+# One server handshake with server options sopts, against one client
+# with client options copts.  The client retries until the server has
+# answered, so it does not depend on when the server starts listening.
+#
+procedure handshake(label, sopts, copts)
+   local port, t, sock, key, cert, ca, n
+   key := "key=./data/unicon-server.key"
+   cert := "cert=./data/unicon-server.crt"
+   ca := "ca=./data/unicon-ca.crt"
+   port := tls_port()
+   srv_err := &null
+   t := thread serve([port, "nae", key, cert, ca] ||| sopts)
+   n := 0
+   while /srv_err & (n +:= 1) <= 100 do {
+      if sock := open ! ([port, "ne", 2000, ca] ||| copts) then
+         close(sock)
+      if /srv_err then
+         delay(50)
+      }
+   wait(t)
+   write(label, ": ", \srv_err | "no answer from server")
+end
+
+procedure main()
+   if not (&features == "secure sockets layer encryption") then
+      stop("needs SSL")
+   if not (&features == "concurrent threads") then
+      stop("needs concurrent threads")
+
+   handshake("tls13-server tls12-client",
+             ["minProto=TLS1.3"], ["maxProto=TLS1.2"])
+   handshake("tls12-server tls13-client",
+             ["maxProto=TLS1.2"], ["minProto=TLS1.3"])
+   handshake("no shared TLS1.3 cipher",
+             ["minProto=TLS1.3", "ciphers1.3=TLS_AES_256_GCM_SHA384"],
+             ["ciphers1.3=TLS_AES_128_GCM_SHA256"])
+   handshake("no shared TLS1.2 cipher",
+             ["maxProto=TLS1.2", "ciphers=AES256-GCM-SHA384"],
+             ["maxProto=TLS1.2", "ciphers=AES128-GCM-SHA256"])
+end

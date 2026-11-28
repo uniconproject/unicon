@@ -412,7 +412,6 @@ void rusage2rec(struct rusage *usg, struct descrip *dp, struct b_record **rp);
 void            segvtrap        (int sig, siginfo_t *si, void *uc);
 void            segv_thread_init(char *altstack, int ismain);
 int             cstack_peril    (char *mark);
-extern char     main_segv_altstack[];
 #else                                   /* UNIX */
 void            segvtrap        (void);
 #endif                                  /* UNIX */

@@ -19,6 +19,14 @@ static word unicon_getrandom(void);
 static void     env_err         (char *msg, char *name, char *val);
 #if UNIX
 static void install_cstack_signals(void);
+
+/*
+ * &main's alternate signal stack for segvtrap().  Static, so that on
+ * macOS it lands in __DATA,__bss.  The macOS linker gives a large
+ * external zero-filled array in __DATA,__common an alignment that
+ * grows with its size, and 128 KB gets more than a segment allows.
+ */
+static char main_segv_altstack[SegvAltStackSize];
 #endif                                  /* UNIX */
 FILE            *pathOpen       (char *fname, char *mode);
 
@@ -1489,7 +1497,6 @@ static void install_cstack_signals(void)
 static __thread char *cstack_top;       /* near the start of this C stack */
 static __thread char *cstack_lo;        /* low end of this C stack, if known */
 static __thread int cstack_is_main;     /* non-zero in the &main thread */
-char main_segv_altstack[SegvAltStackSize];
 
 #ifdef Concurrent
 static pthread_key_t segv_altstack_key;

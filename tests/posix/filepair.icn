@@ -32,18 +32,19 @@ procedure parent(in)
    tries := 0
    while i < count do {
 #       write("parent ", i)
-      tries +:= 1
-      if s := read(in) then {
+      if s := read(in) & *s > 0 then {
          j := (s ? integer(tab(many(&digits)))) | -1
          if j ~= i then {
             write("failed - expected ", i, " got ", j, " from ", image(s))
             break
          }
          i +:= 1
+         tries := 0
       }
       else {
+         tries +:= 1
          delay(1)
-         if tries > 10 then stop("too many tries for i ", i)
+         if tries > 2000 then stop("too many tries for i ", i)
          }
    }
    write("parent ending")

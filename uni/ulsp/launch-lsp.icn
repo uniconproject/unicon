@@ -26,6 +26,7 @@ procedure usage()
    write("\t --socket <PORT> : set the lsp server port")
    write("\t -s : run as a server (default)")
    write("\t -c : run as a client")
+   write("\t --stdio : talk to the client over stdin/stdout instead of a socket")
    write("\t --logfile <filename> : log file")
    write("\t --loglevel <level> : log level from 0-17. log levels 8-17 are used for debugging")
    write("\t --debug-kind  <kind>: debug kind to log")
@@ -36,9 +37,9 @@ end
 
 procedure validate_args(args)
    local opts
-   opts := options(args, "--socket+ --logfile: --loglevel+  --debug-kind: -h! -c! -s! --build-lsif:", usage)
+   opts := options(args, "--socket+ --stdio! --logfile: --loglevel+  --debug-kind: -h! -c! -s! --build-lsif:", usage)
    if *opts = 0 then usage()
-   member(opts, "-socket") | member(opts, "-build-lsif") | usage()
+   member(opts, "-socket" | "-stdio" | "-build-lsif") | usage()
    return opts
 end
 
@@ -60,6 +61,9 @@ procedure main(args)
    opts := validate_args(args)
 
    Logger((opts["-loglevel"]), opts["-logfile"]) #  # default to informational, stdout
+   # stdout carries the protocol, so log to stderr
+   if \opts["-stdio"] then
+      Logger.redirect_std_out_to_err()
 
    if \opts["-debug-kind"] then
       Logger.add_debug_kind(opts["-debug-kind"])
@@ -75,17 +79,21 @@ procedure main(args)
       indexer.build_index()
       exit(0)
    }
-   # Allow passing full host:port as an arg
-   sock := opts["-socket"]
-   if &features == ("MacOS" | "MS Windows NT") then {
-      sock := "127.0.0.1:" || sock
-   }
+   if \opts["-stdio"] then
+      mode := "stdio"
    else {
-      sock := ":" || sock
-   }
+      # Allow passing full host:port as an arg
+      sock := opts["-socket"]
+      if &features == ("MacOS" | "MS Windows NT") then {
+         sock := "127.0.0.1:" || sock
+      }
+      else {
+         sock := ":" || sock
+      }
 
-   # Set mode for server to run in, based on opts.
-   member(opts, mode := "c") | (mode := "s")
+      # Set mode for server to run in, based on opts.
+      member(opts, mode := "c") | (mode := "s")
+   }
 
    ulsp_server := Server(sock, mode)
    ulsp_server.connect()

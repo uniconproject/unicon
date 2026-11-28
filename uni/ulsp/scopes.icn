@@ -1,0 +1,560 @@
+#
+# scopes.icn: what each name in a document refers to
+#
+# The document is parsed with the parser package (uni/parser), and each
+# identifier in it is matched with what declares it: a parameter, local
+# or static of the procedure or method it is in, a member or method of
+# the class it is in, or a global, procedure, record or class of the
+# document. The name after a "." is a member of the class when it follows
+# self, and a field otherwise. A name none of these declare is a built-in
+# function, or is declared in another file, or is not declared at all.
+#
+# The parser sees the document after its $define macros are expanded and
+# its $include files are read. A name is put where it is in the document
+# only when that is certain (see exact()); a name that a macro wrote or
+# moved is put where it most likely is, and what it refers to is noted
+# as unsafe to rename, as is what an included file refers to.
+#
+
+package ulsp
+
+import parser
+
+#
+# What a name refers to. kind is one of "param", "local", "static",
+# "global", "procedure", "record", "class", "member", "method", "field",
+# "builtin" or "other". line and col (1-based, col in characters) are
+# where it is declared, if in this document. owner is the procedure,
+# method or class it belongs to, if any.
+#
+record scope_sym(kind, name, line, col, owner)
+
+#
+# A name at line and col (1-based, col in characters) of the document,
+# len characters long. proc is the linker's name for the procedure it is
+# in, e.g. "main" or "Counter_bump".
+#
+record scope_occ(sym, line, col, len, proc, decl)
+
+class DocScopes(
+   text,       # the document's text
+   dir,        # the document's directory, where $include looks first
+   lines,      # its lines
+   occs,       # every name found, as scope_occs
+   globals,    # names declared at the top of the document
+   members,    # class name -> table of member and method names
+   fields,     # field name -> its scope_sym
+   others,     # name -> scope_sym for names nothing here declares
+   pkg,        # the document's package, if it has one
+   expanded,   # line number -> the line as the parser saw it
+   unsafe,     # scope_sym -> why a rename cannot find all its uses
+   names,      # procedure -> the set of names used in it
+   macros,     # the preprocessor symbols: predefined, or from $define
+   dropped,    # the lines that an $ifdef left out
+   starts,     # the lines where declarations, procedures and methods start
+   first,      # procedure -> the line where it starts
+   taken,      # the "line:col" of each name in occs
+   guesses     # scope_occs for names whose place is not certain
+   )
+
+   #
+   # Parse the text and match its names; fail if it does not parse.
+   #
+   method build()
+      local tree, here
+      lines := doc_lines(text)
+      # $include "f" opens f in the current directory, as the translator
+      # does when it compiles the document where it is
+      here := chdir()
+      chdir(\dir)
+      tree := parse_unicon(copy(lines))
+      chdir(\here)
+      \tree | fail
+      macros := parse_macros
+      # yyin is the text the parser's lexer read
+      expand_lines(yyin)
+      dropped_lines()
+      starts := set()
+      first := table()
+      occs := []
+      unsafe := table()
+      names := table()
+      taken := set()
+      guesses := []
+      globals := table()
+      members := table()
+      fields := table()
+      others := table()
+      declare(tree)
+      resolve(tree)
+      # a guess is kept if no other name is at its place
+      every add_occ(!guesses)
+      return
+   end
+
+   #
+   # Note the lines of the document in s, the text after preprocessing.
+   # A "#line n "file"" in it says where the lines after it are from, as
+   # it does to the lexer; the document itself is the file "list".
+   #
+   method expand_lines(s)
+      local n := 1, f := "list", line
+      expanded := table()
+      s ? while not pos(0) do {
+         line := tab(find("\n") | 0)
+         move(1)
+         line ? {
+            if ="#line " & n := integer(tab(many(&digits))) then {
+               if =" \"" then f := "" ~== tab(find("\"") | 0)
+            }
+            else if f == "list" then
+               /expanded[n] := line
+         }
+         n +:= 1
+      }
+   end
+
+   #
+   # Note the lines of the document that the preprocessor left out, as
+   # they are in the part of an $ifdef or $ifndef that does not apply.
+   # Their names are not parsed, so nothing knows what they refer to.
+   # A line of a multiline string that is between $ifdef and $endif is
+   # taken for one too, as it is also not a line of its own to the parser.
+   #
+   method dropped_lines()
+      local n, depth := 0, w
+      dropped := []
+      every n := 1 to *lines do lines[n] ? {
+         tab(many(' \t'))
+         if ="$" & (tab(many(' \t')) | &null) & w := tab(many(&letters)) then {
+            if match("if", w) then depth +:= 1
+            else if w == "endif" then depth -:= 1
+         }
+         else if depth > 0 & not pos(0) & (/expanded[n] | *expanded[n] = 0) then
+            put(dropped, n)
+      }
+   end
+
+   #
+   # The first line that an $ifdef left out and that has the name of sym,
+   # a parameter, local or static, where it could be a use of it: between
+   # the line where its procedure starts and the next line where another
+   # one or a declaration starts. Fails if there is none.
+   #
+   method left_out(sym)
+      local s, e, n
+      s := \first[sym.owner] | fail
+      e := *lines
+      every n := !starts do
+         if n > s then e >:= n - 1
+      every n := !dropped do
+         if s <= n <= e & word_at(lines[n], sym.name) then return n
+   end
+
+   #
+   # The name at the 0-based line and UTF-16 character of an LSP position.
+   #
+   method at(line, character)
+      local o, s, after
+      line +:= 1
+      s := lines[line] | fail
+      every o := !occs do
+         if o.line = line then {
+            if utf16_len(s[1:o.col]) <= character < utf16_len(s[1:o.col + o.len]) then
+               return o
+            # the position just after a name
+            if character = utf16_len(s[1:o.col + o.len]) then
+               /after := o
+         }
+      return \after
+   end
+
+   #
+   # Every name that refers to the same thing as o.
+   #
+   method all_like(o)
+      local x
+      every x := !occs do
+         if x.sym === o.sym then suspend x
+   end
+
+   #
+   # An LSP Range for o.
+   #
+   method range(o)
+      local s
+      s := lines[o.line]
+      return table("start", table("line", o.line - 1, "character", utf16_len(s[1:o.col])),
+                   "end", table("line", o.line - 1, "character", utf16_len(s[1:o.col + o.len])))
+   end
+
+   #
+   # The names that the procedure with linker name p uses but nothing
+   # here declares.
+   #
+   method undeclared(p, name)
+      local o
+      every o := !occs do
+         if o.proc === p & o.sym.kind == "other" & o.sym.name == name then suspend o
+   end
+
+   #
+   # The linker's name for the procedure or method m of class c, or for
+   # the procedure m when c is null.
+   #
+   method linker_name(m, c)
+      return (\pkg || "__" | "") || (\c || "_" | "") || m
+   end
+
+   ##################################################################
+   # Declarations at the top of the document
+   ##################################################################
+
+   method declare(n)
+      local t, c, m
+      type(n) == "treenode" | fail
+      case n.label of {
+         "package": pkg := ident_leaves(n).s
+         "global": every add_decl(globals, "global", ident_leaves(n))
+         "procedure": add_decl(globals, "procedure", n.children[1])
+         "record": {
+            add_decl(globals, "record", n.children[1])
+            every t := ident_leaves(n.children[2]) do
+               /fields[t.s] := scope_sym("field", t.s, t.line, t.column, n.children[1].s)
+         }
+         "class": {
+            c := n.children[1].s
+            add_decl(globals, "class", n.children[1])
+            /members[c] := table()
+            every add_decl(members[c], "member", arg_names(n.children[3]), c)
+            every add_decl(members[c], "member", ident_leaves(n.children[5]), c)
+            every m := tree_nodes(n.children[6], "method" | "abstract") do
+               add_decl(members[c], "method", first_ident(m), c)
+         }
+         "link" | "import" | "invocable": fail
+         default: every declare(!n.children)
+      }
+   end
+
+   method add_decl(tbl, kind, t, owner)
+      is_ident(t) | fail
+      if in_doc(t) then insert(starts, t.line)
+      /tbl[t.s] := scope_sym(kind, t.s, t.line, t.column, owner)
+   end
+
+   ##################################################################
+   # Matching names with declarations
+   ##################################################################
+
+   method resolve(n)
+      local t, c, m
+      type(n) == "treenode" | fail
+      case n.label of {
+         "global": every t := ident_leaves(n) do
+            note(t, globals[t.s], , 1)
+         "record": {
+            note(n.children[1], globals[n.children[1].s], , 1)
+            every t := ident_leaves(n.children[2]) do
+               note(t, fields[t.s], , 1)
+         }
+         "procedure": body(n, , n.children[1].s)
+         "class": {
+            c := n.children[1].s
+            note(n.children[1], globals[c], , 1)
+            every t := ident_leaves(n.children[2]) do
+               note(t, globals[t.s])
+            every t := arg_names(n.children[3]) | ident_leaves(n.children[5]) do
+               note(t, members[c][t.s], , 1)
+            every m := tree_nodes(n.children[6], "method" | "abstract") do
+               body(m, c, first_ident(m).s)
+            if type(n.children[8]) == "treenode" then
+               body(n.children[8], c, "initially")
+         }
+         "package" | "link" | "import" | "invocable": fail
+         default: every resolve(!n.children)
+      }
+   end
+
+   #
+   # A procedure, method or initially section: its name, parameters,
+   # locals and statics, then its code. c is the class it is in.
+   #
+   method body(n, c, name)
+      local scope, p, t, k, x, i
+      scope := table()
+      p := linker_name(name, c)
+      # A method has an implicit parameter self, whether or not the source
+      # writes that name. A procedure does not, and may declare self itself.
+      if \c then {
+         /names[p] := set()
+         insert(names[p], "self")
+      }
+      if name == "initially" then {
+         i := 1
+         # the tree does not say where it starts: after the start that
+         # comes last before its first name, a method's or the class's
+         if in_doc(t := first_ident(n)) then
+            every k := !starts do
+               if k <= t.line then {
+                  /first[p] := k
+                  first[p] <:= k
+               }
+      }
+      else {
+         if \c then note(n.children[1], members[c][name], p, 1)
+         else note(n.children[1], globals[name], p, 1)
+         if in_doc(n.children[1]) then first[p] := n.children[1].line
+         i := 2
+      }
+      every t := arg_names(n.children[i]) do {
+         /scope[t.s] := scope_sym("param", t.s, t.line, t.column, p)
+         note(t, scope[t.s], p, 1)
+      }
+      every x := !n.children[i + 1:0] do
+         if type(x) == "treenode" & x.label == "locals" then {
+            every k := tree_nodes(x, "local" | "static") do
+               every t := declared_vars(k) do {
+                  /scope[t.s] := scope_sym(k.label, t.s, t.line, t.column, p)
+                  note(t, scope[t.s], p, 1)
+               }
+            # initial values of locals
+            every expr(var_values(x), scope, c, p)
+         }
+         else
+            expr(x, scope, c, p)
+   end
+
+   method expr(n, scope, c, p)
+      local f, sym
+      if type(n) == "token" then {
+         is_ident(n) | fail
+         # The implicit self of a method is not a variable written in the
+         # source. A method that declares self, and a procedure, are ordinary.
+         if n.s == "self" & \c & /scope["self"] then fail
+         note(n, lookup(n.s, scope, c), p)
+      }
+      else if type(n) == "treenode" then {
+         # the name of a keyword, as in &input, is not a variable
+         if n.label == "Keyword" then fail
+         if n.label == "packageref" then {
+            # ::x is the global x, whatever the procedure declares, if
+            # the document is not in a package; in p::x neither p nor x
+            # is a name of this document
+            if /n.children[1] & /pkg & f := is_ident(n.children[2]) then
+               note(f, lookup(f.s, table()), p)
+         }
+         else if n.label == "Field" & type(f := n.children[2]) == "token" then {
+            expr(n.children[1], scope, c, p)
+            if type(n.children[1]) == "token" & n.children[1].s == "self" & sym := members[\c][f.s] then
+               note(f, sym, p)
+            else
+               note(f, \fields[f.s] | (fields[f.s] := scope_sym("field", f.s)), p)
+         }
+         else
+            every expr(!n.children, scope, c, p)
+      }
+   end
+
+   method lookup(name, scope, c)
+      return \(scope[name] | members[\c][name] | globals[name] | others[name]) |
+         (others[name] := scope_sym(if proc(name, 0) then "builtin" else "other", name))
+   end
+
+   #
+   # Note that token t, a name in procedure p, refers to sym.
+   #
+   method note(t, sym, p, decl)
+      local col
+      \sym | fail
+      is_ident(t) | fail
+      /names[p] := set()
+      insert(names[p], t.s)
+      if not in_doc(t) then {
+         /unsafe[sym] := "in the included file " || t.filename
+         fail
+      }
+      if col := exact(t) then
+         add_occ(scope_occ(sym, t.line, col, *t.s, p, decl))
+      else {
+         /unsafe[sym] := "on line " || t.line || ", in text that a $define changes"
+         put(guesses, scope_occ(sym, t.line, locate(t), *t.s, p, decl))
+      }
+   end
+
+   # t, if it is a token of the document, not of a file it includes
+   method in_doc(t)
+      if \t.filename ~== "list" then fail
+      return t
+   end
+
+   method add_occ(o)
+      local k := o.line || ":" || o.col
+      if member(taken, k) then fail
+      insert(taken, k)
+      put(occs, o)
+   end
+
+   #
+   # The column, in characters, of token t in the document, if it is
+   # certain: the lexer found t in a line that is as it is in the
+   # document, or in the part of a line before the first change that
+   # preprocessing made to it or after the last one. Fails otherwise.
+   #
+   method exact(t)
+      local src, exp, i, j, p, q
+      src := lines[t.line] | fail
+      exp := \expanded[t.line] | fail
+      i := col_index(exp, t.column) | fail
+      exp[i +: *t.s] == t.s | fail
+      if exp == src then return i
+      # p characters are the same at the start of both, then q at the end
+      p := 0
+      while exp[p + 1] == src[p + 1] do p +:= 1
+      q := 0
+      while p + q < *exp & p + q < *src & exp[-(q + 1)] == src[-(q + 1)] do q +:= 1
+      if i + *t.s - 1 <= p then
+         j := i
+      else if i > *exp - q then
+         j := i + *src - *exp
+      else
+         fail
+      # it must be the whole of a name in the document too
+      if any(idchars(), src, j - 1) | any(idchars(), src, j + *t.s) then fail
+      return j
+   end
+
+   #
+   # The column, in characters, where token t most likely is in the
+   # document, when exact() cannot say: where the name is, nearest to the
+   # column the lexer gave. Fails if the name is not on the line.
+   #
+   method locate(t)
+      local s, i, best, d, bestd
+      s := lines[t.line] | fail
+      every i := word_at(s, t.s) do {
+         d := abs(visual_col(s, i) - t.column)
+         if /bestd | d < bestd then {
+            best := i
+            bestd := d
+         }
+      }
+      return \best
+   end
+end
+
+#
+# The lines of text, without line ends.
+#
+procedure doc_lines(text)
+   local L := [], i
+   text ? {
+      while put(L, tab(find("\n"))) do move(1)
+      put(L, tab(0))
+   }
+   every i := 1 to *L do
+      if L[i][-1] == "\r" then L[i] := L[i][1:-1]
+   return L
+end
+
+#
+# The places in s where the name w is, as a whole name.
+#
+procedure word_at(s, w)
+   local i
+   every i := find(w, s) do
+      if not (any(idchars(), s, i - 1) | any(idchars(), s, i + *w)) then suspend i
+end
+
+procedure idchars()
+   static cs
+   initial cs := &letters ++ &digits ++ '_'
+   return cs
+end
+
+#
+# The column of character i of s, counting tabs every 8, as the lexer does.
+#
+procedure visual_col(s, i)
+   local col := 1, c
+   every c := !s[1:i] do {
+      col +:= 1
+      if c == "\t" then
+         while (col - 1) % 8 ~= 0 do col +:= 1
+   }
+   return col
+end
+
+#
+# The character of s that is at column col, counting tabs every 8.
+#
+procedure col_index(s, col)
+   local i, c := 1
+   every i := 1 to *s do {
+      if c = col then return i
+      c +:= 1
+      if s[i] == "\t" then
+         while (c - 1) % 8 ~= 0 do c +:= 1
+   }
+end
+
+# t, if it is a token that is a name
+procedure is_ident(t)
+   type(t) == "token" | fail
+   is_name(t.s) | fail
+   return t
+end
+
+# s, if it is a name that is not a reserved word
+procedure is_name(s)
+   any(&letters ++ '_', s) | fail
+   many(idchars(), s) = *s + 1 | fail
+   fmt_reserved(s) & fail
+   return s
+end
+
+# the identifier leaves under n, in order
+procedure ident_leaves(n)
+   if type(n) == "token" then
+      return is_ident(n)
+   else if type(n) == "treenode" then
+      suspend ident_leaves(!n.children)
+end
+
+procedure first_ident(n)
+   return ident_leaves(n)
+end
+
+# the nodes labeled s under n, not looking inside them
+procedure tree_nodes(n, s)
+   type(n) == "treenode" | fail
+   if n.label == s then return n
+   suspend tree_nodes(!n.children, s)
+end
+
+# the names in a parameter list: the first identifier of each arg
+procedure arg_names(n)
+   local a
+   if type(n) == "token" then return is_ident(n)
+   type(n) == "treenode" | fail
+   if n.label == ("arg" | "carg") then {
+      every a := !n.children do
+         if type(a) == "treenode" & a.label == "arg" then return first_ident(a)
+      return first_ident(n)
+   }
+   suspend arg_names(!n.children)
+end
+
+# the variables a local or static declaration declares
+procedure declared_vars(n)
+   local v
+   every v := tree_nodes(n, "variable" | "variableassign") do
+      suspend first_ident(v)
+end
+
+# the initial values in local declarations: "local u := 1" has
+# variableassign(u, assign(:=)(u, 1))
+procedure var_values(n)
+   local v
+   every v := tree_nodes(n, "variableassign") do
+      suspend v.children[2].children[2]
+end

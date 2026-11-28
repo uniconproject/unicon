@@ -3129,6 +3129,7 @@ function{*} Attrib(argv[argc])
       /*
        * Attrib() dispatches on the type of its first argument:
        *   - file + "tty=…": local tty/console raw/sane mode
+       *   - file + "binary=…": untranslated (binary) or text mode
        *   - socket file: WAttrib-style "name" / "name=value" strings
        *   - co-expression / list / integer codes: thread/channel attrs
        */
@@ -3219,8 +3220,12 @@ function{*} Attrib(argv[argc])
 #ifdef PosixFns
       /*
        * TTY mode on a file (&input, etc.): Attrib(f, "tty=raw") /
-       * Attrib(f, "tty=sane").  Entered only when the first attribute
-       * is a tty name so other non-socket Attrib forms are untouched.
+       * Attrib(f, "tty=sane").  Binary mode on an open file:
+       * Attrib(f, "binary=yes") / Attrib(f, "binary=no"), the same as
+       * opening it with or without "u"; this is how a program gets
+       * &input and &output untranslated, as the runtime opens them.
+       * Entered only when the first attribute is tty or binary so other
+       * non-socket Attrib forms are untouched.
        */
       if (is:file(argv[0]) &&
           !(BlkD(argv[0], File)->status & (Fs_Socket
@@ -3233,7 +3238,7 @@ function{*} Attrib(argv[argc])
                                           ))) {
          tended struct descrip sbuf, ans;
          word i;
-         int fd, status, raw, rv;
+         int fd, status, raw, rv, std_stream;
          char *p, *end, *eq;
          long nlen;
 
@@ -3244,9 +3249,34 @@ function{*} Attrib(argv[argc])
             for (eq = p; eq < end; eq++)
                if (*eq == '=') break;
             nlen = (eq < end) ? (eq - p) : StrLen(sbuf);
-            if (nlen == 3 && strncmp(p, "tty", 3) == 0) {
+            if ((nlen == 3 && strncmp(p, "tty", 3) == 0) ||
+                (nlen == 6 && strncmp(p, "binary", 6) == 0)) {
                status = BlkD(argv[0], File)->status;
                if (!(status & Fs_Read) && !(status & Fs_Write))
+                  runerr(174, argv[0]);
+               /*
+                * A console's &input, &output or &errout is a FILE even when
+                * it is tagged Fs_Window.  For the kinds of file below fd
+                * holds neither a FILE nor anything get_fd() can find a
+                * descriptor in, and neither tty= nor binary= means anything.
+                */
+               std_stream = (BlkD(argv[0], File)->fd.fp == stdin ||
+                             BlkD(argv[0], File)->fd.fp == stdout ||
+                             BlkD(argv[0], File)->fd.fp == stderr);
+               if (!std_stream && (status & (Fs_Window3D
+#ifdef ISQL
+                                             | Fs_ODBC
+#endif                                  /* ISQL */
+#ifdef Messaging
+                                             | Fs_Messaging
+#endif                                  /* Messaging */
+#if HAVE_LIBZ
+                                             | Fs_Compress
+#endif                                  /* HAVE_LIBZ */
+#ifdef HAVE_VOICE
+                                             | Fs_Voice
+#endif                                  /* HAVE_VOICE */
+                                             )))
                   runerr(174, argv[0]);
                /*
                 * Console &input may be tagged Fs_Window while fd.fp is
@@ -3278,10 +3308,54 @@ function{*} Attrib(argv[argc])
                   for (eq = p; eq < end; eq++)
                      if (*eq == '=') break;
                   nlen = (eq < end) ? (eq - p) : StrLen(sbuf);
-                  if (nlen != 3 || strncmp(p, "tty", 3) != 0)
-                     runerr(1310, argv[i]);
                   if (eq >= end)
                      runerr(1310, argv[i]); /* query not supported */
+
+                  if (nlen == 6 && strncmp(p, "binary", 6) == 0) {
+                     long vlen = end - (eq + 1);
+                     int bin;
+                     FILE *fp = BlkD(argv[0], File)->fd.fp;
+                     /*
+                      * Only a file read and written through a FILE has a
+                      * mode to change.  A pty or a window has a descriptor,
+                      * for tty=, but fd holds a ptstruct or a window.
+                      */
+                     if (!std_stream && (status & (Fs_Window | Fs_Window3D
+#ifdef PseudoPty
+                                                   | Fs_Pty
+#endif                                  /* PseudoPty */
+                                                   )))
+                        runerr(174, argv[0]);
+                     if (vlen == 3 && strncmp(eq + 1, "yes", 3) == 0)
+                        bin = 1;
+                     else if (vlen == 2 && strncmp(eq + 1, "no", 2) == 0)
+                        bin = 0;
+                     else
+                        runerr(205, argv[i]);
+                     /*
+                      * What is buffered was translated, or not, as the
+                      * file was; write it out in that mode.
+                      */
+                     if (BlkD(argv[0], File)->status & Fs_Write)
+                        fflush(fp);
+#if NT
+                     if (_setmode(fd, bin ? _O_BINARY : _O_TEXT) == -1) {
+                        set_syserrortext(errno);
+                        fail;
+                        }
+#endif                                  /* NT */
+                     if (bin)
+                        BlkD(argv[0], File)->status |= Fs_Untrans;
+                     else
+                        BlkD(argv[0], File)->status &= ~Fs_Untrans;
+                     MakeStr(eq + 1, vlen, &ans);
+                     Protect(StrLoc(ans) = alcstr(StrLoc(ans), StrLen(ans)),
+                             runerr(0));
+                     suspend ans;
+                     continue;
+                     }
+                  if (nlen != 3 || strncmp(p, "tty", 3) != 0)
+                     runerr(1310, argv[i]);
 
                   {
                   long vlen = end - (eq + 1);

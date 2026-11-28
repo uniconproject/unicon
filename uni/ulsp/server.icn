@@ -17,7 +17,7 @@ import logger
 
 class Server(
    port,                         # Port number acquired from args on start up of server
-   mode,                         # Mode to run in (client | server)
+   mode,                         # Mode to run in (client | server | stdio)
    sock,                         # Socket connection for communication with client
    openFiles,                    # File container for open files
    completionHandler,            # Instance of CompletionHandler class for handling completion requests
@@ -27,6 +27,9 @@ class Server(
    symbolHandler,
    foldingRangeHandler,
    formattingHandler,
+   diagnosticsHandler,
+   scopeHandler,                 # documentHighlight, references, rename
+
    lsp_database,                  # table containing database of packages (i.e. main, graphics3d, etc.) and their files.
    jrpc_handler,
    stoploop,
@@ -61,6 +64,10 @@ class Server(
          "textDocument/documentSymbol" : symbolHelp(msg)
          "textDocument/foldingRange" : foldingRangeHelp(msg)
          "textDocument/formatting" : formattingHelp(msg)
+         "textDocument/documentHighlight" : highlightHelp(msg)
+         "textDocument/references" : referencesHelp(msg)
+         "textDocument/prepareRename" : prepareRenameHelp(msg)
+         "textDocument/rename" : renameHelp(msg)
          "shutdown" : shutdown(msg)
          default: {
             handle_unsupported(msg)
@@ -95,9 +102,21 @@ class Server(
 
    method run()
       local msg
-      jrpc_handler := JRPC_HTTPSocket(sock)
+      if mode == "stdio" then {
+         # The headers end in "\r\n\r\n" and Content-Length counts bytes,
+         # so nothing may translate line ends, as Windows does by default.
+         Attrib(&input, "binary=yes")
+         Attrib(&output, "binary=yes")
+         jrpc_handler := JRPC_HTTPSocket(&input, , &output)
+      }
+      else
+         jrpc_handler := JRPC_HTTPSocket(sock)
       repeat {
-         if msg := jrpc_handler.get_msg() then {
+         if not (msg := jrpc_handler.get_msg()) then {
+            # A failed read on stdin means the client has gone away.
+            if mode == "stdio" then break
+         }
+         else {
             #Logger.info("msg= ", image(msg.get_content()))
             case msg.get_kind() of {
                "request" : handle_request(msg)
@@ -133,7 +152,10 @@ class Server(
 # Follow the LSP specifications on how to add a particular capability to your initialize string.
 
    method initialize(msg)
-      local capabilitiesTable
+      local capabilitiesTable, rename
+      # rename options may only be given to a client that can prepare a rename
+      rename := if (\(\(\(\msg.get_params())["capabilities"])["textDocument"])["rename"])["prepareSupport"] === "__true__"
+                then table("prepareProvider", "__true__") else "__true__"
 
       capabilitiesTable := [
          "capabilities": [
@@ -152,7 +174,10 @@ class Server(
             "definitionProvider": "__true__";
             "documentSymbolProvider": "__true__";
             "foldingRangeProvider": "__true__";
-            "documentFormattingProvider": "__true__"
+            "documentFormattingProvider": "__true__";
+            "documentHighlightProvider": "__true__";
+            "referencesProvider": "__true__";
+            "renameProvider": rename
          ];
          "processId": getpid()
       ]
@@ -166,28 +191,16 @@ class Server(
 ########################################################
 
    method didOpen(request_params)
-      local fname, uri, f, initial_file_contents, filehandler_object
-      if \(uri := request_params["textDocument"]["uri"]) then {
-         # uri: file://<PATH>
-         uri ? {
-            ="file://" | write(&errout, "unexpected uri:", uri)
-            fname := tab(0)
-         }
-
-         if f := open(fname) then {
-            initial_file_contents := reads(f, -1)
-            close(f)
-         }
-      }
-      # Get rid of root / and change unicode encoded "%3A" back to ":" on Windows machines
-      if &features == ("MS Windows NT") then {
-         fname := replace(fname[2:0], "%3A", ":")
-      }
-      openFiles[\uri] := FileHandler(fname, lsp_database)
-      filehandler_object := openFiles[\uri]
+      local fname, uri, filehandler_object
+      uri := \request_params["textDocument"]["uri"] | fail
+      fname := uri_to_path(uri)
+      openFiles[uri] := filehandler_object := FileHandler(fname, lsp_database)
       filehandler_object.setFile()
+      # The editor's text may differ from the file on disk.
+      filehandler_object.updateUniDoc(fname, \request_params["textDocument"]["text"])
       filehandler_object.updateFileHandler()
-
+      publishDiagnostics(uri, fname, request_params["textDocument"]["text"],
+                         request_params["textDocument"]["version"])
    end
 
 ########################################################
@@ -198,6 +211,7 @@ class Server(
       local uri
       uri := request_params["textDocument"]["uri"]
       delete(openFiles, \uri)
+      publishDiagnostics(\uri)
    end
 
 ########################################################
@@ -205,34 +219,35 @@ class Server(
 ########################################################
 
    method didChange(request_params)
-      local fname, uri, f, file_contents, filehandler_object, initial_file_contents
-      if \(uri := request_params["textDocument"]["uri"]) then {
-         # uri: file://<PATH>
-         uri ? {
-            ="file://" | write(&errout, "unexpected uri:", uri)
-            fname := tab(0)
-         }
-
-         if f := open(fname) then {
-            initial_file_contents := reads(f, -1)
-            close(f)
-         }
-      }
-      # Get rid of root / and change unicode encoded "%3A" back to ":" on Windows machines
-      if &features == ("MS Windows NT") then {
-         fname := replace(fname[2:0], "%3A", ":")
-      }
-      uri := request_params["textDocument"]["uri"]
+      local fname, uri, file_contents, filehandler_object
+      uri := \request_params["textDocument"]["uri"] | fail
+      fname := uri_to_path(uri)
       file_contents := request_params["contentChanges"][1]["text"]
-      filehandler_object := openFiles[\uri]
+      filehandler_object := openFiles[uri]
       # If file handler doesn't exist, create it (file might have been changed before didOpen)
       if /filehandler_object then {
-         openFiles[\uri] := FileHandler(fname, lsp_database)
-         filehandler_object := openFiles[\uri]
+         openFiles[uri] := filehandler_object := FileHandler(fname, lsp_database)
          filehandler_object.setFile()
       }
       filehandler_object.updateUniDoc(fname, file_contents)
       filehandler_object.updateFileHandler()
+      publishDiagnostics(uri, fname, file_contents, request_params["textDocument"]["version"])
+   end
+
+########################################################
+#          textDocument/publishDiagnostics             #
+########################################################
+
+   # Check text, the contents of the document at uri, and send its errors
+   # to the client. With no text, clear the document's diagnostics.
+   method publishDiagnostics(uri, fname, text, version)
+      local params
+      params := table("uri", uri, "diagnostics",
+                      if \text then diagnosticsHandler.getResult(fname, text,
+                                        (\openFiles[uri]).getScopes() | &null)
+                      else [])
+      params["version"] := \version
+      jrpc_handler.send_msg(JRPC_Message().make_notification("textDocument/publishDiagnostics", params))
    end
 
 ########################################################
@@ -290,10 +305,49 @@ class Server(
    method definitionHelp(msg)
       local filehandler_object, result
       filehandler_object := openFiles[\msg.get_param_uri()]
-      definitionHandler.setVariables(filehandler_object, msg.get_params())
-      if result := definitionHandler.getResult() then
-         \result["uri"] := replace(result["uri"], "c:/", "/c%3A/")
+      # a name declared in this document, then the database
+      if not (result := scopeHandler.definition(filehandler_object, msg.get_params(), msg.get_param_uri())) then {
+         definitionHandler.setVariables(filehandler_object, msg.get_params())
+         if result := definitionHandler.getResult() then
+            \result["uri"] := path_to_uri(result["uri"])
+      }
       msg.make_result_response(result)
+      jrpc_handler.send_msg(msg)
+   end
+
+########################################################
+#    documentHighlight, references, prepareRename,     #
+#    rename                                            #
+########################################################
+
+   method highlightHelp(msg)
+      msg.make_result_response(scopeHandler.highlight(openFiles[\msg.get_param_uri()], msg.get_params()))
+      jrpc_handler.send_msg(msg)
+   end
+
+   method referencesHelp(msg)
+      msg.make_result_response(scopeHandler.references(openFiles[\msg.get_param_uri()], msg.get_params(),
+                                                       msg.get_param_uri()))
+      jrpc_handler.send_msg(msg)
+   end
+
+   method prepareRenameHelp(msg)
+      local result
+      result := scopeHandler.prepare_rename(openFiles[\msg.get_param_uri()], msg.get_params())
+      if type(result) == "string" then
+         msg.make_error_response(-32803, result)
+      else
+         msg.make_result_response(result)
+      jrpc_handler.send_msg(msg)
+   end
+
+   method renameHelp(msg)
+      local result
+      result := scopeHandler.rename(openFiles[\msg.get_param_uri()], msg.get_params(), msg.get_param_uri())
+      if type(result) == "string" then
+         msg.make_error_response(-32803, result)
+      else
+         msg.make_result_response(result)
       jrpc_handler.send_msg(msg)
    end
 
@@ -375,10 +429,17 @@ class Server(
       symbolHandler := SymbolHandler()
       foldingRangeHandler := FoldingRangeHandler()
       formattingHandler := FormattingHandler()
+      diagnosticsHandler := DiagnosticsHandler()
+      scopeHandler := ScopeHandler()
    end
 
    method connect()
       local openopt := "n", mstring
+
+      if mode == "stdio" then {
+         Logger.info("Starting Unicon LSP on stdin/stdout")
+         return
+      }
 
       case mode of {
          "s" : {

@@ -1,0 +1,23 @@
+#
+# basics.icn: talk to ulsp over stdio: capabilities, hover, definition,
+# signature help and document symbols on a procedural program
+#
+link lspclient
+
+procedure main()
+   local hover, def, sig, r, c, k
+   lsp_init()
+   lsp_open("prog.icn")
+   hover := lsp_at("textDocument/hover", "prog.icn", 15, 9)
+   def := lsp_at("textDocument/definition", "prog.icn", 15, 9)
+   sig := lsp_at("textDocument/signatureHelp", "prog.icn", 15, 13,
+                 table("context", table("triggerKind", 2, "triggerCharacter", "(",
+                                        "isRetrigger", "__false__")))
+   r := lsp_run("basics")
+   c := lsp_result(r, 1)["capabilities"]
+   every lsp_show(k := !sort([: key(c) :]), c[k])
+   lsp_show("hover", lsp_result(r, hover))
+   lsp_show("definition", lsp_result(r, def))
+   lsp_show("signature", lsp_result(r, sig))
+   every lsp_show("diagnostics", lsp_notifications(r, "textDocument/publishDiagnostics"))
+end

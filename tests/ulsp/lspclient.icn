@@ -1,0 +1,157 @@
+#
+# lspclient.icn: a small LSP client for testing ulsp
+#
+# A test queues requests and notifications, then calls lsp_run(), which
+# sends them all to "ulsp --stdio" and returns the replies. lsp_show()
+# writes a reply as JSON with sorted keys and with the test directory
+# replaced by $DIR, so the output does not depend on where the tests run.
+#
+
+link strings
+import json
+
+global lsp_dir, lsp_msgs, lsp_id
+
+procedure lsp_init()
+   lsp_dir := map(chdir(), "\\", "/")
+   lsp_msgs := []
+   lsp_id := 0
+   lsp_request("initialize", table("processId", &null, "rootUri", lsp_uri(""),
+                                   "capabilities", table("textDocument",
+                                      table("rename", table("prepareSupport", "__true__")))))
+   lsp_notify("initialized", table())
+end
+
+procedure lsp_uri(f)
+   return "file://" || lsp_dir || "/" || f
+end
+
+procedure lsp_request(meth, params)
+   put(lsp_msgs, table("jsonrpc", "2.0", "id", lsp_id +:= 1, "method", meth,
+                       "params", params))
+   return lsp_id
+end
+
+procedure lsp_notify(meth, params)
+   put(lsp_msgs, table("jsonrpc", "2.0", "method", meth, "params", params))
+end
+
+# open src/f with its text from disk, or with text if given
+procedure lsp_open(f, text)
+   local in
+   if /text then {
+      in := open("src/" || f) | stop("cannot open src/", f)
+      text := reads(in, -1) | ""
+      close(in)
+   }
+   lsp_notify("textDocument/didOpen",
+              table("textDocument", table("uri", lsp_uri("src/" || f), "languageId", "unicon",
+                                          "version", 1, "text", text)))
+end
+
+procedure lsp_change(f, text, version)
+   lsp_notify("textDocument/didChange",
+              table("textDocument", table("uri", lsp_uri("src/" || f), "version", version),
+                    "contentChanges", [table("text", text)]))
+end
+
+procedure lsp_close(f)
+   lsp_notify("textDocument/didClose", table("textDocument", table("uri", lsp_uri("src/" || f))))
+end
+
+# a request at 0-based line and character of src/f
+procedure lsp_at(meth, f, line, character, extra)
+   local params, k
+   params := table("textDocument", table("uri", lsp_uri("src/" || f)),
+                   "position", table("line", line, "character", character))
+   every k := key(\extra) do params[k] := extra[k]
+   return lsp_request(meth, params)
+end
+
+#
+# Send the queued messages and return a list of what ulsp sent back.
+#
+procedure lsp_run(name)
+   local infile, outfile, f, m, body, replies, len, s, ulsp
+   lsp_request("shutdown", &null)
+   lsp_notify("exit", &null)
+   infile := "local/" || name || ".lspin"
+   outfile := "local/" || name || ".lspout"
+   f := open(infile, "w") | stop("cannot write ", infile)
+   every m := !lsp_msgs do {
+      body := tojson(m)
+      writes(f, "Content-Length: ", *body, "\r\n\r\n", body)
+   }
+   close(f)
+   # ULSP names the server to test, e.g. an installed ulsp (see Makefile)
+   ulsp := getenv("ULSP") | "../../bin/ulsp"
+   system(ulsp || " --stdio --loglevel 0 < " || infile || " > " || outfile)
+   f := open(outfile) | stop("cannot read ", outfile)
+   s := reads(f, -1) | ""
+   close(f)
+   *s > 0 | stop("no replies from ", ulsp)
+   replies := []
+   s ? while tab(find("Content-Length: ")) do {
+      move(16)
+      len := integer(tab(many(&digits)))
+      ="\r\n\r\n"
+      put(replies, jtous(move(len)))
+   }
+   return replies
+end
+
+# the reply to request id
+procedure lsp_result(replies, id)
+   local m
+   every m := !replies do
+      if m["id"] === id then return m["result"]
+end
+
+# the params of every notification meth
+procedure lsp_notifications(replies, meth)
+   local m
+   every m := !replies do
+      if m["method"] === meth then suspend m["params"]
+end
+
+procedure lsp_show(label, x)
+   write(label, ": ", lsp_canon(x))
+end
+
+procedure lsp_canon(x)
+   local s, k, sep
+   case type(x) of {
+      "null": return "null"
+      "integer" | "real": return image(x)
+      "string": {
+         if x == ("__true__" | "__false__") then return x[3:-2]
+         x := replace(x, lsp_uri(""), "$DIR/")
+         x := replace(x, lsp_dir || "/", "$DIR/")
+         return image(x)
+      }
+      "list": {
+         s := "["
+         every s ||:= lsp_canon(!x) || ", "
+         if *x > 0 then s := s[1:-2]
+         return s || "]"
+      }
+      "table": {
+         s := "{"
+         sep := ""
+         every k := !sort([: key(x) :]) do {
+            # a key may be a uri, as in a WorkspaceEdit
+            s ||:= sep || replace(k, lsp_uri(""), "$DIR/") || ": " || lsp_canon(x[k])
+            sep := ", "
+         }
+         return s || "}"
+      }
+      default: return image(x)
+   }
+end
+
+# the whole reply to request id: its result, or its error
+procedure lsp_reply(replies, id)
+   local m
+   every m := !replies do
+      if m["id"] === id then return \m["error"] | m["result"]
+end

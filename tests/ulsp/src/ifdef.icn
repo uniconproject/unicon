@@ -1,0 +1,20 @@
+# ifdef.icn: names in text that an $ifdef leaves out, for the scopes test
+procedure main()
+   local x, y, s
+   x := 1
+   y := 2
+$ifdef _NO_SUCH_SYMBOL
+   x +:= 2
+$else
+   x +:= 3
+$endif
+   s := "abc"
+   write(x, y, s[1:+y])
+end
+
+procedure other(y)
+$ifndef _V9
+   y +:= 1
+$endif
+   return y
+end

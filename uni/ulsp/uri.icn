@@ -1,0 +1,54 @@
+#
+# uri.icn: convert between file:// URIs, as LSP clients send them, and paths
+#
+
+package ulsp
+
+#
+# uri_to_path(uri): the path of a file:// uri, with %XX escapes decoded.
+# On Windows, "file:///c%3A/dir/f.icn" becomes "c:/dir/f.icn".
+#
+procedure uri_to_path(uri)
+   local path := "", hex
+   static hexdigits
+   initial hexdigits := '0123456789abcdefABCDEF'
+   \uri ? {
+      ="file://"
+      while path ||:= tab(upto('%')) do {
+         move(1)
+         if hex := tab(any(hexdigits)) || tab(any(hexdigits)) then
+            path ||:= char(integer("16r" || hex))
+         else
+            path ||:= "%"
+      }
+      path ||:= tab(0)
+   }
+   if &features == "MS Windows NT" then
+      path ? if ="/" & any(&letters) & move(1) & =":" then path := path[2:0]
+   return path
+end
+
+#
+# path_to_uri(path): the file:// uri for path; a uri is returned as is.
+#
+procedure path_to_uri(path)
+   local uri := "file://", c
+   static plain
+   initial plain := &letters ++ &digits ++ '-._~/'
+   if match("file:", path) then return path
+   path := map(path, "\\", "/")
+   if path ? (any(&letters) & move(1) & =":") then
+      path := "/" || path
+   path ? repeat {
+      uri ||:= (tab(many(plain)) | "")
+      c := move(1) | break
+      uri ||:= "%" || uri_hex2(ord(c))
+   }
+   return uri
+end
+
+procedure uri_hex2(i)
+   static digits
+   initial digits := "0123456789ABCDEF"
+   return digits[i / 16 + 1] || digits[i % 16 + 1]
+end

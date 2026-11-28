@@ -261,7 +261,24 @@ class JRPC_Message(msg, kind, json_table)
 end
 
 
-class JSON_HTTPSocket(sock)
+class JSON_HTTPSocket(sock, osock)
+   #
+   # Read up to n bytes. A socket is polled with select()/ready(); a pair of
+   # plain files (e.g. &input/&output, see initially) is read with reads(),
+   # which works the same on all platforms but ignores the timeout.
+   method read_chunk(n, timeout)
+      local chunk
+      if osock === sock then {
+         *select(\sock, timeout) > 0 | fail
+         chunk := ready(sock, n)
+      }
+      else
+         chunk := reads(\sock, n)
+      \chunk | fail
+      chunk ~== "" | fail
+      return chunk
+   end
+
    #
    # parse the http header in the form of
    #   ...
@@ -276,11 +293,7 @@ class JSON_HTTPSocket(sock)
          # Wait for a message to arrive, read the header
          # assume the min header size is 22, because the shortest
          # msgs will be at least 2 digits, I.e header size >=22
-         *select(\sock, timeout) > 0  | fail
-         
-         chunk := ready(sock, size-*data)
-         \chunk | fail
-         chunk ~== "" | fail
+         chunk := read_chunk(size-*data, timeout) | fail
          data ||:= chunk
 
          if *data < size then next
@@ -305,11 +318,7 @@ class JSON_HTTPSocket(sock)
       local data := "", chunk
       /timeout := -1
       while *data < size do {
-         *select(sock, timeout) > 0 | fail
-         
-         chunk := ready(sock, size - *data)
-         \chunk | fail
-         chunk ~== "" | fail
+         chunk := read_chunk(size - *data, timeout) | fail
          data ||:= chunk
       }
       return data
@@ -326,15 +335,19 @@ class JSON_HTTPSocket(sock)
    method send_msg(t)
       local body
       body := tojson(t) | fail
-      writes(sock, CONTENT_LENGTH, *body, "\r\n\r\n", body)
+      writes(osock, CONTENT_LENGTH, *body, "\r\n\r\n", body)
+      flush(osock)
    end
 
-   # Initialize the JSON HTTPSocket
-   initially(addr, opt)
+   # Initialize the JSON HTTPSocket. addr is an address to open(addr, opt)
+   # or an already open file. If out is given, messages are read from
+   # addr and written to out, e.g. JSON_HTTPSocket(&input, , &output).
+   initially(addr, opt, out)
       if string(addr) then
          sock := open(addr,opt)
       else
          sock := addr
+      osock := \out | sock
 
 end
 
@@ -355,10 +368,11 @@ class JRPC_HTTPSocket : JSON_HTTPSocket()
    method send_msg(msg)
       local data
       data := msg.get_content()
-      writes(sock, CONTENT_LENGTH, *data, "\r\n\r\n", data)
+      writes(osock, CONTENT_LENGTH, *data, "\r\n\r\n", data)
+      flush(osock)
    end
 
-   initially(addr, opt)
-      return self.JSON_HTTPSocket.initially(addr, opt)
+   initially(addr, opt, out)
+      return self.JSON_HTTPSocket.initially(addr, opt, out)
       
 end

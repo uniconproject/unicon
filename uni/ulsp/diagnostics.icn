@@ -1,0 +1,286 @@
+#
+# diagnostics.icn: report the errors the Unicon translator finds in a document
+#
+# The document's text is written to a file in a new directory that only
+# this user can use, and checked there with "unicon -s -y" (parse only),
+# so the errors are exactly the ones the compiler would give. The
+# directory of the document is added to LPATH and IPATH, so that $include
+# and import find the same files they would if the document were compiled
+# where it is.
+#
+# A document without errors is then linked with "unicon -u", which names
+# the identifiers that are not declared and the procedure each is in; the
+# document's scopes (scopes.icn) say where in the procedure they are.
+#
+# The file is always called ulspdoc.icn, whatever the document's name is:
+# the translator passes file names on to a shell, and a document may have
+# a name that means something to one.
+#
+
+package ulsp
+
+link basename
+import logger
+
+class DiagnosticsHandler(unicon, tmpdir)
+
+   #
+   # getResult(fname, text, scopes): a list of LSP Diagnostic tables for
+   # text, the current contents of the file fname; scopes, if given, is
+   # its DocScopes.
+   #
+   method getResult(fname, text, scopes)
+      local dir, f, line, results, seen, d, oldlpath, oldipath, lines
+      results := []
+      \text | return results
+      dir := make_work_dir() | {
+         Logger.error("diagnostics: cannot make a directory in ", tmpdir)
+         return results
+      }
+      f := open(dir || "/ulspdoc.icn", "w") | {
+         Logger.error("diagnostics: cannot write in ", dir)
+         remove_work_dir(dir)
+         return results
+      }
+      writes(f, text)
+      close(f)
+
+      oldlpath := getenv("LPATH") | ""
+      oldipath := getenv("IPATH") | ""
+      setenv("LPATH", path_with(directory_of(fname), oldlpath))
+      setenv("IPATH", path_with(directory_of(fname), oldipath))
+
+      lines := split_lines(text)
+      seen := set()
+      run_unicon(unicon, dir, ["-s", "-y", "ulspdoc.icn"], "ulspdoc.log")
+      if f := open(dir || "/ulspdoc.log") then {
+         while line := read(f) do {
+            if d := parse_message(line, "ulspdoc.icn", lines) then {
+               if not member(seen, d["range"]["start"]["line"] || ":" || d["message"]) then {
+                  insert(seen, d["range"]["start"]["line"] || ":" || d["message"])
+                  put(results, d)
+               }
+            }
+         }
+         close(f)
+      }
+
+      if *results = 0 & \scopes then
+         every put(results, undeclared(dir, scopes))
+
+      setenv("LPATH", oldlpath)
+      setenv("IPATH", oldipath)
+      remove_work_dir(dir)
+      return results
+   end
+
+   #
+   # Warnings for the identifiers that the linker says are undeclared in
+   # ulspdoc.icn, the document, in dir. The document is linked with a
+   # file that says "invocable all", so that procedures nothing calls are
+   # kept, and that has an empty main if the document has none.
+   #
+   method undeclared(dir, scopes)
+      local f, line, name, p, o
+      f := open(dir || "/ulspmain.icn", "w") | fail
+      write(f, "invocable all")
+      if \scopes.pkg | not (scopes.globals["main"].kind == "procedure") then
+         write(f, "procedure main()\nend")
+      close(f)
+      run_unicon(unicon, dir, ["-s", "-u", "ulspdoc.icn", "ulspmain.icn", "-o", "ulspu"], "ulspu.log")
+      f := open(dir || "/ulspu.log") | fail
+      # ulspdoc.icn: "name": undeclared identifier, procedure p
+      while line := read(f) do line ? {
+         if ="ulspdoc.icn: \"" & name := tab(find("\": undeclared identifier, procedure ")) then {
+            move(36)
+            p := tab(0)
+            every o := scopes.undeclared(p, name) do
+               suspend table("range", scopes.range(o),
+                             "severity", 2,
+                             "source", "unicon",
+                             "message", "\"" || name || "\": undeclared identifier")
+         }
+      }
+      close(f)
+   end
+
+   #
+   # Turn one line of translator output into a Diagnostic, or fail.
+   # The translator reports errors in two forms:
+   #    file:line: # "token" message
+   #    File file; Line line # message          (preprocessor)
+   #
+   method parse_message(s, tmpfile, lines)
+      local prefix, file, lnum, tok, msg, i, text, c1, c2, sev
+      s ? {
+         if ="File " then {
+            file := tab(find("; Line ")) | fail
+            move(7)
+            lnum := integer(tab(many(&digits))) | fail
+            =" # " | fail
+            msg := tab(0)
+         }
+         else {
+            prefix := tab(find(": # ")) | fail
+            move(4)
+            # prefix is file:line; the file name may itself contain ':'
+            every i := find(":", prefix)
+            file := prefix[1:\i] | fail
+            lnum := integer(prefix[i+1:0]) | fail
+            # the token, in quotes, then the message
+            if ="\"" then {
+               tok := tab(find("\" ")) | ""
+               move(2)
+            }
+            msg := tab(0)
+         }
+      }
+      file := trim(file, '"', 0)
+      if file ~== tmpfile then {
+         # an error in an included file: show it at the top of the document
+         msg := basename(file) || ":" || lnum || ": " || msg
+         lnum := 1
+         tok := &null
+      }
+      if lnum > *lines then lnum := *lines
+      if lnum < 1 then lnum := 1
+      text := lines[lnum] | ""
+      # The translator may notice an error on the line after the token
+      # that caused it, e.g. an unterminated string.
+      if \tok ~== ";" & not find(tok, text) & find(tok, lines[lnum - 1]) then {
+         lnum -:= 1
+         text := lines[lnum]
+      }
+      if \tok ~== ";" & c1 := find(tok, text) then
+         c2 := c1 + *tok
+      else {
+         c1 := upto(~' \t', text) | 1
+         c2 := *trim(text) + 1
+         c2 <:= c1
+      }
+      sev := if find("arning", msg) then 2 else 1
+      # c1 and c2 are bytes of the line; LSP counts UTF-16 code units
+      return table("range", table("start", table("line", lnum - 1, "character", utf16_len(text[1:c1])),
+                                  "end", table("line", lnum - 1, "character", utf16_len(text[1:c2]))),
+                   "severity", sev,
+                   "source", "unicon",
+                   "message", msg)
+   end
+
+   method split_lines(text)
+      local L := [], i
+      text ? {
+         while put(L, tab(find("\n"))) do move(1)
+         put(L, tab(0))
+      }
+      every i := 1 to *L do
+         if L[i][-1] == "\r" then L[i] := L[i][1:-1]
+      return L
+   end
+
+   initially
+      unicon := unicon_command()
+      tmpdir := temp_dir()
+end
+
+#
+# The unicon translator that came with this ulsp, or "unicon".
+#
+procedure unicon_command()
+   local bin
+   if bin := (&features ? (="Binaries at " & tab(0))) & *bin > 0 then {
+      # an installed Unicon reports its bin directory without a final /
+      if not any('/\\', bin[-1]) then bin ||:= "/"
+      return bin || "unicon"
+   }
+   return "unicon"
+end
+
+procedure temp_dir()
+   return getenv("TMPDIR" | "TEMP" | "TMP") | "/tmp"
+end
+
+#
+# A new directory for the files the translator reads and writes, or fail
+# if one cannot be made. Only this user can use it, and mkdir() fails if
+# the name is already there, so nobody else has put anything in it.
+#
+procedure make_work_dir()
+   local dir
+   every 1 to 20 do {
+      dir := temp_dir() || "/ulsp" || getpid() || "-" || ?1000000000
+      if mkdir(dir, 8r700) then return dir
+   }
+end
+
+#
+# Remove dir, a directory from make_work_dir(), and all that is in it.
+#
+procedure remove_work_dir(dir)
+   local d, n
+   d := open(dir) | fail
+   while n := read(d) do
+      if not (n == ("." | "..")) then
+         remove(dir || "/" || n) | remove_work_dir(dir || "/" || n)
+   close(d)
+   rmdir(dir)
+end
+
+#
+# Run the translator in dir with the arguments in the list args, what it
+# writes going to the file log there, and return its exit status. The
+# arguments are given to it as they are, not through a shell; Windows
+# makes one command line of them anyway, and so they and log must be
+# names without spaces.
+#
+procedure run_unicon(unicon, dir, args, log)
+   local here, status, cmd
+   here := chdir() | fail
+   chdir(dir) | fail
+   if &features == "MS Windows NT" then {
+      cmd := "\"" || unicon || "\""
+      every cmd ||:= " " || !args
+      status := system(cmd || " > " || log || " 2>&1")
+   }
+   else
+      status := system([unicon] ||| args, , log, log)
+   chdir(here)
+   return status
+end
+
+procedure directory_of(fname)
+   local i
+   fname := map(fname, "\\", "/")
+   every i := find("/", fname)
+   return fname[1:\i] | "."
+end
+
+#
+# The value for LPATH or IPATH that has dir before the directories of
+# path, the variable's value now. The translator and the linker split
+# the value at semicolons if it has any, and at spaces only if it has
+# none; so dir is added with a semicolon, and the spaces of a path
+# without semicolons become semicolons first. The translator splits at
+# $PATHSEP instead when that is set.
+#
+procedure path_with(dir, path)
+   local sep
+   if sep := "" ~== getenv("PATHSEP") then
+      return dir || sep || path
+   if not find(";", path) then path := map(path, " ", ";")
+   return dir || ";" || path
+end
+
+#
+# The length of s in UTF-16 code units, as LSP counts characters; s is
+# UTF-8.
+#
+procedure utf16_len(s)
+   local n := 0, c
+   every c := ord(!s) do
+      if c < 16r80 | c >= 16rC0 then {
+         n +:= 1
+         if c >= 16rF0 then n +:= 1     # outside the BMP: a surrogate pair
+      }
+   return n
+end

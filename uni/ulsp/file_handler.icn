@@ -21,6 +21,7 @@ package ulsp
 link regexp
 link io
 import json
+import logger
 import UniDoc
 
 import lang
@@ -33,7 +34,8 @@ class FileHandler(
    uri,
    lsp_database,
    temp_file,
-   #   file_contents,
+   file_text,     # the document's text, as the client last sent it
+   doc_scopes,    # a DocScopes for file_text, made when first needed
    links,
    imports,
    _package,
@@ -88,11 +90,29 @@ class FileHandler(
    end
 
    method updateUniDoc(uri, contents)
-      local files, file_contents
+      local files
       temp_idoc.processFile(uri, contents)
-      file_contents := contents
+      file_text := contents
       files := temp_idoc.getAllFiles()
       m_uni_file := files[1]
+   end
+
+   method getContents()
+      return \file_text
+   end
+
+   #
+   # What each name in the document refers to, as a DocScopes; fails if
+   # the document does not parse.
+   #
+   method getScopes()
+      local d
+      \file_text | fail
+      if (\doc_scopes).text === file_text then return doc_scopes
+      d := DocScopes(file_text, directory_of(uri))
+      if d.build() then
+         return doc_scopes := d
+      Logger.info("scopes: ", uri, " does not parse: ", !parse_messages | "")
    end
 
    method deleteTempFile()
@@ -406,7 +426,8 @@ class FileHandler(
       objects := table()
       lineNum := 1
       while _line := temp_idoc.getUniFileLine(uri, lineNum) do {
-         if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=[\ \t]*[a-zA-Z0-9_]+[(][a-zA-Z0-9_]*[)][\ \t]*$", _line) then {
+         # x := ClassName(any arguments)
+         if ReMatch("^[\ \t]*[a-zA-Z0-9_]+[\ \t]*:=[\ \t]*[a-zA-Z0-9_]+[(]", _line) then {
             _line ? {
                tab(many(' \t'))
                objectName := tab(many(&digits ++ &letters ++ '-' ++ '_'))

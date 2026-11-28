@@ -1,0 +1,82 @@
+#
+# scopes.icn: highlight, references, definition and rename know which
+# names are the same variable
+#
+link lspclient
+
+procedure main()
+   local r, ids, i, labels
+   lsp_init()
+   lsp_open("scope.icn")
+   labels := []
+   ids := []
+   # n, a local of main: not the n of other() or of Counter
+   put(labels, "highlight local n"); put(ids, lsp_at("textDocument/documentHighlight", "scope.icn", 7, 3))
+   # n, the member of Counter, used in a method and after self.
+   put(labels, "highlight member n"); put(ids, lsp_at("textDocument/documentHighlight", "scope.icn", 20, 6))
+   put(labels, "references to total"); put(ids, lsp_at("textDocument/references", "scope.icn", 9, 4,
+       table("context", table("includeDeclaration", "__true__"))))
+   put(labels, "references to field x"); put(ids, lsp_at("textDocument/references", "scope.icn", 9, 18,
+       table("context", table("includeDeclaration", "__false__"))))
+   put(labels, "definition of p"); put(ids, lsp_at("textDocument/definition", "scope.icn", 6, 3))
+   put(labels, "definition of k"); put(ids, lsp_at("textDocument/definition", "scope.icn", 20, 12))
+   put(labels, "prepare rename n"); put(ids, lsp_at("textDocument/prepareRename", "scope.icn", 15, 10))
+   put(labels, "rename n to m"); put(ids, lsp_at("textDocument/rename", "scope.icn", 15, 10,
+       table("newName", "m")))
+   put(labels, "rename p to n"); put(ids, lsp_at("textDocument/rename", "scope.icn", 6, 3,
+       table("newName", "n")))
+   put(labels, "prepare rename total"); put(ids, lsp_at("textDocument/prepareRename", "scope.icn", 9, 4))
+   put(labels, "prepare rename write"); put(ids, lsp_at("textDocument/prepareRename", "scope.icn", 11, 4))
+   # names on lines that $define changes: y is where it is in the
+   # document, x and k are also used in what the macros write
+   lsp_open("macro.icn")
+   put(labels, "highlight y"); put(ids, lsp_at("textDocument/documentHighlight", "macro.icn", 8, 17))
+   put(labels, "rename y to z"); put(ids, lsp_at("textDocument/rename", "macro.icn", 8, 17,
+       table("newName", "z")))
+   put(labels, "rename x"); put(ids, lsp_at("textDocument/rename", "macro.icn", 6, 3,
+       table("newName", "z")))
+   put(labels, "prepare rename k"); put(ids, lsp_at("textDocument/prepareRename", "macro.icn", 9, 3))
+   put(labels, "rename n to k"); put(ids, lsp_at("textDocument/rename", "macro.icn", 8, 3,
+       table("newName", "k")))
+   # a new name that the preprocessor would replace
+   put(labels, "rename y to LIMIT"); put(ids, lsp_at("textDocument/rename", "macro.icn", 8, 17,
+       table("newName", "LIMIT")))
+   put(labels, "rename y to DUP"); put(ids, lsp_at("textDocument/rename", "macro.icn", 8, 17,
+       table("newName", "DUP")))
+   put(labels, "rename y to _V9"); put(ids, lsp_at("textDocument/rename", "macro.icn", 8, 17,
+       table("newName", "_V9")))
+   # the input of &input is not the local input, nor is ::count or the
+   # lang of lang::size the local of that name
+   lsp_open("names.icn")
+   put(labels, "highlight input"); put(ids, lsp_at("textDocument/documentHighlight", "names.icn", 4, 3))
+   put(labels, "rename input"); put(ids, lsp_at("textDocument/rename", "names.icn", 4, 3,
+       table("newName", "f")))
+   put(labels, "references to local count"); put(ids, lsp_at("textDocument/references", "names.icn", 5, 3,
+       table("context", table("includeDeclaration", "__true__"))))
+   put(labels, "references to global count"); put(ids, lsp_at("textDocument/references", "names.icn", 6, 5,
+       table("context", table("includeDeclaration", "__true__"))))
+   put(labels, "highlight lang"); put(ids, lsp_at("textDocument/documentHighlight", "names.icn", 7, 3))
+   # self is an ordinary local in a procedure, and the implicit parameter
+   # of a method, so a method local cannot be renamed to it
+   lsp_open("self.icn")
+   put(labels, "highlight self"); put(ids, lsp_at("textDocument/documentHighlight", "self.icn", 4, 3))
+   put(labels, "rename self to s"); put(ids, lsp_at("textDocument/rename", "self.icn", 4, 3,
+       table("newName", "s")))
+   put(labels, "rename x to self"); put(ids, lsp_at("textDocument/rename", "self.icn", 11, 6,
+       table("newName", "self")))
+   # s on the line that opens a multiline string, not on the line that closes it
+   lsp_open("triple.icn")
+   put(labels, "highlight s"); put(ids, lsp_at("textDocument/documentHighlight", "triple.icn", 3, 3))
+   # x is also in the part of an $ifdef that is left out; so is the y of
+   # other(), but not the y of main(). The ":+" on line 12 makes the
+   # lexer warn, which must not stop the server.
+   lsp_open("ifdef.icn")
+   put(labels, "rename x in $ifdef"); put(ids, lsp_at("textDocument/rename", "ifdef.icn", 3, 3,
+       table("newName", "z")))
+   put(labels, "prepare rename y of other"); put(ids, lsp_at("textDocument/prepareRename", "ifdef.icn", 18, 10))
+   put(labels, "rename y of main"); put(ids, lsp_at("textDocument/rename", "ifdef.icn", 4, 3,
+       table("newName", "z")))
+   r := lsp_run("scopes")
+   every i := 1 to *ids do
+      lsp_show(labels[i], lsp_reply(r, ids[i]))
+end

@@ -1,0 +1,499 @@
+#
+# unifmt.icn: re-indent Unicon source text
+#
+# unifmt() keeps every line break and the order and spelling of every
+# token. It changes only
+#    - the indentation of each line, computed from the program's structure
+#      (declarations, braces, and the single statement after a "then",
+#      "else", "do", "repeat" or "initial" that ends a line),
+#    - blanks: trailing ones are removed, and one blank is put on each side
+#      of an assignment operator and after a comma when none is there.
+# A line that continues a statement keeps its indentation relative to the
+# statement's first line, so arguments the author lined up stay lined up.
+# Comments that start in column 1, $ preprocessor lines, the lines of a
+# string continued with "_" or of a triple-quoted string, and Ivib layout
+# sections are left as they are.
+#
+# unifmt() fails when it cannot follow the structure, e.g. an "end" with
+# nothing to close. The caller is expected to check the result as well,
+# since a formatter must never change what a program means.
+#
+
+package ulsp
+
+record fmt_token(kind, s, col)
+record fmt_frame(kind, snapshot, width)
+
+#
+# unifmt(text, unit): text re-indented with unit (e.g. "   " or "\t") per
+# level; fails if the structure of text cannot be followed.
+#
+procedure unifmt(text, unit)
+   local lines, out, i, line, toks, code, first, last, frames, pending,
+         depth, instr, nextinstr, contin, delta, stmt_frames, indent,
+         old, j, t, ivib, newline, f, unitw, decl, comment_only, crlf,
+         stmt_indent
+
+   crlf := if find("\r\n", text) then 1
+   lines := fmt_split(text)
+   out := []
+   frames := []
+   pending := []
+   depth := 0
+   instr := &null
+   contin := &null
+   delta := 0
+   stmt_frames := []
+   stmt_indent := 0
+   unitw := fmt_width(unit)
+
+   every i := 1 to *lines do {
+      line := lines[i]
+
+      # Ivib layout comments are machine-written: leave them alone
+      if match("### Ivib-v2 layout ##", line) then ivib := 1
+      if \ivib then {
+         if line ? (tab(many(' \t')) | "", ="#") then {
+            put(out, line)
+            next
+         }
+         ivib := &null
+      }
+
+      # the rest of a string continued with "_" on the line before
+      if \instr then {
+         toks := fmt_lex(line, instr) | return fmt_fail(i, "cannot read the line")
+         instr := toks[2]
+         if \instr then
+            put(out, line)
+         else {
+            # the string ended on this line, and the line is left where
+            # it is; what follows the string may end the statement
+            put(out, trim(line, ' \t'))
+            code := []
+            every t := !toks[1] do
+               if t.kind ~== "comment" then put(code, t)
+            fmt_track(code, frames, depth, fmt_indent_width(line) + unitw) |
+               return fmt_fail(i, "unbalanced braces")
+            depth := fmt_track_depth
+            if not (depth > 0 | fmt_continues(code[-1])) then {
+               contin := &null
+               fmt_pop_oneshots(frames, pending)
+            }
+         }
+         next
+      }
+
+      # preprocessor lines and empty lines
+      if line ? (tab(many(' \t')) | "", ="$", any(&letters)) then {
+         put(out, trim(line, ' \t'))
+         next
+      }
+      if trim(line, ' \t') == "" then {
+         put(out, "")
+         next
+      }
+
+      toks := fmt_lex(line) | return fmt_fail(i, "cannot read the line")
+      nextinstr := toks[2]
+      toks := toks[1]
+      code := []
+      every t := !toks do
+         if t.kind ~== "comment" then put(code, t)
+      comment_only := (*code = 0) | &null
+      old := fmt_indent_width(line)
+
+      if \comment_only then {
+         if line[1] == "#" then
+            put(out, trim(line, ' \t'))
+         else if \contin then
+            put(out, fmt_reindent(line, old + delta, unit, unitw))
+         else
+            put(out, fmt_reindent(line, fmt_base(frames), unit, unitw))
+         next
+      }
+
+      first := code[1].s
+      last := code[-1]
+      j := 1           # first token that fmt_track still has to see
+
+      if \contin then
+         indent := (0 < old + delta) | 0
+      else {
+         # a new statement or declaration: close what its first token closes,
+         # and line up with the line that opened it
+         f := &null
+         case first of {
+            "end": {
+               fmt_pop_oneshots(frames, pending)
+               f := pull(frames) | return fmt_fail(i, "end closes nothing")
+               if f.kind == "init" then
+                  ((f := pull(frames)).kind == "class") | return fmt_fail(i, "initially outside a class")
+               else if not (f.kind == ("body" | "class")) then
+                  return fmt_fail(i, "end inside braces")
+               j := 2
+            }
+            "}" | "$)": {
+               fmt_pop_oneshots(frames, pending)
+               ((*frames > 0) & (f := pull(frames)).kind == "brace") | return fmt_fail(i, "unbalanced braces")
+               j := 2
+            }
+            "else": {
+               if *pending > 0 then
+                  frames := copy(pop(pending))
+            }
+            "procedure": {
+               *frames = 0 | return fmt_fail(i, "procedure inside a declaration")
+            }
+         }
+         # an if whose "else" could still follow no longer can
+         if first ~== "else" then
+            while *pending > 0 & *pending[1] >= *frames do pop(pending)
+
+         indent := (\f).width - unitw | fmt_base(frames)
+         stmt_frames := copy(frames)
+
+         # declarations that open a body
+         decl := &null
+         if first == ("procedure" | "class") then decl := first
+         else if first == "method" & frames[-1].kind == "class" then
+            decl := "method"
+         else if first == "initially" & frames[-1].kind == "class" then {
+            # the initially section, at the level of the methods or, as
+            # the author may have it, at the level of the class
+            if old = fmt_base(frames[1:-1]) then
+               indent := old
+            decl := "initially"
+         }
+         if \decl & last.s == "end" & *code > 1 then
+            decl := &null      # e.g. class C() end
+         delta := indent - old
+         stmt_indent := indent
+      }
+
+      newline := fmt_reindent(line, indent, unit, unitw, nextinstr)
+      newline := fmt_space(newline, toks, fmt_lead(newline) - fmt_lead(line))
+      put(out, newline)
+
+      fmt_track(code[j:0], frames, depth, indent + unitw) |
+         return fmt_fail(i, "unbalanced braces")
+      depth := fmt_track_depth
+      if \decl then {
+         push_frame(frames, case decl of {
+            "procedure" | "method": "body"
+            "class": "class"
+            "initially": "init"
+         }, stmt_frames, indent + unitw)
+         decl := &null
+      }
+
+      # does the statement go on to the next line?
+      instr := nextinstr
+      if \instr | depth > 0 | fmt_continues(last) then
+         contin := 1
+      else {
+         contin := &null
+         if last.s == ("then" | "else" | "do" | "repeat" | "initial") then
+            push_frame(frames, if last.s == "then" then "then" else "oneshot",
+                       stmt_frames, stmt_indent + unitw)
+         else if last.s ~== "{" then
+            # the statement is complete: so are the single statements
+            # that were waiting for it
+            fmt_pop_oneshots(frames, pending)
+      }
+   }
+   (*frames = 0 & depth = 0 & /instr) | return fmt_fail(*lines, "unclosed declaration or bracket")
+   return fmt_join(out, if \crlf then "\r\n" else "\n")
+end
+
+global fmt_error
+
+#
+# Note why unifmt() gave up, in fmt_error, and fail.
+#
+procedure fmt_fail(lnum, why)
+   fmt_error := "line " || lnum || ": " || why
+end
+
+#
+# The indentation of a statement that starts inside frames.
+#
+procedure fmt_base(frames)
+   return frames[-1].width | 0
+end
+
+procedure push_frame(frames, kind, snapshot, width)
+   put(frames, fmt_frame(kind, copy(snapshot), width))
+end
+
+#
+# Pop the single-statement frames at the top of frames; those opened by
+# "then" go to pending, as an "else" may still follow.
+#
+procedure fmt_pop_oneshots(frames, pending)
+   local f, newp := []
+   while (*frames > 0) & frames[-1].kind == ("then" | "oneshot") do {
+      f := pull(frames)
+      if f.kind == "then" then put(newp, f.snapshot)
+   }
+   every push(pending, !reverse(newp))
+end
+
+global fmt_track_depth
+
+#
+# Follow braces, parentheses and brackets in toks. Braces open frames whose
+# statements are indented to width, and close them; fmt_track_depth is
+# left at the paren/bracket depth.
+#
+procedure fmt_track(toks, frames, depth, width)
+   local t
+   every t := !toks do {
+      case t.s of {
+         "{" | "$(": push_frame(frames, "brace", [], width)
+         "}" | "$)": {
+            while (*frames > 0) & frames[-1].kind == ("then" | "oneshot") do
+               pull(frames)
+            ((*frames > 0) & pull(frames).kind == "brace") | fail
+         }
+         "(" | "[" | "$<": depth +:= 1
+         ")" | "]" | "$>": depth -:= 1
+      }
+   }
+   fmt_track_depth := depth
+   return
+end
+
+#
+# Does a line whose last code token is t leave its statement unfinished?
+# It does when t cannot end an expression, as for Unicon's own semicolon
+# insertion, except for the words after which a single statement follows.
+#
+procedure fmt_continues(t)
+   static enders
+   initial enders := set("break", "fail", "next", "return", "suspend", "end",
+                         "initially", "then", "else", "do", "repeat", "initial",
+                         ")", "]", "}", "$)", "$>", "@>", "@>>", "<@", "<<@",
+                         "`", ";", "{", "$(")
+   if t.kind == ("id" | "num" | "str") then fail
+   if member(enders, t.s) then fail
+   return
+end
+
+procedure fmt_reserved(s)
+   static words
+   initial words := set("abstract", "break", "by", "case", "class", "create",
+                        "critical", "default", "do", "else", "end", "every",
+                        "fail", "global", "if", "import", "initial",
+                        "initially", "invocable", "link", "local", "method",
+                        "next", "not", "of", "package", "procedure", "record",
+                        "repeat", "return", "static", "suspend", "then",
+                        "thread", "to", "until", "while")
+   return member(words, s)
+end
+
+#
+# fmt_lex(s, instr): [tokens, instr'] for the line s. instr is the quote
+# of a string or cset continued from the line before, or &null; instr' is
+# the same for the end of s.
+#
+procedure fmt_lex(s, instr)
+   local toks := [], c, q, start, op, L
+   static ops, opchars, idchars
+   initial {
+      opchars := '!%&*+-./:<=>?@\\^|~`$'
+      idchars := &letters ++ &digits ++ '_'
+      ops := []
+      every op := ":=:" | "<->" | "<-" | ":=" | "::" | "@>>" | "@>" | "<<@" | "<@" |
+            "->" | "=>" | ".|" | ".>" | ".$" | "??" | "$$" | "$(" | "$)" | "$<" |
+            "$>" | "+:" | "-:" | "``" do
+         put(ops, op)
+      # binary operators, and their augmented assignments
+      every op := "|||" | "||" | "~===" | "~==" | "~=" | "===" | "==" |
+            "<<=" | "<<" | "<=" | ">>=" | ">>" | ">=" | "**" | "++" | "--" |
+            "%" | "&" | "*" | "+" | "-" | "/" | "<" | "=" | ">" | "?" | "@" |
+            "^" | "|" | "." | "!" | "\\" | "~" | ":" | "`" | "$" do {
+         put(ops, op || ":=")
+         put(ops, op)
+      }
+      # longest first
+      L := []
+      every put(L, fmt_op(!ops))
+      ops := []
+      every put(ops, (!reverse(sortf(L, 2)))[1])
+   }
+   s ? {
+      if \instr then {
+         start := &pos
+         q := instr
+         instr := &null
+         fmt_lit_rest(q) | (instr := q)
+         put(toks, fmt_token("str", &subject[start:&pos], start))
+      }
+      while not pos(0) do {
+         if tab(many(' \t\r\v\f')) then next
+         start := &pos
+         c := &subject[&pos]
+         if c == "#" then {
+            put(toks, fmt_token("comment", tab(0), start))
+         }
+         else if ="\"\"\"" then {
+            # a triple-quoted string, which may go on for several lines
+            fmt_lit_rest("\"\"\"") | (instr := "\"\"\"")
+            put(toks, fmt_token("str", &subject[start:&pos], start))
+         }
+         else if c == ("\"" | "'") then {
+            move(1)
+            fmt_lit_rest(c) | (instr := c)
+            put(toks, fmt_token("str", &subject[start:&pos], start))
+         }
+         else if any(&digits) | (="." & any(&digits) & (&pos := start)) then {
+            tab(many(idchars))
+            if ="." then tab(many(&digits))
+            if &subject[&pos - 1] == ("e" | "E") & any('+-') then {
+               move(1)
+               tab(many(&digits))
+            }
+            else if any('eE') then tab(many(idchars ++ '+-'))
+            put(toks, fmt_token("num", &subject[start:&pos], start))
+         }
+         else if any(&letters ++ '_') then {
+            tab(many(idchars))
+            put(toks, fmt_token(if fmt_reserved(&subject[start:&pos]) then "word" else "id",
+                                &subject[start:&pos], start))
+         }
+         else if ="&" & tab(many(idchars)) then {
+            put(toks, fmt_token("id", &subject[start:&pos], start))
+         }
+         else {
+            &pos := start
+            if c == ("(" | ")" | "[" | "]" | "{" | "}" | "," | ";") then
+               put(toks, fmt_token("punct", move(1), start))
+            else if any(opchars) then {
+               op := =!ops | fail      # the longest that matches
+               put(toks, fmt_token("op", op, start))
+            }
+            else
+               fail
+         }
+      }
+   }
+   return [toks, instr]
+end
+
+procedure fmt_op(s)
+   return [s, *s]
+end
+
+#
+# Move past the rest of a string or cset that started with quote q (or
+# with three double quotes). Fails at the end of the subject when the
+# literal goes on to the next line.
+#
+procedure fmt_lit_rest(q)
+   if *q > 1 then {
+      # a triple-quoted string has no escapes
+      tab(find(q)) | {
+         tab(0)
+         fail
+      }
+      return =q
+   }
+   repeat {
+      tab(upto('\\' ++ q)) | {
+         tab(0)
+         fail
+      }
+      if ="\\" then
+         move(1) | fail
+      else {
+         move(1)
+         return
+      }
+   }
+end
+
+#
+# Put one blank on each side of an assignment operator and after a comma
+# where there is none. Columns in toks are those of the line before it was
+# re-indented by shift.
+#
+procedure fmt_space(line, toks, shift)
+   local i, t, prev, nxt, ins
+   static assigns
+   initial assigns := set(":=", ":=:", "<-", "<->")
+   ins := []
+   every i := 1 to *toks do {
+      t := toks[i]
+      t.kind == "comment" & break
+      prev := toks[i - 1] | &null
+      nxt := toks[i + 1] | &null
+      if t.kind == "op" & (member(assigns, t.s) | (*t.s > 2 & t.s[-2:0] == ":=")) then {
+         if \prev & prev.col + *prev.s = t.col then put(ins, t.col)
+         if \nxt & t.col + *t.s = nxt.col then put(ins, nxt.col)
+      }
+      else if t.s == "," & \nxt & t.col + 1 = nxt.col then
+         put(ins, nxt.col)
+   }
+   ins := sort(set(ins))
+   every i := ins[*ins to 1 by -1] do
+      line := line[1:i + shift] || " " || line[i + shift:0]
+   return line
+end
+
+procedure fmt_split(text)
+   local L := [], i
+   text ? {
+      while put(L, tab(find("\n"))) do move(1)
+      put(L, tab(0))
+   }
+   every i := 1 to *L do
+      if L[i][-1] == "\r" then L[i] := L[i][1:-1]
+   return L
+end
+
+procedure fmt_join(L, nl)
+   local s := "", i
+   every i := 1 to *L do {
+      s ||:= L[i]
+      if i < *L then s ||:= nl
+   }
+   return s
+end
+
+procedure fmt_lead(s)
+   return *(s ? tab(many(' \t'))) | 0
+end
+
+#
+# The width of the leading blanks of line, with tabs every 8 columns.
+#
+procedure fmt_indent_width(line)
+   local w := 0, c
+   line ? while c := tab(any(' \t')) do
+      if c == " " then w +:= 1 else w := (w / 8 + 1) * 8
+   return w
+end
+
+procedure fmt_width(unit)
+   return fmt_indent_width(unit || "x")
+end
+
+#
+# line with its leading blanks replaced by width columns of indentation,
+# made of tabs if unit is a tab, and without its trailing blanks unless
+# keep is set.
+#
+procedure fmt_reindent(line, width, unit, unitw, keep)
+   local s := ""
+   line ? {
+      tab(many(' \t'))
+      line := tab(0)
+   }
+   if unit == "\t" then {
+      s := repl("\t", width / 8) || repl(" ", width % 8)
+   }
+   else
+      s := repl(" ", width)
+   return s || (if \keep then line else trim(line, ' \t'))
+end

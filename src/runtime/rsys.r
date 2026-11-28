@@ -56,11 +56,32 @@ int sock_getstrg(register char *buf, int maxi, dptr file)
       stmp++;
       }
 
-   if (stmp - buf < r) {
-      if(stmp == buf)
-         i = stmp - buf + 1;
+   if (stmp - buf < r)
+      i = stmp - buf + 1;               /* include the newline */
+   else if (r < maxi) {
+      /*
+       * The bytes queued so far are not a whole line.  A non-blocking
+       * socket must leave them there: consuming them and then failing
+       * the read when the newline has not arrived yet drops the line,
+       * and the following read returns only the newline.
+       */
+#ifndef NT
+      {
+      int fd, flags;
+#if HAVE_LIBSSL
+      if (BlkD(*file, File)->status & Fs_Encrypt)
+         fd = SSL_get_fd(BlkD(*file, File)->fd.ssl);
       else
-         i = stmp - buf;
+#endif                                  /* LIBSSL */
+         fd = (int)BlkD(*file,File)->fd.fd;
+      flags = fcntl(fd, F_GETFL, 0);
+      if (flags != -1 && (flags & O_NONBLOCK)) {
+         set_syserrortext(EAGAIN);
+         return -3;
+         }
+      }
+#endif                                  /* NT */
+      i = r;
       }
    else
       i = r;
@@ -85,6 +106,8 @@ int sock_getstrg(register char *buf, int maxi, dptr file)
       set_errortext(1040);
       return -3;
       }
+   if (r <= 0)
+      return -1;
    return r;
    }
 #endif                                  /* NT */
@@ -1387,11 +1410,19 @@ void ptclose(struct ptstruct *ptStruct)
    CloseHandle(ptStruct->master_write);
 #else                                   /* NT */
    /* close the master and slave file descriptors */
-   close(ptStruct->master_fd);
-   close(ptStruct->slave_fd);
-   /* terminate the child process */
-   waitpid(ptStruct->slave_pid,&status,WNOHANG);
-   kill(ptStruct->slave_pid,SIGKILL);
+   if (ptStruct->master_fd >= 0)
+      close(ptStruct->master_fd);
+   if (ptStruct->slave_fd >= 0)
+      close(ptStruct->slave_fd);
+   /*
+    * Terminate the child process, if there is one.  ptopen() fails before
+    * it forks with slave_pid at -1, and kill() of 0 or -1 would kill this
+    * process's whole group, or every process it may signal.
+    */
+   if (ptStruct->slave_pid > 0) {
+      waitpid(ptStruct->slave_pid,&status,WNOHANG);
+      kill(ptStruct->slave_pid,SIGKILL);
+      }
 #endif                                  /* NT */
    /* free the space allocated for the structure */
    free(ptStruct);
@@ -1423,6 +1454,11 @@ struct ptstruct *ptopen(char *command)
       EXITERROR(newPtStruct);
       }
    strcpy(newPtStruct->slave_command, command);
+#if !NT
+   /* nothing is open and there is no child yet, for ptclose() */
+   newPtStruct->master_fd = newPtStruct->slave_fd = -1;
+   newPtStruct->slave_pid = -1;
+#endif                                  /* !NT */
 
    CmdParamToArgv(command, &av, 0);
    /*
@@ -1470,9 +1506,20 @@ struct ptstruct *ptopen(char *command)
       EXITERROR(newPtStruct);
       }
 #else                                   /* SUN */
-   if((newPtStruct->master_fd=posix_openpt(O_RDWR|O_NONBLOCK)) == -1) {
+   /*
+    * FreeBSD's posix_openpt() takes only O_RDWR, O_NOCTTY and O_CLOEXEC,
+    * and fails with EINVAL for O_NONBLOCK, so that is set afterwards.
+    */
+   if((newPtStruct->master_fd=posix_openpt(O_RDWR)) == -1) {
       EXITERROR(newPtStruct);
       }
+   {
+   int flags = fcntl(newPtStruct->master_fd, F_GETFL);
+   if (flags == -1 ||
+       fcntl(newPtStruct->master_fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+      EXITERROR(newPtStruct);
+      }
+   }
 #endif                                  /* SUN */
 
    /* change permissions of slave pty to correspond with the master pty */
@@ -1516,25 +1563,23 @@ struct ptstruct *ptopen(char *command)
       EXITERROR(newPtStruct);
       }
    else if(newPtStruct->slave_pid == 0) {
+      /*
+       * The child: if it cannot run the command it must exit, not return
+       * to go on running the program beside its parent.
+       */
       /* create a session id and make this process the process group leader */
       if(setsid() == -1) /* was setpgid */
-         EXITERROR(newPtStruct);
+         _exit(127);
       /*
        * dup standard file descriptors to be associated with pseudo terminal */
-      if(dup2(newPtStruct->slave_fd,0) == -1) {
-         EXITERROR(newPtStruct);
-         }
-      if(dup2(newPtStruct->slave_fd,1) == -1) {
-         EXITERROR(newPtStruct);
-         }
-      if(dup2(newPtStruct->slave_fd,2) == -1) {
-         EXITERROR(newPtStruct);
-         }
+      if(dup2(newPtStruct->slave_fd,0) == -1 ||
+         dup2(newPtStruct->slave_fd,1) == -1 ||
+         dup2(newPtStruct->slave_fd,2) == -1)
+         _exit(127);
 
       /* attempt to execute the command slave process */
-      if(execve(av[0], av, NULL) == -1) {
-         EXITERROR(newPtStruct);
-         }
+      execve(av[0], av, NULL);
+      _exit(127);
       }
 #endif                                  /* NT */
 

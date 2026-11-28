@@ -1,0 +1,26 @@
+# scope.icn: names in several scopes, for the scopes test
+global total
+record point(x, y)
+
+procedure main(args)
+   local p, n
+   p := point(1, 2)
+   n := 0
+   every n +:= !args
+   total := n + p.x
+   c := Counter(n)
+   write(c.bump(1), total)
+end
+
+procedure other(n)
+   return n * 2
+end
+
+class Counter(n)
+   method bump(k)
+      n +:= k
+      return self.n
+   end
+initially
+   /n := 0
+end

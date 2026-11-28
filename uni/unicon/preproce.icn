@@ -401,12 +401,19 @@ end
 #
 procedure preproc_scan_text(done_set)
     local q,result,p,interesting_in_quotes,ident,value,fmacro,save_pos
+    local open_line, end_line
     static interesting_chars
     initial {
         interesting_chars := '#"\'_' ++ &letters
     }
     if /preproc_if_state then {
+        open_line := preproc_line
         preproc_rewrite_triple_strings()
+        # A """ string may have read through its closing line. The
+        # rewritten text is still the opening line; the next line of
+        # input is the one after end_line.
+        end_line := preproc_line
+        preproc_line := open_line
         if *preproc_sym_table > 0 | *preproc_fun_table > 0 then {
             &pos := q := 1
             result := ""
@@ -439,7 +446,10 @@ procedure preproc_scan_text(done_set)
                             if not match("_",trim(&subject),-1) then {
                                 break
                             }
+                            # The read must follow the """ string, not the opening line.
+                            preproc_line := end_line
                             &subject := preproc_read() | fail
+                            end_line := preproc_line
                             # we have just read the next line and incremented
                             # preproc_line; treat previous line as if already
                             # printed.
@@ -502,7 +512,12 @@ procedure preproc_scan_text(done_set)
             #suspend image(preproc_filename) || ":" ||
             #        preproc_line || " " || &subject
         }
-        preproc_print_line := preproc_line
+        preproc_line := end_line
+        # The emitted line is the opening line. Leave preproc_print_line
+        # there when the string ate more lines, so the next line's #line
+        # directive moves the lexer past them.
+        if end_line = open_line then
+            preproc_print_line := preproc_line
     }
 end
 

@@ -311,6 +311,8 @@ Status peeks are :ref:`section 6.4 <sec-peek>`.
 
 ``verifyPeer=yes|no`` and mode ``-`` mean the same thing on TLS
 and SSH. An explicit ``verifyPeer=`` overrides the mode flag.
+SSH alone also takes ``verifyPeer=accept-new``, which trusts and
+records a host's key the first time it is seen.
 Trust stores stay distinct: TLS uses ``ca=`` (X.509);
 SSH uses ``hostkeyfile=`` (OpenSSH ``known_hosts``).
 

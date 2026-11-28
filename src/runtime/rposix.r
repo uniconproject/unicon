@@ -4559,6 +4559,8 @@ int sock_purge(int fd)
  * Authentication attributes are tried in the order they appear in the
  * open() call, not in a hardcoded priority order.
  */
+#define SSH_VERIFY_ACCEPT_NEW  2   /* verifyPeer=accept-new */
+
 #define SSH_AUTH_ATTR_KEY      1
 #define SSH_AUTH_ATTR_PASSWORD 2
 
@@ -4679,6 +4681,27 @@ static int ssh_chan_register_callbacks(struct SSHfile *sshf, ssh_channel chan)
       }
    sshf->cbs = cb;
    return 0;
+}
+
+/*
+ * ssh_chan_release() - detach a channel's callbacks and free it.
+ * libssh keeps a channel freed before the server has closed it until
+ * the server's close arrives, and runs its callbacks for whatever
+ * comes first (a late exit status, say).  Those callbacks point at
+ * the SSHfile and the callbacks struct, both freed once the file is
+ * closed, so take them off the channel first.
+ */
+static void ssh_chan_release(struct SSHfile *sshf, ssh_channel chan, int do_close)
+{
+   if (chan == NULL)
+      return;
+   if (sshf != NULL && sshf->cbs != NULL)
+      ssh_remove_channel_callbacks(chan, (ssh_channel_callbacks)sshf->cbs);
+   if (do_close) {
+      ssh_channel_send_eof(chan);
+      ssh_channel_close(chan);
+      }
+   ssh_channel_free(chan);
 }
 
 /*
@@ -5157,6 +5180,44 @@ static int ssh_request_interactive_pty(ssh_channel chan, const char *term,
 }
 
 /*
+ * Attribute values have to outlive the conversions of the attributes
+ * after them.  A tended char * keeps a string's address but not its
+ * length, so a collection while a later attribute is converted can
+ * drop or move an alcstr copy that a value still points into.  Copy
+ * each name=value attribute to malloc'd storage instead. copies[a]
+ * holds attribute a's copy and its full length until ssh_attr_free().
+ * The parser plants a NUL at the first '=', so a wipe that stops at
+ * the first NUL would leave the password or key passphrase in the
+ * freed block. Wipe the whole allocation, then free it.
+ */
+struct ssh_attr {
+   char *s;
+   size_t n;                            /* bytes allocated, including the NUL */
+};
+
+static struct ssh_attr *ssh_attr_alloc(int n)
+{
+   return calloc((size_t)n + 1, sizeof(struct ssh_attr));
+}
+
+static void ssh_attr_free(struct ssh_attr *copies, int n)
+{
+   int a;
+   size_t i;
+   volatile char *p;
+
+   if (copies == NULL)
+      return;
+   for (a = 0; a < n; a++)
+      if ((p = copies[a].s) != NULL) {
+         for (i = 0; i < copies[a].n; i++)
+            p[i] = '\0';
+         free(copies[a].s);
+         }
+   free(copies);
+}
+
+/*
  * create_ssh_session() - establish an authenticated SSH connection,
  * optionally with a channel on it, returning a malloc'd SSHfile.
  * Follows the same attribute-parsing shape as create_ssl_context():
@@ -5174,20 +5235,150 @@ static int ssh_request_interactive_pty(ssh_channel chan, const char *term,
  * Mode "hs" (ssh_sftp) is a transport-only session intended for an
  * immediate SFTP open on the same handle.  channel=yes is the
  * default.  Passing do_verify = 0 (the '-' mode char) skips host-key
- * verification; verifyPeer=yes|no overrides that flag, matching TLS.
+ * verification; verifyPeer=yes|no overrides that flag, matching TLS,
+ * and verifyPeer=accept-new trusts and records a host's key the first
+ * time it is seen.
  * cmd= without mode 'c', and channel=no with 'c' or cmd=, are bad
  * attributes.
  *
  * On failure sets &errortext and returns NULL, so open() can fail
  * rather than raise a runtime error, matching the SSL connect path.
  */
+/*
+ * env= values ("NAME=VALUE"), kept as consecutive NUL-terminated
+ * strings in one malloc'd buffer: attribute strings live in the
+ * Unicon heap and may move while later attributes are parsed.
+ */
+static int ssh_env_add(char **buf, size_t *len, char *nv)
+{
+   char *eq = strchr(nv, '=');
+   size_t n = strlen(nv) + 1;
+   char *nb;
+
+   if (eq == NULL || eq == nv)
+      return -1;
+   nb = realloc(*buf, *len + n);
+   if (nb == NULL)
+      return -1;
+   memcpy(nb + *len, nv, n);
+   *buf = nb;
+   *len += n;
+   return 0;
+}
+
+/*
+ * Send each env= variable on a newly opened channel, before its exec
+ * or shell request.  A variable the server refuses is ignored, as
+ * OpenSSH's SetEnv does.  No Unicon allocation (runs unregistered).
+ */
+static void ssh_chan_request_envs(ssh_channel chan, char *buf, size_t len)
+{
+   char *p, *eq;
+
+   for (p = buf; p != NULL && p < buf + len; p += strlen(p) + 1) {
+      eq = strchr(p, '=');
+      *eq = '\0';
+      ssh_channel_request_env(chan, p, eq + 1);
+      *eq = '=';
+      }
+}
+
+/*
+ * End the known_hosts file with a newline before libssh appends to
+ * it: ssh_session_update_known_hosts() writes its entry without one,
+ * and an entry glued onto the last line would leave both unusable.
+ * Returns 0, or -1 when the file cannot be fixed.  No Unicon
+ * allocation (runs unregistered).
+ */
+static int ssh_known_hosts_end_line(ssh_session sess)
+{
+   char *path = NULL;
+   FILE *fp;
+   int c = '\n', rc = 0;
+
+   if (ssh_options_get(sess, SSH_OPTIONS_KNOWNHOSTS, &path) != SSH_OK)
+      return 0;                         /* libssh reports it on update */
+   if ((fp = fopen(path, "rb")) != NULL) {
+      if (fseek(fp, -1L, SEEK_END) == 0)
+         c = getc(fp);
+      fclose(fp);
+      }
+   if (c != '\n' && c != EOF) {
+      if ((fp = fopen(path, "ab")) == NULL || putc('\n', fp) == EOF)
+         rc = -1;
+      if (fp != NULL && fclose(fp) != 0)
+         rc = -1;
+      }
+   ssh_string_free_char(path);
+   return rc;
+}
+
+/*
+ * Keyboard-interactive login, answering the server's password prompt
+ * with password.  Only a round with one hidden prompt is answered, and
+ * only once, so a wrong password is not tried again and the password
+ * never answers a second question (a one-time code asked in the same
+ * round, or a user name, which echoes).  Rounds without prompts (some
+ * servers send one after the password) pass through.
+ * Returns 1 when authenticated.
+ */
+static int ssh_auth_kbdint(ssh_session sess, char *password)
+{
+   int rc, np, rounds = 0, answered = 0;
+   char echo;
+
+   rc = ssh_userauth_kbdint(sess, NULL, NULL);
+   while (rc == SSH_AUTH_INFO && rounds++ < 8) {
+      np = ssh_userauth_kbdint_getnprompts(sess);
+      if (np > 0) {
+         if (answered || np != 1)
+            return 0;
+         echo = 0;
+         if (ssh_userauth_kbdint_getprompt(sess, 0, &echo) == NULL || echo)
+            return 0;
+         if (ssh_userauth_kbdint_setanswer(sess, 0, password) < 0)
+            return 0;
+         answered = 1;
+         }
+      rc = ssh_userauth_kbdint(sess, NULL, NULL);
+      }
+   return rc == SSH_AUTH_SUCCESS;
+}
+
+/*
+ * Password login: the "password" method, or keyboard-interactive when
+ * the server offers only that (OpenSSH servers using PAM often do).
+ * Either way the password is sent once.  Returns 1 when authenticated.
+ */
+static int ssh_auth_password(ssh_session sess, char *password)
+{
+   int methods;
+
+   methods = ssh_userauth_list(sess, NULL);
+   if (methods == 0) {
+      /* no method list yet: a "none" attempt asks the server for it */
+      if (ssh_userauth_none(sess, NULL) == SSH_AUTH_SUCCESS)
+         return 1;
+      methods = ssh_userauth_list(sess, NULL);
+      }
+   if (!(methods & SSH_AUTH_METHOD_PASSWORD) &&
+       (methods & SSH_AUTH_METHOD_INTERACTIVE))
+      return ssh_auth_kbdint(sess, password);
+   /* the server offers neither: don't send the password at all */
+   if (methods != 0 && !(methods & SSH_AUTH_METHOD_PASSWORD))
+      return 0;
+   return ssh_userauth_password(sess, NULL, password) == SSH_AUTH_SUCCESS;
+}
+
 struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
                                    int do_verify, int ssh_cmd, int ssh_sftp)
 {
-   tended char *tmps, *val;
-   tended char *key=NULL, *password=NULL, *keypass=NULL;
-   tended char *hostkeyfile=NULL, *cmd=NULL, *userattr=NULL;
-   tended char *term=NULL;
+   tended char *tmps;
+   char *name, *val;                    /* both point into copies[a].s */
+   char *key=NULL, *password=NULL, *keypass=NULL;
+   char *hostkeyfile=NULL, *cmd=NULL, *userattr=NULL;
+   char *term=NULL;
+   struct ssh_attr *copies;
    char namebuf[512];
    char *user, *host, *at, *colon, *rbrack;
    int auth_order[2];
@@ -5200,6 +5391,8 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
    C_integer pty_cols = 0, pty_rows = 0;
    int a, authed, err;
    int want_channel = 1;                /* channel=yes by default */
+   char *envbuf = NULL;                 /* env= values, see ssh_env_add() */
+   size_t envlen = 0;
 
    /*
     * Split "user@host[:port]" (or "[ipv6]:port") into storage that
@@ -5261,6 +5454,12 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
          }
       }
 
+   copies = ssh_attr_alloc(n);
+   if (copies == NULL) {
+      set_errortext(1330);
+      return NULL;
+      }
+
    /*
     * Check the attributes, create_ssl_context() style.
     */
@@ -5273,67 +5472,83 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
          continue;
       if (!cnv:C_string(attr[a], tmps)) {
          set_errortext(1331);
-         return NULL;
+         goto attr_fail;
          }
-      if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
+      /* a value may itself end in '=' (env=NAME=, a base64 password) */
+      if (strlen(tmps) < 3 || tmps[0] == '=') {
          set_errortext_with_val(1331, tmps);
-         return NULL;
+         goto attr_fail;
          }
       /*
        * Split a private copy at the '=' sign; cnv:C_string can return
        * the caller's own string storage, which must not be mutated.
        */
-      Protect(tmps = alcstr(tmps, (word)strlen(tmps)+1), fatalerr(0,NULL));
-      val = strchr(tmps, '=');
+      if ((copies[a].s = strdup(tmps)) == NULL) {
+         set_errortext(1330);
+         goto attr_fail;
+         }
+      copies[a].n = strlen(tmps) + 1;
+      name = copies[a].s;
+      val = strchr(name, '=');
       if (val == NULL) {
-         set_errortext_with_val(1331, tmps);
-         return NULL;
+         set_errortext_with_val(1331, name);
+         goto attr_fail;
          }
       *val = '\0';
       val++;
       if (strlen(val) == 0) {
-         set_errortext_with_val(1331, tmps);
-         return NULL;
+         set_errortext_with_val(1331, name);
+         goto attr_fail;
          }
-      if (strcmp(tmps, "user") == 0)
+      if (strcmp(name, "user") == 0)
          userattr = val;
-      else if (strcmp(tmps, "key") == 0) {
+      else if (strcmp(name, "key") == 0) {
          key = val;
          if (nauth < 2) auth_order[nauth++] = SSH_AUTH_ATTR_KEY;
          }
-      else if (strcmp(tmps, "password") == 0) {
+      else if (strcmp(name, "password") == 0) {
          password = val;
          if (nauth < 2) auth_order[nauth++] = SSH_AUTH_ATTR_PASSWORD;
          }
-      else if (strcmp(tmps, "keypass") == 0)
+      else if (strcmp(name, "keypass") == 0)
          keypass = val;
-      else if (strcmp(tmps, "hostkeyfile") == 0)
+      else if (strcmp(name, "hostkeyfile") == 0)
          hostkeyfile = val;
-      else if (strcmp(tmps, "cmd") == 0)
+      else if (strcmp(name, "cmd") == 0)
          cmd = val;
-      else if (strcmp(tmps, "term") == 0)
-         term = val;
-      else if (strcmp(tmps, "cols") == 0)
-         pty_cols = atol(val);
-      else if (strcmp(tmps, "rows") == 0)
-         pty_rows = atol(val);
-      else if (strcmp(tmps, "channel") == 0) {
-         want_channel = sock_attr_bool(val);
-         if (want_channel < 0) {
-            set_errortext_with_val(1331, tmps);
-            return NULL;
+      else if (strcmp(name, "env") == 0) {
+         if (ssh_env_add(&envbuf, &envlen, val) < 0) {
+            set_errortext_with_val(1331, "env");
+            goto attr_fail;
             }
          }
-      else if (strcmp(tmps, "verifyPeer") == 0) {
-         do_verify = sock_attr_bool(val);
+      else if (strcmp(name, "term") == 0)
+         term = val;
+      else if (strcmp(name, "cols") == 0)
+         pty_cols = atol(val);
+      else if (strcmp(name, "rows") == 0)
+         pty_rows = atol(val);
+      else if (strcmp(name, "channel") == 0) {
+         want_channel = sock_attr_bool(val);
+         if (want_channel < 0) {
+            set_errortext_with_val(1331, name);
+            goto attr_fail;
+            }
+         }
+      else if (strcmp(name, "verifyPeer") == 0) {
+         /* accept-new: OpenSSH's StrictHostKeyChecking=accept-new */
+         if (strcmp(val, "accept-new") == 0)
+            do_verify = SSH_VERIFY_ACCEPT_NEW;
+         else
+            do_verify = sock_attr_bool(val);
          if (do_verify < 0) {
-            set_errortext_with_val(1331, tmps);
-            return NULL;
+            set_errortext_with_val(1331, name);
+            goto attr_fail;
             }
          }
       else {
-         set_errortext_with_val(1331, tmps);
-         return NULL;
+         set_errortext_with_val(1331, name);
+         goto attr_fail;
          }
       }
 
@@ -5343,26 +5558,31 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
 
    if (ssh_cmd && ssh_sftp) {
       set_errortext_with_val(1331, "c");
-      return NULL;
+      goto attr_fail;
       }
    /* cmd= is selected by mode 'c', not by the attribute alone */
    if (cmd != NULL && !ssh_cmd) {
       set_errortext_with_val(1331, "cmd");
-      return NULL;
+      goto attr_fail;
       }
    /* mode "hs": SFTP, not a shell/exec channel */
    if (ssh_sftp)
       want_channel = 0;
+   /* env= sets variables on a channel: none with channel=no or "hs" */
+   if (!want_channel && envbuf != NULL) {
+      set_errortext_with_val(1331, "env");
+      goto attr_fail;
+      }
    /* channel=no with 'c' or cmd= is contradictory */
    if (!want_channel && (ssh_cmd || cmd != NULL)) {
       set_errortext_with_val(1331, "channel");
-      return NULL;
+      goto attr_fail;
       }
 
    sess = ssh_new();
    if (sess == NULL) {
       set_errortext(1330);
-      return NULL;
+      goto attr_fail;
       }
    ssh_options_set(sess, SSH_OPTIONS_HOST, host);
    if (user != NULL)
@@ -5370,6 +5590,17 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
    if (port != 0) {
       unsigned int p = (unsigned int)port;
       ssh_options_set(sess, SSH_OPTIONS_PORT, &p);
+      }
+   /*
+    * Read ~/.ssh/config and the system ssh_config now rather than in
+    * ssh_connect(), so that the options set below win over them: a
+    * StrictHostKeyChecking no or a UserKnownHostsFile there must not
+    * undo the host-key checks that open() asks for.
+    */
+   if (ssh_options_parse_config(sess, NULL) != 0) {
+      set_ssh_errortext(sess, 1330);
+      ssh_free(sess);
+      goto attr_fail;
       }
    if (timeout > 0) {
       long sec = timeout / 1000;
@@ -5379,12 +5610,16 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
       }
    if (hostkeyfile != NULL)
       ssh_options_set(sess, SSH_OPTIONS_KNOWNHOSTS, hostkeyfile);
+   if (do_verify) {
+      int strict = 1;                   /* StrictHostKeyChecking yes */
+      ssh_options_set(sess, SSH_OPTIONS_STRICTHOSTKEYCHECK, &strict);
+      }
 
    sshf = malloc(sizeof(struct SSHfile));
    if (sshf == NULL) {
       ssh_free(sess);
       set_errortext(1330);
-      return NULL;
+      goto attr_fail;
       }
    memset(sshf, 0, sizeof(struct SSHfile));
 
@@ -5400,7 +5635,19 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
       goto ssh_fail;
 
    if (do_verify) {
-      if (ssh_session_is_known_server(sess) != SSH_KNOWN_HOSTS_OK) {
+      int known = ssh_session_is_known_server(sess);
+      /*
+       * accept-new trusts a host seen for the first time (no entry,
+       * or no known_hosts file yet) and records its key; a changed
+       * key, or a key of another type, still fails.
+       */
+      if (do_verify == SSH_VERIFY_ACCEPT_NEW &&
+          (known == SSH_KNOWN_HOSTS_UNKNOWN ||
+           known == SSH_KNOWN_HOSTS_NOT_FOUND) &&
+          ssh_known_hosts_end_line(sess) == 0 &&
+          ssh_session_update_known_hosts(sess) == SSH_OK)
+         known = SSH_KNOWN_HOSTS_OK;
+      if (known != SSH_KNOWN_HOSTS_OK) {
          err = 1333;
          goto ssh_fail;
          }
@@ -5427,7 +5674,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
             }
          }
       else {
-         if (ssh_userauth_password(sess, NULL, password) == SSH_AUTH_SUCCESS)
+         if (ssh_auth_password(sess, password))
             authed = 1;
          }
       }
@@ -5452,6 +5699,7 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
          goto ssh_fail;
       if (ssh_channel_open_session(chan) != SSH_OK)
          goto ssh_fail;
+      ssh_chan_request_envs(chan, envbuf, envlen);
       if (cmd != NULL) {
          if (ssh_channel_request_exec(chan, cmd) != SSH_OK)
             goto ssh_fail;
@@ -5469,16 +5717,24 @@ struct SSHfile *create_ssh_session(char *fnamestr, dptr attr, int n,
 
    sshf->sess = sess;
    sshf->chan = chan;                   /* NULL when channel=no */
+   free(envbuf);
+   ssh_attr_free(copies, n);
    return sshf;
 
 ssh_fail:
    INC_NARTHREADS_CONTROLLED;
    set_ssh_errortext(sess, err);
-   if (chan != NULL)
-      ssh_channel_free(chan);
+   ssh_chan_release(sshf, chan, 0);
    ssh_disconnect(sess);
    ssh_free(sess);
    ssh_free_file_state(sshf);
+   free(envbuf);
+   ssh_attr_free(copies, n);
+   return NULL;
+
+attr_fail:
+   free(envbuf);
+   ssh_attr_free(copies, n);
    return NULL;
 }
 
@@ -5508,9 +5764,7 @@ void ssh_close_file(struct SSHfile *sshf)
       }
 
    if (sshf->chan != NULL) {
-      ssh_channel_send_eof(sshf->chan);
-      ssh_channel_close(sshf->chan);
-      ssh_channel_free(sshf->chan);
+      ssh_chan_release(sshf, sshf->chan, 1);
       sshf->chan = NULL;
       }
 
@@ -5540,9 +5794,7 @@ void ssh_close_file(struct SSHfile *sshf)
             ch->sdir = NULL;
             }
          if (ch->chan != NULL) {
-            ssh_channel_send_eof(ch->chan);
-            ssh_channel_close(ch->chan);
-            ssh_channel_free(ch->chan);
+            ssh_chan_release(ch, ch->chan, 1);
             ch->chan = NULL;
             }
          ch->sftp = NULL;               /* owned here, freed below */
@@ -5565,13 +5817,15 @@ void ssh_close_file(struct SSHfile *sshf)
    ssh_free_file_state(sshf);
 }
 
+#define SSH_SFTP_WRITE_MAX 32768   /* bytes per sftp_write() */
+
 /*
  * ssh_file_write() - write all n bytes to an SSH channel or SFTP file.
  * Retries short writes.  Returns n on success, or -1 with &errortext set.
  */
 int ssh_file_write(struct SSHfile *sshf, char *s, word n)
 {
-   word total = 0;
+   word total = 0, chunk;
    int rc;
 
    if (sshf == NULL || sshf->closed) {
@@ -5583,7 +5837,15 @@ int ssh_file_write(struct SSHfile *sshf, char *s, word n)
    if (sshf->sfile != NULL) {
       DEC_NARTHREADS;
       while (total < n) {
-         rc = sftp_write(sshf->sfile, s + total, (size_t)(n - total));
+         /*
+          * Servers drop SFTP packets past their own limit (256 KB for
+          * OpenSSH), ending the session, and libssh does not split a
+          * large write itself.  32 KB is the size every server takes.
+          */
+         chunk = n - total;
+         if (chunk > SSH_SFTP_WRITE_MAX)
+            chunk = SSH_SFTP_WRITE_MAX;
+         rc = sftp_write(sshf->sfile, s + total, (size_t)chunk);
          if (rc < 0) {
             INC_NARTHREADS_CONTROLLED;
             set_ssh_errortext(sshf->sess, 1335);
@@ -5680,17 +5942,26 @@ int ssh_getstrg(char *buf, int maxi, struct SSHfile *sshf)
  */
 struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
 {
-   tended char *tmps, *val;
-   tended char *cmd = NULL;
-   tended char *term = NULL;
+   tended char *tmps;
+   char *name, *val;                    /* both point into copies[a].s */
+   char *cmd = NULL;
+   char *term = NULL;
+   struct ssh_attr *copies;
    struct SSHfile *owner, *sshf;
    ssh_channel chan = NULL;
    int a;
    C_integer pty_cols = 0, pty_rows = 0;
+   char *envbuf = NULL;                 /* env= values, see ssh_env_add() */
+   size_t envlen = 0;
 
    /* resolve to the session owner: opening on a channel opens a sibling */
    owner = (sf->parent != NULL) ? sf->parent : sf;
    if (owner->sess == NULL) {
+      set_errortext(1334);
+      return NULL;
+      }
+   copies = ssh_attr_alloc(n);
+   if (copies == NULL) {
       set_errortext(1334);
       return NULL;
       }
@@ -5702,7 +5973,7 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
          }
       if (!cnv:C_string(attr[a], tmps)) {
          set_errortext(1331);
-         return NULL;
+         goto attr_fail;
          }
       /*
        * Mode-only tokens ("hc", "w", ...) carry no '=' and are
@@ -5710,36 +5981,48 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
        */
       if (strchr(tmps, '=') == NULL)
          continue;
-      if (strlen(tmps) < 3 || tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
+      /* a value may itself end in '=' (env=NAME=, a base64 password) */
+      if (strlen(tmps) < 3 || tmps[0] == '=') {
          set_errortext_with_val(1331, tmps);
-         return NULL;
+         goto attr_fail;
          }
-      Protect(tmps = alcstr(tmps, (word)strlen(tmps)+1), fatalerr(0,NULL));
-      val = strchr(tmps, '=');
+      if ((copies[a].s = strdup(tmps)) == NULL) {
+         set_errortext(1334);
+         goto attr_fail;
+         }
+      copies[a].n = strlen(tmps) + 1;
+      name = copies[a].s;
+      val = strchr(name, '=');
       *val = '\0';
       val++;
       if (strlen(val) == 0) {
-         set_errortext_with_val(1331, tmps);
-         return NULL;
+         set_errortext_with_val(1331, name);
+         goto attr_fail;
          }
-      if (strcmp(tmps, "cmd") == 0)
+      if (strcmp(name, "cmd") == 0)
          cmd = val;
-      else if (strcmp(tmps, "term") == 0)
+      else if (strcmp(name, "env") == 0) {
+         if (ssh_env_add(&envbuf, &envlen, val) < 0) {
+            set_errortext_with_val(1331, "env");
+            goto attr_fail;
+            }
+         }
+      else if (strcmp(name, "term") == 0)
          term = val;
-      else if (strcmp(tmps, "cols") == 0)
+      else if (strcmp(name, "cols") == 0)
          pty_cols = atol(val);
-      else if (strcmp(tmps, "rows") == 0)
+      else if (strcmp(name, "rows") == 0)
          pty_rows = atol(val);
       else {
-         set_errortext_with_val(1331, tmps);
-         return NULL;
+         set_errortext_with_val(1331, name);
+         goto attr_fail;
          }
       }
 
    sshf = malloc(sizeof(struct SSHfile));
    if (sshf == NULL) {
       set_errortext(1334);
-      return NULL;
+      goto attr_fail;
       }
    memset(sshf, 0, sizeof(struct SSHfile));
 
@@ -5751,6 +6034,7 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
       goto chan_fail;
    if (ssh_channel_open_session(chan) != SSH_OK)
       goto chan_fail;
+   ssh_chan_request_envs(chan, envbuf, envlen);
    if (cmd != NULL) {
       if (ssh_channel_request_exec(chan, cmd) != SSH_OK)
          goto chan_fail;
@@ -5769,14 +6053,22 @@ struct SSHfile *create_ssh_channel(struct SSHfile *sf, dptr attr, int n)
    sshf->parent = owner;
    sshf->next = owner->children;
    owner->children = sshf;
+   free(envbuf);
+   ssh_attr_free(copies, n);
    return sshf;
 
 chan_fail:
    INC_NARTHREADS_CONTROLLED;
    set_ssh_errortext(owner->sess, 1334);
-   if (chan != NULL)
-      ssh_channel_free(chan);
+   ssh_chan_release(sshf, chan, 0);
    ssh_free_file_state(sshf);
+   free(envbuf);
+   ssh_attr_free(copies, n);
+   return NULL;
+
+attr_fail:
+   free(envbuf);
+   ssh_attr_free(copies, n);
    return NULL;
 }
 
@@ -5816,7 +6108,8 @@ static sftp_session ssh_owner_sftp(struct SSHfile *owner)
 struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
                                  int status, int *isdir, int as_owner)
 {
-   tended char *tmps, *val, *path = NULL;
+   tended char *tmps;
+   char *name, *val, *path = NULL;      /* path: malloc'd, freed on every exit */
    struct SSHfile *owner, *sshf;
    sftp_session sftp;
    sftp_attributes at;
@@ -5836,7 +6129,7 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
          }
       if (!cnv:C_string(attr[a], tmps)) {
          set_errortext(1331);
-         return NULL;
+         goto sftp_fail;
          }
       /*
        * Mode-only tokens ("hs", "w", "r", "a", "b", ...) carry no '='
@@ -5846,31 +6139,33 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
          continue;
       if (tmps[0] == '=' || tmps[strlen(tmps)-1] == '=') {
          set_errortext_with_val(1331, tmps);
-         return NULL;
+         goto sftp_fail;
          }
-      Protect(tmps = alcstr(tmps, (word)strlen(tmps)+1), fatalerr(0,NULL));
-      val = strchr(tmps, '=');
+      if ((name = strdup(tmps)) == NULL) {
+         set_errortext(1335);
+         goto sftp_fail;
+         }
+      val = strchr(name, '=');
       *val = '\0';
       val++;
-      if (strlen(val) == 0) {
-         set_errortext_with_val(1331, tmps);
-         return NULL;
+      if (strcmp(name, "path") != 0) {
+         set_errortext_with_val(1331, name);
+         free(name);
+         goto sftp_fail;
          }
-      if (strcmp(tmps, "path") == 0)
-         path = val;
-      else {
-         set_errortext_with_val(1331, tmps);
-         return NULL;
-         }
+      /* keep the whole copy; path is its value part */
+      memmove(name, val, strlen(val) + 1);
+      free(path);
+      path = name;
       }
    if (path == NULL) {
       set_errortext(1335);
-      return NULL;
+      goto sftp_fail;
       }
 
    sftp = ssh_owner_sftp(owner);
    if (sftp == NULL)
-      return NULL;                      /* &errortext already set */
+      goto sftp_fail;                   /* &errortext already set */
 
    if (as_owner)
       sshf = owner;
@@ -5878,7 +6173,7 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
       sshf = malloc(sizeof(struct SSHfile));
       if (sshf == NULL) {
          set_errortext(1335);
-         return NULL;
+         goto sftp_fail;
          }
       memset(sshf, 0, sizeof(struct SSHfile));
       sshf->sess = owner->sess;
@@ -5896,7 +6191,7 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
          set_ssh_errortext(owner->sess, 1335);
          if (!as_owner)
             free(sshf);
-         return NULL;
+         goto sftp_fail;
          }
       *isdir = 1;
       }
@@ -5917,7 +6212,7 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
          set_ssh_errortext(owner->sess, 1335);
          if (!as_owner)
             free(sshf);
-         return NULL;
+         goto sftp_fail;
          }
       }
 
@@ -5925,7 +6220,12 @@ struct SSHfile *create_sftp_file(struct SSHfile *sf, dptr attr, int n,
       sshf->next = owner->children;
       owner->children = sshf;
       }
+   free(path);
    return sshf;
+
+sftp_fail:
+   free(path);
+   return NULL;
 }
 
 /*

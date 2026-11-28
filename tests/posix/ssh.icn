@@ -29,6 +29,22 @@ procedure main()
    f := open("nobody@127.0.0.1", "h", "cmd=true")
    write("cmd-without-c open fails: ", failed_with_text(f))
 
+   # env= takes NAME=VALUE: a value without a name or '=' is a bad attribute.
+   f := open("nobody@127.0.0.1", "hc", "cmd=true", "env=NOVALUE")
+   write("env-without-equals open fails: ", failed_bad_attribute(f))
+   f := open("nobody@127.0.0.1", "hc", "cmd=true", "env==x")
+   write("env-without-name open fails: ", failed_bad_attribute(f))
+
+   # env= sets variables on a channel, so it contradicts channel=no.
+   f := open("nobody@127.0.0.1", "h", "channel=no", "env=A=b")
+   write("channel=no+env open fails: ", failed_bad_attribute(f))
+
+   # A value may be empty or end in '=' (base64): the open gets as far
+   # as connecting, which fails on the closed port.
+   f := open("nobody@127.0.0.1:1", "hc", "cmd=true", "env=A=", "env=B=YWJjZA==")
+   write("env-value-ending-in-equals accepted: ",
+         if /f & not find("bad ssh attribute", &errortext) then "yes" else "no")
+
    # Connecting to a closed local port must fail with &errortext set.
    f := open("nobody@127.0.0.1:1", "hc", "cmd=true")
    write("connect-refused open fails: ", failed_with_text(f))
@@ -40,6 +56,13 @@ end
 # Report "yes" when open() failed (produced &null) and left a &errortext.
 procedure failed_with_text(f)
    if /f & (*&errortext > 0) then return "yes"
+   if \f then close(f)
+   return "no"
+end
+
+# Report "yes" when open() failed because of a bad attribute.
+procedure failed_bad_attribute(f)
+   if /f & find("bad ssh attribute", &errortext) then return "yes"
    if \f then close(f)
    return "no"
 end
@@ -72,9 +95,15 @@ end
 #   UNICON_SSH_TESTKEY    private key path (else default identities/agent)
 #   UNICON_SSH_KNOWNHOSTS known_hosts path (else host-key check is skipped)
 #   UNICON_SSH_SFTPPATH   remote directory for SFTP checks (optional)
+#   UNICON_SSH_ENVOK      a variable name the server accepts from clients
+#                         (AcceptEnv); enables the env= checks (optional)
+#   UNICON_SSH_TESTPASS   the user's password; enables the password= checks
+#                         (optional).  Against a server that offers only
+#                         keyboard-interactive (PasswordAuthentication no
+#                         with PAM), these exercise keyboard-interactive.
 procedure live_test()
    local host, addr, opts, s, line, got, c, info, remote, L, chunk, stray, m,
-      first, e
+      first, e, big
 
    host := getenv("UNICON_SSH_TESTHOST") | {
       write("live round-trip: skipped (set UNICON_SSH_TESTHOST)")
@@ -148,6 +177,37 @@ procedure live_test()
       if find("partial_ssh_line", got) then "pass" else "fail")
    close(s)
 
+   env_test(addr)
+   password_test(addr)
+   accept_new_test(addr)
+
+   #
+   # Close channels before the server has sent their exit status, then
+   # keep using the session: the late packets must not reach the closed
+   # channels' state.
+   #
+   opts := ssh_opts(addr, "h", "channel=no")
+   s := open ! opts | {
+      write("live early close: open failed: ", &errortext)
+      return
+      }
+   every 1 to 20 do {
+      c := open(s, "hc", "cmd=sleep 0.02; echo late; exit 3") | break
+      close(c)
+      delay(30)
+      }
+   got := ""
+   if c := open(s, "hc", "cmd=echo after_early_close") then {
+      while m := receive(c, 5000) do
+         if m.type == "stdout" then got ||:= m.msg
+      close(c)
+      }
+   write("live early close: ",
+      if find("after_early_close", got) then "pass" else "fail")
+   close(s)
+
+   gc_attr_test(addr)
+
    # Optional SFTP checks when a remote writable directory is provided
    remote := getenv("UNICON_SSH_SFTPPATH") | {
       write("live sftp: skipped (set UNICON_SSH_SFTPPATH)")
@@ -174,5 +234,211 @@ procedure live_test()
    remove(s, remote || "/unicon_ssh_bin.bin") |
       stop("live sftp remove failed: ", &errortext)
    write("live sftp remove: pass")
+
+   # One writes() bigger than a server takes in a single SFTP packet.
+   big := repl("unicon_sftp_big\n", 65536)        # 1 MB
+   c := open(s, "hs", "path=" || remote || "/unicon_ssh_big.txt", "w") |
+        stop("live sftp big write-open failed: ", &errortext)
+   writes(c, big) | stop("live sftp big writes failed: ", &errortext)
+   close(c)
+   c := open(s, "hs", "path=" || remote || "/unicon_ssh_big.txt") |
+        stop("live sftp big read-open failed: ", &errortext)
+   got := ""
+   while got ||:= reads(c, 100000) do if *got >= *big then break
+   close(c)
+   write("live sftp big write: ", if got == big then "pass" else "fail")
+   remove(s, remote || "/unicon_ssh_big.txt")
    close(s)
+end
+
+# env= on channels, only when UNICON_SSH_ENVOK names a variable the
+# server accepts.  A variable it refuses must be ignored, not fail.
+procedure env_test(addr)
+   local name, opts, s, c, got
+
+   name := getenv("UNICON_SSH_ENVOK") | {
+      write("live env: skipped (set UNICON_SSH_ENVOK)")
+      return
+      }
+
+   # repeatable, and the value keeps any further '=', also at its end
+   opts := ssh_opts(addr, "hc", "cmd=printf '%s' \"$" || name || "\"",
+                    "env=" || name || "=a=b:c==")
+   s := open ! opts | {
+      write("live env: open failed: ", &errortext)
+      return
+      }
+   got := ""
+   while got ||:= reads(s, 64)
+   close(s)
+   write("live env: ", if got == "a=b:c==" then "pass" else "fail")
+
+   # a refused variable is ignored
+   opts := ssh_opts(addr, "hc", "cmd=echo env_refused_ok",
+                    "env=UNICON_SSH_NEVER_ACCEPTED_X=1")
+   s := open ! opts | {
+      write("live env refused: open failed: ", &errortext)
+      return
+      }
+   got := ""
+   while got ||:= reads(s, 64)
+   close(s)
+   write("live env refused: ",
+      if find("env_refused_ok", got) then "pass" else "fail")
+
+   # env= on a channel opened from a session
+   opts := ssh_opts(addr, "h", "channel=no")
+   s := open ! opts | {
+      write("live env channel: open failed: ", &errortext)
+      return
+      }
+   c := open(s, "hc", "cmd=printf '%s' \"$" || name || "\"",
+             "env=" || name || "=from_session") | {
+      write("live env channel: open failed: ", &errortext)
+      close(s)
+      return
+      }
+   got := ""
+   while got ||:= reads(c, 64)
+   close(c)
+   close(s)
+   write("live env channel: ", if got == "from_session" then "pass" else "fail")
+end
+
+# password= (or keyboard-interactive), only when UNICON_SSH_TESTPASS is
+# set.  No key= here, so the password is the only way in.
+procedure password_test(addr)
+   local pass, opts, s, got, kh
+
+   pass := getenv("UNICON_SSH_TESTPASS") | {
+      write("live password: skipped (set UNICON_SSH_TESTPASS)")
+      return
+      }
+
+   opts := [addr, "hc", "cmd=echo password_ok", "password=" || pass]
+   if kh := getenv("UNICON_SSH_KNOWNHOSTS") then put(opts, "hostkeyfile=" || kh)
+   else opts[2] := "hc-"
+   s := open ! opts | {
+      write("live password: open failed: ", &errortext)
+      return
+      }
+   got := ""
+   while got ||:= reads(s, 64)
+   close(s)
+   write("live password: ", if find("password_ok", got) then "pass" else "fail")
+
+   opts[4] := "password=" || pass || "-wrong"
+   s := (open ! opts) | &null
+   write("live wrong password fails: ", failed_with_text(s))
+end
+
+# verifyPeer=accept-new against a known_hosts file of the test's own:
+# the first contact records the host's key, a later strict open trusts
+# it, and a different key on file still fails.
+procedure accept_new_test(addr)
+   local kh, s, f, line, n, key, opts, ok
+
+   kh := "unicon_ssh_known_hosts.tmp"
+   remove(kh)
+   key := ("key=" || getenv("UNICON_SSH_TESTKEY")) | &null
+
+   opts := [addr, "h", "channel=no", "verifyPeer=accept-new", "hostkeyfile=" || kh]
+   put(opts, \key)
+   s := open ! opts | &null
+   n := 0
+   if f := open(kh) then {
+      while line := read(f) do n +:= 1
+      close(f)
+      }
+   write("live accept-new first contact: ",
+         if \s & n = 1 then "pass" else "fail")
+   close(\s)
+
+   opts := [addr, "h", "channel=no", "hostkeyfile=" || kh]
+   put(opts, \key)
+   s := open ! opts | &null
+   write("live accept-new key trusted later: ", if \s then "pass" else "fail")
+   close(\s)
+
+   # Put another key on file for the same host name.
+   if f := open(kh) then {
+      line := read(f)
+      close(f)
+      if f := open(kh, "w") then {
+         line ? write(f, tab(upto(' ')), " ssh-ed25519 AAAAC3NzaC1lZDI1NTE5",
+                         "AAAAIByleCQFVscHQ1c8tCY2d/CoKj556T4gkv5+Gnklru1G")
+         close(f)
+         }
+      }
+   opts := [addr, "h", "channel=no", "verifyPeer=accept-new", "hostkeyfile=" || kh]
+   put(opts, \key)
+   s := open ! opts | &null
+   ok := if /s & *&errortext > 0 then "pass" else "fail"
+   n := 0
+   if f := open(kh) then {
+      while line := read(f) do n +:= 1
+      close(f)
+      }
+   write("live accept-new changed key fails: ", if ok == "pass" & n = 1 then "pass" else "fail")
+   close(\s)
+
+   # A store whose last line has no newline: the new entry must still
+   # go on a line of its own.
+   if f := open(kh, "w") then {
+      writes(f, "unicon-test-other.invalid ssh-ed25519 AAAAC3NzaC1lZDI1NTE5",
+                "AAAAIByleCQFVscHQ1c8tCY2d/CoKj556T4gkv5+Gnklru1G")
+      close(f)
+      }
+   opts := [addr, "h", "channel=no", "verifyPeer=accept-new", "hostkeyfile=" || kh]
+   put(opts, \key)
+   s := open ! opts | &null
+   close(\s)
+   n := 0
+   if f := open(kh) then {
+      while line := read(f) do n +:= 1
+      close(f)
+      }
+   opts := [addr, "h", "channel=no", "hostkeyfile=" || kh]
+   put(opts, \key)
+   s := open ! opts | &null
+   write("live accept-new after unterminated line: ",
+         if \s & n = 2 then "pass" else "fail")
+   close(\s)
+   remove(kh)
+end
+
+#
+# Attribute values must survive a collection while the attributes after
+# them are converted.  A large attribute after cmd= makes one likely when
+# the string region is small; tests/posix/Makefile runs this test with
+# STRSIZE=100000.
+#
+procedure gc_attr_test(addr)
+   local opts, s, c, got, i, before, seen, bad
+
+   opts := ssh_opts(addr, "h", "channel=no")
+   s := open ! opts | {
+      write("live attributes across a collection: open failed: ", &errortext)
+      return
+      }
+   seen := bad := 0
+   every i := 1 to 40 do {
+      before := &collections
+      c := open(s, "hc", "cmd=echo marker_" || i,
+                "rows=24" || repl(" ", 20000 + 997 * i)) | {
+         bad +:= 1
+         next
+         }
+      got := ""
+      while got ||:= reads(c, 64)
+      close(c)
+      if &collections > before then {
+         seen +:= 1
+         if not find("marker_" || i, got) then bad +:= 1
+         }
+      }
+   close(s)
+   write("live attributes across a collection: ",
+         if seen = 0 then "skipped (no collection during open)"
+         else if bad = 0 then "pass" else "fail")
 end

@@ -1105,14 +1105,20 @@ Attributes include \texttt{user=},
 \texttt{key=} (private key path), \texttt{keypass=} (passphrase for an
 encrypted key), \texttt{password=} (login password),
 \texttt{hostkeyfile=} (known\_hosts path), \texttt{cmd=} (remote
-command; requires mode \texttt{"hc"}), and \texttt{channel=} (\texttt{yes}/\texttt{no}). Interactive
+command; requires mode \texttt{"hc"}), \texttt{env=NAME=VALUE} (an
+environment variable for the channel, like OpenSSH's \texttt{SetEnv};
+repeatable; a variable the server refuses is ignored), and \texttt{channel=} (\texttt{yes}/\texttt{no}). Interactive
 shells also accept \texttt{term=} (terminal type; default \$TERM or
 \texttt{xterm}), \texttt{cols=}, and \texttt{rows=} (PTY size; default
 from the local tty, else 80$\times$24). With neither
 \texttt{key=} nor \texttt{password=}, the default identities and a
-running agent are tried. Mode \texttt{"h-"} or \texttt{verifyPeer=no}
+running agent are tried. \texttt{password=} also answers a server that
+offers only keyboard-interactive login. Mode \texttt{"h-"} or \texttt{verifyPeer=no}
 skips host-key verification (\texttt{verifyPeer=} overrides the mode
-flag, as on TLS).
+flag, as on TLS). \texttt{verifyPeer=accept-new}, like OpenSSH's
+\texttt{StrictHostKeyChecking=accept-new}, trusts a host that has no
+key on file and adds its key to the known\_hosts file (created if
+missing); a host whose key changed still fails.
 Without \texttt{cmd=}, mode \texttt{"h"} opens an interactive shell on a PTY.
 Use \texttt{net::ssh\_interactive(s)} (Unicon class library) to attach
 the local tty: raw mode, \texttt{select} mux with \texttt{\&input}, and

@@ -21,6 +21,11 @@ endif
 endif
 
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
+
+# A small string region makes ssh.icn's live checks see a collection
+# during open(), so attribute values that do not survive one show up.
+ssh: TEST_ENV := STRSIZE=100000
+
 IGNORE=
 
 # Windows (WINSKIP): review case-by-case — many are skipped only because the NT runtime

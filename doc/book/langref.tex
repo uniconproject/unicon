@@ -3034,11 +3034,13 @@ host or \texttt{user@host}, optionally with \texttt{:port} (same form as
 socket addresses; IPv6 uses \texttt{[addr]:port}). Trailing attributes
 include \texttt{user=}, \texttt{key=}, \texttt{keypass=},
 \texttt{password=}, \texttt{hostkeyfile=}, \texttt{cmd=} (requires mode
-\texttt{"hc"}),
+\texttt{"hc"}), \texttt{env=NAME=VALUE} (channel environment; repeatable),
 \texttt{term=}/\texttt{cols=}/\texttt{rows=} (interactive PTY), and
 \texttt{channel=} (\texttt{yes}/\texttt{no}; \texttt{channel=no} is a
-transport-only session), and \texttt{verifyPeer=} (\texttt{yes}/\texttt{no}).
-Mode \texttt{"h-"} or \texttt{verifyPeer=no} skips host-key verification.
+transport-only session), and \texttt{verifyPeer=} (\texttt{yes}/\texttt{no}/\texttt{accept-new}).
+Mode \texttt{"h-"} or \texttt{verifyPeer=no} skips host-key verification;
+\texttt{verifyPeer=accept-new} trusts a host with no key on file and adds
+its key to the known\_hosts file, but still fails on a changed key.
 \texttt{open(s, "hc", ...)} on an existing SSH file opens another channel on
 the same session; \texttt{open(s, "hs", "path=\textit{path}", ...)}
 opens a remote file or directory over SFTP. See Chapter~6.

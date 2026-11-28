@@ -1,0 +1,56 @@
+#
+# binary.icn: Attrib(f, "binary=yes"|"binary=no") makes an open file
+# untranslated, as open(f, "u") does, or translated again
+#
+procedure main()
+   local f
+   write("&input: ", Attrib(&input, "binary=yes"), " ", Attrib(&input, "binary=no"))
+   write("&output: ", Attrib(&output, "binary=yes"))
+   # untranslated output: the line end is written as it is
+   write("after binary=yes")
+   write("&output: ", Attrib(&output, "binary=no"))
+
+   f := open("binary.tmp", "w") | stop("cannot write binary.tmp")
+   writes(f, "one\r\ntwo\r\nthree\r\n")
+   close(f)
+   f := open("binary.tmp") | stop("cannot read binary.tmp")
+   # read() drops the \r of a translated file's line ends, and keeps an
+   # untranslated file's
+   write(image(read(f)))
+   write(Attrib(f, "binary=yes"))
+   write(image(read(f)))
+   write(Attrib(f, "binary=no"))
+   write(image(read(f)))
+   close(f)
+   remove("binary.tmp")
+
+   # a bad value is an error, as it is for tty=
+   &error := 1
+   Attrib(&output, "binary=maybe")
+   write("binary=maybe: error ", &errornumber)
+
+   # a file that is not read and written through a FILE has no mode to
+   # change; where the build has no such files, say what it would say
+   if &features == "pseudo terminals" & f := open("cat", "prw") then {
+      refused("pty", f, "binary=yes")
+      close(f)
+   }
+   else write("pty binary=yes: error 174")
+   if &features == "libz file compression" & f := open("binary.gz", "wz") then {
+      refused("compressed", f, "binary=yes")
+      refused("compressed", f, "tty=raw")
+      close(f)
+      remove("binary.gz")
+   }
+   else {
+      write("compressed binary=yes: error 174")
+      write("compressed tty=raw: error 174")
+   }
+end
+
+procedure refused(label, f, a)
+   &error := 1
+   Attrib(f, a)
+   write(label, " ", a, ": ", if &error = 0 then "error " || &errornumber else "allowed")
+   &error := 0
+end

@@ -78,7 +78,7 @@ extern struct tend_desc *tend;  /* chain of tended descriptors */
 extern int num_cpu_cores;
 
 #ifdef Concurrent
-extern pthread_mutex_t **mutexes;
+extern pthread_mutex_t **mutexes[MutexChunks];
 extern AtomicWord nmutexes;
 extern word maxmutexes;
 

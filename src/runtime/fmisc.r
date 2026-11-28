@@ -2548,13 +2548,20 @@ word get_mutex( pthread_mutexattr_t *mattr){
 word n;
    MUTEX_LOCKID_CONTROLLED(MTX_MUTEXES);
    if(nmutexes==maxmutexes){
-      SUSPEND_THREADS();
-      if(nmutexes==maxmutexes){
-         maxmutexes = maxmutexes * 2;
-         mutexes=realloc(mutexes, maxmutexes * sizeof(pthread_mutex_t *));
-         if (mutexes==NULL) syserr("get_mutex(): out of memory for mutexes!");
-         }
-      RESUME_THREADS();
+      word c = maxmutexes >> MutexChunkBits;
+
+      /*
+       * Add a chunk; the ones in use stay where they are.  Suspending the
+       * threads and realloc'ing one array does not cover a thread that
+       * has counted out and is still evaluating MUTEXID(id); realloc
+       * would free the array under it.
+       */
+      if (c == MutexChunks)
+         syserr("get_mutex(): too many mutexes!");
+      mutexes[c] = malloc(MutexChunkSize * sizeof(pthread_mutex_t *));
+      if (mutexes[c] == NULL)
+         syserr("get_mutex(): out of memory for mutexes!");
+      maxmutexes += MutexChunkSize;
       }
    MUTEX_INITID(nmutexes, mattr);
    n = nmutexes++;

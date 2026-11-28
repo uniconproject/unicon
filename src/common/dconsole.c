@@ -65,7 +65,7 @@ struct descrip emptystr;                /* zero-length empty string */
 #ifdef Concurrent
 #undef tend
 int is_concurrent;
-pthread_mutex_t **mutexes;
+pthread_mutex_t **mutexes[MutexChunks];
 struct threadstate *get_tstate()
 {
    return curtstate;
@@ -280,9 +280,8 @@ void initalloc(word codesize)
          curtstring = curstring;
          {
            int i;
-           int maxmutexes = 1024;
-           mutexes=malloc(maxmutexes * sizeof(pthread_mutex_t *));
-           if (mutexes==NULL) syserr("init_threads(): out of memory for mutexes!");
+           mutexes[0]=malloc(MutexChunkSize * sizeof(pthread_mutex_t *));
+           if (mutexes[0]==NULL) syserr("init_threads(): out of memory for mutexes!");
 
            for(i=0; i<NUM_STATIC_MUTEXES-1; i++)
               MUTEX_INITID(i, NULL);

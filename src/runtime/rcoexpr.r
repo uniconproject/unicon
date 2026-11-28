@@ -902,7 +902,7 @@ word* condvarsmtxs;
 word maxcondvars;
 word ncondvars;
 
-pthread_mutex_t **mutexes;
+pthread_mutex_t **mutexes[MutexChunks];
 word maxmutexes;
 AtomicWord nmutexes;                    /* bounds-checked without MTX_MUTEXES */
 
@@ -945,9 +945,9 @@ void init_threads()
                           "thread_init():cannot init GC semaphore");
 #endif /* NamedSemaphores */
 
-   maxmutexes = 1024;
-   mutexes=malloc(maxmutexes * sizeof(pthread_mutex_t *));
-   if (mutexes==NULL) syserr("init_threads(): out of memory for mutexes!");
+   maxmutexes = MutexChunkSize;
+   mutexes[0] = malloc(maxmutexes * sizeof(pthread_mutex_t *));
+   if (mutexes[0]==NULL) syserr("init_threads(): out of memory for mutexes!");
 
    ncondvars = 0;
    maxcondvars = 10*1024;
@@ -996,8 +996,8 @@ void clean_threads()
 
    /*  keep MTX_SEGVTRAP_N alive        */
    for(i=1; i<nmutexes; i++){
-      pthread_mutex_destroy(mutexes[i]);
-      free(mutexes[i]);
+      pthread_mutex_destroy(MUTEXID(i));
+      free(MUTEXID(i));
       }
 
    pthread_mutexattr_destroy(&rmtx_attr);
